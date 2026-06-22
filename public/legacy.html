@@ -3683,6 +3683,55 @@
         let fuseOnsetTimer     = null;
         /** Last wire warning level for which a FUSE™ toast was shown — prevents repeated toasts. */
         let _lastWireWarningToastLevel = null;
+        /** Slightly larger component meshes for readability + on-screen presence. */
+        const COMPONENT_SCALE = 1.25;
+        /** Payoff showcase only: scales the current-flow particle SPEED so the demo
+         *  reads ~25% slower and is easy to watch. User-built circuits are unaffected. */
+        const PAYOFF_FLOW_SPEED_SCALE = 0.75;
+        /** Set true at renderer init on capable (non-mobile) GPUs; gates shadow casting. */
+        let renderShadows = false;
+
+        /**
+         * Build a soft procedural "studio" environment as an equirectangular canvas
+         * texture. Fed through PMREMGenerator so the PBR (MeshStandardMaterial)
+         * components pick up believable reflections + ambient bounce instead of
+         * reading flat. Deliberately muted (no pure white) to avoid the blow-out that
+         * over-bright environments caused on the branding work.
+         */
+        function buildStudioEnvTexture() {
+            const c = document.createElement('canvas');
+            c.width = 256; c.height = 128;
+            const g = c.getContext('2d');
+            const grad = g.createLinearGradient(0, 0, 0, c.height);
+            grad.addColorStop(0.0,  '#3a4a66'); // upper sky — soft key
+            grad.addColorStop(0.45, '#202836');
+            grad.addColorStop(0.55, '#161b26');
+            grad.addColorStop(1.0,  '#0a0d14'); // ground
+            g.fillStyle = grad;
+            g.fillRect(0, 0, c.width, c.height);
+            // Soft elliptical highlight = a single believable key reflection on metal.
+            const hx = c.width * 0.32, hy = c.height * 0.26, hr = c.height * 0.55;
+            const hi = g.createRadialGradient(hx, hy, 0, hx, hy, hr);
+            hi.addColorStop(0, 'rgba(200,214,235,0.80)');
+            hi.addColorStop(1, 'rgba(200,214,235,0)');
+            g.fillStyle = hi;
+            g.fillRect(0, 0, c.width, c.height);
+            const tex = new THREE.CanvasTexture(c);
+            tex.mapping = THREE.EquirectangularReflectionMapping;
+            return tex;
+        }
+        /**
+         * True while the startup payoff showcase circuit is loaded. Used so that a
+         * F.U.S.E. branch failure in the parallel showcase degrades the flow (slow +
+         * dim) instead of opening the whole circuit the way a series failure would.
+         */
+        let isPayoffCircuit = false;
+        /**
+         * Global flow-degradation multiplier for the payoff showcase (1 = full, 0.75 =
+         * degraded). Scales both particle speed and brightness so that when a F.U.S.E.
+         * branch fails the surviving parallel paths read ~25% slower and dimmer.
+         */
+        let payoffFlowDegrade = 1;
         let globalFlowTime      = 0;  // monotonic per-frame counter for animation phases
         let menuVisible = isEmbedded ? false : true;
         let analysisVisible = isEmbedded ? false : true;
@@ -5108,7 +5157,8 @@ body.android-optimized .zoom-btn {
             opamp: 0,
             transformer: 0,
             relay: 0,
-            'voltage-regulator': 0
+            'voltage-regulator': 0,
+            'flux-capacitor': 0
         };
 
         // Track placement offset for staggering components
@@ -5235,8 +5285,8 @@ body.android-optimized .zoom-btn {
         };
 
         // Wire energy-glow overlay (additive blending, all tiers)
-        const WIRE_GLOW_RADIUS        = 0.30;   // tube radius (world units)
-        const WIRE_GLOW_BASE_OPACITY  = 0.09;   // resting opacity
+        const WIRE_GLOW_RADIUS        = 0.32;   // tube radius (world units)
+        const WIRE_GLOW_BASE_OPACITY  = 0.075;  // resting opacity (subtle energized haze)
         const WIRE_GLOW_PULSE_AMP     = 0.06;   // opacity added by sine pulse
         const WIRE_GLOW_RADIAL_SEGS   = 7;      // cylinder sides (low-poly for performance)
         const WIRE_GLOW_SPEED_SCALE   = 2.2;    // opacity boost at max current speed
@@ -5346,9 +5396,31 @@ body.android-optimized .zoom-btn {
         const STREAM_WIGGLE_SPEED2 = 0.029;  // secondary — ratio 0.029/0.078 ≈ 0.372 (no simple fraction)
         const STREAM_WIGGLE_SPEED3 = 0.051;  // tertiary  — ratio 0.051/0.078 ≈ 0.654 (no simple fraction)
         // Wire energy-stream inner-core tube (tight glowing channel added alongside the outer haze)
-        const WIRE_STREAM_CORE_RADIUS  = 0.11;  // inner-core tube radius
-        const WIRE_STREAM_CORE_OPACITY = 0.18;  // inner-core base opacity (brighter than haze)
+        const WIRE_STREAM_CORE_RADIUS  = 0.13;  // inner-core tube radius
+        const WIRE_STREAM_CORE_OPACITY = 0.165; // inner-core base opacity (energized channel)
         const WIRE_STREAM_PATH_SEGS    = isMobile ? 14 : 26; // curve samples for TubeGeometry
+
+        // ── Electron glow sprite (fake-bloom) ───────────────────────────────
+        // A soft radial-gradient texture used as an additive billboard halo on
+        // every flow particle, so each electron reads as a luminous point of
+        // light — the "arena-level" electric glow without postprocessing/bloom.
+        let _electronGlowTexture = null;
+        function getElectronGlowTexture() {
+            if (_electronGlowTexture) return _electronGlowTexture;
+            const size = 64;
+            const cnv = document.createElement('canvas');
+            cnv.width = cnv.height = size;
+            const ctx = cnv.getContext('2d');
+            const g = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+            g.addColorStop(0.0,  'rgba(255,255,255,1.0)');  // white-hot core
+            g.addColorStop(0.22, 'rgba(255,255,255,0.85)');
+            g.addColorStop(0.5,  'rgba(180,225,255,0.35)'); // electric-blue mid
+            g.addColorStop(1.0,  'rgba(140,205,255,0.0)');  // fade to nothing
+            ctx.fillStyle = g;
+            ctx.fillRect(0, 0, size, size);
+            _electronGlowTexture = new THREE.CanvasTexture(cnv);
+            return _electronGlowTexture;
+        }
 
         // Layer-visibility update throttle thresholds
         const LAYER_VISIB_DIST_THRESHOLD  = 0.04;  // min camera-distance change to trigger mesh traversal
@@ -5412,30 +5484,32 @@ body.android-optimized .zoom-btn {
             createMesh() {
                 const group = new THREE.Group();
                 
-                // Main bright-yellow junction sphere — highly visible on dark background
-                const bodyGeometry = new THREE.SphereGeometry(0.28, isMobile ? 12 : 16, isMobile ? 8 : 12);
-                const bodyMaterial = new THREE.MeshStandardMaterial({ 
-                    color: 0xffdd00,
-                    emissive: 0xcc8800,
-                    emissiveIntensity: 0.7,
-                    metalness: 0.15,
-                    roughness: 0.25
+                // Solder junction node — a compact, energized connection bead.
+                // (Previously a Saturn-like sphere + flat ring that read as a planet;
+                //  redesigned to look like a glowing solder node where wires meet.)
+                const bodyGeometry = new THREE.SphereGeometry(0.2, isMobile ? 12 : 16, isMobile ? 8 : 12);
+                const bodyMaterial = new THREE.MeshStandardMaterial({
+                    color: 0xe6f4ff,           // bright chrome-blue solder bead
+                    emissive: 0x4aa8ff,        // electric-blue glow
+                    emissiveIntensity: 1.0,
+                    metalness: 0.6,
+                    roughness: 0.2
                 });
                 const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
                 group.add(body);
 
-                // Outer ring — makes junctions unmistakable on any wire run
-                const ringGeometry = new THREE.TorusGeometry(0.42, 0.055, 8, 28);
-                const ringMaterial = new THREE.MeshStandardMaterial({
-                    color: 0xff8800,
-                    emissive: 0xff4400,
-                    emissiveIntensity: 0.6,
-                    metalness: 0.1,
-                    roughness: 0.3
+                // Soft additive glow halo (energized aura) — replaces the flat ring,
+                // so the node reads as a bright electrical contact, not a planet.
+                const glowGeometry = new THREE.SphereGeometry(0.36, isMobile ? 10 : 14, isMobile ? 8 : 10);
+                const glowMaterial = new THREE.MeshBasicMaterial({
+                    color: 0x66ccff,
+                    transparent: true,
+                    opacity: 0.22,
+                    blending: isAndroid ? THREE.NormalBlending : THREE.AdditiveBlending,
+                    depthWrite: false
                 });
-                const ring = new THREE.Mesh(ringGeometry, ringMaterial);
-                ring.rotation.x = Math.PI / 2; // lay flat in the XZ plane
-                group.add(ring);
+                const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+                group.add(glow);
                 
                 // Selection sphere
                 const selectionGeometry = new THREE.SphereGeometry(isMobile ? 1.2 : 0.9, 8, 6);
@@ -5453,7 +5527,7 @@ body.android-optimized .zoom-btn {
                 this.mesh = group;
                 this.selectionSphere = selectionSphere;
                 this.bodyMaterial = bodyMaterial;
-                this.ringMaterial = ringMaterial;
+                this.ringMaterial = glowMaterial; // pulse target (now the glow halo)
                 scene.add(group);
                 
                 this.createConnectionPoint();
@@ -5531,7 +5605,9 @@ body.android-optimized .zoom-btn {
                     this.bodyMaterial.emissiveIntensity = 0.5 + pulseFactor * 0.6;
                 }
                 if (this.ringMaterial) {
-                    this.ringMaterial.emissiveIntensity = 0.4 + pulseFactor * 0.5;
+                    // Glow halo is a basic material — pulse its opacity for an
+                    // energized throb instead of emissiveIntensity (no-op on basic).
+                    this.ringMaterial.opacity = 0.16 + pulseFactor * 0.22;
                 }
             }
         }
@@ -5615,6 +5691,7 @@ body.android-optimized .zoom-btn {
                     case 'transformer': return { ratio: 1, primaryVoltage: 120 }; // turns ratio, V
                     case 'relay': return { coilVoltage: 12, coilResistance: 200 }; // V, Ω
                     case 'voltage-regulator': return { outputVoltage: 5, maxCurrent: 1.5 }; // V, A
+                    case 'flux-capacitor': return { jigawatts: 1.21, timeCircuitsOn: true }; // GW — what makes time travel possible
                     default: return {};
                 }
             }
@@ -5661,6 +5738,7 @@ body.android-optimized .zoom-btn {
                     case 'speaker': return `SPK${this.componentNumber}`;
                     case 'opamp': return `OP${this.componentNumber}`;
                     case 'transformer': return `T${this.componentNumber}`;
+                    case 'flux-capacitor': return `FC${this.componentNumber}`;
                     default: return `C${this.componentNumber}`;
                 }
             }
@@ -5814,6 +5892,13 @@ body.android-optimized .zoom-btn {
                         return {
                             text: `${this.properties.ratio}:1 ${this.properties.primaryVoltage}V`,
                             color: '#ff8844' // Orange
+                        };
+                    case 'flux-capacitor':
+                        return {
+                            text: this.properties.timeCircuitsOn
+                                ? `${this.properties.jigawatts} GW`
+                                : 'TIME CIRCUITS OFF',
+                            color: this.properties.timeCircuitsOn ? '#7df9ff' : '#ff4444' // electric cyan when fluxing
                         };
                     default:
                         return { text: '', color: '#ffffff' };
@@ -6037,7 +6122,21 @@ body.android-optimized .zoom-btn {
                     case 'voltage-regulator':
                         this.createVoltageRegulatorMesh(group);
                         break;
+                    case 'flux-capacitor':
+                        this.createFluxCapacitorMesh(group);
+                        break;
                 }
+
+                // PBR shadows: every solid body mesh casts + receives. Done before the
+                // selection box is added so the invisible picker box never casts a shadow.
+                if (renderShadows) {
+                    group.traverse((o) => {
+                        if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; }
+                    });
+                }
+
+                // Slightly larger components for readability and on-screen presence.
+                group.scale.setScalar(COMPONENT_SCALE);
 
                 group.position.copy(this.position);
                 group.userData = { component: this };
@@ -6331,6 +6430,62 @@ body.android-optimized .zoom-btn {
                     coil.position.x = -0.25 + i * 0.15;
                     group.add(coil);
                 }
+
+                this.addLeads(group);
+            }
+
+            createFluxCapacitorMesh(group) {
+                const segments = isMobile ? 8 : 16;
+                const on = this.properties?.timeCircuitsOn !== false;
+                const glow = on ? 0x7df9ff : 0x2a3a44; // electric cyan when fluxing
+
+                // Stainless housing — the iconic boxy case.
+                const caseGeometry = new THREE.BoxGeometry(0.7, 0.9, 0.35);
+                const caseMaterial = new THREE.MeshStandardMaterial({ color: 0x9aa3ad, metalness: 0.85, roughness: 0.3 });
+                const housing = new THREE.Mesh(caseGeometry, caseMaterial);
+                group.add(housing);
+
+                // Dark inset face so the Y of tubes reads against it.
+                const faceGeometry = new THREE.BoxGeometry(0.5, 0.72, 0.06);
+                const faceMaterial = new THREE.MeshStandardMaterial({ color: 0x10141a, metalness: 0.2, roughness: 0.6 });
+                const face = new THREE.Mesh(faceGeometry, faceMaterial);
+                face.position.z = 0.18;
+                group.add(face);
+
+                // The three flux tubes form a Y, meeting at the centre hub — the
+                // shape that makes time travel possible.  Glowing emissive when the
+                // time circuits are on.
+                const tubeMaterial = new THREE.MeshStandardMaterial({
+                    color: glow, emissive: glow, emissiveIntensity: on ? 1.4 : 0.15,
+                    metalness: 0.3, roughness: 0.4
+                });
+                const bulbMaterial = new THREE.MeshStandardMaterial({
+                    color: glow, emissive: glow, emissiveIntensity: on ? 2.0 : 0.2,
+                    metalness: 0.2, roughness: 0.3
+                });
+
+                // Arms point up (90°), down-left (210°), down-right (330°).
+                const armAngles = [Math.PI / 2, (Math.PI * 7) / 6, (Math.PI * 11) / 6];
+                const armLen = 0.34;
+                armAngles.forEach((ang) => {
+                    const tubeGeometry = new THREE.CylinderGeometry(0.05, 0.05, armLen, segments);
+                    const tube = new THREE.Mesh(tubeGeometry, tubeMaterial);
+                    tube.position.set(Math.cos(ang) * armLen / 2, Math.sin(ang) * armLen / 2, 0.2);
+                    tube.rotation.z = ang - Math.PI / 2; // cylinder axis is +Y by default
+                    group.add(tube);
+
+                    // Glowing lamp at the outer end of each arm.
+                    const bulbGeometry = new THREE.SphereGeometry(0.07, segments, segments);
+                    const bulb = new THREE.Mesh(bulbGeometry, bulbMaterial);
+                    bulb.position.set(Math.cos(ang) * armLen, Math.sin(ang) * armLen, 0.2);
+                    group.add(bulb);
+                });
+
+                // Central hub where the three tubes converge.
+                const hubGeometry = new THREE.SphereGeometry(0.09, segments, segments);
+                const hub = new THREE.Mesh(hubGeometry, bulbMaterial);
+                hub.position.z = 0.2;
+                group.add(hub);
 
                 this.addLeads(group);
             }
@@ -7945,7 +8100,7 @@ body.android-optimized .zoom-btn {
                 const initHeight = (window.innerHeight || document.documentElement.clientHeight || 640);
 
                 scene = new THREE.Scene();
-                scene.background = new THREE.Color(0x0a0a1a);
+                scene.background = new THREE.Color(0x0e1322);
                 
                 // Use safe non-zero viewport dimensions.  On Android/Capacitor
                 // the local-bundle iframe can execute before the browser layout
@@ -8029,7 +8184,7 @@ body.android-optimized .zoom-btn {
                 // loss and making particles invisible.  2× retains full retina sharpness.
                 renderer.setPixelRatio(isMobile ? Math.min(window.devicePixelRatio, 2) : window.devicePixelRatio);
                 renderer.setSize(_vw, _vh);
-                renderer.setClearColor(0x0a0a1a, 1);
+                renderer.setClearColor(0x0e1322, 1);
                 // Android System WebView (Capacitor) may have older GLSL compiler that
                 // misprecises or fails to compile the ACES tone-mapping fragment shader,
                 // resulting in invisible / black materials (including current-flow particles).
@@ -8037,7 +8192,12 @@ body.android-optimized .zoom-btn {
                 // correctly on every GPU/driver combination — use it on Android to guarantee
                 // current-flow particles are always visible.
                 renderer.toneMapping = isAndroid ? THREE.LinearToneMapping : THREE.ACESFilmicToneMapping;
-                renderer.toneMappingExposure = isAndroid ? 1.0 : 1.1;
+                renderer.toneMappingExposure = isAndroid ? 1.05 : 1.15;
+                // Soft shadows on capable (non-mobile) GPUs to ground the components and
+                // sell the PBR look. Mobile skips them to protect the frame/VRAM budget.
+                renderShadows = !isMobile;
+                renderer.shadowMap.enabled = renderShadows;
+                renderer.shadowMap.type = THREE.PCFSoftShadowMap;
                 // sRGB encoding removed: Three.js r128 does not support
                 // renderer.outputColorSpace.  Setting it was a no-op but caused
                 // confusion across multiple fix cycles.  If upgrading to r152+,
@@ -8075,12 +8235,25 @@ body.android-optimized .zoom-btn {
                 mouse = new THREE.Vector2();
                 
                 // Lighting - key + fill + hemisphere for richer PBR shading
-                const directionalLight = new THREE.DirectionalLight(0xffffff, isMobile ? 1.0 : 1.4);
+                const directionalLight = new THREE.DirectionalLight(0xffffff, isMobile ? 1.0 : 1.35);
                 directionalLight.position.set(10, 10, 5);
+                if (renderShadows) {
+                    directionalLight.castShadow = true;
+                    directionalLight.shadow.mapSize.set(2048, 2048);
+                    const sd = 45;
+                    directionalLight.shadow.camera.left   = -sd;
+                    directionalLight.shadow.camera.right  =  sd;
+                    directionalLight.shadow.camera.top    =  sd;
+                    directionalLight.shadow.camera.bottom = -sd;
+                    directionalLight.shadow.camera.near   = 1;
+                    directionalLight.shadow.camera.far    = 140;
+                    directionalLight.shadow.bias          = -0.0004;
+                    directionalLight.shadow.normalBias    = 0.02;
+                }
                 scene.add(directionalLight);
 
                 // Cool-blue fill light from the opposite side to soften harsh shadows
-                const fillLight = new THREE.DirectionalLight(0x8ab4f8, isMobile ? 0.3 : 0.5);
+                const fillLight = new THREE.DirectionalLight(0x9fc4ff, isMobile ? 0.35 : 0.5);
                 fillLight.position.set(-8, 4, -6);
                 scene.add(fillLight);
 
@@ -8091,8 +8264,37 @@ body.android-optimized .zoom-btn {
                 }
 
                 // HemisphereLight replaces plain AmbientLight for sky/ground gradient illumination
-                const hemisphereLight = new THREE.HemisphereLight(0x4488bb, 0x1a0a2a, isMobile ? 0.6 : 0.5);
+                const hemisphereLight = new THREE.HemisphereLight(0x6aa6dd, 0x2a1a3a, isMobile ? 0.6 : 0.6);
                 scene.add(hemisphereLight);
+
+                // ── Image-based lighting (IBL) ────────────────────────────────
+                // Feed a soft procedural studio environment through PMREMGenerator so the
+                // PBR components gain realistic reflections + ambient bounce instead of
+                // reading flat. The muted env + ACES tone mapping guard against blow-out.
+                try {
+                    const pmrem = new THREE.PMREMGenerator(renderer);
+                    pmrem.compileEquirectangularShader();
+                    const envSrc = buildStudioEnvTexture();
+                    const envRT  = pmrem.fromEquirectangular(envSrc);
+                    scene.environment = envRT.texture;
+                    envSrc.dispose();
+                    pmrem.dispose();
+                } catch (envErr) {
+                    console.warn('[CT3D] Environment map setup failed (non-fatal):', envErr);
+                }
+
+                // Transparent shadow-catcher so cast shadows ground the components
+                // without painting over the grid (ShadowMaterial shows only the shadow).
+                if (renderShadows) {
+                    const shadowGround = new THREE.Mesh(
+                        new THREE.PlaneGeometry(500, 500),
+                        new THREE.ShadowMaterial({ opacity: 0.26 })
+                    );
+                    shadowGround.rotation.x = -Math.PI / 2;
+                    shadowGround.position.y = -0.4;
+                    shadowGround.receiveShadow = true;
+                    scene.add(shadowGround);
+                }
                 
                 // Enhanced grid system — wrapped individually so a canvas-2D or
                 // geometry error does NOT prevent the animation loop from starting.
@@ -11953,10 +12155,26 @@ body.android-optimized .zoom-btn {
                     `;
                     break;
                     
+                case 'flux-capacitor':
+                    formHTML = `
+                        <div class="edit-row">
+                            <label>⚡ Time Circuits</label>
+                            <select id="edit-time-circuits">
+                                <option value="true" ${component.properties.timeCircuitsOn ? 'selected' : ''}>ON</option>
+                                <option value="false" ${!component.properties.timeCircuitsOn ? 'selected' : ''}>OFF</option>
+                            </select>
+                        </div>
+                        <div class="edit-row">
+                            <label>Flux Output (jigawatts)</label>
+                            <input type="number" id="edit-jigawatts" value="${component.properties.jigawatts}" min="0" max="9.99" step="0.01">
+                        </div>
+                    `;
+                    break;
+
                 default:
                     formHTML = '<div class="edit-row">No editable properties</div>';
             }
-            
+
             return formHTML;
         }
 
@@ -11996,8 +12214,19 @@ body.android-optimized .zoom-btn {
                         newProperties.resistance = parseFloat(switchResistanceInput.value) || 0.1;
                     }
                     break;
+
+                case 'flux-capacitor':
+                    const timeCircuitsSelect = document.getElementById('edit-time-circuits');
+                    const jigawattsInput = document.getElementById('edit-jigawatts');
+                    if (timeCircuitsSelect) {
+                        newProperties.timeCircuitsOn = timeCircuitsSelect.value === 'true';
+                    }
+                    if (jigawattsInput) {
+                        newProperties.jigawatts = parseFloat(jigawattsInput.value) || 1.21;
+                    }
+                    break;
             }
-            
+
             // Update component properties
             currentEditComponent.updateProperties(newProperties);
             
@@ -15255,81 +15484,89 @@ Made with ? for visual learners everywhere!
         function buildComponentRuntimeNameplateMetrics(analysis, flowState) {
             const result = analysis || {};
             const hasFlow = Boolean(flowState && flowState.hasFlow);
-            const circuitCurrent = Number.isFinite(result.current) ? result.current : 0;
             const circuitVoltage = Number.isFinite(result.voltage) ? result.voltage : 0;
+            const fallbackCurrent = Number.isFinite(result.current) ? result.current : 0;
             const metricsByComponentId = new Map();
-            const resistanceByComponentId = new Map();
 
-            if (flowState && Array.isArray(flowState.componentSegments)) {
-                flowState.componentSegments.forEach(segment => {
-                    const component = segment?.component;
-                    if (!component || !component.id) {
-                        return;
+            // No flow → every component is open.
+            if (!hasFlow) {
+                components.forEach(component => {
+                    if (component && component.id) {
+                        metricsByComponentId.set(component.id, {
+                            state: 'open',
+                            reason: flowState?.reason || 'open',
+                            current: 0
+                        });
                     }
-
-                    const resistance = Number(segment.resistance);
-                    if (!isFinite(resistance) || resistance < 0) {
-                        return;
-                    }
-
-                    const previous = resistanceByComponentId.get(component.id) || 0;
-                    resistanceByComponentId.set(component.id, previous + resistance);
                 });
+                return metricsByComponentId;
             }
+
+            // Textbook-accurate per-component currents via the DC nodal (MNA) solver
+            // — the SAME engine the multimeter uses. This makes series, parallel, and
+            // combination circuits all report correct branch currents / voltage drops /
+            // power (I = V/R per branch, I_total = ΣI), matching the W.I.R.E. method.
+            // Previously the analysis was single-path (lowest-resistance), so parallel
+            // branches read "idle"; this fixes that.
+            let solution = null;
+            try { solution = solveDCCircuitLegacy(); } catch (e) { solution = null; }
+            const solved = Boolean(solution && solution.status === 'solved');
+            const CURRENT_EPS = 1e-6;
 
             components.forEach(component => {
                 if (!component || !component.id) {
                     return;
                 }
 
-                if (!hasFlow) {
-                    metricsByComponentId.set(component.id, {
-                        state: 'open',
-                        reason: flowState?.reason || 'open',
-                        current: 0
-                    });
-                    return;
-                }
-
+                // ── Source (battery / AC): report the total source current ──
                 if (component.type === 'battery' || component.type === 'ac_source') {
                     const sourceVoltage = Number(component.properties?.voltage);
+                    let srcCurrent = solved ? getComponentCurrentFromSolution(component, solution) : NaN;
+                    if (!Number.isFinite(srcCurrent)) srcCurrent = fallbackCurrent;
+                    srcCurrent = Math.abs(srcCurrent);
                     const resolvedVoltage = isFinite(sourceVoltage) ? sourceVoltage : circuitVoltage;
                     metricsByComponentId.set(component.id, {
                         state: 'live',
                         role: 'source',
-                        current: circuitCurrent,
+                        current: srcCurrent,
                         voltageDrop: isFinite(sourceVoltage) ? sourceVoltage : null,
-                        power: isFinite(resolvedVoltage) ? resolvedVoltage * circuitCurrent : null
+                        power: isFinite(resolvedVoltage) ? resolvedVoltage * srcCurrent : null
                     });
                     return;
                 }
 
-                const pathResistance = resistanceByComponentId.get(component.id);
-                if (isFinite(pathResistance) && pathResistance >= 0) {
-                    metricsByComponentId.set(component.id, {
-                        state: 'live',
-                        role: 'load',
-                        current: circuitCurrent,
-                        resistance: pathResistance,
-                        voltageDrop: circuitCurrent * pathResistance,
-                        power: circuitCurrent * circuitCurrent * pathResistance
-                    });
+                // ── Loads: use the solved branch current ──
+                let branchCurrent = solved ? getComponentCurrentFromSolution(component, solution) : NaN;
+                if (Number.isFinite(branchCurrent)) {
+                    branchCurrent = Math.abs(branchCurrent);
+                    const ohms = getComponentResistance(component);
+                    const r = Number.isFinite(ohms) ? ohms : null;
+                    if (branchCurrent > CURRENT_EPS) {
+                        metricsByComponentId.set(component.id, {
+                            state: 'live',
+                            role: 'load',
+                            current: branchCurrent,
+                            resistance: r != null ? r : undefined,
+                            voltageDrop: r != null ? branchCurrent * r : undefined,
+                            power: r != null ? branchCurrent * branchCurrent * r : undefined
+                        });
+                        return;
+                    }
+                    // Solved but ~0 A (dead/open branch) → idle.
+                    metricsByComponentId.set(component.id, { state: 'idle', current: 0 });
                     return;
                 }
 
+                // ── Solver unavailable → graceful fallback ──
                 if (component.type === 'switch' && component.properties?.isOn) {
                     metricsByComponentId.set(component.id, {
                         state: 'live',
                         role: 'control',
-                        current: circuitCurrent
+                        current: fallbackCurrent
                     });
                     return;
                 }
-
-                metricsByComponentId.set(component.id, {
-                    state: 'idle',
-                    current: 0
-                });
+                metricsByComponentId.set(component.id, { state: 'idle', current: 0 });
             });
 
             return metricsByComponentId;
@@ -15353,9 +15590,23 @@ Made with ? for visual learners everywhere!
                 if (entry?.failed) { failedEntry = entry; break; }
             }
             if (failedEntry && currentFlowState?.hasFlow) {
-                currentFlowState = { hasFlow: false, currentValue: 0, reason: 'component-failure' };
-                animateCurrentFlow(currentFlowState);
-                setStatus(`⚠ COMPONENT FAILURE: ${failedEntry.name || 'Component'} has failed — circuit is open and current flow has stopped.`);
+                if (isPayoffCircuit) {
+                    // Parallel payoff showcase: a failed branch is an OPEN CIRCUIT — no
+                    // current flows through it — while the other branches keep conducting
+                    // at their own current. Re-solve so the netlist drops the failed branch
+                    // (buildNetlistLegacy skips failed parts): its particles stop and the
+                    // survivors continue. When the last branch opens, the re-solve finds no
+                    // path and all current stops. This replaces the old global slow-down,
+                    // which incorrectly kept current "flowing" through the open branch.
+                    setStatus(`⚠ F.U.S.E.: ${failedEntry.name || 'A branch'} overheated and went open — no current flows through it now; the surviving parallel branches carry on.`);
+                    // Deferred so we re-enter analyzeCircuit() on a fresh call stack (this
+                    // handler runs inside the current analysis pass) — avoids recursion.
+                    setTimeout(() => { try { analyzeCircuit(); } catch (e) { /* non-fatal */ } }, 0);
+                } else {
+                    currentFlowState = { hasFlow: false, currentValue: 0, reason: 'component-failure' };
+                    animateCurrentFlow(currentFlowState);
+                    setStatus(`⚠ COMPONENT FAILURE: ${failedEntry.name || 'Component'} has failed — circuit is open and current flow has stopped.`);
+                }
             }
         }
 
@@ -15772,6 +16023,7 @@ Made with ? for visual learners everywhere!
                 case 'ac_source':
                 case 'motor':
                 case 'speaker':
+                case 'flux-capacitor':
                     return ['left', 'right'];
                 default:
                     return [];
@@ -15839,6 +16091,15 @@ Made with ? for visual learners everywhere!
             }
 
             if (component.type === 'fuse') {
+                return Number(component.properties?.resistance) || 0.05;
+            }
+
+            if (component.type === 'flux-capacitor') {
+                // Time-circuit energy core: when the time circuits are off it blocks
+                // the path (open); when on it conducts like a charged reactive core.
+                if (component.properties?.timeCircuitsOn === false) {
+                    return Infinity;
+                }
                 return Number(component.properties?.resistance) || 0.05;
             }
 
@@ -18161,14 +18422,22 @@ Made with ? for visual learners everywhere!
 
             if (!segments.length) return;
 
-            const baseSpeed        = calculateFlowSpeed(currentValue);
-            const baseParticleCount = isMobile ? 6 : 10;
-            const maxParticles      = isMobile ? 20 : 35;
+            // PAYOFF_FLOW_SPEED_SCALE slows the payoff demo ~25% overall so the energized
+            // current is calm and easy to watch; user-built circuits run at full speed
+            // (gated on isPayoffCircuit). payoffFlowDegrade stays as a secondary hook.
+            const payoffSpeedScale = isPayoffCircuit ? PAYOFF_FLOW_SPEED_SCALE : 1;
+            const baseSpeed        = calculateFlowSpeed(currentValue) * payoffFlowDegrade * payoffSpeedScale;
+            // Denser stream floor so even low-current showcase circuits read as a
+            // continuous energized current rather than a few sparse dots.
+            const baseParticleCount = isMobile ? 11 : 18;
+            const maxParticles      = isMobile ? 28 : 50;
             const inAtomicZoom      = cameraDistance < ATOMIC_ZOOM_THRESHOLD;
             const inCloseZoom       = cameraDistance < CLOSE_ZOOM_THRESHOLD;
             const inDeepAtomic      = cameraDistance < ZOOM_DEEP_ATOMIC;
             const inComponentView   = cameraDistance < ZOOM_COMPONENT_VIEW;
-            const intensity         = Math.min(1, currentValue / 0.5);
+            // Artistic floor: keep particles visually energetic (size/brightness)
+            // even at low amperage so the flow always looks alive, not anaemic.
+            const intensity         = Math.min(1, 0.5 + currentValue / 0.5);
 
             segments.forEach((segment, segmentIndex) => {
                 const wire = segment.wire;
@@ -18266,7 +18535,7 @@ Made with ? for visual learners everywhere!
                     try {
                         // Smaller particles combined with additive blending and higher density
                         // make individual spheres merge visually into a continuous glowing stream.
-                        const particleSize = (0.062 + (intensity * 0.040)) * (isAndroid ? ANDROID_PARTICLE_SIZE_SCALE : 1.0);
+                        const particleSize = (0.095 + (intensity * 0.055)) * (isAndroid ? ANDROID_PARTICLE_SIZE_SCALE : 1.0);
                         const particleGeometry = new THREE.SphereGeometry(
                             // Fewer segments on both mobile and desktop to compensate for the
                             // higher particle count: with 1.5–2× more particles in the scene,
@@ -18281,7 +18550,8 @@ Made with ? for visual learners everywhere!
                         // blending: individually dim particles accumulate into a bright stream.
                         const baseOpacity   = isMisty ? 0.32 + intensity * 0.22
                                                        : 0.50 + intensity * 0.22;
-                        const baseEmissive  = isMisty ? 0.95 : 1.45;
+                        // payoffFlowDegrade dims the glow ~25% once a F.U.S.E. branch fails.
+                        const baseEmissive  = (isMisty ? 0.95 : 1.45) * payoffFlowDegrade;
                         // On Android boost emissive intensity to guarantee particles glow
                         // even when the GPU's colour-space conversion compresses bright values.
                         const effectiveEmissive = isAndroid ? Math.min(ANDROID_MAX_EMISSIVE, baseEmissive * ANDROID_EMISSIVE_MULTIPLIER) : baseEmissive;
@@ -18337,6 +18607,23 @@ Made with ? for visual learners everywhere!
                             continue;
                         }
                         particle.position.copy(initialPosition);
+
+                        // ── Additive glow halo (fake-bloom) ─────────────────
+                        // Makes every electron a luminous point of light so the
+                        // stream reads as tangible, glowing electricity.
+                        const glowSprite = new THREE.Sprite(new THREE.SpriteMaterial({
+                            map:         getElectronGlowTexture(),
+                            color:       flowColor.hex,
+                            transparent: true,
+                            opacity:     isAndroid ? 0.34 : 0.375,
+                            blending:    isAndroid ? THREE.NormalBlending : THREE.AdditiveBlending,
+                            depthWrite:  false,
+                            depthTest:   !isAndroid
+                        }));
+                        const glowScale = particleSize * 7.5;
+                        glowSprite.scale.set(glowScale, glowScale, 1);
+                        glowSprite.frustumCulled = false;
+                        particle.add(glowSprite);
 
                         // ── Orbital rings (atomic zoom only) ────────────────
                         let orbitalRing  = null;
@@ -18396,9 +18683,11 @@ Made with ? for visual learners everywhere!
                             }
                         }
 
-                        // ── Comet trail meshes (close + atomic zoom) ─────────
+                        // ── Comet trail meshes ───────────────────────────────
+                        // Show on desktop at every zoom (electric streaks at macro),
+                        // and at close/atomic zoom on mobile to limit mesh count.
                         const trailMeshes = [];
-                        if (inCloseZoom) {
+                        if (inCloseZoom || !isMobile) {
                             let trailOpacity = TRAIL_OPACITY_BASE;
                             let trailSize    = particleSize * TRAIL_SIZE_RATIO;
                             for (let t = 0; t < TRAIL_COUNT; t++) {
@@ -18933,9 +19222,9 @@ Made with ? for visual learners everywhere!
         function calculateFlowSpeed(current) {
             // Wide speed range: near-stationary at tiny currents, blazing fast at high currents.
             // Uses a square-root curve so mid-range currents feel responsive, not just the extremes.
-            const baseSpeed = isMobile ? 0.002 : 0.003;
+            const baseSpeed = isMobile ? 0.00075 : 0.0011;
             const speedMultiplier = 1 + (Math.sqrt(Math.max(0, current)) * SPEED_SQRT_MULTIPLIER);
-            return Math.min(baseSpeed * speedMultiplier, isMobile ? 0.15 : 0.22);
+            return Math.min(baseSpeed * speedMultiplier, isMobile ? 0.056 : 0.082);
         }
 
         function updateCircuitInfo() {
@@ -19302,13 +19591,18 @@ Made with ? for visual learners everywhere!
 
         /**
          * loadPayoffCircuit — dedicated payoff sequence that builds the startup
-         * showcase series circuit directly, bypassing all practice-UI machinery.
+         * showcase circuit directly, bypassing all practice-UI machinery.
+         *
+         * The showcase is a HIGH-CURRENT, MULTI-PATH PARALLEL circuit so the very
+         * first thing a new user sees is dramatic current splitting across several
+         * branches and flowing in 3D — not a trickle through one series loop.
          *
          * Steps:
          *   1. Guard: scene + renderer must exist (init() completed successfully).
          *   2. clearAll() to start fresh.
-         *   3. Create Battery + 3 resistors in a square loop with 4 corner junctions.
-         *   4. Wire them in order: B+→TL→R1→TR→R2→BR→R3→BL→B−.
+         *   3. Create a 12 V battery + 3 resistor branches between a shared top
+         *      rail (battery +) and bottom rail (battery −).
+         *   4. Wire both rails and each parallel branch.
          *   5. Force currentFlowStyle = 'solid' and notify React.
          *   6. fitToScreen() then analyzeCircuit() to spawn particles.
          *   7. setStatus() with a user-facing message.
@@ -19325,33 +19619,83 @@ Made with ? for visual learners everywhere!
                 // Pass false to preserve camera position (no viewport reset).
                 clearAll(false);
 
+                // Mark this as the payoff showcase so a F.U.S.E. branch failure degrades
+                // the flow rather than opening the circuit, and start at full brightness.
+                // (clearAll resets both, so set them AFTER clearing.)
+                isPayoffCircuit   = true;
+                payoffFlowDegrade = 1;
+
                 // ── Components ───────────────────────────────────────────────
-                const battery = new Component('battery', new THREE.Vector3(-10, 0, 0));
-                battery.rotation = Math.PI / 2;
-                if (battery.mesh) battery.mesh.rotation.y = Math.PI / 2;
-                battery.updateProperties({ voltage: 9 });
+                // Textbook parallel ladder: a 12 V source drives three resistor
+                // branches stacked vertically between two VERTICAL bus rails — the
+                // left rail (battery −) and the right rail (battery +). Every element
+                // is left UNROTATED so its terminals sit at x ± offset, exactly where
+                // getWorldConnectionPoint() places them; this keeps every wire a
+                // straight orthogonal run (no diagonal "zigzag" branches) and matches
+                // docs/circuit-topology-reference.md.
+                //
+                // Clean 3:2:1 per-branch math:
+                //   I₁ = 12/40 = 0.30 A · I₂ = 12/60 = 0.20 A · I₃ = 12/120 = 0.10 A
+                //   I_total = 0.60 A · R_eq = 20 Ω
+                //   P₁ = 3.6 W · P₂ = 2.4 W · P₃ = 1.2 W
+                //
+                // F.U.S.E. is wired in for real: each branch is under-rated relative to
+                // its dissipation so the first-order thermal model (ΔT ∝ 1−e^(−t/τ))
+                // eventually drives effective power past 1.667× the rating and the branch
+                // fails. A longer per-branch τ (thermalTimeConstant ≈ 15 s) deliberately
+                // delays the trips so the energized current can be watched first; ratings
+                // are staggered so the branches blow one at a time — the hottest first:
+                //   A: 1.5 W → fails ≈ 18 s · B: 1.2 W → ≈ 27 s · C: 0.65 W → ≈ 35 s
+                // Because this is a PARALLEL circuit, a failed branch is an OPEN CIRCUIT:
+                // no current flows through it, while the surviving branches keep conducting
+                // at their own current. When the last branch opens the circuit is fully
+                // open and all current stops — see the failure handler in analyzeCircuit.
+
+                // Rail X positions and the four stacked rows (z): battery on top,
+                // then the three resistor branches evenly spaced below it.
+                const RAIL_LEFT_X  = -8;
+                const RAIL_RIGHT_X =  8;
+                const ROW_Z = { battery: -6, r1: -2, r2: 2, r3: 6 };
+
+                // Battery across the top row (horizontal, unrotated → +x positive
+                // terminal feeds the right rail, −x negative terminal the left rail).
+                const battery = new Component('battery', new THREE.Vector3(0, 0, ROW_Z.battery));
+                battery.updateProperties({ voltage: 12 });
                 components.push(battery);
 
-                const r1 = new Component('resistor', new THREE.Vector3(0, 0, 6));
-                r1.updateProperties({ resistance: 150 });
-                components.push(r1);
-
-                const r2 = new Component('resistor', new THREE.Vector3(10, 0, 0));
-                r2.rotation = Math.PI / 2;
-                if (r2.mesh) r2.mesh.rotation.y = Math.PI / 2;
-                r2.updateProperties({ resistance: 220 });
-                components.push(r2);
-
-                const r3 = new Component('resistor', new THREE.Vector3(0, 0, -6));
-                r3.updateProperties({ resistance: 270 });
-                components.push(r3);
+                // Horizontal resistor branches, one per row. powerRating is
+                // intentionally below each branch's dissipation so the F.U.S.E. thermal
+                // model trips them in sequence (hottest first).
+                // thermalTimeConstant (τ, seconds) is raised well above the 5 s default so
+                // the trips happen ~3× later — long enough to watch the current flow first.
+                const PAYOFF_TAU = 15;
+                const branchSpecs = [
+                    { z: ROW_Z.r1, resistance: 40,  powerRating: 1.5  }, // P=3.6 W → fails ≈ 18 s
+                    { z: ROW_Z.r2, resistance: 60,  powerRating: 1.2  }, // P=2.4 W → fails ≈ 27 s
+                    { z: ROW_Z.r3, resistance: 120, powerRating: 0.65 }, // P=1.2 W → fails ≈ 35 s
+                ];
+                const branchResistors = branchSpecs.map(({ z, resistance, powerRating }) => {
+                    const r = new Component('resistor', new THREE.Vector3(0, 0, z));
+                    // No rotation: terminals stay on ±x so each branch wires straight
+                    // across to the vertical rails.
+                    // powerRating drives the F.U.S.E. overpower trigger; maxPower kept in
+                    // sync. Under-rated on purpose so each branch eventually fails, and a
+                    // longer thermalTimeConstant delays that failure so the flow is visible.
+                    r.updateProperties({ resistance, powerRating, maxPower: powerRating, thermalTimeConstant: PAYOFF_TAU });
+                    components.push(r);
+                    return r;
+                });
 
                 // ── Junctions ────────────────────────────────────────────────
-                const jTL = new Junction(new THREE.Vector3(-10, 0, 6), { snapToGridPosition: false });
-                const jTR = new Junction(new THREE.Vector3(10, 0, 6), { snapToGridPosition: false });
-                const jBR = new Junction(new THREE.Vector3(10, 0, -6), { snapToGridPosition: false });
-                const jBL = new Junction(new THREE.Vector3(-10, 0, -6), { snapToGridPosition: false });
-                junctions.push(jTL, jTR, jBR, jBL);
+                // Two VERTICAL rails. The left rail is the battery − node, the right
+                // rail the battery + node. Each rail has one junction per row so the
+                // rail segments stay straight and every branch shares the rail node.
+                const rowZ = [ROW_Z.battery, ROW_Z.r1, ROW_Z.r2, ROW_Z.r3];
+                const leftRail  = rowZ.map((z) => new Junction(new THREE.Vector3(RAIL_LEFT_X,  0, z), { snapToGridPosition: false }));
+                const rightRail = rowZ.map((z) => new Junction(new THREE.Vector3(RAIL_RIGHT_X, 0, z), { snapToGridPosition: false }));
+                junctions.push(...leftRail, ...rightRail);
+                const [jLB, jL1, jL2, jL3] = leftRail;
+                const [jRB, jR1, jR2, jR3] = rightRail;
 
                 // ── Force world-matrix update before wire creation ────────────
                 // loadPayoffCircuit runs synchronously (typically before the first
@@ -19367,16 +19711,28 @@ Made with ? for visual learners everywhere!
                 scene.updateMatrixWorld(true);
 
                 // ── Wires ────────────────────────────────────────────────────
-                // Series loop: B+→TL→R1(L→R)→TR→R2(R→L)→BR→R3(R→L)→BL→B−
+                // Battery bridges the two rails along the top row; each rail runs
+                // straight down through its per-row junctions; each resistor wires
+                // straight across from the left rail to the right rail.
+                //   right rail (+): B+→jRB→jR1→jR2→jR3 (shared + node)
+                //   left rail  (−): B−→jLB→jL1→jL2→jL3 (shared − node)
+                //   branches: jL*→R(left) and R(right)→jR*
+                const [rA, rB, rC] = branchResistors;
                 const wireSpecs = [
-                    [battery, 'positive',  jTL, 'center'],
-                    [jTL, 'center',        r1,  'left'  ],
-                    [r1,  'right',         jTR, 'center'],
-                    [jTR, 'center',        r2,  'right' ],
-                    [r2,  'left',          jBR, 'center'],
-                    [jBR, 'center',        r3,  'right' ],
-                    [r3,  'left',          jBL, 'center'],
-                    [jBL, 'center',        battery, 'negative'],
+                    [battery, 'positive', jRB, 'center'],
+                    [jRB, 'center',       jR1, 'center'],
+                    [jR1, 'center',       jR2, 'center'],
+                    [jR2, 'center',       jR3, 'center'],
+                    [battery, 'negative', jLB, 'center'],
+                    [jLB, 'center',       jL1, 'center'],
+                    [jL1, 'center',       jL2, 'center'],
+                    [jL2, 'center',       jL3, 'center'],
+                    [jL1, 'center',       rA,  'left'  ],
+                    [rA,  'right',        jR1, 'center'],
+                    [jL2, 'center',       rB,  'left'  ],
+                    [rB,  'right',        jR2, 'center'],
+                    [jL3, 'center',       rC,  'left'  ],
+                    [rC,  'right',        jR3, 'center'],
                 ];
 
                 wireSpecs.forEach(([startObj, startSide, endObj, endSide]) => {
@@ -19398,6 +19754,10 @@ Made with ? for visual learners everywhere!
 
                 // ── Animate and display ──────────────────────────────────────
                 fitToScreen();
+                // Pull the camera in tighter than the generic fit so the energized
+                // current-flow reads prominently the instant the circuit loads.
+                cameraDistance = Math.max(9, cameraDistance * 0.42);
+                updateCameraPosition();
                 // Second matrix-world update: fitToScreen() may adjust cameraTarget
                 // but does not move meshes.  This belt-and-suspenders call ensures
                 // any mesh whose dirty flag was set during wire creation (e.g. the
@@ -19406,7 +19766,7 @@ Made with ? for visual learners everywhere!
                 // particle positions along the wire curves.
                 scene.updateMatrixWorld(true);
                 analyzeCircuit();
-                setStatus('⚡ CircuiTry3D — Current is flowing! Zoom in to explore all the way down to atomic scale.');
+                setStatus('⚡ CircuiTry3D — 0.6 A flowing across 3 parallel paths (0.3 + 0.2 + 0.1 A)! Zoom in to explore all the way down to atomic scale.');
                 console.log('[CT3D Payoff] Payoff circuit loaded — wires:', wires.length, 'flow:', currentFlowState?.hasFlow);
             } catch (err) {
                 console.error('[CT3D Payoff] loadPayoffCircuit error:', err);
@@ -20215,7 +20575,8 @@ Made with ? for visual learners everywhere!
                 motor: 0,
                 speaker: 0,
                 opamp: 0,
-                transformer: 0
+                transformer: 0,
+                'flux-capacitor': 0
             };
 
             // Reset placement index for staggered positioning
@@ -20225,6 +20586,10 @@ Made with ? for visual learners everywhere!
             fuseOnsetStartTime = 0;
             clearTimeout(fuseOnsetTimer);
             fuseOnsetTimer = null;
+
+            // Reset payoff-showcase degradation state (set again by loadPayoffCircuit).
+            isPayoffCircuit   = false;
+            payoffFlowDegrade = 1;
             
             currentFlowParticles.forEach(particle => {
                 if (particle) {
