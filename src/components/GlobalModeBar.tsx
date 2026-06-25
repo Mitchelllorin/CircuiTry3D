@@ -146,6 +146,17 @@ export function GlobalModeBar() {
           </div>
         )}
 
+        {/* Settings — dedicated page (hash route), pinned to the right end */}
+        <Link
+          to="/settings"
+          className="mode-tab mode-tab--settings"
+          aria-label="Settings"
+          title="App settings — logo, graphics, workspace, accessibility"
+        >
+          <span className="mode-icon" aria-hidden="true">⚙️</span>
+          <span className="mode-label">Settings</span>
+        </Link>
+
         {/* Theme toggle — pinned to the right end of the bar */}
         <button
           type="button"

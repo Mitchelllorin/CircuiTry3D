@@ -1,16 +1,32 @@
 import { useEffect, useMemo, useRef } from "react";
 import { getComponent3D } from "../circuit/Component3DLibrary";
+import { ArenaTestControls } from "./ArenaInstrumentation";
+import { STRESS_MAX } from "./stressTest";
 import type {
   ArenaBattleAgent,
   ArenaBattleHighlight,
+  ArenaBattleStatus,
   ArenaViewTransitionPhase,
 } from "./types";
 
 type ArenaSceneProps = {
   agents: ArenaBattleAgent[];
+  /** The component currently under the most stress (subtle ring highlight). */
   activeAgentId: string | null;
   highlight: ArenaBattleHighlight | null;
   transitionPhase: ArenaViewTransitionPhase;
+  /** Bench status — drives the global heat tint of the arena ring. */
+  status?: ArenaBattleStatus;
+  /** Current load multiple (1 → STRESS_MAX) — drives global heat. */
+  stressFactor?: number;
+  /** Test progress 0→1 — feeds the in-scene load-ramp gauge. */
+  progress?: number;
+  /** Start/re-run the stress test (the in-scene BATTLE button). */
+  onStartTest?: () => void;
+  /** Name of the most-robust component, shown in the verdict. */
+  winnerName?: string | null;
+  /** How many components survived — shown in the verdict. */
+  survivorCount?: number;
   onExitTransitionComplete: () => void;
   /**
    * When true the camera follows the workspace flow: it holds a framed preview
@@ -21,6 +37,28 @@ type ArenaSceneProps = {
   /** Workspace mode only: whether the params panel is currently expanded. */
   panelOpen?: boolean;
 };
+
+const PHASE_BAR_COLOR: Record<string, string> = {
+  nominal: "",
+  stressed: "#fbbf24",
+  critical: "#fb923c",
+  failed: "#ef4444",
+};
+
+const PHASE_LABEL: Record<string, string> = {
+  nominal: "OK",
+  stressed: "STRESS",
+  critical: "CRIT",
+  failed: "FAILED",
+};
+
+function fmtAmps(amps: number): string {
+  if (!Number.isFinite(amps)) return "—";
+  return amps >= 1 ? `${amps.toFixed(2)}A` : `${Math.round(amps * 1000)}mA`;
+}
+
+/** Duration (ms) of the violent flash-punch when a component fails. */
+const FAIL_POP_MS = 900;
 
 type OrbitControlsInstance = {
   enabled: boolean;
@@ -183,6 +221,12 @@ export function ArenaScene({
   activeAgentId,
   highlight,
   transitionPhase,
+  status = "ready",
+  stressFactor = 1,
+  progress = 0,
+  onStartTest,
+  winnerName = null,
+  survivorCount = 0,
   onExitTransitionComplete,
   workspaceMode = false,
   panelOpen = false,
@@ -198,6 +242,8 @@ export function ArenaScene({
   const onExitCompleteRef = useRef(onExitTransitionComplete);
   const workspaceModeRef = useRef(workspaceMode);
   const panelOpenRef = useRef(panelOpen);
+  const statusRef = useRef<ArenaBattleStatus>(status);
+  const stressFactorRef = useRef(stressFactor);
 
   const healthBarAgents = useMemo(() => agents, [agents]);
   const sceneAgentSignature = useMemo(
@@ -237,6 +283,14 @@ export function ArenaScene({
   }, [panelOpen]);
 
   useEffect(() => {
+    statusRef.current = status;
+  }, [status]);
+
+  useEffect(() => {
+    stressFactorRef.current = stressFactor;
+  }, [stressFactor]);
+
+  useEffect(() => {
     if (!rootRef.current || !canvasRef.current) {
       return;
     }
@@ -249,7 +303,14 @@ export function ArenaScene({
     let controls: OrbitControlsInstance | null = null;
     let particleTexture: import("three").CanvasTexture | null = null;
 
-    const agentObjects = new Map<string, { group: import("three").Group }>();
+    const agentObjects = new Map<
+      string,
+      {
+        group: import("three").Group;
+        materials: import("three").MeshStandardMaterial[];
+        baseColor: import("three").Color;
+      }
+    >();
 
     void Promise.all([
       import("three"),
@@ -388,15 +449,30 @@ export function ArenaScene({
 
       agentsRef.current.forEach((agent) => {
         const group = createComponentGroup(THREE, agent.renderType, agent.accent);
-        const radius = ARENA_RADIUS + (agent.health <= 0 ? 0.15 : 0);
         group.position.set(
-          Math.cos(agent.spawnAngle) * radius,
-          0,
-          Math.sin(agent.spawnAngle) * radius,
+          Math.cos(agent.spawnAngle) * ARENA_RADIUS,
+          0.04,
+          Math.sin(agent.spawnAngle) * ARENA_RADIUS,
         );
         group.rotation.y = -agent.spawnAngle + Math.PI / 2;
         scene.add(group);
-        agentObjects.set(agent.id, { group });
+        // Collect every standard material so we can drive a heat glow across the
+        // whole part (body, leads, ring) as its temperature climbs.
+        const materials: import("three").MeshStandardMaterial[] = [];
+        group.traverse((object) => {
+          const mesh = object as import("three").Mesh;
+          const material = mesh.material as
+            | import("three").MeshStandardMaterial
+            | undefined;
+          if (material && (material as { isMeshStandardMaterial?: boolean }).isMeshStandardMaterial) {
+            materials.push(material);
+          }
+        });
+        agentObjects.set(agent.id, {
+          group,
+          materials,
+          baseColor: new THREE.Color(agent.accent),
+        });
       });
 
       const resize = () => {
@@ -420,6 +496,14 @@ export function ArenaScene({
       const previewDrift = new THREE.Vector3();
       const previewRadius = Math.hypot(previewPosition.x, previewPosition.z);
       const attackFlashUntil = new Map<string, number>();
+      // Reusable colours for the per-frame thermal glow (avoid per-agent allocs).
+      const heatHot = new THREE.Color("#ff5512");
+      const heatWhite = new THREE.Color("#ffe2b0");
+      const charColor = new THREE.Color("#140d06");
+      const tmpHeatColor = new THREE.Color();
+      const ringMaterial = ring.material as import("three").MeshStandardMaterial;
+      const clampNum = (value: number, min: number, max: number) =>
+        Math.min(max, Math.max(min, value));
       let phaseStartTime = 0;
       let lastPhase = phaseRef.current;
       // Workspace flow: latches true once the cinematic sweep into the arena
@@ -506,11 +590,21 @@ export function ArenaScene({
         ring.rotation.z += 0.0015;
         particles.rotation.y += 0.0011;
 
+        // The arena ring heats up with the global load ramp — a calm cyan at
+        // rest, glowing hot amber as the bench drives the components hard.
+        const loadT =
+          statusRef.current === "ready"
+            ? 0
+            : clampNum((stressFactorRef.current - 1) / (STRESS_MAX - 1), 0, 1);
+        ringMaterial.emissiveIntensity = 1.6 + loadT * 2.4;
+
         const highlightState = highlightRef.current;
         if (highlightState && highlightState.token !== lastHighlightTokenRef.current) {
           lastHighlightTokenRef.current = highlightState.token;
-          attackFlashUntil.set(highlightState.actorId, time + 260);
-          attackFlashUntil.set(highlightState.targetId, time + 400);
+          attackFlashUntil.set(
+            highlightState.agentId,
+            time + (highlightState.kind === "fail" ? FAIL_POP_MS : 320),
+          );
         }
 
         agentsRef.current.forEach((agent) => {
@@ -519,17 +613,74 @@ export function ArenaScene({
             return;
           }
 
-          const { group } = objectEntry;
-          const isActive = activeAgentIdRef.current === agent.id;
+          const { group, materials, baseColor } = objectEntry;
+          const isFailed = agent.phase === "failed";
+          const isMostStressed = activeAgentIdRef.current === agent.id && !isFailed;
           const isFlashing = (attackFlashUntil.get(agent.id) ?? 0) > time;
-          const pulse = 1 + Math.sin(time * 0.004 + agent.spawnAngle * 4) * 0.025;
-          group.position.y = isActive ? 0.22 + Math.sin(time * 0.01) * 0.08 : 0.04 * pulse;
-          group.scale.setScalar(agent.health > 0 ? (isActive ? 1.08 : pulse) : 0.92);
+          const severity = agent.severity;
+          const seatX = Math.cos(agent.spawnAngle) * ARENA_RADIUS;
+          const seatZ = Math.sin(agent.spawnAngle) * ARENA_RADIUS;
+          const ph = agent.spawnAngle * 7;
 
-          const platform = group.children[0];
-          if (platform && "material" in platform) {
-            const material = platform.material as import("three").MeshStandardMaterial;
-            material.emissiveIntensity = isFlashing ? 1.2 : isActive ? 0.6 : 0.25;
+          // How hot the part is running (also drives the glow). Beyond 1 = over
+          // the junction limit.
+          const heatT = clampNum(
+            (agent.tempC - 40) / Math.max(agent.ratings.junctionLimitC - 40, 30),
+            0,
+            1.4,
+          );
+
+          if (isFailed) {
+            // ── Death throes ── a violent white flash-punch as the part lets go,
+            // then it collapses charred and dark onto its pedestal.
+            const flashEnd = attackFlashUntil.get(agent.id) ?? 0;
+            const popping = flashEnd > time;
+            const popT = popping ? (flashEnd - time) / FAIL_POP_MS : 0; // 1 → 0
+            const shake = popping ? 0.34 * popT : 0;
+            group.position.x = seatX + (Math.random() - 0.5) * shake;
+            group.position.z = seatZ + (Math.random() - 0.5) * shake;
+            group.position.y = popping ? 0.1 + popT * 0.35 : 0.0;
+            group.rotation.z = popping ? (Math.random() - 0.5) * 0.45 * popT : 0;
+            group.scale.setScalar(popping ? 0.85 + Math.sin(popT * Math.PI) * 0.55 : 0.85);
+            tmpHeatColor.copy(popping ? heatWhite : charColor);
+            const failEmissive = popping ? 0.4 + popT * 2.4 : 0.05;
+            for (const material of materials) {
+              material.emissive.copy(tmpHeatColor);
+              material.emissiveIntensity = failEmissive;
+            }
+          } else {
+            // ── Live stress ── shake + heat ramp with how hard the part is being
+            // driven (severity, temperature, OR percent-of-rating), so even a
+            // robust part that never fails visibly strains as the load climbs.
+            const stressLevel = clampNum(
+              Math.max(severity / 2, heatT * 0.9, agent.loadPercent / 130),
+              0,
+              1.3,
+            );
+            const jitterAmp = 0.02 + stressLevel * 0.22;
+            const freq = 0.02 + stressLevel * 0.06;
+            group.position.x = seatX + Math.sin(time * freq * 1.3 + ph) * jitterAmp;
+            group.position.z = seatZ + Math.cos(time * freq + ph) * jitterAmp;
+            group.position.y =
+              0.04 + stressLevel * 0.05 + Math.abs(Math.sin(time * freq)) * stressLevel * 0.05;
+            group.rotation.z = Math.sin(time * freq * 1.7 + ph) * stressLevel * 0.12;
+            group.scale.setScalar((isMostStressed ? 1.07 : 1.0) + stressLevel * 0.05);
+
+            if (heatT <= 1) {
+              tmpHeatColor.copy(baseColor).lerp(heatHot, heatT);
+            } else {
+              tmpHeatColor.copy(heatHot).lerp(heatWhite, clampNum(heatT - 1, 0, 1) / 0.4);
+            }
+            const emissiveIntensity =
+              0.22 +
+              heatT * 1.3 +
+              stressLevel * 0.5 +
+              (isFlashing ? 0.9 : 0) +
+              (isMostStressed ? 0.25 : 0);
+            for (const material of materials) {
+              material.emissive.copy(tmpHeatColor);
+              material.emissiveIntensity = emissiveIntensity;
+            }
           }
 
           const healthBar = healthBarsRef.current[agent.id];
@@ -576,20 +727,59 @@ export function ArenaScene({
   return (
     <div ref={rootRef} className="arena-scene">
       <canvas ref={canvasRef} className="arena-scene__canvas" />
+      {/* The BATTLE control lives ON the 3D stage in immersive workspace mode, so
+          the test is started and watched entirely in 3D. When the params panel is
+          open the panel carries the controls instead. */}
+      {workspaceMode && !panelOpen ? (
+        <div className="arena-scene__console">
+          <ArenaTestControls
+            status={status}
+            stressFactor={stressFactor}
+            progress={progress}
+            winnerName={winnerName}
+            survivorCount={survivorCount}
+            totalCount={agents.length}
+            onStartTest={onStartTest ?? (() => undefined)}
+          />
+        </div>
+      ) : null}
       <div className="arena-scene__healthbars">
         {healthBarAgents.map((agent) => {
-          const healthPercent = Math.max(0, (agent.health / agent.maxHealth) * 100);
+          const integrityPercent = Math.max(0, (agent.integrity / agent.maxIntegrity) * 100);
+          const barColor = PHASE_BAR_COLOR[agent.phase] || agent.accent;
+          const isFailed = agent.phase === "failed";
+          // Live current at the present load — a failed (open) part carries none.
+          const liveAmps = isFailed ? 0 : agent.metrics.current * stressFactor;
+          const overTemp = agent.tempC > agent.ratings.junctionLimitC;
           return (
             <div
               key={agent.id}
               ref={(element) => {
                 healthBarsRef.current[agent.id] = element;
               }}
-              className={`arena-healthbar${agent.health <= 0 ? " is-defeated" : ""}`}
+              className={`arena-nameplate arena-nameplate--${agent.phase}${
+                isFailed ? " is-defeated" : ""
+              }`}
             >
-              <span className="arena-healthbar__label">{agent.name}</span>
-              <div className="arena-healthbar__track">
-                <span style={{ width: `${healthPercent}%`, backgroundColor: agent.accent }} />
+              <div className="arena-nameplate__head">
+                <span className="arena-nameplate__name">
+                  {agent.componentNumber ?? agent.name}
+                </span>
+                <span className="arena-nameplate__status">{PHASE_LABEL[agent.phase]}</span>
+              </div>
+              <div className="arena-nameplate__track">
+                <span style={{ width: `${integrityPercent}%`, backgroundColor: barColor }} />
+              </div>
+              <div className="arena-nameplate__metrics">
+                <span className={overTemp ? "is-hot" : undefined}>
+                  <b>{Math.round(agent.tempC)}</b>°C
+                </span>
+                <span className={agent.loadPercent > 100 ? "is-hot" : undefined}>
+                  <b>{Math.round(agent.loadPercent)}</b>%
+                </span>
+                <span className={isFailed ? "is-open" : undefined}>
+                  {isFailed ? "OPEN" : fmtAmps(liveAmps)}
+                </span>
               </div>
             </div>
           );

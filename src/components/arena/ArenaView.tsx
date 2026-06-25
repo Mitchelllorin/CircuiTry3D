@@ -59,17 +59,16 @@ export default function ArenaView({
 
   const {
     agents,
-    battleLog,
-    currentTurnAgentId,
-    winnerId,
-    round,
+    log,
     status,
+    winnerId,
+    stressFactor,
+    progress,
     highlight,
-    resetBattle,
-  } = useArenaBattle({
-    initialAgents: arenaAgents,
-    autoStart: isWorkspace ? !isExiting : transitionPhase === "active",
-  });
+    mostStressedId,
+    startTest,
+    resetTest,
+  } = useArenaBattle({ initialAgents: arenaAgents });
 
   const handleExitComplete = useCallback(() => {
     if (typeof onNavigateBack === "function") {
@@ -88,9 +87,23 @@ export default function ArenaView({
     setTransitionPhase((phase) => (phase === "exiting" ? phase : "exiting"));
   }, [isWorkspace]);
 
+  // Starting the test from the params panel also collapses the panel, which
+  // triggers the cinematic camera sweep down into the arena — so hitting BATTLE
+  // drops you straight into the 3D scene to watch the run unfold.
+  const handleStartTestFromPanel = useCallback(() => {
+    startTest();
+    if (panelOpen && typeof onTogglePanel === "function") {
+      onTogglePanel();
+    }
+  }, [startTest, panelOpen, onTogglePanel]);
+
   const winnerName = useMemo(
     () => agents.find((agent) => agent.id === winnerId)?.name ?? null,
     [agents, winnerId],
+  );
+  const survivorCount = useMemo(
+    () => agents.filter((agent) => agent.phase !== "failed").length,
+    [agents],
   );
 
   const sessionLabel = sessionPayload?.sessionName ?? "CircuiTry3D Arena";
@@ -100,16 +113,22 @@ export default function ArenaView({
       <div className={`arena-view arena-view--workspace${isExiting ? " arena-view--exiting" : ""}`}>
         <ArenaScene
           agents={agents}
-          activeAgentId={currentTurnAgentId}
+          activeAgentId={mostStressedId}
           highlight={highlight}
           transitionPhase={isExiting ? "exiting" : "active"}
+          status={status}
+          stressFactor={stressFactor}
+          progress={progress}
+          onStartTest={startTest}
+          winnerName={winnerName}
+          survivorCount={survivorCount}
           workspaceMode
           panelOpen={panelOpen}
           onExitTransitionComplete={handleExitComplete}
         />
-        {winnerName ? (
+        {status === "complete" && winnerName ? (
           <div className="arena-winner-banner arena-winner-banner--workspace" role="status">
-            <p>Last agent standing</p>
+            <p>{survivorCount > 0 ? "Most robust under load" : "Last to fail"}</p>
             <strong>{winnerName}</strong>
           </div>
         ) : null}
@@ -122,14 +141,17 @@ export default function ArenaView({
         >
           <ArenaPanelContent
             agents={agents}
-            battleLog={battleLog}
-            currentTurnAgentId={currentTurnAgentId}
-            onResetBattle={resetBattle}
+            log={log}
+            mostStressedId={mostStressedId}
+            status={status}
+            stressFactor={stressFactor}
+            progress={progress}
+            winnerName={winnerName}
+            survivorCount={survivorCount}
+            onStartTest={handleStartTestFromPanel}
+            onResetTest={resetTest}
             onReturnToWorkspace={handleReturnToWorkspace}
             onOpenBuilder={onOpenBuilder}
-            round={round}
-            status={status}
-            winnerName={winnerName}
             immersive={!panelOpen}
           />
         </WorkspaceModePanel>
@@ -144,23 +166,28 @@ export default function ArenaView({
     <section className={containerClassName}>
       <ArenaScene
         agents={agents}
-        activeAgentId={currentTurnAgentId}
+        activeAgentId={mostStressedId}
         highlight={highlight}
         transitionPhase={transitionPhase}
+        status={status}
+        stressFactor={stressFactor}
         onExitTransitionComplete={handleExitComplete}
       />
       <ArenaOverlay
         agents={agents}
-        battleLog={battleLog}
-        currentTurnAgentId={currentTurnAgentId}
-        onResetBattle={resetBattle}
-        onReturnToWorkspace={handleReturnToWorkspace}
-        onOpenBuilder={showOpenBuilderButton ? onOpenBuilder : undefined}
-        round={round}
-        sessionLabel={sessionLabel}
+        log={log}
+        mostStressedId={mostStressedId}
         status={status}
+        stressFactor={stressFactor}
+        progress={progress}
+        sessionLabel={sessionLabel}
         transitionPhase={transitionPhase}
         winnerName={winnerName}
+        survivorCount={survivorCount}
+        onStartTest={startTest}
+        onResetTest={resetTest}
+        onReturnToWorkspace={handleReturnToWorkspace}
+        onOpenBuilder={showOpenBuilderButton ? onOpenBuilder : undefined}
       />
     </section>
   );

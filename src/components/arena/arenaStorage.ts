@@ -12,7 +12,7 @@ type LegacyImportPayload = {
   state?: {
     components?: ArenaSessionPayload["components"];
   };
-  metrics?: ArenaSessionPayload["analysis"]["basic"];
+  metrics?: NonNullable<ArenaSessionPayload["analysis"]>["basic"];
   label?: string;
 };
 

@@ -150,6 +150,49 @@
     .wordmark .brand-orange { color: var(--orange);  font-style: italic; text-shadow: 0 0 16px rgba(255,136,68,.65), 0 0 30px rgba(255,136,68,.5); }
     .wordmark .brand-green  { color: var(--green);   text-shadow: 0 0 18px rgba(0,255,136,.7),   0 0 34px rgba(0,255,136,.5); }
 
+    /* Real WebGL 3D wordmark (matte powder-coated extruded letters).
+       Perspective container + the outsourced "professional rock" motion and
+       matte finish applied to the 3D canvas. */
+    .wordmark3d {
+      position: relative;
+      width: min(94vw, 780px);
+      height: clamp(104px, 23vw, 220px);
+      margin: 0 auto;
+      perspective: 1200px;
+    }
+    .wordmark3d > canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      transform-origin: center center;
+      animation: professionalRock var(--rock-duration, 7s) ease-in-out infinite;
+      will-change: transform;
+      /* Powder-coated finish: removes harsh gloss, softens contrast, velvety depth */
+      filter:
+        contrast(0.95)
+        brightness(1.02)
+        drop-shadow(0 8px 16px rgba(0, 0, 0, 0.4))
+        drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+    }
+    @keyframes professionalRock {
+      0%, 100% { transform: translateY(0) rotateY(0deg) rotateX(0deg); }
+      25% { transform: translateY(-3px) rotateY(var(--rock-angle, 5deg)) rotateX(1.5deg); }
+      50% { transform: translateY(0) rotateY(0deg) rotateX(0deg); }
+      75% { transform: translateY(-3px) rotateY(calc(var(--rock-angle, 5deg) * -1)) rotateX(-1.5deg); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .wordmark3d > canvas { animation: none; }
+    }
+    .wordmark--fallback { display: none; }
+    .wordmark3d.is-fallback > canvas { display: none; }
+    .wordmark3d.is-fallback .wordmark--fallback {
+      display: inline-flex;
+      position: absolute;
+      inset: 0;
+      align-items: center;
+      justify-content: center;
+    }
+
     /* Logo icon */
     .logo-mark {
       width: clamp(140px, 36vw, 240px);
@@ -870,8 +913,11 @@
       <div class="hero-award" aria-label="Award">
         ⚡ An Advanced 3D Circuit Design Simulator
       </div>
-      <div class="wordmark" aria-label="CircuiTry3D">
-        <span class="brand-blue">Circui</span><span class="brand-orange">Try</span><span class="brand-green">3D</span>
+      <div class="wordmark3d" role="img" aria-label="CircuiTry3D">
+        <canvas id="wordmark3d-canvas"></canvas>
+        <div class="wordmark wordmark--fallback" aria-hidden="true">
+          <span class="brand-blue">Circui</span><span class="brand-orange">Try</span><span class="brand-green">3D</span>
+        </div>
       </div>
       <div class="logo-mark" aria-hidden="true">
         <img src="/app-icon-no-text.svg" alt="" />
@@ -1624,6 +1670,151 @@
 
     resize();
     draw();
+  })();
+  </script>
+
+  <!-- ── Real WebGL 3D wordmark logo (PBR + brand-tinted reflections) ── -->
+  <script src="/vendor/three.min.js"></script>
+  <script>
+  (function () {
+    var host = document.querySelector('.wordmark3d');
+    var canvas = document.getElementById('wordmark3d-canvas');
+    if (!host || !canvas) { return; }
+    function fail(e) { console.warn('[wordmark3d] falling back to flat text:', e); host.classList.add('is-fallback'); }
+    if (!window.THREE || !window.THREE.FontLoader || !window.THREE.TextGeometry) { fail('three unavailable'); return; }
+    var THREE = window.THREE;
+    var SETTINGS_KEY = 'circuitry:app-settings';
+
+    function readCfg() {
+      var d = { visible: true, opacity: 100, rotationSpeed: 50, swingAngle: 55, depth: 50, glow: 60 };
+      try {
+        var raw = localStorage.getItem(SETTINGS_KEY);
+        if (raw) { var s = JSON.parse(raw); if (s && s.logo3d) { for (var k in d) { if (typeof s.logo3d[k] !== 'undefined') d[k] = s.logo3d[k]; } } }
+      } catch (e) {}
+      return d;
+    }
+    var cfg = readCfg();
+
+    // setting (0-100) → scene units
+    function depthU(v) { return 0.14 + (v / 100) * 0.5; }
+
+    try {
+      var renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      if (THREE.sRGBEncoding) { renderer.outputEncoding = THREE.sRGBEncoding; }
+      if (THREE.ACESFilmicToneMapping) { renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.0; }
+
+      var scene = new THREE.Scene();
+      var camera = new THREE.PerspectiveCamera(32, 1, 0.1, 100);
+
+      // Soft, even lighting only — NO reflective/emissive environment, so the
+      // matte coat never picks up bright/white hotspots.
+      scene.add(new THREE.HemisphereLight(0x9fb0cc, 0x0a0e1a, 0.85));
+      var key = new THREE.DirectionalLight(0xffffff, 0.35); key.position.set(2, 4, 3); scene.add(key);
+
+      var group = new THREE.Group();
+      // Static 3/4 tilt so the extruded sides read; the gentle rock is CSS.
+      group.rotation.set(0.05, -0.14, 0);
+      group.scale.set(1.3, 1.04, 1); // stretch wider + slightly taller
+      scene.add(group);
+
+      var WORDS = [
+        { t: 'Circui', c: 0x1a56c4, italic: false },  // deep electric blue
+        { t: 'Try',    c: 0xcc5512, italic: true },    // rich burnt orange
+        { t: '3D',     c: 0x068a4a, italic: false }    // deep emerald
+      ];
+
+      var font = null, size3 = new THREE.Vector3();
+
+      function place() {
+        var vFov = camera.fov * Math.PI / 180;
+        // Fit the statically-tilted logo with headroom for the CSS rock.
+        var yaw = 0.2;
+        var halfW = (size3.x / 2) * Math.cos(yaw) + size3.z * Math.sin(yaw) + size3.x * 0.05;
+        var distH = (size3.y * 1.2 / 2) / Math.tan(vFov / 2);
+        var distW = halfW / (Math.tan(vFov / 2) * camera.aspect);
+        camera.position.set(0, 0, Math.max(distH, distW) + size3.z + 0.6);
+        camera.lookAt(0, 0, 0);
+      }
+      function draw() { renderer.render(scene, camera); }
+
+      function build() {
+        if (!font) return;
+        while (group.children.length) {
+          var old = group.children.pop();
+          group.remove(old);
+          if (old.geometry) old.geometry.dispose();
+          if (old.material) old.material.dispose();
+        }
+        var cursor = 0, gap = 0.04, h = depthU(cfg.depth);
+        WORDS.forEach(function (w) {
+          var geo = new THREE.TextGeometry(w.t, {
+            font: font, size: 1, height: h, curveSegments: 14,
+            bevelEnabled: true, bevelThickness: 0.05, bevelSize: 0.05, bevelOffset: 0, bevelSegments: 5
+          });
+          if (w.italic) {
+            var sh = new THREE.Matrix4();
+            sh.set(1, 0.22, 0, 0,  0, 1, 0, 0,  0, 0, 1, 0,  0, 0, 0, 1);
+            geo.applyMatrix4(sh);
+          }
+          geo.computeBoundingBox();
+          var bb = geo.boundingBox;
+          var mat = new THREE.MeshStandardMaterial({
+            color: w.c,
+            metalness: 0.25, roughness: 0.85
+          });
+          var mesh = new THREE.Mesh(geo, mat);
+          mesh.position.x = cursor - bb.min.x;
+          cursor += (bb.max.x - bb.min.x) + gap;
+          group.add(mesh);
+        });
+        var box = new THREE.Box3().setFromObject(group);
+        var c = box.getCenter(new THREE.Vector3());
+        group.position.set(-c.x, -c.y, -c.z);
+        box.getSize(size3);
+        place();
+      }
+
+      function applyLive() {
+        host.style.opacity = (cfg.opacity / 100);
+        host.style.display = cfg.visible ? '' : 'none';
+        // Drive the outsourced CSS "professional rock" from the settings:
+        // swing angle → rock amplitude, rotation speed → animation duration.
+        var angle = (cfg.swingAngle / 100) * 10;             // 0–10deg
+        var dur = (12 - (cfg.rotationSpeed / 100) * 9).toFixed(2); // 12s..3s
+        canvas.style.setProperty('--rock-angle', angle + 'deg');
+        canvas.style.setProperty('--rock-duration', dur + 's');
+        draw();
+      }
+
+      function resize() {
+        var w = host.clientWidth || 700, h = host.clientHeight || 170;
+        renderer.setSize(w, h, false);
+        camera.aspect = w / h; camera.updateProjectionMatrix();
+        place();
+        draw();
+      }
+      window.addEventListener('resize', resize);
+
+      new THREE.FontLoader().load('/fonts/circuitry-bold.typeface.json', function (loaded) {
+        try {
+          font = loaded;
+          build();
+          resize();
+          applyLive();
+        } catch (e) { fail(e); }
+      }, undefined, fail);
+
+      // Live updates when the Settings page writes localStorage (same-origin).
+      window.addEventListener('storage', function (e) {
+        if (e.key && e.key !== SETTINGS_KEY) return;
+        var prevDepth = cfg.depth;
+        cfg = readCfg();
+        if (cfg.depth !== prevDepth) build();
+        else place();
+        applyLive();
+      });
+    } catch (e) { fail(e); }
   })();
   </script>
 </body>

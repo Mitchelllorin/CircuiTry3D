@@ -40,6 +40,7 @@ import "../styles/circuit-storage.css";
 import practiceProblems, {
   DEFAULT_PRACTICE_PROBLEM,
   findPracticeProblemById,
+  getRandomPracticeProblem,
 } from "../data/practiceProblems";
 import troubleshootingProblems, {
   getAnalyzeCircuitResult,
@@ -61,6 +62,7 @@ import type {
   SettingsItem,
   LogoNumericSettingKey,
   PracticeWorksheetStatus,
+  PanelAction,
 } from "../components/builder/types";
 import {
   COMPONENT_ACTIONS,
@@ -99,6 +101,7 @@ import { CircuitExplainPanel } from "../components/builder/CircuitExplainPanel";
 import { CinematicPanel } from "../components/builder/panels/CinematicPanel";
 import type { CinematicPreset } from "../components/builder/panels/CinematicPanel";
 import { useGallery } from "../context/GalleryContext";
+import { useAppSettings } from "../context/AppSettingsContext";
 import type { CinematicFramePayload, CinematicVideoPayload } from "../hooks/builder/useBuilderFrame";
 import "../styles/cinematic.css";
 import "../styles/circuit-explain.css";
@@ -116,6 +119,7 @@ type WorkspacePanelMode =
   | "pricing"
   | "wire-guide"
   | "textbook"
+  | "gallery"
   | "home-circuit"
   | "car-circuit";
 
@@ -1387,6 +1391,10 @@ export default function Builder() {
     useState(false);
   const [isCurrentFlowPayoffRunning, setCurrentFlowPayoffRunning] =
     useState(false);
+  // Rotating "what am I looking at?" insight shown inside the payoff banner so a
+  // first-time user (who may know nothing about electricity) understands that the
+  // moving particles ARE the current and how Ohm's law shapes the split.
+  const [currentFlowPayoffTipIndex, setCurrentFlowPayoffTipIndex] = useState(0);
   const [isIntroDialogVisible, setIntroDialogVisible] = useState(false);
   // Junction tip starts hidden — it is shown the first time the user
   // explicitly uses the Junction button, not automatically on page load,
@@ -1571,6 +1579,33 @@ export default function Builder() {
     onCinematicFrame: handleCinematicFrame,
     onCinematicVideo: handleCinematicVideo,
   });
+
+  // Push live scene-appearance settings (background, grid, current-flow speed)
+  // from the app Settings page into the 3D builder iframe. Fires whenever the
+  // relevant settings change or the iframe (re)becomes ready, so the scene always
+  // reflects the user's preferences.
+  const { settings: appSettings } = useAppSettings();
+  const appWorkspaceSettings = appSettings.workspace;
+  const appCurrentFlowSpeed = appSettings.simulation.currentFlowSpeed;
+  useEffect(() => {
+    if (!isFrameReady) {
+      return;
+    }
+    triggerBuilderAction("apply-scene-settings", {
+      bgBrightness: appWorkspaceSettings.bgBrightness,
+      bgHue: appWorkspaceSettings.bgHue,
+      gridBrightness: appWorkspaceSettings.gridBrightness,
+      gridLineWidth: appWorkspaceSettings.gridLineWidth,
+      gridHue: appWorkspaceSettings.gridHue,
+      // Map 0–100 → 0.3×–2.0× particle speed (50 = default 1.0×).
+      flowSpeedScale: 0.3 + (appCurrentFlowSpeed / 100) * 1.7,
+    });
+  }, [
+    isFrameReady,
+    appWorkspaceSettings,
+    appCurrentFlowSpeed,
+    triggerBuilderAction,
+  ]);
 
   // Handle cinematic state updates from legacy.html (playing/recording status, waypoint count)
   useEffect(() => {
@@ -2442,6 +2477,14 @@ export default function Builder() {
     runCurrentFlowPayoffSequence({ revealBanner: true });
   }, [runCurrentFlowPayoffSequence, setBottomMenuOpen]);
 
+  // Replay the full first-run onboarding on demand: re-show the welcome intro,
+  // which auto-dismisses into the current-flow payoff demo (banner + tips).
+  // The "seen" flags stay set, so this only fires when the user asks for it.
+  const handleReplayOnboarding = useCallback(() => {
+    setIntroDialogVisible(true);
+    setCircuitLocked(true);
+  }, [setCircuitLocked]);
+
   const handleDismissIntroDialog = useCallback(() => {
     setIntroDialogVisible(false);
 
@@ -2551,11 +2594,11 @@ export default function Builder() {
       return;
     }
 
-    // Intro already seen — pre-load the demo circuit silently so the 3D scene
-    // is populated on startup, but don't show the payoff banner again for
-    // returning users. The banner was useful for first-time users to understand
-    // the current-flow animation; repeating it every session adds clutter.
-    runCurrentFlowPayoffSequence({ revealBanner: false });
+    // Intro already seen — skip the big welcome modal, but still reveal the
+    // payoff banner so the explainer text (what the current flow IS, Ohm's law,
+    // the zoom-to-atomic story) always accompanies the demo circuit on startup.
+    // It auto-hides after a few seconds and has a close button, so it stays light.
+    runCurrentFlowPayoffSequence({ revealBanner: true });
   }, [isFrameReady, runCurrentFlowPayoffSequence]);
 
   useEffect(() => {
@@ -2567,9 +2610,10 @@ export default function Builder() {
       // Hide the payoff banner when it expires. The circuit stays locked
       // (isOnboardingLocked) so the user can't accidentally move components;
       // a "tap to edit" chip appears instead, requiring an explicit tap to
-      // begin editing.
+      // begin editing. Long enough to read a few of the slow-rotating tips and
+      // act on the "zoom in" prompt.
       setCurrentFlowPayoffVisible(false);
-    }, 14000);
+    }, 30000);
 
     return () => {
       window.clearTimeout(timer);
@@ -2917,21 +2961,40 @@ export default function Builder() {
       },
     ];
   }, [activeWireProfile, liveWireMetricsSnapshot]);
-  const currentFlowPayoffAmps = Number.isFinite(liveWireMetricsSnapshot.current)
-    ? liveWireMetricsSnapshot.current
-    : 0;
-  const currentFlowPayoffVolts = Number.isFinite(liveWireMetricsSnapshot.voltage)
-    ? liveWireMetricsSnapshot.voltage
-    : 0;
-  const currentFlowPayoffWatts = Number.isFinite(liveWireMetricsSnapshot.power)
-    ? liveWireMetricsSnapshot.power
-    : 0;
-  const currentFlowPayoffHasFlow =
-    Boolean(circuitState?.metrics.flow?.hasFlow) || currentFlowPayoffAmps > 0;
   const shouldShowCurrentFlowPayoffBanner =
     isCurrentFlowPayoffVisible &&
     shouldShowEdgeActions &&
     !isInteractiveTutorialOpen;
+
+  // Plain-language insights that cycle through the payoff banner. Each one names
+  // something the user can actually see happening on screen, so the showcase
+  // teaches instead of just dazzling. Kept short — one idea per card.
+  const currentFlowPayoffTips = useMemo(
+    () => [
+      "🔍 Pinch or scroll to ZOOM IN — keep going and this current dissolves into electrons, then atoms, then a quantum cloud.",
+      "Those glowing particles ARE the electric current — invisible in real life, flowing here in 3D. Zoom in to chase them.",
+      "Zoom deeper and the wire becomes a copper crystal lattice — watch electrons drift through it. Five worlds, one circuit.",
+      "One battery, three paths: the current splits across all three at once. That's a parallel circuit.",
+      "More resistance → less current (Ohm's law, I = V ÷ R). 🔍 Zoom into a resistor to see it up close.",
+      "Keep zooming: naked eye → components → electrons → atoms → quantum — then zoom right back out.",
+    ],
+    [],
+  );
+  const currentFlowPayoffTip =
+    currentFlowPayoffTips[currentFlowPayoffTipIndex % currentFlowPayoffTips.length];
+
+  // Advance the insight every few seconds while the banner is open; reset to the
+  // first tip whenever it re-appears so each showcase starts from the top.
+  useEffect(() => {
+    if (!shouldShowCurrentFlowPayoffBanner) {
+      setCurrentFlowPayoffTipIndex(0);
+      return;
+    }
+    const intervalId = window.setInterval(() => {
+      setCurrentFlowPayoffTipIndex((index) => index + 1);
+    }, 9000);
+    return () => window.clearInterval(intervalId);
+  }, [shouldShowCurrentFlowPayoffBanner]);
 
   const renderHelpParagraph = (paragraph: string, key: string) => {
     const trimmed = paragraph.trim();
@@ -3288,6 +3351,18 @@ export default function Builder() {
               <IconRuler className="edge-action-icon-svg" />
               <span className="edge-action-label" aria-hidden="true">Measure</span>
             </button>
+            <button
+              type="button"
+              className="edge-action-btn"
+              onClick={handleReplayOnboarding}
+              aria-label="Replay the intro tour"
+              title="Replay intro — welcome message + live current-flow demo"
+            >
+              <span className="edge-action-icon-svg edge-action-icon-emoji" aria-hidden="true">
+                ▶
+              </span>
+              <span className="edge-action-label" aria-hidden="true">Tour</span>
+            </button>
 
             {/* 3-step visibility toggle — always visible, even when mode is hidden */}
             <div
@@ -3404,58 +3479,54 @@ export default function Builder() {
       )}
 
       {shouldShowCurrentFlowPayoffBanner && (
-        <section className="current-flow-payoff-banner" role="status" aria-live="polite">
-          <button
-            type="button"
-            className="current-flow-payoff-close"
-            aria-label="Dismiss"
-            onClick={() => {
-              setCurrentFlowPayoffVisible(false);
-              setOnboardingLocked(false);
-              setCircuitLocked(false);
-            }}
+        <section
+          className="current-flow-payoff-strip"
+          role="status"
+          aria-live="polite"
+        >
+          <span className="current-flow-payoff-strip__badge" aria-hidden="true">
+            ⚡
+          </span>
+          <p
+            className="current-flow-payoff-strip__tip"
+            key={currentFlowPayoffTipIndex}
           >
-            ×
-          </button>
-          <div className="current-flow-payoff-kicker">Electricity in motion</div>
-          <h2 className="current-flow-payoff-title">
-            {currentFlowPayoffHasFlow
-              ? "Current is flowing in 3D right now."
-              : "Load a closed circuit to watch current flow instantly."}
-          </h2>
-          <div className="current-flow-payoff-metrics">
-            <span className="current-flow-payoff-metric">
-              <strong>I</strong>{" "}
-              <span>{currentFlowPayoffAmps.toFixed(activeWireProfile ? 4 : 3)} A</span>
-            </span>
-            <span className="current-flow-payoff-metric">
-              <strong>E</strong> <span>{currentFlowPayoffVolts.toFixed(1)} V</span>
-            </span>
-            <span className="current-flow-payoff-metric">
-              <strong>W</strong>{" "}
-              <span>{currentFlowPayoffWatts.toFixed(activeWireProfile ? 3 : 2)} W</span>
-            </span>
-          </div>
-          <div className="current-flow-payoff-actions">
+            {currentFlowPayoffTip}
+          </p>
+          <div className="current-flow-payoff-strip__actions">
             <button
               type="button"
-              className="current-flow-payoff-btn current-flow-payoff-btn--primary"
+              className="current-flow-payoff-strip__btn current-flow-payoff-strip__btn--primary"
               onClick={() => {
                 setCurrentFlowPayoffVisible(false);
                 setOnboardingLocked(false);
                 setCircuitLocked(false);
               }}
             >
-              ✏️ Start Editing
+              ✏️ Edit
             </button>
             <button
               type="button"
-              className="current-flow-payoff-btn"
+              className="current-flow-payoff-strip__btn"
               onClick={handleReplayCurrentFlowPayoff}
               disabled={controlsDisabled || isCurrentFlowPayoffRunning}
               aria-disabled={controlsDisabled || isCurrentFlowPayoffRunning}
+              aria-label="Replay the current-flow demo"
+              title="Replay the current-flow demo"
             >
-              {isCurrentFlowPayoffRunning ? "Replaying..." : "↺ Replay"}
+              {isCurrentFlowPayoffRunning ? "…" : "↺"}
+            </button>
+            <button
+              type="button"
+              className="current-flow-payoff-strip__close"
+              aria-label="Dismiss"
+              onClick={() => {
+                setCurrentFlowPayoffVisible(false);
+                setOnboardingLocked(false);
+                setCircuitLocked(false);
+              }}
+            >
+              ×
             </button>
           </div>
         </section>
@@ -4212,7 +4283,7 @@ export default function Builder() {
       {activeWorkspacePanelMode && workspacePanelMeta && workspacePanelContent && (
         <WorkspaceModePanel
           title={workspacePanelMeta.title}
-          subtitle={workspacePanelMeta.subtitle}
+          subtitle={workspacePanelMeta.subtitle ?? ""}
           isOpen={isWorkspacePanelOpen}
           onToggle={() => setWorkspacePanelOpen((open) => !open)}
           className={

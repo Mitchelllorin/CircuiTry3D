@@ -3732,6 +3732,9 @@
          * branch fails the surviving parallel paths read ~25% slower and dimmer.
          */
         let payoffFlowDegrade = 1;
+        // User-tunable current-flow speed multiplier, driven by the app Settings
+        // page via the 'apply-scene-settings' bridge message (1 = default speed).
+        let userFlowSpeedScale  = 1;
         let globalFlowTime      = 0;  // monotonic per-frame counter for animation phases
         let menuVisible = isEmbedded ? false : true;
         let analysisVisible = isEmbedded ? false : true;
@@ -4097,6 +4100,33 @@ body.android-optimized .zoom-btn {
                                         typeof data.lineWidth === 'number' ? data.lineWidth : gridLineWidth,
                                         typeof data.hue === 'number' ? data.hue : gridHue
                                     );
+                                }
+                                break;
+                            case 'apply-scene-settings':
+                                // Live scene appearance from the app Settings page:
+                                // background, grid and current-flow speed.
+                                try {
+                                    if (typeof data.bgBrightness === 'number' || typeof data.bgHue === 'number') {
+                                        applySceneBackground(
+                                            typeof data.bgBrightness === 'number' ? data.bgBrightness : 35,
+                                            typeof data.bgHue === 'number' ? data.bgHue : 222
+                                        );
+                                    }
+                                    if (typeof data.flowSpeedScale === 'number') {
+                                        userFlowSpeedScale = Math.max(0.15, Math.min(2.5, data.flowSpeedScale));
+                                    }
+                                    if (typeof applyGridStyle === 'function' &&
+                                        (typeof data.gridBrightness === 'number' ||
+                                         typeof data.gridHue === 'number' ||
+                                         typeof data.gridLineWidth === 'number')) {
+                                        applyGridStyle(
+                                            typeof data.gridBrightness === 'number' ? data.gridBrightness : gridBrightness,
+                                            typeof data.gridLineWidth === 'number' ? data.gridLineWidth : gridLineWidth,
+                                            typeof data.gridHue === 'number' ? data.gridHue : gridHue
+                                        );
+                                    }
+                                } catch (e) {
+                                    console.warn('[CT3D] apply-scene-settings failed:', e);
                                 }
                                 break;
                             case 'toggle-labels':
@@ -8645,6 +8675,46 @@ body.android-optimized .zoom-btn {
                         hud.appendChild(factRow);
                     }
 
+                    // ── 5-tier depth ladder ──────────────────────────────────
+                    // A vertical scale showing all five zoom tiers at once — naked
+                    // eye at the top, quantum at the bottom — with the active tier
+                    // lit. This makes the five levels read as five distinct stages
+                    // (not "about three") and tells the user how much deeper the
+                    // zoom can still go.
+                    const activeTierNum =
+                        cameraDistance <= ZOOM_DEEP_ATOMIC      ? 1 :
+                        cameraDistance <= ATOMIC_ZOOM_THRESHOLD ? 2 :
+                        cameraDistance <= CLOSE_ZOOM_THRESHOLD  ? 3 :
+                        cameraDistance <= ZOOM_COMPONENT_VIEW   ? 4 : 5;
+                    const tierLadder = [
+                        { n: 5, key: 't5_circuit',   name: 'Circuit',   scale: 'naked eye' },
+                        { n: 4, key: 't4_component', name: 'Component', scale: 'mm' },
+                        { n: 3, key: 't3_carrier',   name: 'Carriers',  scale: 'µm' },
+                        { n: 2, key: 't2_lattice',   name: 'Lattice',   scale: 'Å' },
+                        { n: 1, key: 't1_quantum',   name: 'Quantum',   scale: 'ψ²' },
+                    ];
+                    const ladder = document.createElement('div');
+                    ladder.style.cssText = 'display:flex;flex-direction:column;gap:2px;margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,0.08)';
+                    tierLadder.forEach((t) => {
+                        const tc = ZOOM_TIER_COLORS[t.key];
+                        const isActive = t.n === activeTierNum;
+                        const row = document.createElement('div');
+                        row.style.cssText = 'display:flex;align-items:center;gap:6px;font-size:8.5px;line-height:1.35;opacity:' + (isActive ? '1' : '0.42');
+                        const dot = document.createElement('span');
+                        dot.style.cssText = 'width:7px;height:7px;border-radius:50%;flex:none;background:' + tc.hex + ';box-shadow:' + (isActive ? '0 0 7px ' + tc.hex : 'none');
+                        const txt = document.createElement('span');
+                        txt.style.cssText = 'color:' + (isActive ? tc.hex : 'rgba(200,220,255,0.7)') + ';font-weight:' + (isActive ? '700' : '500');
+                        txt.textContent = 'T' + t.n + ' · ' + t.name;
+                        const scale = document.createElement('span');
+                        scale.style.cssText = 'margin-left:auto;color:' + (isActive ? tc.hex : 'rgba(170,190,220,0.45)') + ';font-size:8px';
+                        scale.textContent = isActive ? '◄ ' + t.scale : t.scale;
+                        row.appendChild(dot);
+                        row.appendChild(txt);
+                        row.appendChild(scale);
+                        ladder.appendChild(row);
+                    });
+                    hud.appendChild(ladder);
+
                     hud.style.borderColor = tierData.hex + '66';
                     hud.style.boxShadow   = '0 2px 12px ' + tierData.hex + '33';
                     hud.style.display = 'block';
@@ -8722,8 +8792,12 @@ body.android-optimized .zoom-btn {
                         const wt  = globalFlowTime * STREAM_WIGGLE_SPEED  + (wireData.jitterPhaseX || 0);
                         const wt2 = globalFlowTime * STREAM_WIGGLE_SPEED2 + (wireData.jitterPhaseZ || 0);
                         const wt3 = globalFlowTime * STREAM_WIGGLE_SPEED3 + (wireData.jitterPhaseX || 0) * 0.5;
+                        // Far tiers read as smooth bulk current, so damp the lateral
+                        // wiggle: T5 nearly straight streams, T4 gentle, T3-T1 full.
+                        const tierWiggle = activeZoomTier === 5 ? 0.22
+                                         : activeZoomTier === 4 ? 0.55 : 1;
                         const wiggle = (Math.sin(wt) * 0.55 + Math.sin(wt2) * 0.30 + Math.sin(wt3) * 0.15)
-                                       * STREAM_WIGGLE_AMP;
+                                       * STREAM_WIGGLE_AMP * tierWiggle;
                         const radialAngle = wireData.jitterPhaseY || 0;
                         position.x += Math.cos(radialAngle) * wiggle;
                         position.z += Math.sin(radialAngle) * wiggle;
@@ -8745,12 +8819,33 @@ body.android-optimized .zoom-btn {
                         baseZoomScale = Math.min(MAX_PARTICLE_SCALE, CLOSE_ZOOM_THRESHOLD / cameraDistance);
                     }
 
-                    // ── Speed-based elongation along wire tangent ────────────
-                    if (inCloseZoom) {
+                    // ── Per-tier particle SHAPE ──────────────────────────────
+                    // The headline differentiator between the three "macro" tiers:
+                    //   T5 Circuit Overview → long smooth streaks = conventional bulk
+                    //      current flowing as continuous ribbons.
+                    //   T4 Component Scale  → fat round glow = current DENSITY pooling
+                    //      and glowing through the parts (no stretch, bigger + brighter).
+                    //   T3 Charge Carrier   → discrete electrons stretched by their own
+                    //      drift speed, with comet trails (the existing behaviour).
+                    //   T2/T1 atomic        → keep the speed-based elongation.
+                    let elongScale = 1;
+                    let stretchToTangent = false;
+                    if (activeZoomTier === 5) {
+                        elongScale = 6.0;            // long ribbons of current
+                        baseZoomScale *= 0.9;        // thinner so they read as streams
+                        stretchToTangent = true;
+                    } else if (activeZoomTier === 4) {
+                        baseZoomScale *= 1.7;         // fat density glow, no stretch
+                        elongScale = 1;
+                        stretchToTangent = false;
+                    } else if (inCloseZoom) {
                         const absSpeed  = Math.abs(wireData.speed || 0);
                         const elongT    = Math.min(1, absSpeed / ELONGATION_SPEED_NORM);
-                        const elongScale = 1 + (ELONGATION_MAX - 1) * elongT;
+                        elongScale = 1 + (ELONGATION_MAX - 1) * elongT;
+                        stretchToTangent = true;
+                    }
 
+                    if (stretchToTangent) {
                         // Approximate tangent by sampling two nearby points
                         const pA = wire.curve.getPoint(Math.max(0, wireData.progress - TANGENT_SAMPLE_DELTA));
                         const pB = wire.curve.getPoint(Math.min(1, wireData.progress + TANGENT_SAMPLE_DELTA));
@@ -8764,7 +8859,10 @@ body.android-optimized .zoom-btn {
                             particle.scale.setScalar(baseZoomScale);
                         }
                     } else {
-                        if (particle.scale.x !== 1) particle.scale.setScalar(1);
+                        // Round particle (T4 density glow, or far default) — clear any
+                        // prior tangent rotation so it renders as a clean sphere.
+                        particle.quaternion.identity();
+                        particle.scale.setScalar(baseZoomScale);
                     }
 
                     // ── Opacity & scale pulsation ────────────────────────────
@@ -10048,6 +10146,21 @@ body.android-optimized .zoom-btn {
 
         // Apply brightness (10–100), lineWidth (1–3), and hue (0–359) to the workspace grid.
         // Removes the old grid from the scene and recreates it with new params.
+        /**
+         * applySceneBackground — set the 3D void colour behind the circuit from the
+         * app Settings page. brightness 0–100 drives lightness; hue 0–360 tints it.
+         * Kept deliberately dark so the energized current and components still pop.
+         */
+        function applySceneBackground(brightness, hue) {
+            if (!scene) return;
+            const b = _clamp(brightness, 0, 100, 35);
+            const h = _clamp(hue, 0, 360, 222);
+            const lightness = 0.02 + (b / 100) * 0.17; // 0.02 .. 0.19 — always a dark void
+            const color = new THREE.Color().setHSL(h / 360, 0.5, lightness);
+            scene.background = color;
+            if (scene.fog && scene.fog.color) scene.fog.color.copy(color);
+        }
+
         function applyGridStyle(brightness, lineWidth, hue) {
             gridBrightness = _clamp(brightness, 10, 100, gridBrightness);
             gridLineWidth  = _clamp(lineWidth,  1,  3,   gridLineWidth);
@@ -15592,16 +15705,13 @@ Made with ? for visual learners everywhere!
             if (failedEntry && currentFlowState?.hasFlow) {
                 if (isPayoffCircuit) {
                     // Parallel payoff showcase: a failed branch is an OPEN CIRCUIT — no
-                    // current flows through it — while the other branches keep conducting
-                    // at their own current. Re-solve so the netlist drops the failed branch
-                    // (buildNetlistLegacy skips failed parts): its particles stop and the
-                    // survivors continue. When the last branch opens, the re-solve finds no
-                    // path and all current stops. This replaces the old global slow-down,
-                    // which incorrectly kept current "flowing" through the open branch.
-                    setStatus(`⚠ F.U.S.E.: ${failedEntry.name || 'A branch'} overheated and went open — no current flows through it now; the surviving parallel branches carry on.`);
-                    // Deferred so we re-enter analyzeCircuit() on a fresh call stack (this
-                    // handler runs inside the current analysis pass) — avoids recursion.
-                    setTimeout(() => { try { analyzeCircuit(); } catch (e) { /* non-fatal */ } }, 0);
+                    // current flows through it — while the surviving branches keep
+                    // conducting. buildNetlistLegacy already drops failed parts and the
+                    // failure is latched in applyAllWorkspaceFailures, so the periodic
+                    // F.U.S.E. re-check (scheduleFuseCheck → analyzeCircuit) re-solves and
+                    // the open branch's particles stop on the next pass. Nothing to do
+                    // here — and crucially NO analyzeCircuit() call, which previously
+                    // looped and made the F.U.S.E. cards pop over and over.
                 } else {
                     currentFlowState = { hasFlow: false, currentValue: 0, reason: 'component-failure' };
                     animateCurrentFlow(currentFlowState);
@@ -18426,7 +18536,7 @@ Made with ? for visual learners everywhere!
             // current is calm and easy to watch; user-built circuits run at full speed
             // (gated on isPayoffCircuit). payoffFlowDegrade stays as a secondary hook.
             const payoffSpeedScale = isPayoffCircuit ? PAYOFF_FLOW_SPEED_SCALE : 1;
-            const baseSpeed        = calculateFlowSpeed(currentValue) * payoffFlowDegrade * payoffSpeedScale;
+            const baseSpeed        = calculateFlowSpeed(currentValue) * payoffFlowDegrade * payoffSpeedScale * userFlowSpeedScale;
             // Denser stream floor so even low-current showcase circuits read as a
             // continuous energized current rather than a few sparse dots.
             const baseParticleCount = isMobile ? 11 : 18;
@@ -19626,7 +19736,7 @@ Made with ? for visual learners everywhere!
                 payoffFlowDegrade = 1;
 
                 // ── Components ───────────────────────────────────────────────
-                // Textbook parallel ladder: a 12 V source drives three resistor
+                // Textbook parallel ladder: a 6 V source drives three resistor
                 // branches stacked vertically between two VERTICAL bus rails — the
                 // left rail (battery −) and the right rail (battery +). Every element
                 // is left UNROTATED so its terminals sit at x ± offset, exactly where
@@ -19634,22 +19744,23 @@ Made with ? for visual learners everywhere!
                 // straight orthogonal run (no diagonal "zigzag" branches) and matches
                 // docs/circuit-topology-reference.md.
                 //
-                // Clean 3:2:1 per-branch math:
-                //   I₁ = 12/40 = 0.30 A · I₂ = 12/60 = 0.20 A · I₃ = 12/120 = 0.10 A
-                //   I_total = 0.60 A · R_eq = 20 Ω
-                //   P₁ = 3.6 W · P₂ = 2.4 W · P₃ = 1.2 W
+                // This is the FIRST thing a brand-new user sees, so it is a calm,
+                // physically-honest showcase rather than a fireworks display: the
+                // current is deliberately gentle and every branch sits comfortably
+                // within its power rating, so nothing ever trips or fails. It just
+                // flows — the whole point is to make invisible current *visible* and
+                // let Ohm's law read at a glance (more resistance ⇒ less current).
                 //
-                // F.U.S.E. is wired in for real: each branch is under-rated relative to
-                // its dissipation so the first-order thermal model (ΔT ∝ 1−e^(−t/τ))
-                // eventually drives effective power past 1.667× the rating and the branch
-                // fails. A longer per-branch τ (thermalTimeConstant ≈ 15 s) deliberately
-                // delays the trips so the energized current can be watched first; ratings
-                // are staggered so the branches blow one at a time — the hottest first:
-                //   A: 1.5 W → fails ≈ 18 s · B: 1.2 W → ≈ 27 s · C: 0.65 W → ≈ 35 s
-                // Because this is a PARALLEL circuit, a failed branch is an OPEN CIRCUIT:
-                // no current flows through it, while the surviving branches keep conducting
-                // at their own current. When the last branch opens the circuit is fully
-                // open and all current stops — see the failure handler in analyzeCircuit.
+                // Clean 3:2:1 per-branch math (Ohm's law, I = V/R):
+                //   I₁ = 6/200 = 0.030 A · I₂ = 6/300 = 0.020 A · I₃ = 6/600 = 0.010 A
+                //   I_total = 0.060 A · R_eq = 100 Ω
+                //   P₁ = 0.18 W · P₂ = 0.12 W · P₃ = 0.06 W  (all well under ¼ W)
+                //
+                // Because each branch dissipates far less than its ¼ W rating, the
+                // F.U.S.E. thermal model never reaches its trip threshold — no branch
+                // opens, so the showcase keeps conducting indefinitely. (Open-circuit
+                // semantics still hold everywhere: an open branch carries exactly zero
+                // current — there is no "dimmed" flow — see analyzeCircuit's handler.)
 
                 // Rail X positions and the four stacked rows (z): battery on top,
                 // then the three resistor branches evenly spaced below it.
@@ -19660,28 +19771,24 @@ Made with ? for visual learners everywhere!
                 // Battery across the top row (horizontal, unrotated → +x positive
                 // terminal feeds the right rail, −x negative terminal the left rail).
                 const battery = new Component('battery', new THREE.Vector3(0, 0, ROW_Z.battery));
-                battery.updateProperties({ voltage: 12 });
+                battery.updateProperties({ voltage: 6 });
                 components.push(battery);
 
-                // Horizontal resistor branches, one per row. powerRating is
-                // intentionally below each branch's dissipation so the F.U.S.E. thermal
-                // model trips them in sequence (hottest first).
-                // thermalTimeConstant (τ, seconds) is raised well above the 5 s default so
-                // the trips happen ~3× later — long enough to watch the current flow first.
-                const PAYOFF_TAU = 15;
+                // Horizontal resistor branches, one per row. Each branch dissipates
+                // well under a standard ¼ W (0.25 W) resistor rating, so the F.U.S.E.
+                // overpower model never trips — the current simply keeps flowing.
+                const BRANCH_POWER_RATING = 0.25; // standard ¼ W part
                 const branchSpecs = [
-                    { z: ROW_Z.r1, resistance: 40,  powerRating: 1.5  }, // P=3.6 W → fails ≈ 18 s
-                    { z: ROW_Z.r2, resistance: 60,  powerRating: 1.2  }, // P=2.4 W → fails ≈ 27 s
-                    { z: ROW_Z.r3, resistance: 120, powerRating: 0.65 }, // P=1.2 W → fails ≈ 35 s
+                    { z: ROW_Z.r1, resistance: 200 }, // I=30 mA · P=0.18 W
+                    { z: ROW_Z.r2, resistance: 300 }, // I=20 mA · P=0.12 W
+                    { z: ROW_Z.r3, resistance: 600 }, // I=10 mA · P=0.06 W
                 ];
-                const branchResistors = branchSpecs.map(({ z, resistance, powerRating }) => {
+                const branchResistors = branchSpecs.map(({ z, resistance }) => {
                     const r = new Component('resistor', new THREE.Vector3(0, 0, z));
                     // No rotation: terminals stay on ±x so each branch wires straight
-                    // across to the vertical rails.
-                    // powerRating drives the F.U.S.E. overpower trigger; maxPower kept in
-                    // sync. Under-rated on purpose so each branch eventually fails, and a
-                    // longer thermalTimeConstant delays that failure so the flow is visible.
-                    r.updateProperties({ resistance, powerRating, maxPower: powerRating, thermalTimeConstant: PAYOFF_TAU });
+                    // across to the vertical rails. powerRating/maxPower sit safely
+                    // above the branch dissipation so nothing ever fails.
+                    r.updateProperties({ resistance, powerRating: BRANCH_POWER_RATING, maxPower: BRANCH_POWER_RATING });
                     components.push(r);
                     return r;
                 });
@@ -19754,6 +19861,13 @@ Made with ? for visual learners everywhere!
 
                 // ── Animate and display ──────────────────────────────────────
                 fitToScreen();
+                // Hero framing: the parallel ladder is flat in the X–Z plane, so a
+                // head-on view collapses it into a flat line of overlapping parts.
+                // Swing the camera round and tilt it up so the board leans AWAY from
+                // the viewer and every branch reads as a distinct component at a clean
+                // 3/4 angle — components stay legible and the depth sells the 3D.
+                cameraAngleX = Math.PI / 2 - 0.4; // swing round so the rails run across-screen, with a 3/4 skew
+                cameraAngleY = 0.62;              // ~35° up — tilts the flat board back, away from the user
                 // Pull the camera in tighter than the generic fit so the energized
                 // current-flow reads prominently the instant the circuit loads.
                 cameraDistance = Math.max(9, cameraDistance * 0.42);
@@ -19766,7 +19880,7 @@ Made with ? for visual learners everywhere!
                 // particle positions along the wire curves.
                 scene.updateMatrixWorld(true);
                 analyzeCircuit();
-                setStatus('⚡ CircuiTry3D — 0.6 A flowing across 3 parallel paths (0.3 + 0.2 + 0.1 A)! Zoom in to explore all the way down to atomic scale.');
+                setStatus('⚡ CircuiTry3D — 60 mA flowing across 3 parallel paths (30 + 20 + 10 mA). More resistance → less current. Zoom in to follow it down to atomic scale.');
                 console.log('[CT3D Payoff] Payoff circuit loaded — wires:', wires.length, 'flow:', currentFlowState?.hasFlow);
             } catch (err) {
                 console.error('[CT3D Payoff] loadPayoffCircuit error:', err);
@@ -21236,6 +21350,14 @@ Need more detail? Open the Table Method Guide in the Builder sidebar for printab
 
             components.forEach(component => {
                 if (!component || !component.id) return;
+
+                // Latch: once a component has actually failed (open / destroyed) it
+                // STAYS failed — a burned-out part does not heal when its current stops.
+                // Without this, a failed branch is dropped from the netlist → reads 0 W →
+                // detectFailure() clears it → it re-conducts → fails again, re-spawning
+                // the F.U.S.E. toast/cards on every analysis pass (the "popping over and
+                // over" bug). The badge + particles for the destroyed part stay put.
+                if (workspaceFailureState.get(component.id)?.failed) return;
 
                 const runtimeMetrics = metricsByComponentId ? metricsByComponentId.get(component.id) : null;
                 const failureMetrics = buildFailureMetrics(component, runtimeMetrics, circuitVoltage);

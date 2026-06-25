@@ -5,6 +5,7 @@ import {
   verifyOwnerPassword,
   grantOwnerAccess,
   revokeOwnerAccess,
+  OWNER_ACCESS_CONFIGURED,
 } from "../utils/ownerAccess";
 
 export default function OwnerAccess() {

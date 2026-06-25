@@ -1,5 +1,8 @@
+import { familyDefaults, familyThermal, resolveFamily } from "./fuse";
+import { AMBIENT_C } from "./stressTest";
 import type {
   ArenaBattleAgent,
+  ArenaComponentRatings,
   ArenaSessionPayload,
   ArenaSourceComponent,
 } from "./types";
@@ -23,21 +26,21 @@ const TYPE_ALIASES: Record<string, string> = {
   potentiometer: "potentiometer",
 };
 
-const ABILITY_BY_TYPE: Record<string, string> = {
-  resistor: "Voltage Surge",
-  capacitor: "Capacitor Discharge",
-  "capacitor-ceramic": "Ceramic Pulse",
-  led: "Photon Burst",
-  diode: "Rectifier Lash",
-  inductor: "Magnetic Snap",
-  battery: "Current Flood",
-  fuse: "Short Circuit",
-  switch: "Arc Flash",
-  lamp: "Thermal Bloom",
-  potentiometer: "Tuned Strike",
-  bjt: "Bias Cascade",
-  transistor: "Bias Cascade",
-  mosfet: "Gate Slam",
+/** The characteristic failure mode each family is being tested against. */
+const STRESS_SIGNATURE_BY_FAMILY: Record<string, string> = {
+  resistor: "Thermal Overload",
+  capacitor: "Dielectric Breakdown",
+  led: "Junction Burnout",
+  diode: "Forward Burnout",
+  inductor: "Winding Burnout",
+  battery: "Thermal Venting",
+  fuse: "Element Melt",
+  lamp: "Filament Burnout",
+  mosfet: "Drain Burnout",
+  bjt: "Collector Burnout",
+  switch: "Contact Arcing",
+  relay: "Contact Welding",
+  generic: "Thermal Overload",
 };
 
 const FALLBACK_COMPONENTS: ArenaSourceComponent[] = [
@@ -46,21 +49,21 @@ const FALLBACK_COMPONENTS: ArenaSourceComponent[] = [
     name: "Champion Resistor",
     type: "resistor",
     componentNumber: "R1",
-    properties: { resistance: 470, voltage: 9, power: 0.5 },
+    properties: { resistance: 470, voltage: 9, power: 0.5, powerRating: 0.25 },
   },
   {
     id: "fallback-capacitor",
     name: "Pulse Capacitor",
     type: "capacitor",
     componentNumber: "C1",
-    properties: { capacitance: 0.00047, voltage: 16, current: 0.4 },
+    properties: { capacitance: 0.00047, voltage: 16, current: 0.4, maxVoltage: 25 },
   },
   {
     id: "fallback-led",
     name: "Nova LED",
     type: "led",
     componentNumber: "D1",
-    properties: { forwardVoltage: 2.2, current: 0.025, power: 0.08 },
+    properties: { forwardVoltage: 2.2, current: 0.025, power: 0.08, maxCurrent: 0.02 },
   },
 ];
 
@@ -113,10 +116,8 @@ function deriveMetrics(
     readNumeric(properties, ["voltage", "forwardVoltage", "supplyVoltage", "outputVoltage"]) ??
     (typeof basic?.voltage === "number" ? basic.voltage : null) ??
     6;
-  const current =
-    readNumeric(properties, ["current", "maxCurrent", "currentRating", "ratedCurrentA"]) ??
-    (typeof basic?.current === "number" ? Math.max(basic.current / 2, 0.05) : null) ??
-    0.35;
+  const safeVoltage = Math.max(voltage, 0.1);
+
   const resistance =
     readNumeric(properties, [
       "resistance",
@@ -127,16 +128,64 @@ function deriveMetrics(
     ]) ??
     (typeof basic?.resistance === "number" ? Math.max(basic.resistance / 2, 0.25) : null) ??
     12;
-  const rawPower =
-    readNumeric(properties, ["power", "powerRating", "powerDissipation"]) ??
-    (typeof basic?.power === "number" ? Math.max(basic.power / 2, 0.2) : null);
-  const power = rawPower ?? Math.max(voltage * current, 0.15);
+
+  // Operating current — the point of the whole test depends on this being a
+  // SANE starting load, not a rating. Priority:
+  //   1. an explicit operating current,
+  //   2. Ohm's law I = V/R using the part's OWN resistance (not internal/contact
+  //      R), so a resistive load starts at a believable draw,
+  //   3. the circuit's measured current,
+  //   4. a small default.
+  // maxCurrent / ratedCurrentA are RATINGS — they live in deriveRatings, and
+  // must never seed the operating point (that made every part start over-rated
+  // and fail in the first second, before the user could see anything).
+  const loadResistance = readNumeric(properties, ["resistance"]);
+  let current = readNumeric(properties, ["current"]);
+  if (current == null && loadResistance != null && loadResistance > 0) {
+    current = safeVoltage / loadResistance;
+  }
+  if (current == null) {
+    current =
+      typeof basic?.current === "number" ? Math.max(basic.current / 2, 0.01) : 0.05;
+  }
+  const safeCurrent = Math.min(Math.max(current, 0.001), 100);
+
+  // Operating power is the REAL dissipation at this point (V·I), not a rating —
+  // the rating lives in `ratings.powerRating`. The bench ramps this up.
+  const operatingPower = Math.max(safeVoltage * safeCurrent, 0.02);
 
   return {
-    voltage: Math.max(voltage, 0.1),
-    current: Math.max(current, 0.01),
+    voltage: safeVoltage,
+    current: safeCurrent,
     resistance: Math.max(resistance, 0.01),
-    power: Math.max(power, 0.05),
+    power: operatingPower,
+  };
+}
+
+/** Pull real ratings from the merged F.U.S.E. profile + the part's own props. */
+function deriveRatings(
+  family: string,
+  properties: Record<string, unknown>,
+): ArenaComponentRatings {
+  const thermal = familyThermal(family);
+  const powerRating =
+    readNumeric(properties, ["powerRating", "maxPower", "ratedWatts"]) ??
+    (family === "resistor" ? 0.25 : 0.5);
+  const maxCurrent =
+    readNumeric(properties, ["maxCurrent", "id_max", "ic_max", "ratedCurrentA", "maxDischargeCurrent"]) ??
+    Number.POSITIVE_INFINITY;
+  const maxVoltage =
+    readNumeric(properties, ["maxVoltage", "maxVoltageV", "reverseVoltage", "vds_max", "vce_max"]) ??
+    Number.POSITIVE_INFINITY;
+  const thermalResistanceCPerW = readNumeric(properties, ["thermalResistance"]) ?? 60;
+
+  return {
+    powerRating: Math.max(powerRating, 0.01),
+    maxCurrent: maxCurrent > 0 ? maxCurrent : Number.POSITIVE_INFINITY,
+    maxVoltage: maxVoltage > 0 ? maxVoltage : Number.POSITIVE_INFINITY,
+    junctionLimitC: thermal.junctionLimitC,
+    absoluteMaxTempC: thermal.absoluteMaxTempC,
+    thermalResistanceCPerW: Math.max(thermalResistanceCPerW, 0.1),
   };
 }
 
@@ -151,37 +200,46 @@ export function buildArenaRoster(
   return sourceComponents.map((component, index, list) => {
     const componentType = normaliseType(component.type);
     const renderType = TYPE_ALIASES[componentType] ?? componentType;
+    const ownProps = component.properties ?? {};
+    const family = resolveFamily(componentType, ownProps);
+    // Merge engine defaults under the part's own props so detectFailure always
+    // has a rating to compare against, even for sparsely-specified imports.
+    const properties: Record<string, unknown> = {
+      ...familyDefaults(family),
+      ...ownProps,
+    };
     const metrics = deriveMetrics(component, payload);
-    const resistanceShield = Math.log10(metrics.resistance + 1) * 7;
-    const attack = clamp(
-      Math.round(12 + metrics.voltage * 0.8 + metrics.current * 12 + Math.sqrt(metrics.power) * 3),
-      12,
-      58,
-    );
-    const defense = clamp(Math.round(7 + resistanceShield), 7, 32);
-    const maxHealth = clamp(
-      Math.round(72 + defense * 4 + metrics.power * 5 + metrics.voltage * 1.7),
-      72,
-      190,
-    );
+    const ratings = deriveRatings(family, properties);
 
     return {
       id: component.id ?? `arena-agent-${index + 1}`,
-      name:
-        component.name?.trim() ||
-        `${toTitleCase(componentType)} ${index + 1}`,
+      name: component.name?.trim() || `${toTitleCase(componentType)} ${index + 1}`,
       componentType,
       renderType,
-      abilityName: ABILITY_BY_TYPE[componentType] ?? "Ohm Strike",
+      family,
+      stressSignature:
+        STRESS_SIGNATURE_BY_FAMILY[family] ?? STRESS_SIGNATURE_BY_FAMILY.generic,
       accent: ARENA_ACCENTS[index % ARENA_ACCENTS.length] ?? "#60a5fa",
-      attack,
-      defense,
-      health: maxHealth,
-      maxHealth,
       spawnAngle: (Math.PI * 2 * index) / list.length,
       metrics,
+      properties,
+      ratings,
       componentNumber:
         component.componentNumber?.trim() || component.partNumber?.trim() || null,
+
+      // fresh telemetry — a part starts the bench cool and intact
+      integrity: 100,
+      maxIntegrity: 100,
+      severity: 0,
+      tempC: AMBIENT_C,
+      loadPercent: clamp(
+        ratings.powerRating > 0 ? (metrics.power / ratings.powerRating) * 100 : 0,
+        0,
+        999,
+      ),
+      phase: "nominal",
+      failureName: null,
+      failureVisual: null,
     };
   });
 }

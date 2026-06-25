@@ -5,6 +5,52 @@
 
 import { isCapacitor, isAndroid } from '../hooks/capacitor/useAndroidInit';
 
+// ── User graphics settings (from the Settings page) ─────────────────────────
+// Read directly from localStorage so these plain utility functions stay
+// dependency-free. The Settings store (AppSettingsContext) is the writer; key
+// and shape are a shared contract. Read at scene-setup time, not per frame.
+const APP_SETTINGS_KEY = 'circuitry:app-settings';
+
+interface UserGraphics {
+  quality: number; // 0-100
+  pixelRatioCap: number; // 100-300 (÷100 = DPR cap)
+  targetFps: number; // 30-120
+  antialias: boolean;
+  geometryDetail: number; // 0-100
+}
+
+const GRAPHICS_DEFAULTS: UserGraphics = {
+  quality: 75,
+  pixelRatioCap: 200,
+  targetFps: 60,
+  antialias: true,
+  geometryDetail: 70,
+};
+
+const clampNum = (v: unknown, def: number, min: number, max: number): number => {
+  if (typeof v !== 'number' || Number.isNaN(v)) return def;
+  return Math.min(Math.max(v, min), max);
+};
+
+export const getUserGraphics = (): UserGraphics => {
+  if (typeof window === 'undefined') return GRAPHICS_DEFAULTS;
+  try {
+    const raw = window.localStorage.getItem(APP_SETTINGS_KEY);
+    if (!raw) return GRAPHICS_DEFAULTS;
+    const g = (JSON.parse(raw) as { graphics?: Partial<UserGraphics> }).graphics;
+    if (!g || typeof g !== 'object') return GRAPHICS_DEFAULTS;
+    return {
+      quality: clampNum(g.quality, GRAPHICS_DEFAULTS.quality, 0, 100),
+      pixelRatioCap: clampNum(g.pixelRatioCap, GRAPHICS_DEFAULTS.pixelRatioCap, 100, 300),
+      targetFps: clampNum(g.targetFps, GRAPHICS_DEFAULTS.targetFps, 30, 120),
+      antialias: typeof g.antialias === 'boolean' ? g.antialias : GRAPHICS_DEFAULTS.antialias,
+      geometryDetail: clampNum(g.geometryDetail, GRAPHICS_DEFAULTS.geometryDetail, 0, 100),
+    };
+  } catch {
+    return GRAPHICS_DEFAULTS;
+  }
+};
+
 // Detect if device is mobile (touch-based)
 export const isMobile = (): boolean => {
   if (typeof window === 'undefined') return false;
@@ -67,10 +113,12 @@ export interface MobileRendererOptions {
 
 export const getMobileRendererOptions = (): MobileRendererOptions => {
   const tier = getPerformanceTier();
+  // User toggle wins over the tier default for antialiasing.
+  const antialias = getUserGraphics().antialias;
 
   if (tier === 'low') {
     return {
-      antialias: true, // Keep antialiasing for visual quality - it's 2026!
+      antialias,
       powerPreference: 'low-power',
       precision: 'mediump',
       alpha: true
@@ -79,7 +127,7 @@ export const getMobileRendererOptions = (): MobileRendererOptions => {
 
   if (tier === 'medium') {
     return {
-      antialias: true,
+      antialias,
       powerPreference: 'default',
       precision: 'highp',
       alpha: true
@@ -88,7 +136,7 @@ export const getMobileRendererOptions = (): MobileRendererOptions => {
 
   // High-end
   return {
-    antialias: true,
+    antialias,
     powerPreference: 'high-performance',
     precision: 'highp',
     alpha: true
@@ -101,14 +149,15 @@ export const getMobilePixelRatio = (): number => {
 
   const tier = getPerformanceTier();
   const devicePixelRatio = window.devicePixelRatio || 1;
+  const g = getUserGraphics();
 
-  // More generous pixel ratio allowances for better visual clarity
-  if (tier === 'low') {
-    return Math.min(devicePixelRatio, 2); // Allow up to 2x even on low-end (was 1.5)
-  }
+  // Device-tier ceiling, then the user's pixel-ratio cap, then a quality scale.
+  const tierCap = tier === 'low' ? 2 : 2.5;
+  const userCap = g.pixelRatioCap / 100; // 1.0–3.0
+  const qualityScale = 0.55 + (g.quality / 100) * 0.45; // 0.55–1.0
 
-  // Medium and high get full pixel ratio up to 2.5x
-  return Math.min(devicePixelRatio, 2.5);
+  const ratio = Math.min(devicePixelRatio, tierCap, userCap) * qualityScale;
+  return Math.max(0.5, ratio);
 };
 
 // Shadow quality settings
@@ -146,31 +195,26 @@ export const getMobileShadowSettings = (): ShadowSettings => {
 
 // Animation frame rate settings
 export const getTargetFrameRate = (): number => {
+  // The user's explicit frame-rate target wins (clamped to a sane floor on
+  // low-end devices so we never exceed what the device can sustain).
   const tier = getPerformanceTier();
-
-  // All tiers target 60fps - even low-end devices can handle it with other optimizations
-  // Only drop to 30fps if absolutely necessary (handled elsewhere based on actual performance)
-  if (tier === 'low') {
-    return 45; // Compromise between smoothness and battery
-  }
-
-  return 60;
+  const target = getUserGraphics().targetFps;
+  return tier === 'low' ? Math.min(target, 45) : target;
 };
 
 // Get geometry detail level (for LOD)
 // More generous segment counts to avoid "blocky" appearance
 export const getGeometrySegments = (baseSegments: number): number => {
   const tier = getPerformanceTier();
+  const g = getUserGraphics();
 
-  if (tier === 'low') {
-    return Math.max(16, Math.floor(baseSegments * 0.6)); // 60% detail, min 16 (was 50%, min 8)
-  }
+  // Combine the device-tier multiplier with the user's geometry-detail and
+  // overall-quality sliders.
+  const tierMul = tier === 'low' ? 0.6 : tier === 'medium' ? 0.85 : 1;
+  const detailMul = 0.4 + (g.geometryDetail / 100) * 0.6; // 0.4–1.0
+  const qualityMul = 0.7 + (g.quality / 100) * 0.3; // 0.7–1.0
 
-  if (tier === 'medium') {
-    return Math.max(20, Math.floor(baseSegments * 0.85)); // 85% detail (was 75%)
-  }
-
-  return baseSegments;
+  return Math.max(8, Math.floor(baseSegments * tierMul * detailMul * qualityMul));
 };
 
 // Check if device supports WebGL2

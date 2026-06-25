@@ -114,7 +114,7 @@ const computeAxisMetrics = (element: TwoTerminalElement): AxisMetrics => {
 
 const resolveProfile = (standard?: SymbolStandard) => STANDARD_PROFILES[standard ?? DEFAULT_SYMBOL_STANDARD];
 
-const toVec3 = (three: any, point: Vec2, height = WIRE_HEIGHT) => new three.Vector3(point.x, height, point.z);
+const toVec3 = (three: any, point: Vec2, height: number = WIRE_HEIGHT) => new three.Vector3(point.x, height, point.z);
 
 const styliseMaterial = (three: any, material: any, options: BuildOptions, baseColor: number) => {
   if (!material) {
@@ -196,7 +196,7 @@ const cylinderBetween = (three: any, startVec: any, endVec: any, radius: number,
   return mesh;
 };
 
-const createLabelSprite = (three: any, text: string, color = LABEL_COLOR, options: BuildOptions = {}, componentKind?: string) => {
+const createLabelSprite = (three: any, text: string, color: string = LABEL_COLOR, options: BuildOptions = {}, componentKind?: string) => {
   const canvas = document.createElement("canvas");
   // Use larger canvas for longer text to maintain quality
   const isLongText = text.length > 4;
@@ -423,7 +423,7 @@ const buildResistorElement = (three: any, element: TwoTerminalElement, options: 
   const endVec = toVec3(three, element.end, COMPONENT_HEIGHT);
 
   // Add color bands for IEC (rectangular body) resistors
-  if (!options.preview && profile.resistor.bodyStyle === "rectangular") {
+  if (!options.preview && profile.resistor.bodyStyle === "rectangle") {
     const colorBands = getResistorColorBands(element.label);
     if (colorBands && bodyLength > 0.4) {
       const bandWidth = 0.06;

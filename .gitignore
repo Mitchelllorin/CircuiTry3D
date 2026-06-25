@@ -48,3 +48,6 @@ promo-footage/
 
 # Coverage reports
 coverage/
+
+# Claude Code private working notes (not app code)
+memory/

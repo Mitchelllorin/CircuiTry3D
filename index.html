@@ -45,6 +45,12 @@
     <meta name="msapplication-TileImage" content="/icons/icon-144.png" />
     <link rel="msapplication-config" href="/browserconfig.xml" />
 
+    <!-- FUSE™ Failure Understanding Simulation Engine — loaded app-wide so the
+         React Arena (performance test bench) can call the SAME real failure
+         physics the 3D builder uses. Zero-dependency UMD; defines
+         window.FailureEngine synchronously before the app module runs. -->
+    <script src="/js/component-failure-engine.js?v=6"></script>
+
     <!-- App Icons -->
     <link rel="icon" href="/favicon.ico" sizes="any" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />

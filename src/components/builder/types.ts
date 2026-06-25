@@ -41,7 +41,10 @@ export type BuilderInvokeAction =
   | "cinematic-record-stop"
   | "cinematic-add-waypoint"
   | "cinematic-clear-waypoints"
-  | "set-grid-style";
+  | "set-grid-style"
+  | "apply-scene-settings"
+  | "load-payoff"
+  | "run-payoff-flow";
 
 export type MeterMode = "voltage" | "current" | "resistance" | "scope";
 
@@ -56,7 +59,10 @@ export type LegacyMeterState = {
 };
 
 export type BuilderMessage =
-  | { type: "builder:add-component"; payload: { componentType: string } }
+  | {
+      type: "builder:add-component";
+      payload: { componentType: string; initialProperties?: Record<string, unknown> };
+    }
   | { type: "builder:add-junction" }
   | { type: "builder:set-analysis-open"; payload: { open: boolean } }
   | {
@@ -193,7 +199,7 @@ export type ComponentAction = {
   icon: string;
   label: string;
   action: "component" | "junction";
-  builderType?: "battery" | "ac_source" | "resistor" | "capacitor" | "capacitor-ceramic" | "inductor" | "lamp" | "motor" | "speaker" | "diode" | "zener-diode" | "photodiode" | "led" | "thermistor" | "crystal" | "bjt" | "bjt-npn" | "bjt-pnp" | "darlington" | "mosfet" | "switch" | "fuse" | "potentiometer" | "opamp" | "transformer" | "ground";
+  builderType?: "battery" | "ac_source" | "resistor" | "capacitor" | "capacitor-ceramic" | "inductor" | "lamp" | "motor" | "speaker" | "diode" | "zener-diode" | "photodiode" | "led" | "thermistor" | "crystal" | "bjt" | "bjt-npn" | "bjt-pnp" | "darlington" | "mosfet" | "switch" | "fuse" | "potentiometer" | "opamp" | "transformer" | "ground" | "relay" | "voltage-regulator" | "flux-capacitor";
   description?: string;
   /** Extended metadata for scalable component integration */
   metadata?: ComponentMetadata;

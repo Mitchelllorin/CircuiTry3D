@@ -390,7 +390,7 @@ export default function Practice({
   const [internalProblemId, setInternalProblemId] = useState<string | null>(
     () => {
       if (selectedProblemId !== undefined && selectedProblemId !== null) {
-        return findProblem(selectedProblemId).id;
+        return findProblem(selectedProblemId)?.id ?? fallbackProblemId;
       }
       return fallbackProblemId;
     },
@@ -452,7 +452,7 @@ export default function Practice({
     lastControlledProblemId.current = selectedProblemId;
 
     const resolved = findProblem(selectedProblemId);
-    if (resolved.id !== internalProblemId) {
+    if (resolved && resolved.id !== internalProblemId) {
       setInternalProblemId(resolved.id);
       setTableRevealed(false);
       setStepsVisible(false);
@@ -547,6 +547,7 @@ export default function Practice({
 
   const selectProblemById = useCallback((problemId: string) => {
     const next = findProblem(problemId);
+    if (!next) return;
     setInternalProblemId(next.id);
     setTableRevealed(false);
     setStepsVisible(false);

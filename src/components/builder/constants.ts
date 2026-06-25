@@ -57,6 +57,7 @@ export const SCHEMATIC_SYMBOLS = {
   JUNCTION: "ANSI_JUNCTION",
   RELAY: "ANSI_RELAY",
   VOLTAGE_REGULATOR: "ANSI_VOLTAGE_REGULATOR",
+  FLUX_CAPACITOR: "ANSI_FLUX_CAPACITOR",
 } as const;
 
 export const COMPONENT_ACTIONS: ComponentAction[] = [
@@ -160,6 +161,23 @@ export const COMPONENT_ACTIONS: ComponentAction[] = [
       symbolRef: "L1",
       category: "passive",
       educationalTags: ["inductance", "magnetic-field", "coil"],
+    },
+  },
+  {
+    id: "flux-capacitor",
+    icon: "─◁⚡▷─",
+    label: "Flux Capacitor",
+    action: "component",
+    builderType: "flux-capacitor",
+    description: "Flux Capacitor - the time-circuit core, output measured in jigawatts (1.21 GW)",
+    metadata: {
+      schematicSymbol: SCHEMATIC_SYMBOLS.FLUX_CAPACITOR,
+      symbolText: "─◁⚡▷─",
+      symbolDesc: "Jigawatts",
+      symbolUnit: "GW",
+      symbolRef: "FC1",
+      category: "power",
+      educationalTags: ["flux", "time-circuits", "jigawatts", "energy-storage"],
     },
   },
   {

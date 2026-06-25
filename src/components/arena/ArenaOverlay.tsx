@@ -1,3 +1,9 @@
+import WordMark from "../WordMark";
+import {
+  ArenaTestCards,
+  ArenaTestControls,
+  ArenaTestLog,
+} from "./ArenaInstrumentation";
 import type {
   ArenaBattleAgent,
   ArenaBattleLogEntry,
@@ -7,34 +13,36 @@ import type {
 
 type ArenaOverlayProps = {
   agents: ArenaBattleAgent[];
-  battleLog: ArenaBattleLogEntry[];
-  currentTurnAgentId: string | null;
-  onResetBattle: () => void;
-  onReturnToWorkspace: () => void;
-  onOpenBuilder?: () => void;
-  round: number;
-  sessionLabel: string;
+  log: ArenaBattleLogEntry[];
+  mostStressedId: string | null;
   status: ArenaBattleStatus;
+  stressFactor: number;
+  progress: number;
+  sessionLabel: string;
   transitionPhase: ArenaViewTransitionPhase;
   winnerName: string | null;
+  survivorCount: number;
+  onStartTest: () => void;
+  onResetTest: () => void;
+  onReturnToWorkspace: () => void;
+  onOpenBuilder?: () => void;
 };
-
-function getHealthPercent(agent: ArenaBattleAgent): number {
-  return Math.max(0, Math.min(100, (agent.health / agent.maxHealth) * 100));
-}
 
 export function ArenaOverlay({
   agents,
-  battleLog,
-  currentTurnAgentId,
-  onResetBattle,
-  onReturnToWorkspace,
-  onOpenBuilder,
-  round,
-  sessionLabel,
+  log,
+  mostStressedId,
   status,
+  stressFactor,
+  progress,
+  sessionLabel,
   transitionPhase,
   winnerName,
+  survivorCount,
+  onStartTest,
+  onResetTest,
+  onReturnToWorkspace,
+  onOpenBuilder,
 }: ArenaOverlayProps) {
   return (
     <div className="arena-overlay">
@@ -47,12 +55,21 @@ export function ArenaOverlay({
           Return to Workspace
         </button>
         <div className="arena-overlay__hero">
-          <p className="arena-eyebrow">CircuiTry3D Battle Arena</p>
+          <div className="arena-overlay__brand">
+            <WordMark size="md" decorative />
+            <span className="arena-eyebrow">Performance Test Bench</span>
+          </div>
           <h1>{sessionLabel}</h1>
           <div className="arena-overlay__meta">
-            <span>{transitionPhase === "entering" ? "Cinematic entry" : "Arena live"}</span>
-            <span>Round {Math.max(round, 1)}</span>
-            <span>{status === "complete" ? "Battle complete" : "Battle in progress"}</span>
+            <span>{transitionPhase === "entering" ? "Cinematic entry" : "Bench live"}</span>
+            <span>{stressFactor.toFixed(1)}× load</span>
+            <span>
+              {status === "complete"
+                ? "Test complete"
+                : status === "battling"
+                  ? "Stress test running"
+                  : "Bench ready"}
+            </span>
           </div>
         </div>
         <div className="arena-overlay__actions">
@@ -68,81 +85,32 @@ export function ArenaOverlay({
           <button
             type="button"
             className="arena-button arena-button--secondary"
-            onClick={onResetBattle}
+            onClick={onResetTest}
           >
-            Restart Battle
+            Reset Bench
           </button>
         </div>
       </div>
 
-      <aside className="arena-log-panel" aria-label="Battle log">
-        <div className="arena-log-panel__header">
-          <h2>Battle Log</h2>
-          {winnerName ? <span className="arena-status-pill">{winnerName} wins</span> : null}
-        </div>
-        <ol className="arena-log-panel__list">
-          {battleLog.map((entry) => (
-            <li key={entry.id} className={`arena-log-entry arena-log-entry--${entry.kind}`}>
-              <span className="arena-log-entry__round">
-                {entry.round === 0 ? "INIT" : `R${entry.round}`}
-              </span>
-              <span>{entry.message}</span>
-            </li>
-          ))}
-        </ol>
-      </aside>
-
-      <div className="arena-cards" aria-label="Combatant stats">
-        {agents.map((agent) => {
-          const isActive = agent.id === currentTurnAgentId;
-          const isDefeated = agent.health <= 0;
-
-          return (
-            <article
-              key={agent.id}
-              className={`arena-card${isActive ? " is-active" : ""}${isDefeated ? " is-defeated" : ""}`}
-            >
-              <div className="arena-card__header">
-                <div>
-                  <p>{agent.componentNumber ?? agent.componentType.toUpperCase()}</p>
-                  <h3>{agent.name}</h3>
-                </div>
-                <span className="arena-card__badge">{agent.abilityName}</span>
-              </div>
-              <div className="arena-card__health">
-                <div className="arena-card__health-bar">
-                  <span style={{ width: `${getHealthPercent(agent)}%` }} />
-                </div>
-                <strong>
-                  {agent.health}/{agent.maxHealth} HP
-                </strong>
-              </div>
-              <dl className="arena-card__stats">
-                <div>
-                  <dt>ATK</dt>
-                  <dd>{agent.attack}</dd>
-                </div>
-                <div>
-                  <dt>DEF</dt>
-                  <dd>{agent.defense}</dd>
-                </div>
-                <div>
-                  <dt>V</dt>
-                  <dd>{agent.metrics.voltage.toFixed(1)}</dd>
-                </div>
-                <div>
-                  <dt>Ω</dt>
-                  <dd>{agent.metrics.resistance.toFixed(1)}</dd>
-                </div>
-              </dl>
-            </article>
-          );
-        })}
+      <div className="arena-overlay__console">
+        <ArenaTestControls
+          status={status}
+          stressFactor={stressFactor}
+          progress={progress}
+          winnerName={winnerName}
+          survivorCount={survivorCount}
+          totalCount={agents.length}
+          onStartTest={onStartTest}
+        />
       </div>
 
-      {winnerName ? (
+      <ArenaTestLog log={log} winnerName={winnerName} heading="Test Log" />
+
+      <ArenaTestCards agents={agents} mostStressedId={mostStressedId} />
+
+      {status === "complete" && winnerName ? (
         <div className="arena-winner-banner" role="status">
-          <p>Last agent standing</p>
+          <p>{survivorCount > 0 ? "Most robust under load" : "Last to fail"}</p>
           <strong>{winnerName}</strong>
         </div>
       ) : null}

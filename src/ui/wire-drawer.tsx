@@ -966,7 +966,6 @@ export const WireDrawer: React.FC<WireDrawerProps> = ({
     ctx.setTransform(deviceRatio, 0, 0, deviceRatio, 0, 0);
     ctx.clearRect(0, 0, displayWidth, displayHeight);
     ctx.imageSmoothingEnabled = true;
-    // @ts-expect-error - not present in older CanvasRenderingContext2D typings
     ctx.imageSmoothingQuality = 'high';
 
     const tracePolyline = (points: Vec2[]) => {
@@ -1361,7 +1360,6 @@ export const WireDrawer: React.FC<WireDrawerProps> = ({
         ctx.setTransform(deviceRatio, 0, 0, deviceRatio, 0, 0);
         ctx.clearRect(0, 0, displayWidth, displayHeight);
         ctx.imageSmoothingEnabled = true;
-        // @ts-expect-error - not present in older CanvasRenderingContext2D typings
         ctx.imageSmoothingQuality = 'high';
 
         drawBackground();

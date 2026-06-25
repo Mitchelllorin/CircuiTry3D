@@ -30,7 +30,7 @@ const hashPassword = async (password: string): Promise<string> => {
     ["deriveBits"]
   );
   const bits = await crypto.subtle.deriveBits(
-    { name: "PBKDF2", hash: "SHA-256", salt, iterations: PBKDF2_ITERATIONS },
+    { name: "PBKDF2", hash: "SHA-256", salt: salt as BufferSource, iterations: PBKDF2_ITERATIONS },
     keyMaterial,
     PBKDF2_KEY_BITS
   );
@@ -56,7 +56,7 @@ const verifyPassword = async (password: string, stored: string): Promise<boolean
     ["deriveBits"]
   );
   const bits = await crypto.subtle.deriveBits(
-    { name: "PBKDF2", hash: "SHA-256", salt, iterations: PBKDF2_ITERATIONS },
+    { name: "PBKDF2", hash: "SHA-256", salt: salt as BufferSource, iterations: PBKDF2_ITERATIONS },
     keyMaterial,
     PBKDF2_KEY_BITS
   );

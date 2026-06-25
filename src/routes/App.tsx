@@ -9,6 +9,7 @@ import ErrorBoundary from "../components/ErrorBoundary";
 import DemoBanner from "../components/DemoBanner";
 import { WorkspaceModeProvider } from "../context/WorkspaceModeContext";
 import { ThemeProvider } from "../context/ThemeContext";
+import { AppSettingsProvider } from "../context/AppSettingsContext";
 import { IS_DEMO_MODE } from "../utils/demoMode";
 import "../styles/layout.css";
 
@@ -43,6 +44,7 @@ const Gallery = lazy(() => import("../pages/Gallery"));
 const EducatorPilot = lazy(() => import("../pages/EducatorPilot"));
 const OwnerAccess = lazy(() => import("../pages/OwnerAccess"));
 const TermsOfService = lazy(() => import("../pages/TermsOfService"));
+const Settings = lazy(() => import("../pages/Settings"));
 
 function PageFallback() {
   const { t } = useTranslation();
@@ -56,6 +58,7 @@ function PageFallback() {
 export default function App() {
   return (
     <ThemeProvider>
+    <AppSettingsProvider>
     <WorkspaceModeProvider>
       <ErrorBoundary>
       {/* Fixed demo-version banner – rendered above the entire app shell */}
@@ -91,6 +94,7 @@ export default function App() {
             <Route path="/gallery" element={<Gallery />} />
             <Route path="/educator-pilot" element={<EducatorPilot />} />
             <Route path="/terms" element={<TermsOfService />} />
+            <Route path="/settings" element={<Settings />} />
           </Route>
           <Route path="/owner" element={<OwnerAccess />} />
           <Route path="*" element={<NotFound />} />
@@ -98,6 +102,7 @@ export default function App() {
       </Suspense>
       </ErrorBoundary>
     </WorkspaceModeProvider>
+    </AppSettingsProvider>
     </ThemeProvider>
   );
 }
@@ -191,6 +196,8 @@ function AppLayout() {
           <Link to="/privacy" className="app-footer-link">{t("footer.privacyPolicy")}</Link>
           <span className="app-footer-sep" aria-hidden="true">·</span>
           <Link to="/data-safety" className="app-footer-link">{t("footer.dataSafety")}</Link>
+          <span className="app-footer-sep" aria-hidden="true">·</span>
+          <Link to="/settings" className="app-footer-link">Settings</Link>
           <span className="app-footer-sep" aria-hidden="true">·</span>
           <Link to="/app-access" className="app-footer-link">{t("footer.getTheApp")}</Link>
           <span className="app-footer-sep" aria-hidden="true">·</span>

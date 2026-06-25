@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactElement } from "react";
 import ArcadeController from "./ArcadeController";
 
 type Direction = "up" | "down" | "left" | "right";
@@ -182,7 +182,7 @@ const resolveCollisions = (state: MazeState): MazeState => {
     const eatenCount = hitIndexes.length;
     const ghosts = state.ghosts.map((ghost, index) =>
       hitIndexes.includes(index)
-        ? { ...ghost, x: ghost.startX, y: ghost.startY, direction: "left" }
+        ? { ...ghost, x: ghost.startX, y: ghost.startY, direction: "left" as const }
         : ghost,
     );
 
@@ -407,7 +407,7 @@ export default function RetroCircuitMaze() {
       ghostByCell.set(toKey(ghost.x, ghost.y), ghost);
     });
 
-    const cells: JSX.Element[] = [];
+    const cells: ReactElement[] = [];
     MAZE_LAYOUT.forEach((row, y) => {
       row.split("").forEach((tile, x) => {
         const key = toKey(x, y);

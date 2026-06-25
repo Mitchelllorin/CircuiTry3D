@@ -846,12 +846,13 @@ export function registerComposition(composition: Partial<ComponentComposition> &
   if (!composition || typeof composition.componentType !== 'string') return false;
   const key = composition.componentType.toLowerCase();
   const idx = COMPONENT_COMPOSITIONS.findIndex((c) => c.componentType === key);
+  const existing = idx >= 0 ? COMPONENT_COMPOSITIONS[idx] : undefined;
   const merged: ComponentComposition = {
     aliases: [],
     constructionNote: '',
     subComponents: [],
     internalLayers: [],
-    ...COMPONENT_COMPOSITIONS[idx],
+    ...(existing ?? {}),
     ...composition,
   };
   if (idx >= 0) {
