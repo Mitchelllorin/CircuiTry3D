@@ -1181,7 +1181,7 @@ function QuickAddButton({ component, onClick, disabled, title }: QuickAddButtonP
 const INTRO_WELCOME = {
   icon: "⚡",
   title: "Welcome to CircuiTry3D",
-  body: "Build interactive 3D circuits and watch current flow in real time. Drop components, connect wires, and see Ohm's Law (E = I × R) come alive. Tap ? for tutorials.",
+  body: "Build real electric circuits in 3D and watch the current actually flow — no experience needed. New to this? Start by tapping a part below (a Battery powers everything), add a Resistor and an LED, connect them with wires, and press Run. Not sure what a part is? Tap it to see what it does, or tap the ? Help button anytime.",
 };
 
 const GALLERY_TOAST_DURATION_MS = 6000;
@@ -2966,17 +2966,34 @@ export default function Builder() {
     shouldShowEdgeActions &&
     !isInteractiveTutorialOpen;
 
+  // While the current-flow payoff demo is playing (sequence running OR banner
+  // showing) the preset circuit must be view-only: a transparent guard sits over
+  // the workspace so an accidental tap can't grab and drag a component. It clears
+  // the moment the demo auto-dismisses or the user taps Edit/×. This is needed
+  // because the returning-user payoff path doesn't lock the iframe, and even the
+  // first-run lock can be reset when load-payoff rebuilds the circuit.
+  const isCurrentFlowPayoffLocking =
+    isCurrentFlowPayoffRunning || shouldShowCurrentFlowPayoffBanner;
+
+  // The showcase/payoff circuit stays LOCKED (view-only) from the moment it loads
+  // until the user deliberately taps to edit — so it can never be accidentally
+  // dragged or altered, even after the demo banner auto-dismisses.
+  const [isShowcaseLocked, setShowcaseLocked] = useState(false);
+  useEffect(() => {
+    if (isCurrentFlowPayoffLocking) setShowcaseLocked(true);
+  }, [isCurrentFlowPayoffLocking]);
+
   // Plain-language insights that cycle through the payoff banner. Each one names
   // something the user can actually see happening on screen, so the showcase
   // teaches instead of just dazzling. Kept short — one idea per card.
   const currentFlowPayoffTips = useMemo(
     () => [
-      "🔍 Pinch or scroll to ZOOM IN — keep going and this current dissolves into electrons, then atoms, then a quantum cloud.",
-      "Those glowing particles ARE the electric current — invisible in real life, flowing here in 3D. Zoom in to chase them.",
-      "Zoom deeper and the wire becomes a copper crystal lattice — watch electrons drift through it. Five worlds, one circuit.",
-      "One battery, three paths: the current splits across all three at once. That's a parallel circuit.",
-      "More resistance → less current (Ohm's law, I = V ÷ R). 🔍 Zoom into a resistor to see it up close.",
-      "Keep zooming: naked eye → components → electrons → atoms → quantum — then zoom right back out.",
+      "⚡ Those crackling bolts of light ARE the electric current — the real flow of energy, invisible in life, shown here in 3D.",
+      "This is a series circuit: one loop, so the SAME current flows through every part. The battery pushes it round and round.",
+      "The colour shows speed: dull red = slow (held back by resistance), through orange and yellow, up to blue-white = ludicrously fast.",
+      "🔍 Pinch or scroll to ZOOM IN — keep going and the current dissolves into electrons, then a copper-atom lattice, then a quantum cloud.",
+      "More resistance → less current. That's Ohm's Law (I = V ÷ R) — the heart of every circuit.",
+      "New to circuits? Tap any part to see what it is and does, or tap the ? Help button anytime.",
     ],
     [],
   );
@@ -3363,6 +3380,18 @@ export default function Builder() {
               </span>
               <span className="edge-action-label" aria-hidden="true">Tour</span>
             </button>
+            <button
+              type="button"
+              className="edge-action-btn edge-action-btn--help"
+              onClick={() => openHelpWithView("overview")}
+              aria-label="Open help, guides and tutorials"
+              title="Help — guides, tutorials & shortcuts (press ?)"
+            >
+              <span className="edge-action-icon-svg edge-action-icon-emoji" aria-hidden="true">
+                ?
+              </span>
+              <span className="edge-action-label" aria-hidden="true">Help</span>
+            </button>
 
             {/* 3-step visibility toggle — always visible, even when mode is hidden */}
             <div
@@ -3501,6 +3530,7 @@ export default function Builder() {
                 setCurrentFlowPayoffVisible(false);
                 setOnboardingLocked(false);
                 setCircuitLocked(false);
+                setShowcaseLocked(false);
               }}
             >
               ✏️ Edit
@@ -3524,6 +3554,7 @@ export default function Builder() {
                 setCurrentFlowPayoffVisible(false);
                 setOnboardingLocked(false);
                 setCircuitLocked(false);
+                setShowcaseLocked(false);
               }}
             >
               ×
@@ -3937,6 +3968,17 @@ export default function Builder() {
           role="navigation"
           aria-label="Analysis, practice, and guides"
         >
+          {isBottomMenuOpen && (
+            <button
+              type="button"
+              className="builder-menu-bottom-close"
+              onClick={() => setBottomMenuOpen(false)}
+              aria-label="Close insights panel"
+              title="Close insights"
+            >
+              ✕
+            </button>
+          )}
           <div className="builder-menu-scroll builder-menu-scroll-bottom">
             <div className="slider-section">
               <span className="slider-heading">Analysis</span>
@@ -4201,6 +4243,17 @@ export default function Builder() {
           aria-hidden="true"
           style={workspaceSkinStyle}
         />
+        {(isCurrentFlowPayoffLocking || isShowcaseLocked) && (
+          <button
+            type="button"
+            className="builder-payoff-guard"
+            aria-label="Showcase circuit is locked — tap to start editing"
+            title="Tap to edit this circuit"
+            onClick={() => setShowcaseLocked(false)}
+          >
+            <span className="builder-payoff-guard__hint">🔒 Demo circuit — tap to edit</span>
+          </button>
+        )}
       </div>
 
       {activeWorkspacePanelMode === "arena" && (

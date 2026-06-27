@@ -47,6 +47,12 @@
   --builder-safe-area-right: env(safe-area-inset-right, 0px);
   --builder-ticker-height: 32px;
   --builder-ticker-gap: 8px;
+  /* ── Overlap rule ──────────────────────────────────────────────────────
+     Reusable safe-zone for bottom-anchored toasts/banners/tips: they reserve a
+     gutter on each side so they can NEVER cover the corner FAB clusters (zoom
+     controls, panel tabs) that live in the bottom corners. Apply this gutter to
+     any centred bottom overlay's max-width and collisions stop — for good. */
+  --overlay-corner-gutter: 76px;
   /* Top of the ticker strip (below the mode bar and gap).
      Side menus, quick-add-bar and zoom controls all key off this value so that nothing
      overlaps the ticker band. */
@@ -428,8 +434,10 @@ body.builder-body::before {
   width: var(--builder-edge-action-button-size);
   min-height: var(--builder-edge-action-button-size);
   padding: 6px 4px;
-  background: transparent;
-  border: 1px solid transparent;
+  /* Solid chip so the workspace (lightning, nameplate readouts) can't show
+     THROUGH the button — the transparent fill let text bleed behind every icon. */
+  background: rgba(13, 14, 38, 0.9);
+  border: 1px solid rgba(168, 216, 255, 0.14);
   border-radius: 12px;
   color: var(--builder-muted-soft);
   cursor: pointer;
@@ -596,6 +604,22 @@ body.builder-body::before {
     0 0 0 1px rgba(216, 180, 254, 0.3);
 }
 
+/* Help button — a subtle, friendly cyan accent so first-time users can find it. */
+.edge-action-btn--help {
+  border-color: rgba(56, 189, 248, 0.5);
+  color: #bae6fd;
+}
+.edge-action-btn--help:hover:not(:disabled) {
+  border-color: rgba(125, 211, 252, 0.85);
+  color: #e0f2fe;
+  box-shadow:
+    0 4px 14px rgba(56, 189, 248, 0.28),
+    0 0 0 1px rgba(125, 211, 252, 0.25);
+}
+.edge-action-btn--help .edge-action-icon-emoji {
+  font-weight: 800;
+}
+
 .edge-action-btn--ai.edge-action-btn--active {
   background: linear-gradient(
     135deg,
@@ -718,7 +742,8 @@ body.builder-body::before {
   bottom: calc(14px + var(--builder-safe-area-bottom, env(safe-area-inset-bottom, 0px)));
   transform: translateX(-50%);
   z-index: 1100;
-  width: min(720px, calc(100vw - 24px));
+  /* Reserve corner gutters so the banner never overlaps the bottom-corner FABs. */
+  width: min(720px, calc(100vw - 2 * var(--overlay-corner-gutter)));
   display: flex;
   align-items: center;
   gap: 10px;
@@ -832,7 +857,9 @@ body.builder-body::before {
    above them, and tighten spacing. */
 @media (max-width: 600px) {
   .current-flow-payoff-strip {
-    width: calc(100vw - 16px);
+    /* Keep the corner gutters on phones too, so the banner clears the bottom-
+       corner zoom controls / panel tabs instead of sitting on top of them. */
+    width: calc(100vw - 2 * var(--overlay-corner-gutter));
     bottom: calc(70px + var(--builder-safe-area-bottom, env(safe-area-inset-bottom, 0px)));
     gap: 8px;
     padding: 7px 8px 7px 10px;
@@ -1078,7 +1105,7 @@ body.builder-body::before {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  background: rgba(12, 10, 36, 0.78);
+  background: rgba(12, 10, 36, 0.95);
   border: 1px solid rgba(168, 216, 255, 0.22);
   border-radius: 14px;
   backdrop-filter: blur(8px);
@@ -1112,7 +1139,7 @@ body.builder-body::before {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  background: rgba(12, 10, 36, 0.78);
+  background: rgba(12, 10, 36, 0.95);
   border: 1px solid rgba(168, 216, 255, 0.22);
   border-radius: 14px;
   backdrop-filter: blur(8px);
@@ -1560,7 +1587,10 @@ body.builder-body::before {
 
 .builder-menu {
   position: relative;
-  background: rgba(12, 10, 36, 0.92);
+  /* Near-opaque so the workspace (lightning, nameplates) can't bleed THROUGH the
+     panel — important on mobile browsers where backdrop-filter blur is ignored
+     and the old 0.92 fill showed the sharp background straight through. */
+  background: rgba(10, 9, 30, 0.985);
   border: 1px solid var(--builder-border);
   border-radius: 0;
   box-shadow: 0 12px 28px var(--builder-shadow);
@@ -1607,6 +1637,34 @@ body.builder-body::before {
   padding: 18px;
   display: flex;
   flex-direction: column;
+}
+
+/* Always-visible close — the bottom toggle tab sits behind the payoff banner, so
+   give the open insights panel its own unmistakable close button. */
+.builder-menu-bottom-close {
+  position: sticky;
+  top: 0;
+  align-self: flex-end;
+  z-index: 5;
+  width: 34px;
+  height: 34px;
+  margin: -6px -6px 0 0;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--builder-border);
+  border-radius: 50%;
+  background: rgba(12, 10, 36, 0.96);
+  color: var(--builder-cyan);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 2px 10px var(--builder-shadow);
+}
+.builder-menu-bottom-close:hover,
+.builder-menu-bottom-close:focus-visible {
+  background: rgba(30, 26, 60, 0.98);
+  color: #fff;
+  outline: none;
 }
 
 .builder-menu-stage {
@@ -3732,6 +3790,41 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
   opacity: 0;
   mix-blend-mode: normal;
   transition: opacity 0.28s ease;
+}
+
+/* Transparent guard shown over the workspace while the current-flow payoff demo
+   plays. Captures all pointer input so the preset circuit can't be accidentally
+   edited; sits above the iframe but well below the payoff banner (z-index 1100),
+   so the banner's Edit/× controls stay clickable. */
+.builder-payoff-guard {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: auto;
+  background: transparent;
+  border: 0;
+  margin: 0;
+  padding: 0;
+  cursor: pointer;
+  touch-action: none;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+}
+/* Small "tap to edit" badge so the lock is obvious but doesn't hide the circuit. */
+.builder-payoff-guard__hint {
+  margin-top: 14px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: rgba(12, 10, 36, 0.82);
+  border: 1px solid var(--builder-border);
+  color: var(--builder-cyan);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  box-shadow: 0 2px 12px var(--builder-shadow);
+  backdrop-filter: blur(6px);
+  pointer-events: none;
 }
 
 .builder-arena-workspace {

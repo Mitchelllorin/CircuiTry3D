@@ -112,6 +112,36 @@ export type ArenaBattleAgent = {
   failureName: string | null;
   /** F.U.S.E. visual key for the failure effect (char/melt/arc/burst/…). */
   failureVisual: string | null;
+
+  // ── accumulated performance metrics, carried across the whole run ──
+  /** Hottest body temperature reached, °C. */
+  peakTempC: number;
+  /** Highest fraction of rating reached, %. */
+  peakLoadPercent: number;
+  /** Total energy dissipated over the run, joules. */
+  energyJ: number;
+  /** Highest load multiple the part withstood (× nominal). */
+  survivedLoad: number;
+  /** Elapsed time at failure, ms (null while alive). */
+  failedAtMs: number | null;
+  /** Load multiple at the moment of failure (null while alive). */
+  failedAtLoad: number | null;
+  /** Composite robustness score 0–100, assigned when the test concludes. */
+  score: number;
+  /** Final placement, 1 = winner (0 until the test concludes). */
+  rank: number;
+};
+
+/** End-of-run roll-up shown on the verdict / podium. */
+export type ArenaBattleSummary = {
+  scenarioId: string;
+  scenarioName: string;
+  survivorCount: number;
+  totalCount: number;
+  peakLoad: number;
+  totalEnergyJ: number;
+  /** Agent ids ordered best → worst by score. */
+  ranking: string[];
 };
 
 export type ArenaBattleLogEntry = {

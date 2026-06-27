@@ -17,8 +17,10 @@ type ArenaSceneProps = {
   transitionPhase: ArenaViewTransitionPhase;
   /** Bench status — drives the global heat tint of the arena ring. */
   status?: ArenaBattleStatus;
-  /** Current load multiple (1 → STRESS_MAX) — drives global heat. */
+  /** Current load multiple (1 → stressMax) — drives global heat. */
   stressFactor?: number;
+  /** Peak of the active scenario's load ramp (× nominal). */
+  stressMax?: number;
   /** Test progress 0→1 — feeds the in-scene load-ramp gauge. */
   progress?: number;
   /** Start/re-run the stress test (the in-scene BATTLE button). */
@@ -223,6 +225,7 @@ export function ArenaScene({
   transitionPhase,
   status = "ready",
   stressFactor = 1,
+  stressMax = STRESS_MAX,
   progress = 0,
   onStartTest,
   winnerName = null,
@@ -244,6 +247,8 @@ export function ArenaScene({
   const panelOpenRef = useRef(panelOpen);
   const statusRef = useRef<ArenaBattleStatus>(status);
   const stressFactorRef = useRef(stressFactor);
+  const stressMaxRef = useRef(stressMax);
+  stressMaxRef.current = stressMax;
 
   const healthBarAgents = useMemo(() => agents, [agents]);
   const sceneAgentSignature = useMemo(
@@ -595,7 +600,12 @@ export function ArenaScene({
         const loadT =
           statusRef.current === "ready"
             ? 0
-            : clampNum((stressFactorRef.current - 1) / (STRESS_MAX - 1), 0, 1);
+            : clampNum(
+                (stressFactorRef.current - 1) /
+                  Math.max(stressMaxRef.current - 1, 0.001),
+                0,
+                1,
+              );
         ringMaterial.emissiveIntensity = 1.6 + loadT * 2.4;
 
         const highlightState = highlightRef.current;
@@ -739,6 +749,7 @@ export function ArenaScene({
             winnerName={winnerName}
             survivorCount={survivorCount}
             totalCount={agents.length}
+            stressMax={stressMax}
             onStartTest={onStartTest ?? (() => undefined)}
           />
         </div>

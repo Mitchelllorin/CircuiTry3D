@@ -1,13 +1,17 @@
 import WordMark from "../WordMark";
 import {
+  ArenaPodium,
+  ArenaScenarioSelect,
   ArenaTestCards,
   ArenaTestControls,
   ArenaTestLog,
 } from "./ArenaInstrumentation";
+import type { ArenaScenario } from "./scenarios";
 import type {
   ArenaBattleAgent,
   ArenaBattleLogEntry,
   ArenaBattleStatus,
+  ArenaBattleSummary,
 } from "./types";
 
 type ArenaPanelContentProps = {
@@ -19,6 +23,9 @@ type ArenaPanelContentProps = {
   progress: number;
   winnerName: string | null;
   survivorCount: number;
+  scenario: ArenaScenario;
+  summary: ArenaBattleSummary | null;
+  onSelectScenario: (id: string) => void;
   onStartTest: () => void;
   onResetTest: () => void;
   onReturnToWorkspace: () => void;
@@ -41,6 +48,9 @@ export function ArenaPanelContent({
   progress,
   winnerName,
   survivorCount,
+  scenario,
+  summary,
+  onSelectScenario,
   onStartTest,
   onResetTest,
   onReturnToWorkspace,
@@ -56,6 +66,9 @@ export function ArenaPanelContent({
             <span className="arena-eyebrow">Performance Test Bench</span>
           </div>
           <div className="arena-panel__meta-pills">
+            <span>
+              {scenario.icon} {scenario.name}
+            </span>
             <span>{stressFactor.toFixed(1)}× load</span>
             <span>
               {status === "complete"
@@ -94,6 +107,12 @@ export function ArenaPanelContent({
         </div>
       </div>
 
+      <ArenaScenarioSelect
+        scenario={scenario}
+        onSelect={onSelectScenario}
+        disabled={status === "battling"}
+      />
+
       <ArenaTestControls
         status={status}
         stressFactor={stressFactor}
@@ -101,8 +120,13 @@ export function ArenaPanelContent({
         winnerName={winnerName}
         survivorCount={survivorCount}
         totalCount={agents.length}
+        stressMax={scenario.stressMax}
         onStartTest={onStartTest}
       />
+
+      {status === "complete" && summary ? (
+        <ArenaPodium agents={agents} summary={summary} />
+      ) : null}
 
       <ArenaTestCards agents={agents} mostStressedId={mostStressedId} />
 

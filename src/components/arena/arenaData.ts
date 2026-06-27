@@ -240,6 +240,16 @@ export function buildArenaRoster(
       phase: "nominal",
       failureName: null,
       failureVisual: null,
+
+      // accumulated metrics — reset at the start of every run
+      peakTempC: AMBIENT_C,
+      peakLoadPercent: 0,
+      energyJ: 0,
+      survivedLoad: 1,
+      failedAtMs: null,
+      failedAtLoad: null,
+      score: 0,
+      rank: 0,
     };
   });
 }

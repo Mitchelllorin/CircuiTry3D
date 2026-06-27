@@ -876,9 +876,13 @@
         /* ── Zoom-mode HUD badge ─────────────────────────────────────────── */
         #zoom-mode-hud {
             position: fixed;
-            top: 12px;
-            left: 50%;
-            transform: translateX(-50%);
+            /* Bottom-LEFT corner — out of the way of the top action bar, the
+               bottom-centre banner and the bottom-right zoom controls, so the tier
+               indicator never sits on top of (or behind) another control. */
+            top: auto;
+            bottom: calc(84px + env(safe-area-inset-bottom, 0px));
+            left: 12px;
+            transform: none;
             z-index: 97;
             background: rgba(10, 10, 26, 0.88);
             color: #88ccff;
@@ -5257,6 +5261,11 @@ body.android-optimized .zoom-btn {
         const ATOMIC_MODE_EXIT_HYSTERESIS_ABOVE  = 0.30;
         const ATOMIC_MODE_ENTER_THRESHOLD = ATOMIC_ZOOM_THRESHOLD - ATOMIC_MODE_ENTER_HYSTERESIS_BELOW; // enter atomic mode
         const ATOMIC_MODE_EXIT_THRESHOLD  = ATOMIC_ZOOM_THRESHOLD + ATOMIC_MODE_EXIT_HYSTERESIS_ABOVE; // exit atomic mode
+        // Tiered zoom toggle. true = keep the full descent (carrier → lattice →
+        // atomic → quantum) so you can zoom in to see the copper lattice and
+        // electrons. false = stop at the navigable charge-carrier tier. Kept as a
+        // flag so we can A/B; default on because the tiered zoom is a core feature.
+        const AUTO_ATOMIC_DESCENT = true;
         const ORBITAL_RING_RADIUS_FACTOR = 2.8;
         const ORBITAL_RING_TUBE_FACTOR = 0.35;
         const ORBITAL_RING_RADIAL_SEGMENTS = 6;
@@ -5430,6 +5439,231 @@ body.android-optimized .zoom-btn {
         const WIRE_STREAM_CORE_OPACITY = 0.165; // inner-core base opacity (energized channel)
         const WIRE_STREAM_PATH_SEGS    = isMobile ? 14 : 26; // curve samples for TubeGeometry
 
+        // ── Lightning flow mode ─────────────────────────────────────────────
+        // PROTOTYPE: render current as an undulating, twisting, crackling bolt of
+        // LIGHTNING running down each wire (see _createLightningBolt / _updateLightning),
+        // riding inside a soft haze channel. Dots are removed at circuit scale so the
+        // lightning carries the flow; individual electrons still appear at deep atomic
+        // zoom. Flip FLOW_STREAM_MODE to false to restore the classic dotty particles.
+        const FLOW_STREAM_MODE        = true;
+        const FLOW_STREAM_ON_ANDROID  = true;   // the glow channel is normally desktop-only
+        const FLOW_STREAM_DOT_RATIO    = 0;     // dots at circuit scale (0 = lightning only)
+        const FLOW_STREAM_SCROLL       = 0.5;   // base scroll speed of the light bands
+        const FLOW_STREAM_TILE_PER_M   = 1.6;   // light bands per metre of wire
+        let _flowStreamTexture = null;
+        function _getFlowStreamTexture() {
+            if (_flowStreamTexture) return _flowStreamTexture;
+            const c = document.createElement('canvas');
+            c.width = 128; c.height = 4;
+            const cx = c.getContext('2d');
+            // Two soft bright crests per tile → smooth travelling waves of light.
+            const g = cx.createLinearGradient(0, 0, c.width, 0);
+            g.addColorStop(0.00, 'rgba(255,255,255,0)');
+            g.addColorStop(0.16, 'rgba(255,255,255,1)');
+            g.addColorStop(0.34, 'rgba(255,255,255,0)');
+            g.addColorStop(0.50, 'rgba(255,255,255,0)');
+            g.addColorStop(0.66, 'rgba(255,255,255,1)');
+            g.addColorStop(0.84, 'rgba(255,255,255,0)');
+            g.addColorStop(1.00, 'rgba(255,255,255,0)');
+            cx.fillStyle = g;
+            cx.fillRect(0, 0, c.width, c.height);
+            const tex = new THREE.CanvasTexture(c);
+            tex.wrapS = THREE.RepeatWrapping;
+            tex.wrapT = THREE.ClampToEdgeWrapping;
+            _flowStreamTexture = tex;
+            return tex;
+        }
+        /** A real THREE.Curve (CatmullRom) sampled from the wire's path, so
+         *  TubeGeometry — which needs computeFrenetFrames() — can build the glow
+         *  channel. The wire's own `curve` is a lightweight getPoint-only object that
+         *  TubeGeometry rejects, which is why the glow tubes never rendered before. */
+        function _streamTubeCurve(wire) {
+            const src = wire && wire.curve;
+            if (!src || typeof src.getPoint !== 'function') return null;
+            const N = Math.max(2, WIRE_STREAM_PATH_SEGS);
+            const pts = [];
+            for (let i = 0; i <= N; i++) {
+                const p = src.getPoint(i / N);
+                if (!p) continue;
+                pts.push(p.clone ? p.clone() : new THREE.Vector3(p.x, p.y, p.z));
+            }
+            if (pts.length < 2) return null;
+            return new THREE.CatmullRomCurve3(pts);
+        }
+
+        /** Attach a scrolling flow gradient to a glow-tube material; returns scroll meta. */
+        function _applyFlowStream(material, wire, directionMul, speedFactor) {
+            const map = _getFlowStreamTexture().clone();
+            map.needsUpdate = true;
+            map.wrapS = THREE.RepeatWrapping;
+            const lengthM = (typeof getWireLengthMeters === 'function') ? getWireLengthMeters(wire) : 1;
+            map.repeat.x = Math.max(2, Math.round(lengthM * FLOW_STREAM_TILE_PER_M));
+            material.alphaMap = map;
+            material.needsUpdate = true;
+            return { map, scroll: (directionMul >= 0 ? 1 : -1) * FLOW_STREAM_SCROLL * (0.5 + (speedFactor || 1)) };
+        }
+
+        // ── Lightning flow ──────────────────────────────────────────────────
+        // Current rendered as a living, glowing TUBE of light that undulates,
+        // twists and crackles down each wire. Energy (thickness, amplitude,
+        // brightness, travel speed) scales with the branch CURRENT, so Ohm's law
+        // reads at a glance: a high-resistance / low-current branch is a thin gentle
+        // wisp; a high-current branch is a fat writhing flare. The bolt travels in
+        // the active current direction (conventional + → −, or electron − → +).
+        const LIGHTNING_SEGS        = isMobile ? 20 : 28; // rings along each bolt
+        const LIGHTNING_TUBE_SIDES  = 5;     // radial faces (low-poly glowing tube)
+        const LIGHTNING_RADIUS      = 0.075; // base tube radius (scaled by current)
+        const LIGHTNING_BASE_AMP    = 0.2;   // perpendicular displacement (world units)
+        const LIGHTNING_TWIST       = 1.4;   // how fast the bolt rotates around the wire
+        const LIGHTNING_TWIST_PITCH = 0.5;   // twist added per ring (spatial helix)
+        const LIGHTNING_WAVE_FREQ   = 4.2;   // undulation / travel speed (lower = more flowing)
+        const LIGHTNING_SPATIAL     = 1.8;   // undulation wavelength along the bolt
+        const LIGHTNING_STRANDS     = 2;     // intertwining bolts per wire (3 at high current)
+        let currentLightningBolts = [];
+
+        // Triangle indices for an (N rings × M sides) open tube — built once per bolt.
+        function _tubeIndices(N, M) {
+            const idx = [];
+            for (let i = 0; i < N; i++) {
+                for (let j = 0; j < M; j++) {
+                    const a = i * (M + 1) + j;
+                    const b = (i + 1) * (M + 1) + j;
+                    const c = (i + 1) * (M + 1) + (j + 1);
+                    const d = i * (M + 1) + (j + 1);
+                    idx.push(a, b, d, b, c, d);
+                }
+            }
+            return idx;
+        }
+
+        function _createLightningBolt(wire, flowColor, currentValue, speedFactor, directionMul) {
+          try {
+            const curve = _streamTubeCurve(wire);
+            if (!curve) return;
+            const N = LIGHTNING_SEGS;
+            const M = LIGHTNING_TUBE_SIDES;
+            let frames;
+            try { frames = curve.computeFrenetFrames(N, false); } catch (e) { return; }
+            const basePts = [];
+            for (let i = 0; i <= N; i++) basePts.push(curve.getPoint(i / N));
+
+            // Pre-compute the unit ring (cos/sin per radial face).
+            const ring = [];
+            for (let j = 0; j <= M; j++) {
+                const a = (Math.PI * 2 * j) / M;
+                ring.push([Math.cos(a), Math.sin(a)]);
+            }
+
+            // Energy from current; resistance (low speedFactor) tames it.
+            const energy = Math.max(0.12, Math.min(1.5,
+                Math.sqrt(Math.max(0, currentValue)) * 1.6 * (speedFactor || 1)));
+            // Several thin bolts braid down each wire; more current → more strands.
+            const strands = energy > 0.95 ? LIGHTNING_STRANDS + 1 : LIGHTNING_STRANDS;
+
+            for (let s = 0; s < strands; s++) {
+                const positions = new Float32Array((N + 1) * (M + 1) * 3);
+                const geom = new THREE.BufferGeometry();
+                geom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                geom.setIndex(_tubeIndices(N, M));
+                const mat = new THREE.MeshBasicMaterial({
+                    color:       flowColor.hex,
+                    transparent: true,
+                    opacity:     0.8,
+                    blending:    isAndroid ? THREE.NormalBlending : THREE.AdditiveBlending,
+                    depthWrite:  false,
+                    side:        THREE.DoubleSide
+                });
+                const mesh = new THREE.Mesh(geom, mat);
+                mesh.frustumCulled = false;
+                scene.add(mesh);
+                currentLightningBolts.push({
+                    mesh, geom, mat,
+                    pos:         positions,
+                    basePts,
+                    normals:     frames.normals,
+                    binormals:   frames.binormals,
+                    N, M, ring,
+                    // Thinner per strand so the braid stays sharp, not bulky.
+                    radius:      LIGHTNING_RADIUS * (0.55 + energy * 0.45) / Math.sqrt(strands),
+                    amp:         LIGHTNING_BASE_AMP * (0.55 + energy),
+                    // Alternate twist direction + start angle so the strands intertwine.
+                    twist:       LIGHTNING_TWIST * (s % 2 === 0 ? 1 : -0.85),
+                    twistOffset: (Math.PI * 2 * s) / strands,
+                    travel:      (directionMul >= 0 ? 1 : -1) * (1.0 + energy * 1.8),
+                    waveFreq:    LIGHTNING_WAVE_FREQ * (0.75 + energy * 0.4) * (1 + s * 0.09),
+                    phase:       Math.random() * Math.PI * 2 + s * 1.9,
+                    baseOpacity: Math.min(1, 0.45 + energy * 0.4),
+                    crackleAt:   0,
+                    crackleEnd:  0,
+                    crackleBoost: 1
+                });
+            }
+          } catch (e) { /* skip degenerate wire */ }
+        }
+
+        function _updateLightning(time) {
+            if (!currentLightningBolts.length) return;
+            const t = time * 0.001; // seconds
+            for (let b = 0; b < currentLightningBolts.length; b++) {
+                const L = currentLightningBolts[b];
+                if (!L || !L.geom) continue;
+                // Occasional crackle: a brief amplitude + brightness spike.
+                if (time > L.crackleAt) {
+                    L.crackleAt = time + 110 + Math.random() * 380;
+                    L.crackleBoost = 1.35 + Math.random() * 1.1;
+                    L.crackleEnd = time + 80 + Math.random() * 90;
+                }
+                const crackling = time < L.crackleEnd;
+                const ampNow = L.amp * (crackling ? L.crackleBoost : 1);
+                const pos = L.pos, N = L.N, M = L.M, ring = L.ring, R = L.radius;
+                for (let i = 0; i <= N; i++) {
+                    const bp = L.basePts[i];
+                    const nrm = L.normals[i] || L.normals[N - 1];
+                    const bin = L.binormals[i] || L.binormals[N - 1];
+                    // Taper to zero at the ends so the bolt stays pinned to terminals.
+                    const taper = Math.sin(Math.PI * (i / N));
+                    // Smooth undulation that TRAVELS along the wire (liquid, not spiky).
+                    const wave =
+                        Math.sin(i * LIGHTNING_SPATIAL - t * L.waveFreq * L.travel + L.phase) +
+                        0.35 * Math.sin(i * 2.7 - t * L.waveFreq * 1.5 + L.phase * 1.6);
+                    const jitter = crackling ? (Math.random() - 0.5) * 0.6 : 0;
+                    const disp = ampNow * taper * (wave + jitter);
+                    // Twist the displacement around the wire axis (helix). Per-strand
+                    // twist rate/direction + start angle make the strands intertwine.
+                    const ang = t * L.twist + i * LIGHTNING_TWIST_PITCH + L.twistOffset;
+                    const ca = Math.cos(ang), sa = Math.sin(ang);
+                    // Displaced centre of this ring.
+                    const cx = bp.x + (nrm.x * ca + bin.x * sa) * disp;
+                    const cy = bp.y + (nrm.y * ca + bin.y * sa) * disp;
+                    const cz = bp.z + (nrm.z * ca + bin.z * sa) * disp;
+                    // Tube ring around the displaced centre (slim at the ends).
+                    const rr = R * (0.45 + 0.55 * taper);
+                    const base = i * (M + 1) * 3;
+                    for (let j = 0; j <= M; j++) {
+                        const cj = ring[j][0], sj = ring[j][1];
+                        const ox = (nrm.x * cj + bin.x * sj) * rr;
+                        const oy = (nrm.y * cj + bin.y * sj) * rr;
+                        const oz = (nrm.z * cj + bin.z * sj) * rr;
+                        const o = base + j * 3;
+                        pos[o] = cx + ox; pos[o + 1] = cy + oy; pos[o + 2] = cz + oz;
+                    }
+                }
+                L.geom.attributes.position.needsUpdate = true;
+                L.mat.opacity = Math.min(1, L.baseOpacity * (crackling ? 1.5 : 1));
+            }
+        }
+
+        function _clearLightning() {
+            for (let i = 0; i < currentLightningBolts.length; i++) {
+                const L = currentLightningBolts[i];
+                if (!L) continue;
+                if (L.geom) L.geom.dispose();
+                if (L.mat) L.mat.dispose();
+                if (L.mesh && scene) scene.remove(L.mesh);
+            }
+            currentLightningBolts = [];
+        }
+
         // ── Electron glow sprite (fake-bloom) ───────────────────────────────
         // A soft radial-gradient texture used as an additive billboard halo on
         // every flow particle, so each electron reads as a luminous point of
@@ -5477,6 +5711,8 @@ body.android-optimized .zoom-btn {
         }
 
         function _resolveAtomicMode(distance, wasAtomic) {
+            // Prototype: keep the camera out of the un-navigable atomic tiers.
+            if (!AUTO_ATOMIC_DESCENT) return false;
             if (wasAtomic) return distance <= ATOMIC_MODE_EXIT_THRESHOLD;
             return distance <= ATOMIC_MODE_ENTER_THRESHOLD;
         }
@@ -8643,11 +8879,11 @@ body.android-optimized .zoom-btn {
                     tierData = ZOOM_TIER_COLORS.t2_lattice;
                 } else if (cameraDistance <= CLOSE_ZOOM_THRESHOLD) {
                     tierData = ZOOM_TIER_COLORS.t3_carrier;
-                } else if (cameraDistance <= ZOOM_COMPONENT_VIEW) {
-                    tierData = ZOOM_TIER_COLORS.t4_component;
-                } else if (currentFlowState?.hasFlow) {
-                    tierData = ZOOM_TIER_COLORS.t5_circuit;
                 }
+                // Component (t4) and Circuit (t5) are the NORMAL working views — show
+                // no tier HUD there, so it never clutters the workspace or hides behind
+                // the action bar. The indicator only appears once you actually zoom IN
+                // past the carrier threshold to explore the atomic/quantum tiers.
                 if (tierData) {
                     // Build HUD content with DOM manipulation (avoids innerHTML XSS risk)
                     // Three lines: tier label | scientific context | physical fact
@@ -8745,9 +8981,11 @@ body.android-optimized .zoom-btn {
             }
 
             // Determine zoom tier once per frame
-            const inAtomicZoom    = cameraDistance < ATOMIC_ZOOM_THRESHOLD;
+            // AUTO_ATOMIC_DESCENT gates the atomic/quantum tiers: when off, deep
+            // zoom stays at the (navigable) close/carrier tier instead.
+            const inAtomicZoom    = AUTO_ATOMIC_DESCENT && cameraDistance < ATOMIC_ZOOM_THRESHOLD;
             const inCloseZoom     = cameraDistance < CLOSE_ZOOM_THRESHOLD;
-            const inDeepAtomic    = cameraDistance < ZOOM_DEEP_ATOMIC;
+            const inDeepAtomic    = AUTO_ATOMIC_DESCENT && cameraDistance < ZOOM_DEEP_ATOMIC;
             const inComponentView = cameraDistance < ZOOM_COMPONENT_VIEW;
             // Active tier: 1=Quantum, 2=Atomic Lattice, 3=Charge Carrier, 4=Component Scale, 5=Circuit Overview
             const activeZoomTier = inDeepAtomic ? 1 : inAtomicZoom ? 2 : inCloseZoom ? 3 : inComponentView ? 4 : 5;
@@ -8967,6 +9205,7 @@ body.android-optimized .zoom-btn {
 
         /** Pulse the opacity of wire energy-glow tubes each frame. */
         function updateWireGlows(currentTime) {
+            _updateLightning(currentTime);
             if (!currentWireGlows.length) return;
             for (let i = 0; i < currentWireGlows.length; i++) {
                 const g = currentWireGlows[i];
@@ -8978,6 +9217,13 @@ body.android-optimized .zoom-btn {
                     : 0;
                 g.mesh.material.opacity = Math.max(0.01, Math.min(0.55,
                     g.baseOpacity + sinVal * WIRE_GLOW_PULSE_AMP + proximityBoost));
+                // Flow mode: scroll the light bands along the wire in the current's
+                // direction so the channel reads as flowing energy, not a static glow.
+                if (g.flowMap) {
+                    let off = g.flowMap.offset.x - g.flowScroll * 0.016;
+                    off = off - Math.floor(off); // wrap to [0,1)
+                    g.flowMap.offset.x = off;
+                }
             }
         }
 
@@ -9003,6 +9249,7 @@ body.android-optimized .zoom-btn {
                 }
             });
             currentWireGlows = [];
+            _clearLightning();
         }
 
         /**
@@ -17109,25 +17356,26 @@ Made with ? for visual learners everywhere!
          * forward direction from startKey toward endKey).
          */
         function _collectAllFlowWireEdges(adjacency, startKey, endKey) {
-            // Pass 1 — nodes reachable (going forward) from startKey.
+            // Pass 1 — BFS hop-distance from startKey (the + terminal) to every node.
             // Index-based traversal avoids O(n) Array.shift() per step, giving O(V+E) overall.
-            const forwardReachable = new Set();
+            const distFromStart = new Map();
             const fwdQ = [startKey];
-            forwardReachable.add(startKey);
+            distFromStart.set(startKey, 0);
             for (let fi = 0; fi < fwdQ.length; fi++) {
                 const k = fwdQ[fi];
+                const d = distFromStart.get(k);
                 for (const edge of (adjacency.get(k) || [])) {
                     if (!edge.to || !isFinite(edge.resistance)) continue;
-                    if (!forwardReachable.has(edge.to)) {
-                        forwardReachable.add(edge.to);
+                    if (!distFromStart.has(edge.to)) {
+                        distFromStart.set(edge.to, d + 1);
                         fwdQ.push(edge.to);
                     }
                 }
             }
 
-            // Pass 2 — nodes that can reach endKey (reverse BFS).
-            // Build reverse adjacency first, then BFS from endKey.
-            const backwardReachable = new Set();
+            // Pass 2 — BFS hop-distance from each node to endKey (the − terminal),
+            // via reverse adjacency.
+            const distToEnd = new Map();
             const reverseNeighbors = new Map();
             for (const [from, edges] of adjacency) {
                 for (const edge of edges) {
@@ -17137,26 +17385,58 @@ Made with ? for visual learners everywhere!
                 }
             }
             const bwdQ = [endKey];
-            backwardReachable.add(endKey);
+            distToEnd.set(endKey, 0);
             for (let bi = 0; bi < bwdQ.length; bi++) {
                 const k = bwdQ[bi];
+                const d = distToEnd.get(k);
                 for (const prev of (reverseNeighbors.get(k) || [])) {
-                    if (!backwardReachable.has(prev)) {
-                        backwardReachable.add(prev);
+                    if (!distToEnd.has(prev)) {
+                        distToEnd.set(prev, d + 1);
                         bwdQ.push(prev);
                     }
                 }
             }
 
-            // Pass 3 — collect wire edges where from ∈ forward AND to ∈ backward
+            // Pass 3 — orient each branch wire along conventional current (+ → −).
+            // Raw distance-to-end is NOT enough: on a shared SUPPLY rail the segment
+            // beside the lowest-resistance branch is a local minimum of distance-to-end,
+            // which flips it backwards (current visibly converging mid-rail). Instead
+            // build a monotonic "flow potential" φ that rises from + (0) to − (max):
+            //   +-side node (closer to +):  φ = distance-from-+        (rises downstream)
+            //   −-side node (closer to −):  φ = C − distance-to-−       (keeps rising to −)
+            // with C large enough that every −-side φ exceeds every +-side φ. Wires never
+            // straddle the mid-point (a resistor/component always sits at the crossing),
+            // so both endpoints share a side. Current then flows from LOWER φ to HIGHER φ
+            // on every edge — correct for both rails AND every parallel branch.
+            let maxDFS = 0, maxDTE = 0;
+            for (const v of distFromStart.values()) if (v > maxDFS) maxDFS = v;
+            for (const v of distToEnd.values()) if (v > maxDTE) maxDTE = v;
+            const PHI_C = maxDFS + maxDTE + 1;
+            const phi = (n) => {
+                const dfs = distFromStart.get(n);
+                const dte = distToEnd.get(n);
+                if (dfs == null) return PHI_C - dte;   // only reaches − → return side
+                if (dte == null) return dfs;           // only reached from + → supply side
+                return (dfs <= dte) ? dfs : (PHI_C - dte);
+            };
             const result = [];
             const seenWireIds = new Set();
             for (const [from, edges] of adjacency) {
-                if (!forwardReachable.has(from)) continue;
+                if (!distFromStart.has(from)) continue;
                 for (const edge of edges) {
                     if (edge.type !== 'wire' || !edge.wire) continue;
-                    if (!backwardReachable.has(edge.to)) continue;
+                    if (!distToEnd.has(edge.to)) continue;
                     if (seenWireIds.has(edge.wire.id)) continue; // one direction per wire
+                    const pFrom = phi(from);
+                    const pTo = phi(edge.to);
+                    let towardMinus;
+                    if (pFrom === pTo) {
+                        // φ tie: fall back to distance-to-end (flow toward −).
+                        towardMinus = (distToEnd.get(from) ?? Infinity) >= (distToEnd.get(edge.to) ?? Infinity);
+                    } else {
+                        towardMinus = pFrom < pTo;
+                    }
+                    if (!towardMinus) continue; // reverse orientation handles this wire
                     seenWireIds.add(edge.wire.id);
                     result.push({ fromKey: from, edge });
                 }
@@ -18541,9 +18821,9 @@ Made with ? for visual learners everywhere!
             // continuous energized current rather than a few sparse dots.
             const baseParticleCount = isMobile ? 11 : 18;
             const maxParticles      = isMobile ? 28 : 50;
-            const inAtomicZoom      = cameraDistance < ATOMIC_ZOOM_THRESHOLD;
+            const inAtomicZoom      = AUTO_ATOMIC_DESCENT && cameraDistance < ATOMIC_ZOOM_THRESHOLD;
             const inCloseZoom       = cameraDistance < CLOSE_ZOOM_THRESHOLD;
-            const inDeepAtomic      = cameraDistance < ZOOM_DEEP_ATOMIC;
+            const inDeepAtomic      = AUTO_ATOMIC_DESCENT && cameraDistance < ZOOM_DEEP_ATOMIC;
             const inComponentView   = cameraDistance < ZOOM_COMPONENT_VIEW;
             // Artistic floor: keep particles visually energetic (size/brightness)
             // even at low amperage so the flow always looks alive, not anaemic.
@@ -18575,6 +18855,12 @@ Made with ? for visual learners everywhere!
 
                 let dynamicCount = Math.floor((currentValue * (isMobile ? 24 : 42)) * (segment.speedFactor || 1));
                 dynamicCount = Math.max(baseParticleCount, Math.min(maxParticles, dynamicCount));
+                if (FLOW_STREAM_MODE && !inAtomicZoom) {
+                    // The flowing glow channel carries the current at circuit scale;
+                    // keep only a few dots as sparse sparkle. Full electrons return at
+                    // atomic zoom (inAtomicZoom), where individual carriers are the point.
+                    dynamicCount = Math.round(dynamicCount * FLOW_STREAM_DOT_RATIO);
+                }
 
                 // ── Copper lattice atoms (atomic zoom only) ──────────────────
                 if (inAtomicZoom) {
@@ -18592,17 +18878,36 @@ Made with ? for visual learners everywhere!
                 // and a wider diffuse outer haze.  Together they create the glowing
                 // "energy channel" that makes electrons look like they are streaming
                 // inside a luminous conductor rather than floating in empty space.
-                if (!isAndroid && wire.curve) {
-                    // Inner core — narrow, bright, gives the stream a hot-wire look
-                    try {
+                // Render the glow channel on desktop always; on Android only in flow
+                // mode (where it replaces the dots, so it must be present on phones).
+                const _renderGlow = wire.curve && (!isAndroid || (FLOW_STREAM_MODE && FLOW_STREAM_ON_ANDROID));
+                if (_renderGlow) {
+                    // Android can't do AdditiveBlending reliably — use NormalBlending there.
+                    const _glowBlend = isAndroid ? THREE.NormalBlending : THREE.AdditiveBlending;
+                    // Current direction (conventional vs electron) for the scroll.
+                    const _flowDirMul = (segment.direction >= 0 ? 1 : -1) * (currentFlowStyle === 'misty' ? -1 : 1);
+                    // In flow mode the alphaMap zeroes the troughs, so lift the crest
+                    // opacity to keep the travelling band bright.
+                    const _coreOpacity = FLOW_STREAM_MODE
+                        ? Math.min(0.6, WIRE_STREAM_CORE_OPACITY * 2.6)
+                        : WIRE_STREAM_CORE_OPACITY;
+                    // A real Curve for TubeGeometry (wire.curve lacks computeFrenetFrames).
+                    const _tubeCurve = _streamTubeCurve(wire);
+
+                    // Flow mode → a crackling lightning bolt carries the current,
+                    // riding inside the soft haze channel. Classic mode → the
+                    // original static inner-core glow tube.
+                    if (FLOW_STREAM_MODE) {
+                        _createLightningBolt(wire, flowColor, currentValue, segment.speedFactor, _flowDirMul);
+                    } else if (_tubeCurve) try {
                         const coreGeom = new THREE.TubeGeometry(
-                            wire.curve, WIRE_STREAM_PATH_SEGS,
+                            _tubeCurve, WIRE_STREAM_PATH_SEGS,
                             WIRE_STREAM_CORE_RADIUS, WIRE_GLOW_RADIAL_SEGS, false);
                         const coreMat = new THREE.MeshBasicMaterial({
                             color:       flowColor.hex,
                             transparent: true,
-                            opacity:     WIRE_STREAM_CORE_OPACITY,
-                            blending:    THREE.AdditiveBlending,
+                            opacity:     _coreOpacity,
+                            blending:    _glowBlend,
                             depthWrite:  false,
                             side:        THREE.FrontSide
                         });
@@ -18612,20 +18917,22 @@ Made with ? for visual learners everywhere!
                         currentWireGlows.push({
                             mesh:        coreMesh,
                             phase:       Math.random() * Math.PI * 2,
-                            baseOpacity: WIRE_STREAM_CORE_OPACITY
+                            baseOpacity: _coreOpacity
                         });
                     } catch (e) { /* skip if curve is degenerate */ }
 
-                    // Outer haze — wider, more diffuse, softens the stream edges
-                    try {
+                    // Outer haze — wider, diffuse; a steady soft channel. Classic mode
+                    // only: in lightning/flow mode the glowing bolt IS the channel, so
+                    // we skip these semi-transparent tubes entirely.
+                    if (!FLOW_STREAM_MODE && _tubeCurve) try {
                         const hazeGeom = new THREE.TubeGeometry(
-                            wire.curve, WIRE_STREAM_PATH_SEGS,
+                            _tubeCurve, WIRE_STREAM_PATH_SEGS,
                             WIRE_GLOW_RADIUS, WIRE_GLOW_RADIAL_SEGS, false);
                         const hazeMat = new THREE.MeshBasicMaterial({
                             color:       flowColor.hex,
                             transparent: true,
-                            opacity:     WIRE_GLOW_BASE_OPACITY,
-                            blending:    THREE.AdditiveBlending,
+                            opacity:     WIRE_GLOW_BASE_OPACITY * (FLOW_STREAM_MODE ? 1.6 : 1),
+                            blending:    _glowBlend,
                             depthWrite:  false,
                             side:        THREE.FrontSide
                         });
@@ -18635,7 +18942,7 @@ Made with ? for visual learners everywhere!
                         currentWireGlows.push({
                             mesh:        hazeMesh,
                             phase:       Math.random() * Math.PI * 2 + 1,
-                            baseOpacity: WIRE_GLOW_BASE_OPACITY
+                            baseOpacity: WIRE_GLOW_BASE_OPACITY * (FLOW_STREAM_MODE ? 1.6 : 1)
                         });
                     } catch (e) { /* skip if curve is degenerate */ }
                 }
@@ -18645,7 +18952,7 @@ Made with ? for visual learners everywhere!
                     try {
                         // Smaller particles combined with additive blending and higher density
                         // make individual spheres merge visually into a continuous glowing stream.
-                        const particleSize = (0.095 + (intensity * 0.055)) * (isAndroid ? ANDROID_PARTICLE_SIZE_SCALE : 1.0);
+                        const particleSize = (0.095 + (intensity * 0.055)) * (isAndroid ? ANDROID_PARTICLE_SIZE_SCALE : 1.0) * (FLOW_STREAM_MODE ? 0.6 : 1);
                         const particleGeometry = new THREE.SphereGeometry(
                             // Fewer segments on both mobile and desktop to compensate for the
                             // higher particle count: with 1.5–2× more particles in the scene,
@@ -18658,8 +18965,8 @@ Made with ? for visual learners everywhere!
                         const isMisty = currentFlowStyle === 'misty';
                         // Lower per-particle opacity compensates for more particles + additive
                         // blending: individually dim particles accumulate into a bright stream.
-                        const baseOpacity   = isMisty ? 0.32 + intensity * 0.22
-                                                       : 0.50 + intensity * 0.22;
+                        const baseOpacity   = (isMisty ? 0.32 + intensity * 0.22
+                                                       : 0.50 + intensity * 0.22) * (FLOW_STREAM_MODE ? 0.5 : 1);
                         // payoffFlowDegrade dims the glow ~25% once a F.U.S.E. branch fails.
                         const baseEmissive  = (isMisty ? 0.95 : 1.45) * payoffFlowDegrade;
                         // On Android boost emissive intensity to guarantee particles glow
@@ -19736,73 +20043,53 @@ Made with ? for visual learners everywhere!
                 payoffFlowDegrade = 1;
 
                 // ── Components ───────────────────────────────────────────────
-                // Textbook parallel ladder: a 6 V source drives three resistor
-                // branches stacked vertically between two VERTICAL bus rails — the
-                // left rail (battery −) and the right rail (battery +). Every element
-                // is left UNROTATED so its terminals sit at x ± offset, exactly where
-                // getWorldConnectionPoint() places them; this keeps every wire a
-                // straight orthogonal run (no diagonal "zigzag" branches) and matches
-                // docs/circuit-topology-reference.md.
-                //
-                // This is the FIRST thing a brand-new user sees, so it is a calm,
-                // physically-honest showcase rather than a fireworks display: the
-                // current is deliberately gentle and every branch sits comfortably
-                // within its power rating, so nothing ever trips or fails. It just
-                // flows — the whole point is to make invisible current *visible* and
-                // let Ohm's law read at a glance (more resistance ⇒ less current).
-                //
-                // Clean 3:2:1 per-branch math (Ohm's law, I = V/R):
-                //   I₁ = 6/200 = 0.030 A · I₂ = 6/300 = 0.020 A · I₃ = 6/600 = 0.010 A
-                //   I_total = 0.060 A · R_eq = 100 Ω
-                //   P₁ = 0.18 W · P₂ = 0.12 W · P₃ = 0.06 W  (all well under ¼ W)
-                //
-                // Because each branch dissipates far less than its ¼ W rating, the
-                // F.U.S.E. thermal model never reaches its trip threshold — no branch
-                // opens, so the showcase keeps conducting indefinitely. (Open-circuit
-                // semantics still hold everywhere: an open branch carries exactly zero
-                // current — there is no "dimmed" flow — see analyzeCircuit's handler.)
+                // Textbook SERIES square — the FIRST thing a brand-new user sees.
+                // A single closed LOOP so current reads as ONE clean unidirectional
+                // flow (no opposing bus rails, no "two directions"), drawn like a
+                // schematic. It is a calm, physically-honest showcase: every part sits
+                // well within its ¼ W rating so nothing ever trips — it just flows,
+                // making invisible current visible and letting Ohm's law read at a
+                // glance (same current everywhere in series; voltage divides).
 
-                // Rail X positions and the four stacked rows (z): battery on top,
-                // then the three resistor branches evenly spaced below it.
-                const RAIL_LEFT_X  = -8;
-                const RAIL_RIGHT_X =  8;
-                const ROW_Z = { battery: -6, r1: -2, r2: 2, r3: 6 };
+                // Textbook SERIES-PARALLEL combination (matches the allaboutcircuits
+                // reference): R1 in series feeds a parallel pair R2 ∥ R3, the two
+                // recombine and return — one coherent, Kirchhoff-correct flow.
+                //   R_parallel = 300∥600 = 200Ω · R_total = 200 + 200 = 400Ω
+                //   I_total = 12/400 = 0.030 A through R1, then SPLITS:
+                //     I_R2 = 6/300 = 0.020 A · I_R3 = 6/600 = 0.010 A   (20+10 = 30 mA ✓)
+                //   drops: 6 V across R1, 6 V across the parallel group (sum = 12 V)
+                //   powers: 0.18 / 0.12 / 0.06 W  (all < ¼ W → nothing ever trips)
+                const PAYOFF_PR = 0.25;            // ¼ W parts — never trip
+                const VERT = Math.PI / 2;
 
-                // Battery across the top row (horizontal, unrotated → +x positive
-                // terminal feeds the right rail, −x negative terminal the left rail).
-                const battery = new Component('battery', new THREE.Vector3(0, 0, ROW_Z.battery));
-                battery.updateProperties({ voltage: 6 });
+                // Battery: left leg, vertical (+ terminal at the top-left).
+                const battery = new Component('battery', new THREE.Vector3(-10, 0, 0));
+                battery.updateProperties({ voltage: 12 });
+                if (battery.mesh) { battery.rotation = normalizeAngle(VERT); battery.mesh.rotation.y = battery.rotation; }
                 components.push(battery);
 
-                // Horizontal resistor branches, one per row. Each branch dissipates
-                // well under a standard ¼ W (0.25 W) resistor rating, so the F.U.S.E.
-                // overpower model never trips — the current simply keeps flowing.
-                const BRANCH_POWER_RATING = 0.25; // standard ¼ W part
-                const branchSpecs = [
-                    { z: ROW_Z.r1, resistance: 200 }, // I=30 mA · P=0.18 W
-                    { z: ROW_Z.r2, resistance: 300 }, // I=20 mA · P=0.12 W
-                    { z: ROW_Z.r3, resistance: 600 }, // I=10 mA · P=0.06 W
-                ];
-                const branchResistors = branchSpecs.map(({ z, resistance }) => {
-                    const r = new Component('resistor', new THREE.Vector3(0, 0, z));
-                    // No rotation: terminals stay on ±x so each branch wires straight
-                    // across to the vertical rails. powerRating/maxPower sit safely
-                    // above the branch dissipation so nothing ever fails.
-                    r.updateProperties({ resistance, powerRating: BRANCH_POWER_RATING, maxPower: BRANCH_POWER_RATING });
-                    components.push(r);
-                    return r;
-                });
+                // R1 — series resistor on the top-left leg (horizontal).
+                const r1 = new Component('resistor', new THREE.Vector3(-5, 0, 6));
+                r1.updateProperties({ resistance: 200, powerRating: PAYOFF_PR, maxPower: PAYOFF_PR });
+                components.push(r1);
+                // R2, R3 — the parallel pair (vertical branches between the rails).
+                const r2 = new Component('resistor', new THREE.Vector3(0, 0, 0));
+                r2.updateProperties({ resistance: 300, powerRating: PAYOFF_PR, maxPower: PAYOFF_PR });
+                if (r2.mesh) { r2.rotation = normalizeAngle(VERT); r2.mesh.rotation.y = r2.rotation; }
+                components.push(r2);
+                const r3 = new Component('resistor', new THREE.Vector3(10, 0, 0));
+                r3.updateProperties({ resistance: 600, powerRating: PAYOFF_PR, maxPower: PAYOFF_PR });
+                if (r3.mesh) { r3.rotation = normalizeAngle(VERT); r3.mesh.rotation.y = r3.rotation; }
+                components.push(r3);
 
-                // ── Junctions ────────────────────────────────────────────────
-                // Two VERTICAL rails. The left rail is the battery − node, the right
-                // rail the battery + node. Each rail has one junction per row so the
-                // rail segments stay straight and every branch shares the rail node.
-                const rowZ = [ROW_Z.battery, ROW_Z.r1, ROW_Z.r2, ROW_Z.r3];
-                const leftRail  = rowZ.map((z) => new Junction(new THREE.Vector3(RAIL_LEFT_X,  0, z), { snapToGridPosition: false }));
-                const rightRail = rowZ.map((z) => new Junction(new THREE.Vector3(RAIL_RIGHT_X, 0, z), { snapToGridPosition: false }));
-                junctions.push(...leftRail, ...rightRail);
-                const [jLB, jL1, jL2, jL3] = leftRail;
-                const [jRB, jR1, jR2, jR3] = rightRail;
+                // ── Junctions: top rail (TL·TM·TR) + bottom rail (BL·BM·BR) ──
+                const jTL = new Junction(new THREE.Vector3(-10, 0,  6), { snapToGridPosition: false });
+                const jTM = new Junction(new THREE.Vector3(  0, 0,  6), { snapToGridPosition: false });
+                const jTR = new Junction(new THREE.Vector3( 10, 0,  6), { snapToGridPosition: false });
+                const jBL = new Junction(new THREE.Vector3(-10, 0, -6), { snapToGridPosition: false });
+                const jBM = new Junction(new THREE.Vector3(  0, 0, -6), { snapToGridPosition: false });
+                const jBR = new Junction(new THREE.Vector3( 10, 0, -6), { snapToGridPosition: false });
+                junctions.push(jTL, jTM, jTR, jBL, jBM, jBR);
 
                 // ── Force world-matrix update before wire creation ────────────
                 // loadPayoffCircuit runs synchronously (typically before the first
@@ -19817,29 +20104,22 @@ Made with ? for visual learners everywhere!
                 // first call regardless of whether a render frame has occurred.
                 scene.updateMatrixWorld(true);
 
-                // ── Wires ────────────────────────────────────────────────────
-                // Battery bridges the two rails along the top row; each rail runs
-                // straight down through its per-row junctions; each resistor wires
-                // straight across from the left rail to the right rail.
-                //   right rail (+): B+→jRB→jR1→jR2→jR3 (shared + node)
-                //   left rail  (−): B−→jLB→jL1→jL2→jL3 (shared − node)
-                //   branches: jL*→R(left) and R(right)→jR*
-                const [rA, rB, rC] = branchResistors;
+                // ── Wires — R1 in series, then R2 ∥ R3, recombine, return ────
+                //   B+ → TL → R1 → TM ─┬─ R2 ↓ to BM
+                //                       └─ TM→TR → R3 ↓ to BR
+                //   bottom rail BR → BM → BL → B−  (the branch currents recombine)
                 const wireSpecs = [
-                    [battery, 'positive', jRB, 'center'],
-                    [jRB, 'center',       jR1, 'center'],
-                    [jR1, 'center',       jR2, 'center'],
-                    [jR2, 'center',       jR3, 'center'],
-                    [battery, 'negative', jLB, 'center'],
-                    [jLB, 'center',       jL1, 'center'],
-                    [jL1, 'center',       jL2, 'center'],
-                    [jL2, 'center',       jL3, 'center'],
-                    [jL1, 'center',       rA,  'left'  ],
-                    [rA,  'right',        jR1, 'center'],
-                    [jL2, 'center',       rB,  'left'  ],
-                    [rB,  'right',        jR2, 'center'],
-                    [jL3, 'center',       rC,  'left'  ],
-                    [rC,  'right',        jR3, 'center'],
+                    [battery, 'positive', jTL, 'center'],
+                    [jTL,     'center',   r1,  'left'  ],
+                    [r1,      'right',    jTM, 'center'],
+                    [jTM,     'center',   r2,  'right' ],   // R2 top  (+z)
+                    [r2,      'left',     jBM, 'center'],   // R2 bottom (−z)
+                    [jTM,     'center',   jTR, 'center'],   // top rail → R3
+                    [jTR,     'center',   r3,  'right' ],   // R3 top
+                    [r3,      'left',     jBR, 'center'],   // R3 bottom
+                    [jBR,     'center',   jBM, 'center'],   // bottom rail
+                    [jBM,     'center',   jBL, 'center'],   // bottom rail → battery
+                    [jBL,     'center',   battery, 'negative'],
                 ];
 
                 wireSpecs.forEach(([startObj, startSide, endObj, endSide]) => {
@@ -19851,22 +20131,22 @@ Made with ? for visual learners everywhere!
                     }
                 });
 
-                // ── Force solid current-flow style ───────────────────────────
-                if (currentFlowStyle !== 'solid') {
-                    currentFlowStyle = 'solid';
+                // ── Electron-flow style (current − → +, no deviation) ────────
+                if (currentFlowStyle !== 'misty') {
+                    currentFlowStyle = 'misty';
                     const styleLabel = document.getElementById('flow-style-label');
-                    if (styleLabel) styleLabel.textContent = 'Current Flow';
+                    if (styleLabel) styleLabel.textContent = 'Electron Flow';
                     notifyParentModeState();
                 }
 
                 // ── Animate and display ──────────────────────────────────────
                 fitToScreen();
-                // Hero framing: the parallel ladder is flat in the X–Z plane, so a
+                // Hero framing: the series loop is flat in the X–Z plane, so a
                 // head-on view collapses it into a flat line of overlapping parts.
                 // Swing the camera round and tilt it up so the board leans AWAY from
-                // the viewer and every branch reads as a distinct component at a clean
+                // the viewer and every leg reads as a distinct component at a clean
                 // 3/4 angle — components stay legible and the depth sells the 3D.
-                cameraAngleX = Math.PI / 2 - 0.4; // swing round so the rails run across-screen, with a 3/4 skew
+                cameraAngleX = Math.PI / 2 - 0.4; // swing round so the loop runs across-screen, with a 3/4 skew
                 cameraAngleY = 0.62;              // ~35° up — tilts the flat board back, away from the user
                 // Pull the camera in tighter than the generic fit so the energized
                 // current-flow reads prominently the instant the circuit loads.
@@ -19880,7 +20160,7 @@ Made with ? for visual learners everywhere!
                 // particle positions along the wire curves.
                 scene.updateMatrixWorld(true);
                 analyzeCircuit();
-                setStatus('⚡ CircuiTry3D — 60 mA flowing across 3 parallel paths (30 + 20 + 10 mA). More resistance → less current. Zoom in to follow it down to atomic scale.');
+                setStatus('⚡ CircuiTry3D — 30 mA flows into R1, then SPLITS across the parallel pair: 20 mA + 10 mA = 30 mA back out (Kirchhoff). Voltage drops 6 V across R1 and 6 V across the pair = 12 V. Zoom in to follow the electrons to atomic scale.');
                 console.log('[CT3D Payoff] Payoff circuit loaded — wires:', wires.length, 'flow:', currentFlowState?.hasFlow);
             } catch (err) {
                 console.error('[CT3D Payoff] loadPayoffCircuit error:', err);
@@ -19895,10 +20175,11 @@ Made with ? for visual learners everywhere!
         function runPayoffFlow() {
             if (!scene || !renderer) return;
             try {
-                if (currentFlowStyle !== 'solid') {
-                    currentFlowStyle = 'solid';
+                // Electron-flow convention (− → +) to match the showcase series loop.
+                if (currentFlowStyle !== 'misty') {
+                    currentFlowStyle = 'misty';
                     const styleLabel = document.getElementById('flow-style-label');
-                    if (styleLabel) styleLabel.textContent = 'Current Flow';
+                    if (styleLabel) styleLabel.textContent = 'Electron Flow';
                     notifyParentModeState();
                 }
                 analyzeCircuit();

@@ -66,8 +66,11 @@ export default function ArenaView({
     progress,
     highlight,
     mostStressedId,
+    scenario,
+    summary,
     startTest,
     resetTest,
+    selectScenario,
   } = useArenaBattle({ initialAgents: arenaAgents });
 
   const handleExitComplete = useCallback(() => {
@@ -97,10 +100,11 @@ export default function ArenaView({
     }
   }, [startTest, panelOpen, onTogglePanel]);
 
-  const winnerName = useMemo(
-    () => agents.find((agent) => agent.id === winnerId)?.name ?? null,
+  const winner = useMemo(
+    () => agents.find((agent) => agent.id === winnerId) ?? null,
     [agents, winnerId],
   );
+  const winnerName = winner?.name ?? null;
   const survivorCount = useMemo(
     () => agents.filter((agent) => agent.phase !== "failed").length,
     [agents],
@@ -118,6 +122,7 @@ export default function ArenaView({
           transitionPhase={isExiting ? "exiting" : "active"}
           status={status}
           stressFactor={stressFactor}
+          stressMax={scenario.stressMax}
           progress={progress}
           onStartTest={startTest}
           winnerName={winnerName}
@@ -126,10 +131,24 @@ export default function ArenaView({
           panelOpen={panelOpen}
           onExitTransitionComplete={handleExitComplete}
         />
-        {status === "complete" && winnerName ? (
+        {status === "complete" && winner ? (
           <div className="arena-winner-banner arena-winner-banner--workspace" role="status">
-            <p>{survivorCount > 0 ? "Most robust under load" : "Last to fail"}</p>
-            <strong>{winnerName}</strong>
+            <span className="arena-winner-banner__trophy" aria-hidden>
+              🏆
+            </span>
+            <div>
+              <p>
+                {scenario.icon} {scenario.name} ·{" "}
+                {survivorCount > 0 ? "Most robust under load" : "Last to fail"}
+              </p>
+              <strong>{winner.name}</strong>
+              <span className="arena-winner-banner__score">
+                Robustness {winner.score.toFixed(1)} ·{" "}
+                {survivorCount > 0
+                  ? `${survivorCount}/${agents.length} survived`
+                  : `held ${(winner.failedAtLoad ?? 0).toFixed(1)}×`}
+              </span>
+            </div>
           </div>
         ) : null}
         <WorkspaceModePanel
@@ -148,6 +167,9 @@ export default function ArenaView({
             progress={progress}
             winnerName={winnerName}
             survivorCount={survivorCount}
+            scenario={scenario}
+            summary={summary}
+            onSelectScenario={selectScenario}
             onStartTest={handleStartTestFromPanel}
             onResetTest={resetTest}
             onReturnToWorkspace={handleReturnToWorkspace}
@@ -171,6 +193,7 @@ export default function ArenaView({
         transitionPhase={transitionPhase}
         status={status}
         stressFactor={stressFactor}
+        stressMax={scenario.stressMax}
         onExitTransitionComplete={handleExitComplete}
       />
       <ArenaOverlay
@@ -184,6 +207,9 @@ export default function ArenaView({
         transitionPhase={transitionPhase}
         winnerName={winnerName}
         survivorCount={survivorCount}
+        scenario={scenario}
+        summary={summary}
+        onSelectScenario={selectScenario}
         onStartTest={startTest}
         onResetTest={resetTest}
         onReturnToWorkspace={handleReturnToWorkspace}

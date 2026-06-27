@@ -1,13 +1,17 @@
 import WordMark from "../WordMark";
 import {
+  ArenaPodium,
+  ArenaScenarioSelect,
   ArenaTestCards,
   ArenaTestControls,
   ArenaTestLog,
 } from "./ArenaInstrumentation";
+import type { ArenaScenario } from "./scenarios";
 import type {
   ArenaBattleAgent,
   ArenaBattleLogEntry,
   ArenaBattleStatus,
+  ArenaBattleSummary,
   ArenaViewTransitionPhase,
 } from "./types";
 
@@ -22,6 +26,9 @@ type ArenaOverlayProps = {
   transitionPhase: ArenaViewTransitionPhase;
   winnerName: string | null;
   survivorCount: number;
+  scenario: ArenaScenario;
+  summary: ArenaBattleSummary | null;
+  onSelectScenario: (id: string) => void;
   onStartTest: () => void;
   onResetTest: () => void;
   onReturnToWorkspace: () => void;
@@ -39,6 +46,9 @@ export function ArenaOverlay({
   transitionPhase,
   winnerName,
   survivorCount,
+  scenario,
+  summary,
+  onSelectScenario,
   onStartTest,
   onResetTest,
   onReturnToWorkspace,
@@ -62,6 +72,9 @@ export function ArenaOverlay({
           <h1>{sessionLabel}</h1>
           <div className="arena-overlay__meta">
             <span>{transitionPhase === "entering" ? "Cinematic entry" : "Bench live"}</span>
+            <span>
+              {scenario.icon} {scenario.name}
+            </span>
             <span>{stressFactor.toFixed(1)}× load</span>
             <span>
               {status === "complete"
@@ -93,6 +106,11 @@ export function ArenaOverlay({
       </div>
 
       <div className="arena-overlay__console">
+        <ArenaScenarioSelect
+          scenario={scenario}
+          onSelect={onSelectScenario}
+          disabled={status === "battling"}
+        />
         <ArenaTestControls
           status={status}
           stressFactor={stressFactor}
@@ -100,20 +118,18 @@ export function ArenaOverlay({
           winnerName={winnerName}
           survivorCount={survivorCount}
           totalCount={agents.length}
+          stressMax={scenario.stressMax}
           onStartTest={onStartTest}
         />
       </div>
 
       <ArenaTestLog log={log} winnerName={winnerName} heading="Test Log" />
 
-      <ArenaTestCards agents={agents} mostStressedId={mostStressedId} />
-
-      {status === "complete" && winnerName ? (
-        <div className="arena-winner-banner" role="status">
-          <p>{survivorCount > 0 ? "Most robust under load" : "Last to fail"}</p>
-          <strong>{winnerName}</strong>
-        </div>
+      {status === "complete" && summary ? (
+        <ArenaPodium agents={agents} summary={summary} />
       ) : null}
+
+      <ArenaTestCards agents={agents} mostStressedId={mostStressedId} />
     </div>
   );
 }

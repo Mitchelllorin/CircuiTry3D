@@ -9,15 +9,17 @@
  * over-temperature) and in the order their physical ratings dictate.
  */
 import { detectFailure } from "./fuse";
+import type { ArenaScenario } from "./scenarios";
+import { DEFAULT_SCENARIO } from "./scenarios";
 import type { ArenaBattleAgent, ArenaTestPhase } from "./types";
 
-export const AMBIENT_C = 25;
+/** Default soak temperature for a part shown before any test runs. */
+export const AMBIENT_C = DEFAULT_SCENARIO.ambientC;
 
-/** Peak load the ramp reaches, as a multiple of the nominal operating point. */
-export const STRESS_MAX = 4;
-/** Milliseconds for the load ramp to climb from 1× to STRESS_MAX. A slow,
- *  watchable build so the escalation and the failures play out as a spectacle. */
-export const RAMP_MS = 18000;
+/** Peak load the default-scenario ramp reaches (× nominal). Scenario-tunable. */
+export const STRESS_MAX = DEFAULT_SCENARIO.stressMax;
+/** Default ramp duration (ms). Each scenario overrides this. */
+export const RAMP_MS = DEFAULT_SCENARIO.rampMs;
 /** Thermal time constant (ms): how fast a part approaches its steady temperature.
  *  Deliberately slow so heat (and the shake/glow that track it) visibly builds
  *  over several seconds before a part lets go — you watch it strain, then fail. */
@@ -36,12 +38,17 @@ export type StressOutcome = {
   failed: boolean;
   failureName: string | null;
   failureVisual: string | null;
+  /** Instantaneous dissipation at this tick, W — used to integrate energy. */
+  powerW: number;
 };
 
-/** Load factor (× nominal) at a given elapsed time, clamped to STRESS_MAX. */
-export function stressFactorAt(elapsedMs: number): number {
-  const t = Math.max(0, elapsedMs) / RAMP_MS;
-  return 1 + Math.min(t, 1) * (STRESS_MAX - 1);
+/** Load factor (× nominal) at a given elapsed time, clamped to the scenario peak. */
+export function stressFactorAt(
+  elapsedMs: number,
+  scenario: ArenaScenario = DEFAULT_SCENARIO,
+): number {
+  const t = Math.max(0, elapsedMs) / scenario.rampMs;
+  return 1 + Math.min(t, 1) * (scenario.stressMax - 1);
 }
 
 /** Fraction of steady-state heat accumulated so far (0 → 1). */
@@ -67,8 +74,10 @@ export function evaluateStress(
   agent: ArenaBattleAgent,
   stressFactor: number,
   thermalFraction: number,
+  scenario: ArenaScenario = DEFAULT_SCENARIO,
 ): StressOutcome {
   const { metrics, ratings } = agent;
+  const ambientC = scenario.ambientC;
 
   // Drive the operating point up the ramp. Voltage and current scale linearly;
   // power follows V·I, so it scales with the square of the load.
@@ -80,10 +89,14 @@ export function evaluateStress(
   // compares against the rating, mirroring the builder's buildFailureMetrics.
   const effectivePower = instantaneousPower * thermalFraction;
 
-  // Real body-temperature rise (no fudge factor) so the °C gauge is believable.
-  const thermalRise =
-    instantaneousPower * ratings.thermalResistanceCPerW * thermalFraction;
-  const tempC = AMBIENT_C + thermalRise;
+  // Convection: the scenario scales the part's thermal resistance. Vacuum/still
+  // air trap heat (>1, hotter), a cold plate or forced air pulls it away (<1).
+  const thermalResistance = ratings.thermalResistanceCPerW * scenario.convectionMul;
+
+  // Real body-temperature rise (no fudge factor) so the °C gauge is believable,
+  // referenced to the scenario's ambient soak temperature.
+  const thermalRise = instantaneousPower * thermalResistance * thermalFraction;
+  const tempC = ambientC + thermalRise;
 
   const result = detectFailure(
     { type: agent.componentType, properties: agent.properties },
@@ -92,12 +105,18 @@ export function evaluateStress(
       currentRms: current,
       operatingVoltage: voltage,
       thermalRise,
-      ambientTemperature: AMBIENT_C,
+      ambientTemperature: ambientC,
       impedance: metrics.resistance,
     },
   );
 
-  const severity = Math.max(0, Math.min(3, result.severity));
+  // Mechanical stress (vibration) adds wear that scales with how hard the part is
+  // being pushed — solder-joint / lead fatigue the engine's electrical model
+  // doesn't see. It nudges severity up so vibration-heavy scenarios fail sooner.
+  const vibrationSeverity =
+    scenario.vibration * Math.max(0, stressFactor - 1) * 0.45;
+
+  const severity = Math.max(0, Math.min(3, result.severity + vibrationSeverity));
 
   // Headroom used against the binding rating (power or current, whichever is
   // tighter) — drives the "% of rating" gauge.
@@ -120,5 +139,6 @@ export function evaluateStress(
     failed: severity >= 2,
     failureName: result.name,
     failureVisual: result.visual,
+    powerW: instantaneousPower,
   };
 }

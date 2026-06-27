@@ -375,6 +375,7 @@
 }
 
 .arena-card {
+  position: relative;
   padding: 14px 16px;
   border: 1px solid rgba(148, 163, 184, 0.16);
   border-radius: 20px;
@@ -912,5 +913,344 @@
     min-inline-size: 104px;
     max-inline-size: 132px;
     padding: 5px 8px;
+  }
+}
+
+/* ───────────────────────── Environmental scenario picker ───────────────────────── */
+.arena-scenario {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 16px;
+  border: 1px solid var(--arena-border);
+  border-radius: 20px;
+  background: var(--arena-panel);
+  box-shadow: var(--arena-shadow);
+  backdrop-filter: blur(12px);
+}
+.arena-scenario__head {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.arena-scenario__eyebrow {
+  color: var(--arena-cyan);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+.arena-scenario__tagline {
+  margin: 0;
+  color: var(--arena-muted);
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+.arena-scenario__chips {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(116px, 1fr));
+  gap: 8px;
+}
+.arena-scenario__chip {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 9px 11px;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.6);
+  color: var(--arena-text);
+  font: inherit;
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    transform 140ms ease;
+}
+.arena-scenario__chip:hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: rgba(96, 165, 250, 0.5);
+}
+.arena-scenario__chip.is-active {
+  background: rgba(15, 23, 42, 0.95);
+  box-shadow: 0 0 0 1px currentColor inset;
+}
+.arena-scenario__chip:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+.arena-scenario__icon {
+  font-size: 1.05rem;
+  line-height: 1;
+}
+.arena-scenario__name {
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+.arena-scenario__amb {
+  color: var(--arena-muted);
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ───────────────────────── Card: rank badge + final verdict row ───────────────────────── */
+.arena-card__rank {
+  position: absolute;
+  inset-block-start: -10px;
+  inset-inline-end: 14px;
+  min-inline-size: 30px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.95);
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  font-size: 0.86rem;
+  font-weight: 800;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.arena-card__rank.is-winner {
+  border-color: rgba(250, 204, 21, 0.7);
+  box-shadow: 0 0 18px rgba(250, 204, 21, 0.35);
+}
+.arena-card.is-winner {
+  border-color: rgba(250, 204, 21, 0.6);
+  box-shadow:
+    var(--arena-shadow),
+    0 0 0 1px rgba(250, 204, 21, 0.35),
+    0 0 36px rgba(250, 204, 21, 0.18);
+}
+.arena-card__verdict {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.82);
+}
+.arena-card__verdict.is-winner {
+  background: rgba(250, 204, 21, 0.1);
+  box-shadow: inset 0 0 0 1px rgba(250, 204, 21, 0.35);
+}
+.arena-card__verdict-rank {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: var(--arena-muted);
+}
+.arena-card__verdict.is-winner .arena-card__verdict-rank {
+  color: #fde047;
+}
+.arena-card__verdict-score {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+.arena-card__verdict-score strong {
+  font-size: 1.2rem;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+.arena-card__verdict-score em {
+  color: var(--arena-muted);
+  font-style: normal;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.arena-card__verdict-held {
+  color: var(--arena-muted);
+  font-size: 0.74rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ───────────────────────── Winner podium ───────────────────────── */
+.arena-podium {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid rgba(250, 204, 21, 0.28);
+  border-radius: 22px;
+  background:
+    radial-gradient(120% 140% at 50% -20%, rgba(250, 204, 21, 0.14), transparent 60%),
+    var(--arena-panel-strong);
+  box-shadow:
+    0 0 50px rgba(250, 204, 21, 0.12),
+    var(--arena-shadow);
+  backdrop-filter: blur(12px);
+}
+.arena-podium__head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.arena-podium__trophy {
+  font-size: 2.6rem;
+  line-height: 1;
+  filter: drop-shadow(0 0 14px rgba(250, 204, 21, 0.5));
+}
+.arena-podium__eyebrow {
+  margin: 0;
+  color: var(--arena-muted);
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.arena-podium__winner {
+  margin: 4px 0 2px;
+  font-size: 1.5rem;
+  font-weight: 900;
+  background: linear-gradient(90deg, #fde047, #f59e0b);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.arena-podium__score {
+  margin: 0;
+  color: var(--arena-text);
+  font-size: 0.84rem;
+  font-variant-numeric: tabular-nums;
+}
+.arena-podium__steps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  align-items: end;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.arena-podium__step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 8px;
+  border-radius: 14px 14px 0 0;
+  background: rgba(15, 23, 42, 0.82);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-block-end: none;
+  text-align: center;
+}
+.arena-podium__step--rank-1 {
+  padding-block: 22px 12px;
+  background: rgba(250, 204, 21, 0.12);
+  border-color: rgba(250, 204, 21, 0.4);
+}
+.arena-podium__step--rank-2 {
+  padding-block: 16px 12px;
+}
+.arena-podium__medal {
+  font-size: 1.4rem;
+  line-height: 1;
+}
+.arena-podium__name {
+  font-size: 0.86rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+.arena-podium__step-score {
+  font-size: 1.1rem;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+.arena-podium__pill {
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+.arena-podium__pill--failed {
+  background: rgba(239, 68, 68, 0.16);
+  color: #fca5a5;
+}
+.arena-podium__pill--nominal,
+.arena-podium__pill--stressed,
+.arena-podium__pill--critical {
+  background: rgba(52, 211, 153, 0.16);
+  color: #6ee7b7;
+}
+
+/* ── Winner banner: trophy + score (workspace overlay) ── */
+.arena-winner-banner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  text-align: start;
+}
+.arena-winner-banner--workspace {
+  inset-block-start: auto;
+  inset-block-end: 96px;
+  inset-inline-start: 50%;
+  transform: translateX(-50%);
+  border-color: rgba(250, 204, 21, 0.4);
+  box-shadow:
+    0 0 60px rgba(250, 204, 21, 0.2),
+    var(--arena-shadow);
+}
+.arena-winner-banner__trophy {
+  font-size: 2.4rem;
+  line-height: 1;
+  filter: drop-shadow(0 0 14px rgba(250, 204, 21, 0.55));
+}
+.arena-winner-banner__score {
+  display: block;
+  margin-top: 4px;
+  color: var(--arena-muted);
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Affiliate "get the real part" links ── */
+.arena-buy-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  font-weight: 800;
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    transform 140ms ease,
+    box-shadow 200ms ease,
+    filter 160ms ease;
+}
+.arena-buy-link:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.05);
+}
+.arena-buy-link--winner {
+  margin-top: 12px;
+  padding: 10px 16px;
+  font-size: 0.92rem;
+  letter-spacing: 0.02em;
+  color: #1a1206;
+  background: linear-gradient(135deg, #ffd166, #ff9f1c);
+  box-shadow: 0 10px 26px rgba(255, 159, 28, 0.32);
+}
+.arena-buy-link--card {
+  padding: 5px 10px;
+  font-size: 0.72rem;
+  color: #ffd9a3;
+  background: rgba(255, 159, 28, 0.14);
+  box-shadow: inset 0 0 0 1px rgba(255, 159, 28, 0.4);
+}
+.arena-affiliate-disclosure {
+  margin: 4px 0 0;
+  color: var(--arena-muted);
+  font-size: 0.68rem;
+  line-height: 1.3;
+  opacity: 0.85;
+}
+
+@media (max-width: 720px) {
+  .arena-card__stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
