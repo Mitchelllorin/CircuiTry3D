@@ -1380,6 +1380,9 @@ export default function Builder() {
   const [activeGuideWorkflow, setActiveGuideWorkflow] =
     useState<GuideWorkflowId>("tutorial");
   const [isCircuitLocked, setCircuitLocked] = useState(false);
+  // Showcase/payoff edit-lock: keeps the demo circuit view-only (camera still free)
+  // until the user taps to edit. Declared here so the lock-sync effect can use it.
+  const [isShowcaseLocked, setShowcaseLocked] = useState(false);
   // Tracks whether the circuit is locked specifically for the onboarding payoff
   // sequence. Used to distinguish onboarding lock from practice/troubleshoot lock
   // and to show a "tap to edit" chip after the payoff banner is dismissed.
@@ -1957,13 +1960,16 @@ export default function Builder() {
     setWorkspaceModeWithGlobalSync,
   ]);
 
-  // Sync circuit lock state to the iframe
+  // Sync circuit lock state to the iframe. The showcase/payoff also locks editing
+  // (so components can't be dragged/changed) — but via this edit-lock rather than a
+  // pointer-blocking overlay, so the camera stays free to zoom and explore it.
   useEffect(() => {
     if (!isFrameReady) {
       return;
     }
-    triggerBuilderAction(isCircuitLocked ? "lock-circuit" : "unlock-circuit");
-  }, [isCircuitLocked, isFrameReady, triggerBuilderAction]);
+    const lock = isCircuitLocked || isShowcaseLocked;
+    triggerBuilderAction(lock ? "lock-circuit" : "unlock-circuit");
+  }, [isCircuitLocked, isShowcaseLocked, isFrameReady, triggerBuilderAction]);
 
   const triggerSimulationPulse = useCallback(() => {
     setSimulatePulsing(true);
@@ -2992,10 +2998,8 @@ export default function Builder() {
   const isCurrentFlowPayoffLocking =
     isCurrentFlowPayoffRunning || shouldShowCurrentFlowPayoffBanner;
 
-  // The showcase/payoff circuit stays LOCKED (view-only) from the moment it loads
-  // until the user deliberately taps to edit — so it can never be accidentally
-  // dragged or altered, even after the demo banner auto-dismisses.
-  const [isShowcaseLocked, setShowcaseLocked] = useState(false);
+  // (isShowcaseLocked is declared earlier, near isCircuitLocked, so the lock-sync
+  // effect can depend on it.) Latch it on once the payoff is loaded/showing.
   useEffect(() => {
     if (isCurrentFlowPayoffLocking) setShowcaseLocked(true);
   }, [isCurrentFlowPayoffLocking]);

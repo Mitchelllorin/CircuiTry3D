@@ -3816,20 +3816,23 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
    plays. Captures all pointer input so the preset circuit can't be accidentally
    edited; sits above the iframe but well below the payoff banner (z-index 1100),
    so the banner's Edit/× controls stay clickable. */
+/* Small top-centre "tap to edit" pill. The showcase is kept view-only by the
+   circuit EDIT-LOCK (so components can't be dragged) — this pill no longer covers
+   the workspace, so the camera stays free to zoom/orbit the locked demo. */
 .builder-payoff-guard {
   position: absolute;
-  inset: 0;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
   z-index: 3;
   pointer-events: auto;
   background: transparent;
   border: 0;
   margin: 0;
   padding: 0;
+  width: auto;
+  height: auto;
   cursor: pointer;
-  touch-action: none;
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
 }
 /* Small "tap to edit" badge so the lock is obvious but doesn't hide the circuit. */
 .builder-payoff-guard__hint {

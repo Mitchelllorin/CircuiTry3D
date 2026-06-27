@@ -5937,6 +5937,10 @@ body.android-optimized .zoom-btn {
         // Ordered list of ZOOM_TIER_COLORS keys matching tiers 1-5.
         // Must stay in sync with ZOOM_TIER_COLORS object definition.
         const ZOOM_TIER_COLOR_KEYS = ['t1_quantum', 't2_lattice', 't3_carrier', 't4_component', 't5_circuit'];
+        // Zoom-tier HUD auto-dismiss state: flash the indicator on a tier change, then fade.
+        let _hudActiveTier = null;
+        let _hudHideTimer = null;
+        let _hudGoneTimer = null;
 
         // Animation micro-constants
         const TANGENT_SAMPLE_DELTA    = 0.01;   // progress offset used to approximate wire tangent
@@ -9196,9 +9200,26 @@ body.android-optimized .zoom-btn {
 
                     hud.style.borderColor = tierData.hex + '66';
                     hud.style.boxShadow   = '0 2px 12px ' + tierData.hex + '33';
-                    hud.style.display = 'block';
+                    // Auto-dismiss: when you cross into a NEW tier, flash the indicator,
+                    // then fade it out via timers. (This block only re-runs on a zoom
+                    // change, so a per-frame countdown would never fire — timers do.)
+                    if (activeTierNum !== _hudActiveTier) {
+                        _hudActiveTier = activeTierNum;
+                        clearTimeout(_hudHideTimer);
+                        clearTimeout(_hudGoneTimer);
+                        hud.style.transition = 'opacity 0.5s ease';
+                        hud.style.opacity = '1';
+                        hud.style.display = 'block';
+                        _hudHideTimer = setTimeout(function () {
+                            hud.style.opacity = '0';
+                            _hudGoneTimer = setTimeout(function () { hud.style.display = 'none'; }, 550);
+                        }, 3600);
+                    }
                 } else {
+                    clearTimeout(_hudHideTimer);
+                    clearTimeout(_hudGoneTimer);
                     hud.style.display = 'none';
+                    _hudActiveTier = null;
                 }
             }
         }
