@@ -96,9 +96,9 @@ function createInitialBattleState(
       id: "arena-intro",
       kind: "system",
       round: 1,
-      message: `Bench armed — F.U.S.E. monitoring ${initialAgents.length} component${
+      message: `Stress test ready — F.U.S.E. watching ${initialAgents.length} part${
         initialAgents.length === 1 ? "" : "s"
-      } in ${scenario.icon} ${scenario.name} (${Math.round(
+      } for failure in ${scenario.icon} ${scenario.name} (${Math.round(
         scenario.ambientC,
       )}°C). Hit BATTLE to ramp to ${scenario.stressMax}× and stress them to failure.`,
     },

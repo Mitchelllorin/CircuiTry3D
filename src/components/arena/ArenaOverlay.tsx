@@ -67,11 +67,11 @@ export function ArenaOverlay({
         <div className="arena-overlay__hero">
           <div className="arena-overlay__brand">
             <WordMark size="md" decorative />
-            <span className="arena-eyebrow">Performance Test Bench</span>
+            <span className="arena-eyebrow">Stress Test</span>
           </div>
           <h1>{sessionLabel}</h1>
           <div className="arena-overlay__meta">
-            <span>{transitionPhase === "entering" ? "Cinematic entry" : "Bench live"}</span>
+            <span>{transitionPhase === "entering" ? "Cinematic entry" : "Test running"}</span>
             <span>
               {scenario.icon} {scenario.name}
             </span>
@@ -81,7 +81,7 @@ export function ArenaOverlay({
                 ? "Test complete"
                 : status === "battling"
                   ? "Stress test running"
-                  : "Bench ready"}
+                  : "Ready to test"}
             </span>
           </div>
         </div>
@@ -100,7 +100,7 @@ export function ArenaOverlay({
             className="arena-button arena-button--secondary"
             onClick={onResetTest}
           >
-            Reset Bench
+            Reset test
           </button>
         </div>
       </div>

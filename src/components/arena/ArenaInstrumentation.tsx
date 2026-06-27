@@ -343,7 +343,7 @@ export function ArenaTestControls({
               ? "Driving every component past its rating…"
               : isFuseAvailable()
                 ? "F.U.S.E.™ armed · real failure physics"
-                : "Bench ready"}
+                : "Ready to test"}
         </p>
       </div>
     </div>

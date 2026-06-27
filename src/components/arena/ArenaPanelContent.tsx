@@ -63,7 +63,7 @@ export function ArenaPanelContent({
         <div className="arena-panel__meta">
           <div className="arena-overlay__brand">
             <WordMark size="sm" decorative />
-            <span className="arena-eyebrow">Performance Test Bench</span>
+            <span className="arena-eyebrow">Stress Test</span>
           </div>
           <div className="arena-panel__meta-pills">
             <span>
@@ -75,7 +75,7 @@ export function ArenaPanelContent({
                 ? "Test complete"
                 : status === "battling"
                   ? "Stress test running"
-                  : "Bench ready"}
+                  : "Ready to test"}
             </span>
             <span>{immersive ? "Immersive view" : "Collapse panel to enter 3D"}</span>
           </div>
@@ -95,7 +95,7 @@ export function ArenaPanelContent({
             className="arena-button arena-button--secondary"
             onClick={onResetTest}
           >
-            Reset Bench
+            Reset test
           </button>
           <button
             type="button"
