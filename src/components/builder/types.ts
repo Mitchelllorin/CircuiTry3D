@@ -222,7 +222,8 @@ export type WorkspaceMode =
   | "textbook"
   | "gallery"
   | "home-circuit"
-  | "car-circuit";
+  | "car-circuit"
+  | "settings";
 
 export type GuideWorkflowId = "tutorial" | "wire-guide";
 

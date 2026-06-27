@@ -93,6 +93,17 @@
   flex-direction: column;
 }
 
+/* ── Settings mode: shorter bottom sheet ──
+   Sit lower (cover ~the bottom half) so the live 3D workspace stays visible
+   above the panel while you drag sliders — you see brightness/grid/logo changes
+   apply in real time. */
+.workspace-mode-panel--settings {
+  height: 54vh;
+  height: 54dvh;
+  max-height: 54vh;
+  max-height: 54dvh;
+}
+
 /* ── Arena mode: steel sword styling on the title ── */
 /* Arena canvas must fill the panel body — same pattern as circuit mode */
 .workspace-mode-panel--arena .workspace-mode-panel-body {

@@ -92,6 +92,7 @@ import Gallery from "./Gallery";
 import Account from "./Account";
 import Classroom from "./Classroom";
 import Arcade from "./Arcade";
+import Settings from "./Settings";
 import Textbook from "./Textbook";
 import HomeCircuit from "./HomeCircuit";
 import CarCircuit from "./CarCircuit";
@@ -121,7 +122,8 @@ type WorkspacePanelMode =
   | "textbook"
   | "gallery"
   | "home-circuit"
-  | "car-circuit";
+  | "car-circuit"
+  | "settings";
 
 const DEFAULT_WIRE_SEGMENT_RESISTANCE_OHM = 0.01;
 const CURRENT_FLOW_PAYOFF_STORAGE_KEY =
@@ -2141,7 +2143,8 @@ export default function Builder() {
         pendingMode === "pricing" ||
         pendingMode === "textbook" ||
         pendingMode === "home-circuit" ||
-        pendingMode === "car-circuit"
+        pendingMode === "car-circuit" ||
+        pendingMode === "settings"
       ) {
         openWorkspacePanelMode(pendingMode);
       } else if (pendingMode === "troubleshoot") {
@@ -3099,6 +3102,11 @@ export default function Builder() {
           title: "Textbook",
           subtitle: "Year 1 & Year 2 Electrical Studies — formulas, rules, and safety",
         };
+      case "settings":
+        return {
+          title: "Settings",
+          subtitle: "Logo, graphics, workspace, simulation & accessibility",
+        };
       case "home-circuit":
         return {
           title: "Home Circuit",
@@ -3156,6 +3164,8 @@ export default function Builder() {
         return <Gallery />;
       case "account":
         return <Account />;
+      case "settings":
+        return <Settings embedded />;
       case "pricing":
         return (
           <>
@@ -4359,7 +4369,9 @@ export default function Builder() {
               ? "workspace-mode-panel--arena"
               : activeWorkspacePanelMode === "home-circuit" || activeWorkspacePanelMode === "car-circuit"
                 ? "workspace-mode-panel--circuit"
-                : undefined
+                : activeWorkspacePanelMode === "settings"
+                  ? "workspace-mode-panel--settings"
+                  : undefined
           }
         >
           {workspacePanelContent}

@@ -97,7 +97,7 @@ const CONFIG: CategoryConfig[] = [
   },
 ];
 
-export default function Settings() {
+export default function Settings({ embedded = false }: { embedded?: boolean }) {
   const { settings, setSetting, resetCategory, resetAll } = useAppSettings();
   const [activeId, setActiveId] = useState<SettingsCategory>(CONFIG[0].id);
 
@@ -109,17 +109,19 @@ export default function Settings() {
   const group = settings[active.id] as Record<string, number | boolean>;
 
   return (
-    <div className="settings-page">
-      <header className="settings-page__header">
-        <BrandSignature size="md" />
-        <div>
-          <h1>Settings</h1>
-          <p>Tune every part of CircuiTry3D. Changes save automatically.</p>
-        </div>
-        <button type="button" className="settings-reset settings-reset--all" onClick={resetAll}>
-          Reset everything
-        </button>
-      </header>
+    <div className={`settings-page${embedded ? " settings-page--embedded" : ""}`}>
+      {!embedded && (
+        <header className="settings-page__header">
+          <BrandSignature size="md" />
+          <div>
+            <h1>Settings</h1>
+            <p>Tune every part of CircuiTry3D. Changes save automatically.</p>
+          </div>
+          <button type="button" className="settings-reset settings-reset--all" onClick={resetAll}>
+            Reset everything
+          </button>
+        </header>
+      )}
 
       <div className="settings-layout">
         <nav className="settings-nav" aria-label="Settings categories">

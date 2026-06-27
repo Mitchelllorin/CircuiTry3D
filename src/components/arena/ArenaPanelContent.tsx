@@ -124,11 +124,11 @@ export function ArenaPanelContent({
         onStartTest={onStartTest}
       />
 
+      <ArenaTestCards agents={agents} mostStressedId={mostStressedId} />
+
       {status === "complete" && summary ? (
         <ArenaPodium agents={agents} summary={summary} />
       ) : null}
-
-      <ArenaTestCards agents={agents} mostStressedId={mostStressedId} />
 
       <ArenaTestLog log={log} winnerName={winnerName} heading="Test Log" />
     </div>

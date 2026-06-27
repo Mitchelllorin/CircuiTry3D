@@ -367,11 +367,13 @@
 }
 
 .arena-cards {
-  grid-column: 1 / -1;
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 12px;
-  align-self: end;
+  /* Full-width in the panel's normal flow — was a narrow bottom-right float
+     (leftover grid-column + align-self:end from the old grid layout) that
+     pushed the component cards low and clipped them. */
+  align-self: stretch;
 }
 
 .arena-card {

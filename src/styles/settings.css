@@ -5,6 +5,14 @@
   color: var(--text-primary, #e8eefc);
 }
 
+/* When mounted inside the translucent workspace panel (not as a full page),
+   keep the content centred at its max-width (≈¾ of a desktop screen) so the 3D
+   workspace shows through on the sides — matching the other panel sections —
+   and just trim the page padding to fit the panel's own scroll area. */
+.settings-page--embedded {
+  padding: 18px 20px calc(28px + var(--builder-safe-area-bottom, 0px));
+}
+
 .settings-page__header {
   display: flex;
   align-items: center;

@@ -146,16 +146,19 @@ export function GlobalModeBar() {
           </div>
         )}
 
-        {/* Settings — dedicated page (hash route), pinned to the right end */}
-        <Link
-          to="/settings"
+        {/* Settings — opens as a workspace panel (like every other section),
+            pinned to the right end. */}
+        <button
+          type="button"
           className="mode-tab mode-tab--settings"
+          data-active={workspaceMode === "settings" ? "true" : undefined}
+          onClick={() => handleModeClick("settings")}
           aria-label="Settings"
           title="App settings — logo, graphics, workspace, accessibility"
         >
           <span className="mode-icon" aria-hidden="true">⚙️</span>
           <span className="mode-label">Settings</span>
-        </Link>
+        </button>
 
         {/* Theme toggle — pinned to the right end of the bar */}
         <button
