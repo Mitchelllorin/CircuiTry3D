@@ -9,6 +9,7 @@ import { buildArenaRoster } from "./arenaData";
 import { loadArenaSessionPayload } from "./arenaStorage";
 import type { ArenaViewProps, ArenaViewTransitionPhase } from "./types";
 import { useArenaBattle } from "./useArenaBattle";
+import ArenaBenchView from "./ArenaBenchView";
 
 const ENTER_TRANSITION_MS = 1800;
 
@@ -26,6 +27,8 @@ export default function ArenaView({
     useState<ArenaViewTransitionPhase>("entering");
   // Workspace variant: terminal exit sweep, distinct from the panel-driven camera.
   const [isExiting, setIsExiting] = useState(false);
+  // Arena entry: solo bench first ("playable datasheet"), then head-to-head battle.
+  const [arenaMode, setArenaMode] = useState<"bench" | "battle">("bench");
 
   useEffect(() => {
     const refreshPayload = () => setSessionPayload(loadArenaSessionPayload());
@@ -113,6 +116,17 @@ export default function ArenaView({
   const sessionLabel = sessionPayload?.sessionName ?? "CircuiTry3D Arena";
 
   if (isWorkspace) {
+    if (arenaMode === "bench") {
+      return (
+        <ArenaBenchView
+          roster={arenaAgents}
+          panelOpen={panelOpen}
+          onTogglePanel={onTogglePanel ?? (() => undefined)}
+          onNavigateBack={handleReturnToWorkspace}
+          onSwitchToBattle={() => setArenaMode("battle")}
+        />
+      );
+    }
     return (
       <div className={`arena-view arena-view--workspace${isExiting ? " arena-view--exiting" : ""}`}>
         <ArenaScene
@@ -174,6 +188,7 @@ export default function ArenaView({
             onResetTest={resetTest}
             onReturnToWorkspace={handleReturnToWorkspace}
             onOpenBuilder={onOpenBuilder}
+            onSwitchToBench={() => setArenaMode("bench")}
             immersive={!panelOpen}
           />
         </WorkspaceModePanel>

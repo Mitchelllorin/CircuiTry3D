@@ -30,6 +30,8 @@ type ArenaPanelContentProps = {
   onResetTest: () => void;
   onReturnToWorkspace: () => void;
   onOpenBuilder?: () => void;
+  /** Switch to the solo single-component bench. */
+  onSwitchToBench?: () => void;
   /** True once the panel has collapsed and the camera owns the workspace. */
   immersive: boolean;
 };
@@ -55,6 +57,7 @@ export function ArenaPanelContent({
   onResetTest,
   onReturnToWorkspace,
   onOpenBuilder,
+  onSwitchToBench,
   immersive,
 }: ArenaPanelContentProps) {
   return (
@@ -81,6 +84,15 @@ export function ArenaPanelContent({
           </div>
         </div>
         <div className="arena-panel__actions">
+          {typeof onSwitchToBench === "function" ? (
+            <button
+              type="button"
+              className="arena-button arena-button--secondary"
+              onClick={onSwitchToBench}
+            >
+              Solo bench
+            </button>
+          ) : null}
           {typeof onOpenBuilder === "function" ? (
             <button
               type="button"
