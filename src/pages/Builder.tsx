@@ -2712,6 +2712,10 @@ export default function Builder() {
     workspaceMode === "build" ||
     workspaceMode === "practice" ||
     workspaceMode === "troubleshoot";
+  // The Settings panel is a short bottom sheet — keep the zoom controls live and
+  // lifted above it so the workspace can be framed while sliders are dragged.
+  const isSettingsPanelLifted =
+    activeWorkspacePanelMode === "settings" && isWorkspacePanelOpen;
   const shouldShowEdgeActions =
     isActiveCircuitBuildMode &&
     !isWorksheetVisible &&
@@ -4290,8 +4294,11 @@ export default function Builder() {
         />
       )}
 
-      {isActiveCircuitBuildMode && !isOverlayActive && (
-        <div className="circuit-zoom-controls" aria-label="Zoom controls">
+      {((isActiveCircuitBuildMode && !isOverlayActive) || isSettingsPanelLifted) && (
+        <div
+          className={`circuit-zoom-controls${isSettingsPanelLifted ? " circuit-zoom-controls--lifted" : ""}`}
+          aria-label="Zoom controls"
+        >
           <button
             type="button"
             className="circuit-zoom-btn"

@@ -895,6 +895,15 @@ body.builder-body::before {
   pointer-events: all;
 }
 
+/* Lifted above the Settings bottom sheet (54vh) so the zoom controls stay usable
+   while the panel is open and the workspace is being live-previewed. Raised z so
+   they sit above the panel even if they brush its top edge. */
+.circuit-zoom-controls--lifted {
+  bottom: calc(54vh + 16px + var(--builder-safe-area-bottom, 0px));
+  bottom: calc(54dvh + 16px + var(--builder-safe-area-bottom, 0px));
+  z-index: calc(var(--z-mode-panel) + 2);
+}
+
 /* Panels overlap the zoom controls — no shift needed, open panel has z-index:1000 */
 
 .circuit-zoom-btn {
