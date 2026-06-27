@@ -205,7 +205,7 @@ export type ComponentAction = {
   metadata?: ComponentMetadata;
 };
 
-export type BuilderToolId = "select" | "wire" | "measure";
+export type BuilderToolId = "select" | "wire" | "measure" | "junction";
 
 export type WorkspaceMode =
   | "build"

@@ -1263,17 +1263,28 @@ body.builder-body::before {
 
 /* ── Junction quick-add button — visually prominent amber/yellow ─────────
    The junction button gets a distinctive amber style so it stands out as
-   a critical circuit-building tool. A keyframe pulse draws the eye to it
-   and the bright colour matches the 3D junction sphere in the workspace. */
+   a critical circuit-building tool, but it should only pulse while the
+   junction placement tool is actually active. */
 .quick-add-btn--junction {
   border-color: rgba(255, 200, 0, 0.65);
   background: rgba(255, 170, 0, 0.14);
   color: #ffe566;
-  animation: junction-btn-glow 2.8s ease-in-out infinite;
 }
 
 .quick-add-btn--junction .quick-add-btn-label {
   color: rgba(255, 220, 80, 0.9);
+}
+
+.quick-add-btn--junction.quick-add-btn--active {
+  background: rgba(255, 190, 0, 0.28);
+  border-color: rgba(255, 215, 0, 0.9);
+  color: #fff8c0;
+  box-shadow: 0 0 20px rgba(255, 200, 0, 0.5);
+  animation: junction-btn-glow 2.8s ease-in-out infinite;
+}
+
+.quick-add-btn--junction.quick-add-btn--active .quick-add-btn-label {
+  color: #fff2a6;
 }
 
 .quick-add-btn--junction:hover:not(:disabled) {

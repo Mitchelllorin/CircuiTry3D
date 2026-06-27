@@ -66,6 +66,7 @@ type OrbitControlsInstance = {
   enabled: boolean;
   enablePan: boolean;
   enableDamping: boolean;
+  dampingFactor: number;
   minDistance: number;
   maxDistance: number;
   minPolarAngle: number;
@@ -359,6 +360,7 @@ export function ArenaScene({
         renderer.domElement,
       ) as OrbitControlsInstance;
       controls.enableDamping = true;
+      controls.dampingFactor = 0.08;
       controls.target.copy(cameraTarget);
       if (isWorkspace) {
         // Flagship "full 3D 360°" control — the works: free orbit, deep zoom, pan.
@@ -374,6 +376,7 @@ export function ArenaScene({
         controls.minPolarAngle = Math.PI / 5;
         controls.maxPolarAngle = Math.PI / 2.05;
       }
+
 
       const ambientLight = new THREE.AmbientLight("#60a5fa", 1.6);
       scene.add(ambientLight);
@@ -397,6 +400,7 @@ export function ArenaScene({
           emissive: new THREE.Color("#0f172a"),
           metalness: 0.5,
           roughness: 0.6,
+          side: THREE.DoubleSide,
         }),
       );
       floor.rotation.x = -Math.PI / 2;
@@ -581,16 +585,22 @@ export function ArenaScene({
             controls.update();
           }
         } else {
+          // Non-workspace (full-screen) flow: drive the camera along the fixed
+          // cinematic entry/exit path, then hand control to OrbitControls once
+          // the battle is active so free-orbit can take hold.
           const cinematicT =
             phase === "entering"
               ? Math.min(phaseElapsed / 1800, 1)
               : phase === "exiting"
                 ? 1 - Math.min(phaseElapsed / 900, 1)
                 : 1;
-          camera.position.lerpVectors(entryPosition, arenaPosition, cinematicT);
+          if (phase !== "active") {
+            camera.position.lerpVectors(entryPosition, arenaPosition, cinematicT);
+          }
           controls.enabled = phase === "active";
           controls.update();
         }
+
 
         ring.rotation.z += 0.0015;
         particles.rotation.y += 0.0011;

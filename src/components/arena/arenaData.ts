@@ -1,5 +1,6 @@
 import { familyDefaults, familyThermal, resolveFamily } from "./fuse";
 import { AMBIENT_C } from "./stressTest";
+import { findCatalogComponent } from "./catalogData";
 import type {
   ArenaBattleAgent,
   ArenaComponentRatings,
@@ -211,9 +212,27 @@ export function buildArenaRoster(
     const metrics = deriveMetrics(component, payload);
     const ratings = deriveRatings(family, properties);
 
+    // Pull rated thresholds from catalog if available, then from component properties
+    const catalogEntry = component.id ? findCatalogComponent(component.id) : null;
+    const ratedThresholds = catalogEntry?.ratedThresholds ?? {
+      maxVoltageV: readNumeric(component.properties, ["maxVoltage", "vds_max", "vce_max", "reverseVoltage"]) ?? undefined,
+      maxCurrentA: readNumeric(component.properties, ["maxCurrent", "ic_max", "id_max", "ratedCurrentA"]) ?? undefined,
+      maxPowerW: readNumeric(component.properties, ["powerRating", "powerDissipation"]) ?? undefined,
+      maxTempC: readNumeric(component.properties, ["maxTempC"]) ?? 125,
+      minTempC: readNumeric(component.properties, ["minTempC"]) ?? -40,
+      thermalResistanceCA: readNumeric(component.properties, ["thermalResistance"]) ?? undefined,
+    };
+
+    const manufacturer =
+      catalogEntry?.manufacturer ??
+      (typeof component.properties?.["manufacturer"] === "string"
+        ? component.properties["manufacturer"]
+        : null);
+
     return {
       id: component.id ?? `arena-agent-${index + 1}`,
       name: component.name?.trim() || `${toTitleCase(componentType)} ${index + 1}`,
+      manufacturer,
       componentType,
       renderType,
       family,
@@ -250,6 +269,7 @@ export function buildArenaRoster(
       failedAtLoad: null,
       score: 0,
       rank: 0,
+      ratedThresholds,
     };
   });
 }

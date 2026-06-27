@@ -119,3 +119,16 @@ export function loadArenaSessionPayload(): ArenaSessionPayload | null {
 
   return null;
 }
+
+export function saveArenaSessionPayload(payload: ArenaSessionPayload): void {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  try {
+    const envelope: ArenaSessionEnvelope = { payload };
+    window.localStorage.setItem(LAST_SESSION_KEY, JSON.stringify(envelope));
+  } catch {
+    // localStorage may be unavailable in some contexts
+  }
+}
