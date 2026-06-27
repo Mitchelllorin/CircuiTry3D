@@ -115,6 +115,35 @@ export function ArenaScenarioSelect({
 }
 
 /** One component's live instrumentation card. */
+/**
+ * F.U.S.E.'s plain-English verdict — WHY a part won or failed, in terms a
+ * newcomer can follow (what it hit, what its rated limit was, how hard it was
+ * pushed). This is the human readout that earns the failure simulation its name.
+ */
+function explainOutcome(agent: ArenaBattleAgent): string {
+  const limit = Math.round(agent.ratings.junctionLimitC);
+  const peak = Math.round(agent.peakTempC);
+  const ranTooHot = peak >= limit;
+  if (agent.phase === "failed") {
+    const cause = agent.failureName || "Overstressed";
+    const at = agent.failedAtLoad ? ` at ${agent.failedAtLoad.toFixed(1)}× load` : "";
+    return ranTooHot
+      ? `${cause}${at} — ran too hot, peaking ${peak}°C past its ${limit}°C rating.`
+      : `${cause}${at} — pushed past what it's rated to take.`;
+  }
+  if (agent.rank === 1) {
+    return `Toughest part on the bench — held the full ${agent.survivedLoad.toFixed(
+      1,
+    )}× load and stayed coolest (peaked ${peak}°C against a ${limit}°C limit).`;
+  }
+  if (agent.rank > 0) {
+    return `Survived ${agent.survivedLoad.toFixed(
+      1,
+    )}× load — peaked ${peak}°C against its ${limit}°C rating.`;
+  }
+  return "";
+}
+
 export function ArenaTestCard({
   agent,
   isMostStressed,
@@ -182,6 +211,12 @@ export function ArenaTestCard({
         </div>
       </dl>
 
+      {isFailed || ranked ? (
+        <p className="arena-card__why">{explainOutcome(agent)}</p>
+      ) : (
+        <p className="arena-card__signature">{agent.stressSignature}</p>
+      )}
+
       {ranked ? (
         <div className={`arena-card__verdict${isWinner ? " is-winner" : ""}`}>
           <span className="arena-card__verdict-rank">{rankLabel(agent.rank)}</span>
@@ -194,13 +229,10 @@ export function ArenaTestCard({
               ? `held ${(agent.failedAtLoad ?? 0).toFixed(1)}×`
               : `survived ${agent.survivedLoad.toFixed(1)}×`}
           </span>
+          {/* Affiliate "get the real part" link lives here per card. */}
           <ArenaBuyLink agent={agent} variant="card" />
         </div>
-      ) : (
-        <p className="arena-card__signature">
-          {isFailed && agent.failureName ? `✸ ${agent.failureName}` : agent.stressSignature}
-        </p>
-      )}
+      ) : null}
     </article>
   );
 }

@@ -51,3 +51,6 @@ coverage/
 
 # Claude Code private working notes (not app code)
 memory/
+
+# Local probe/screenshot scratch scripts
+/_*.mjs

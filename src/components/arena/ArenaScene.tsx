@@ -708,7 +708,10 @@ export function ArenaScene({
             return;
           }
 
-          tempVector.set(group.position.x, 3.2, group.position.z);
+          // Anchor the floating metric nameplate to the part's STABLE seat, not its
+          // live (jittering) group position — so the component shakes under stress
+          // but its readout stays put and legible.
+          tempVector.set(seatX, 3.2, seatZ);
           tempVector.project(camera);
 
           const x = (tempVector.x * 0.5 + 0.5) * root.clientWidth;

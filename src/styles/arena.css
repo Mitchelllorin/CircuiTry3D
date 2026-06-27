@@ -586,6 +586,27 @@
   color: #fca5a5;
 }
 
+/* F.U.S.E.'s plain-English "why it won/failed" verdict line. */
+.arena-card__why {
+  margin: 12px 0 0;
+  padding: 9px 11px;
+  border-radius: 12px;
+  background: rgba(148, 163, 184, 0.08);
+  border-left: 3px solid var(--arena-accent, #60a5fa);
+  color: rgba(226, 232, 240, 0.92);
+  font-size: 0.78rem;
+  line-height: 1.45;
+  font-weight: 500;
+}
+.arena-card--phase-failed .arena-card__why {
+  border-left-color: #f87171;
+  background: rgba(248, 113, 113, 0.08);
+}
+.arena-card.is-winner .arena-card__why {
+  border-left-color: #fbbf24;
+  background: rgba(251, 191, 36, 0.1);
+}
+
 /* ── Test console: the BATTLE button + the live load-ramp gauge ── */
 .arena-overlay__console {
   grid-column: 1;
