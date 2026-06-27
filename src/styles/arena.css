@@ -1187,8 +1187,11 @@
   text-align: start;
 }
 .arena-winner-banner--workspace {
-  inset-block-start: auto;
-  inset-block-end: 96px;
+  /* Anchor near the TOP of the arena (just below the mode bar) so the winner
+     banner never lands on top of the BATTLE button / load-ramp controls at the
+     bottom of the scene. */
+  inset-block-start: calc(96px + var(--builder-safe-area-top, 0px));
+  inset-block-end: auto;
   inset-inline-start: 50%;
   transform: translateX(-50%);
   border-color: rgba(250, 204, 21, 0.4);
