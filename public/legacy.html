@@ -5475,6 +5475,17 @@ body.android-optimized .zoom-btn {
 
         const worldUpVector = new THREE.Vector3(0, 1, 0);
         const cameraDirectionVec = new THREE.Vector3();
+        // Reusable scratch objects for the per-frame flow-particle loop. THREE's
+        // Curve.getPoint(t, target) writes into `target` instead of allocating a
+        // fresh Vector3 every call — with hundreds of particles per frame that
+        // allocation churn was the main GC/jank source. These are mutated and
+        // consumed within a single loop iteration, never retained across frames.
+        const _flowPt = new THREE.Vector3();
+        const _flowPA = new THREE.Vector3();
+        const _flowPB = new THREE.Vector3();
+        const _flowTan = new THREE.Vector3();
+        const _flowTrailPt = new THREE.Vector3();
+        const _flowQuat = new THREE.Quaternion();
         const cameraRightVec = new THREE.Vector3();
         const cameraUpVec = new THREE.Vector3();
         const PAN_SENSITIVITY_BASE = isMobile ? (isAndroid ? 0.0046 : 0.0048) : 0.0036;
@@ -8690,9 +8701,11 @@ body.android-optimized .zoom-btn {
                 // Android is capped at 1.5× because System WebView devices (e.g. Pixel, Galaxy)
                 // report DPR 2.6–3.0, exhausting GPU VRAM and causing WebGL context loss.
                 // Other mobile is capped at 2× to retain retina sharpness.
+                // Cap desktop DPR at 2 too: above 2× (4K/Retina) the extra fill-rate
+                // is a large GPU cost for no perceptible sharpness gain.
                 renderer.setPixelRatio(isAndroid
                     ? Math.min(window.devicePixelRatio, 1.5)
-                    : (isMobile ? Math.min(window.devicePixelRatio, 2) : window.devicePixelRatio));
+                    : Math.min(window.devicePixelRatio, 2));
                 renderer.setSize(_vw, _vh);
                 renderer.setClearColor(0x0e1322, 1);
                 // Android System WebView (Capacitor) may have older GLSL compiler that
@@ -8909,6 +8922,13 @@ body.android-optimized .zoom-btn {
 
         function animate(currentTime) {
             requestAnimationFrame(animate);
+
+            // Skip all per-frame work while the tab/page is hidden. The rAF keeps
+            // ticking cheaply and the loop self-resumes the moment we're visible
+            // again (particles continue from where they paused — visually correct).
+            if (document.hidden) {
+                return;
+            }
 
             // Handle first call where currentTime might be undefined
             if (!currentTime) currentTime = performance.now();
@@ -9279,7 +9299,7 @@ body.android-optimized .zoom-btn {
                     if (wireData.progress > 1) wireData.progress -= 1;
                     else if (wireData.progress < 0) wireData.progress += 1;
 
-                    const position = wire.curve.getPoint(wireData.progress);
+                    const position = wire.curve.getPoint(wireData.progress, _flowPt);
                     if (!position || !position.isVector3) continue;
 
                     // ── Organic stream oscillation (all zoom tiers) ──────────
@@ -9349,12 +9369,12 @@ body.android-optimized .zoom-btn {
 
                     if (stretchToTangent) {
                         // Approximate tangent by sampling two nearby points
-                        const pA = wire.curve.getPoint(Math.max(0, wireData.progress - TANGENT_SAMPLE_DELTA));
-                        const pB = wire.curve.getPoint(Math.min(1, wireData.progress + TANGENT_SAMPLE_DELTA));
+                        const pA = wire.curve.getPoint(Math.max(0, wireData.progress - TANGENT_SAMPLE_DELTA), _flowPA);
+                        const pB = wire.curve.getPoint(Math.min(1, wireData.progress + TANGENT_SAMPLE_DELTA), _flowPB);
                         if (pA && pB && pA.isVector3 && pB.isVector3) {
-                            const tangent = pB.clone().sub(pA).normalize();
+                            const tangent = _flowTan.copy(pB).sub(pA).normalize();
                             // Align Y axis of particle (geometry long axis) to tangent
-                            const q  = new THREE.Quaternion().setFromUnitVectors(worldUpVector, tangent.lengthSq() > 0.0001 ? tangent : worldUpVector);
+                            const q  = _flowQuat.setFromUnitVectors(worldUpVector, tangent.lengthSq() > 0.0001 ? tangent : worldUpVector);
                             particle.setRotationFromQuaternion(q);
                             particle.scale.set(baseZoomScale, baseZoomScale * elongScale, baseZoomScale);
                         } else {
@@ -9414,7 +9434,7 @@ body.android-optimized .zoom-btn {
                             let trailProg = wireData.progress + offset;
                             if (trailProg > 1) trailProg -= 1;
                             if (trailProg < 0) trailProg += 1;
-                            const tp = wire.curve.getPoint(trailProg);
+                            const tp = wire.curve.getPoint(trailProg, _flowTrailPt);
                             if (tp && tp.isVector3) {
                                 trail.position.copy(tp);
                                 // Scale trail with same zoom factor
@@ -10488,7 +10508,7 @@ body.android-optimized .zoom-btn {
                 camera.updateProjectionMatrix();
                 renderer.setPixelRatio(isAndroid
                     ? Math.min(window.devicePixelRatio, 1.5)
-                    : (isMobile ? Math.min(window.devicePixelRatio, 2) : window.devicePixelRatio));
+                    : Math.min(window.devicePixelRatio, 2));
                 renderer.setSize(w, h);
             }
         }
@@ -11269,6 +11289,14 @@ body.android-optimized .zoom-btn {
             }
             const minX = Math.min(Astub.x, Bstub.x) - GRID * 8, maxX = Math.max(Astub.x, Bstub.x) + GRID * 8;
             const minZ = Math.min(Astub.z, Bstub.z) - GRID * 8, maxZ = Math.max(Astub.z, Bstub.z) + GRID * 8;
+            // Safety: the A* frontier uses an O(n log n) sort on every push, so a
+            // very large search box (terminals far apart) can take seconds and hard-
+            // freeze the tab. If the grid is pathologically large, skip the search
+            // and fall back to the simple L-path below — visually fine, never hangs.
+            const A_STAR_MAX_CELLS = 60000;
+            if (((maxX - minX) / GRID) * ((maxZ - minZ) / GRID) > A_STAR_MAX_CELLS) {
+                return compressPath([A, new THREE.Vector3(Bstub.x, 0, Astub.z), B]);
+            }
             function key(x,z){return x+","+z}
             const start = Astub, goal = Bstub;
             const pq=[]; const came=new Map(); const g=new Map(); const f=new Map(); const dir=new Map();
@@ -11278,10 +11306,17 @@ body.android-optimized .zoom-btn {
             function h(p){return Math.abs(p.x-goal.x)+Math.abs(p.z-goal.z)}
             const sK=key(start.x,start.z); g.set(sK,0); f.set(sK,h(start)); push(start,f.get(sK)); dir.set(sK,null);
             const dirs=[[GRID,0,'R'],[0,GRID,'D'],[-GRID,0,'L'],[0,-GRID,'U']];
+            // Hard cap on node expansions: belt-and-suspenders against any runaway
+            // search (also bounds total cost of the per-push frontier sort).
+            let _expansions = 0; const A_STAR_MAX_EXPANSIONS = 20000;
             while(pq.length){
+                if (++_expansions > A_STAR_MAX_EXPANSIONS) break;
                 const cur=pop(); const cK=key(cur.x,cur.z);
                 if(cur.x===goal.x && cur.z===goal.z){
-                    const path=[cur]; let ck=cK; while(came.has(ck)){const prev=came.get(ck); path.unshift(prev); ck=key(prev.x,prev.z);} 
+                    // Guard the parent-chain walk against a cycle in `came` (would
+                    // otherwise loop forever and freeze the renderer).
+                    const path=[cur]; let ck=cK; let _hops=0;
+                    while(came.has(ck) && ++_hops < 8192){const prev=came.get(ck); path.unshift(prev); ck=key(prev.x,prev.z);}
                     return compressPath([A].concat(path).concat([B]));
                 }
                 for(const[dX,dZ,code] of dirs){
@@ -15646,27 +15681,53 @@ Made with ? for visual learners everywhere!
                 hideSnapIndicator();
             }
 
-            // Calculate center-right position with staggering
-            // Components appear in the center-right area of the workspace (visible, not behind menu)
-            // Each new component is staggered slightly to avoid overlap
-            const staggerOffset = componentPlacementIndex * 2; // 2 units apart for each new component
-            const baseX = 2; // Start at X=2 (center-right, away from left menu)
-            const baseZ = 0; // Start at center Z
+            // Choose a placement that won't collide. The old logic dropped each
+            // part onto one of 16 fixed staggered cells with no occupancy check, so
+            // parts piled up and their large fixed-size labels garbled. Instead we
+            // drop new parts into clear space just BELOW the existing circuit (so
+            // their labels don't collide with it), then nudge to the nearest free
+            // cell — reusing the same obstacle helpers the wire router uses.
+            const placementObstacles = (typeof getObstacleRects === 'function')
+                ? getObstacleRects(GRID_SIZE * 0.9)
+                : [];
+            const _cellFree = (px, pz) =>
+                typeof cellBlocked !== 'function' || !cellBlocked(px, pz, placementObstacles);
 
-            // Spiral-like stagger pattern for better visibility
-            const staggerX = (componentPlacementIndex % 4) * 2 - 3; // -3, -1, 1, 3 pattern
-            const staggerZ = Math.floor(componentPlacementIndex / 4) * 2; // Move down every 4 components
+            // Anchor below-centre of the existing cluster (or workspace centre when
+            // the canvas is empty). Placing below — with a clear gap — keeps the new
+            // part's label out of the existing circuit's label band.
+            let startX = 2, startZ = 0;
+            const _placed = components.filter(c => c && c.position);
+            if (_placed.length > 0) {
+                let sumX = 0, maxZ = -Infinity;
+                _placed.forEach(c => { sumX += c.position.x; maxZ = Math.max(maxZ, c.position.z); });
+                startX = Math.round((sumX / _placed.length) / GRID_SIZE) * GRID_SIZE;
+                startZ = maxZ + GRID_SIZE * 4; // clear gap below everything else
+            }
 
-            const position = snapToGrid(new THREE.Vector3(
-                baseX + staggerX,
-                0,
-                baseZ + staggerZ
-            ));
-
-            componentPlacementIndex++;
-            // Reset index after 16 components to reuse positions (components will have been moved by user)
-            if (componentPlacementIndex >= 16) {
-                componentPlacementIndex = 0;
+            let position = snapToGrid(new THREE.Vector3(startX, 0, startZ));
+            if (!_cellFree(position.x, position.z)) {
+                let found = false;
+                const MAX_RING = 14;
+                for (let ring = 1; ring <= MAX_RING && !found; ring++) {
+                    for (let dx = -ring; dx <= ring && !found; dx++) {
+                        for (let dz = -ring; dz <= ring && !found; dz++) {
+                            // Only walk the perimeter of each ring (interior already tried).
+                            if (Math.abs(dx) !== ring && Math.abs(dz) !== ring) continue;
+                            const cand = snapToGrid(new THREE.Vector3(
+                                startX + dx * GRID_SIZE, 0, startZ + dz * GRID_SIZE));
+                            if (_cellFree(cand.x, cand.z)) { position = cand; found = true; }
+                        }
+                    }
+                }
+                // Pathological fallback (everything in range occupied): use the old
+                // staggered slot so a component is always placed.
+                if (!found) {
+                    const sX = (componentPlacementIndex % 4) * 2 - 3;
+                    const sZ = Math.floor(componentPlacementIndex / 4) * 2;
+                    position = snapToGrid(new THREE.Vector3(startX + sX, 0, startZ + sZ));
+                    componentPlacementIndex = (componentPlacementIndex + 1) % 16;
+                }
             }
 
             const component = new Component(type, position);

@@ -113,10 +113,13 @@ export default function ArenaBenchView({
           <div className="arena-panel__controls">
             <div className="arena-panel__meta">
               <span className="arena-eyebrow">Solo Stress Bench · Playable Datasheet</span>
-              <div className="arena-panel__meta-pills">
+              {/* Status read-out, not controls — styled as flat badges (see
+                  arena.css .arena-panel__meta-pills--status) so they don't read
+                  as clickable chips. The live phase is a polite live region. */}
+              <div className="arena-panel__meta-pills arena-panel__meta-pills--status">
                 <span>{component ? component.name : "No part selected"}</span>
                 <span>Ramping {stressor}</span>
-                <span>
+                <span role="status" aria-live="polite">
                   {complete
                     ? envelope?.survived
                       ? "Survived the ramp"
@@ -153,13 +156,14 @@ export default function ArenaBenchView({
           </div>
 
           {/* ── Component picker ── */}
-          <div className="arena-bench-picker" aria-label="Choose a component to test">
+          <div className="arena-bench-picker" role="group" aria-label="Choose a component to test">
             <span className="arena-bench-picker__label">Part under test</span>
             <div className="arena-bench-picker__chips">
               {roster.map((a) => (
                 <button
                   key={a.id}
                   type="button"
+                  aria-pressed={a.id === component?.id}
                   className={`arena-bench-chip${
                     a.id === component?.id ? " is-active" : ""
                   }`}
@@ -177,13 +181,14 @@ export default function ArenaBenchView({
           </div>
 
           {/* ── Stressor picker (v1: current) ── */}
-          <div className="arena-bench-picker" aria-label="Choose the stressor to ramp">
+          <div className="arena-bench-picker" role="group" aria-label="Choose the stressor to ramp">
             <span className="arena-bench-picker__label">Ramp this</span>
             <div className="arena-bench-picker__chips">
               {STRESSORS.map((s) => (
                 <button
                   key={s.id}
                   type="button"
+                  aria-pressed={s.id === stressor}
                   className={`arena-bench-chip arena-bench-chip--stressor${
                     s.id === stressor ? " is-active" : ""
                   }`}

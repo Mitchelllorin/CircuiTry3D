@@ -2595,22 +2595,16 @@ export default function Builder() {
     };
   }, [clearCurrentFlowPayoffTimers]);
 
-  // Effect 1 — show the intro dialog immediately on mount if the user has never
-  // seen it.  This is intentionally independent of isFrameReady: the intro
-  // shows educational text and must appear even if the iframe fails to load.
+  // Effect 1 — lock the canvas immediately on mount so that when the payoff
+  // explainer circuit loads (Effect 2, once the iframe is ready) it appears
+  // view-only as a showcase rather than briefly editable.  We no longer pop a
+  // separate welcome modal here: hitting "Launch" should land the user straight
+  // on the workspace with the payoff circuit + explainer banner playing.  The
+  // welcome dialog still exists and is reachable on demand via "Replay
+  // onboarding" (handleReplayOnboarding).
   useEffect(() => {
-    let hasSeenIntro = false;
-    try {
-      hasSeenIntro =
-        window.localStorage.getItem(INTRO_DIALOG_STORAGE_KEY) === "1";
-    } catch {
-      hasSeenIntro = false;
-    }
-
-    if (!hasSeenIntro) {
-      setIntroDialogVisible(true);
-      setCircuitLocked(true);
-    }
+    setOnboardingLocked(true);
+    setCircuitLocked(true);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // run once on mount
 
@@ -2649,25 +2643,24 @@ export default function Builder() {
 
     firstRunPayoffTriggeredRef.current = true;
 
-    // If the intro hasn't been seen yet it is currently visible (shown by
-    // Effect 1 above).  The payoff sequence will run from
-    // handleDismissIntroDialog after the user dismisses the dialog.
-    let hasSeenIntro = false;
+    // Land directly on the payoff explainer circuit — no welcome modal in
+    // between.  Mark the onboarding/payoff flags as seen (the welcome modal is
+    // now opt-in via "Replay onboarding"), keep the circuit view-only, and
+    // reveal the payoff banner so the explainer text (what current flow IS,
+    // Ohm's law, the zoom-to-atomic story) accompanies the demo circuit. The
+    // banner auto-hides after a few seconds and has a close button.
     try {
-      hasSeenIntro =
-        window.localStorage.getItem(INTRO_DIALOG_STORAGE_KEY) === "1";
+      window.localStorage.setItem(INTRO_DIALOG_STORAGE_KEY, "1");
     } catch {
-      hasSeenIntro = false;
+      // ignore storage write failures
+    }
+    try {
+      window.localStorage.setItem(CURRENT_FLOW_PAYOFF_STORAGE_KEY, "seen");
+    } catch {
+      // ignore storage write failures
     }
 
-    if (!hasSeenIntro) {
-      return;
-    }
-
-    // Intro already seen — skip the big welcome modal, but still reveal the
-    // payoff banner so the explainer text (what the current flow IS, Ohm's law,
-    // the zoom-to-atomic story) always accompanies the demo circuit on startup.
-    // It auto-hides after a few seconds and has a close button, so it stays light.
+    setOnboardingLocked(true);
     runCurrentFlowPayoffSequence({ revealBanner: true });
   }, [isFrameReady, runCurrentFlowPayoffSequence]);
 

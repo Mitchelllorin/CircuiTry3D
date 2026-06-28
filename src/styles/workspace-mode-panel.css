@@ -28,7 +28,7 @@
   gap: 12px;
   min-height: 52px;
   padding: 0 14px;
-  background: rgba(20, 35, 55, 0.82);
+  background: rgb(20, 35, 55);
   border-bottom: 1px solid rgba(136, 204, 255, 0.22);
 }
 
@@ -72,7 +72,11 @@
   height: calc(100% - 52px);
   max-height: calc(100% - 52px);
   overflow-y: auto;
-  background: rgba(8, 18, 36, 0.72);
+  /* Opaque by default so content modes (Textbook, Arcade, Classroom, etc.)
+     don't let the persistent 3D workspace canvas bleed through behind the text.
+     Modes that intentionally show the live workspace behind the panel
+     (Settings — a short bottom sheet) re-enable translucency below. */
+  background: rgb(8, 18, 36);
 }
 
 .workspace-mode-panel-content {
@@ -102,6 +106,13 @@
   height: 54dvh;
   max-height: 54vh;
   max-height: 54dvh;
+}
+
+/* Settings is a short bottom sheet: keep its body translucent so brightness /
+   grid / logo changes on the live 3D workspace remain visible through and above
+   the panel while dragging sliders. */
+.workspace-mode-panel--settings .workspace-mode-panel-body {
+  background: rgba(8, 18, 36, 0.72);
 }
 
 /* ── Arena mode: steel sword styling on the title ── */

@@ -23,8 +23,13 @@
    Outer scroller-menu shell
    --------------------------------------------------------------------------- */
 .scroller-menu {
-  flex: 1 1 auto;
-  min-height: 0;
+  /* Take natural content height and let the outer .builder-menu-scroll do the
+     scrolling. Previously `flex: 1 1 auto` + `min-height: 0` let the flexbox
+     shrink this to ZERO height when the sibling "Real Parts Library" section was
+     tall — the film-reel-wrapper (flex-shrink: 0, fixed 348px) then overflowed
+     its 0-height parent and rendered ON TOP of the branded parts list. That was
+     the UI-layering bug where real/branded components hid behind the reel. */
+  flex: 0 0 auto;
   display: flex;
   flex-direction: column;
   gap: 6px;
