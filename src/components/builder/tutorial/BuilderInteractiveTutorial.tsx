@@ -34,7 +34,7 @@ type TutorialObjective = {
   done: boolean;
 };
 
-const STORAGE_KEY = "circuitry3d:tutorial:basic-circuits:v1";
+const STORAGE_KEY = "circuitry3d:tutorial:basic-circuits:v2";
 
 function safeParseInt(value: string | null) {
   if (!value) return null;
@@ -82,51 +82,67 @@ export function BuilderInteractiveTutorial(props: {
     () => [
       {
         id: "welcome",
-        title: "Welcome: build your first working circuit",
+        title: "Welcome — let’s build a circuit that actually works",
         body:
-          "You’ll build a simple battery + resistor circuit, then use W.I.R.E. (Watts, Current, Resistance, Voltage) to read what’s happening.",
+          "No experience needed. In a few steps you’ll wire up a real battery-and-resistor loop, watch current flow through it, and read what’s happening with W.I.R.E. — Watts (power), I (current), Resistance, and E (voltage). Hit Next and I’ll point things out as we go.",
+        canSkipRequirement: true,
+        isComplete: () => true,
+      },
+      {
+        id: "parts-tour",
+        title: "Meet your parts — what each one actually does",
+        body:
+          "Open the Library (the parts drawer) and take a look. In plain English: a BATTERY is the push — it pumps charge around the loop (its voltage is the pressure). A RESISTOR is the brake — it limits how much current flows and uses up some voltage. An LED or LAMP is the payoff — it turns that current into light. A SWITCH is the gate — open = no flow, closed = flow. WIRES are the roads that connect it all. That’s a whole circuit: a push, a brake, a payoff, and roads between them.",
         canSkipRequirement: true,
         isComplete: () => true,
       },
       {
         id: "battery",
-        title: "Step 1 — Add a Battery (the voltage source)",
+        title: "Step 1 — Add a Battery (the push)",
         body:
-          "Open the Library and click Battery. A circuit needs a source (voltage / EMF) to push charge.",
+          "Open the Library and tap Battery. The battery is your voltage source — it’s the pump that pushes charge around the loop. Its (+) terminal sits at higher pressure than (−); current leaves (+), travels the circuit, and returns to (−). No source, no flow.",
         targetId: "tutorial-add-battery",
         isComplete: ({ circuit }) =>
           Boolean((circuit?.counts.byType?.battery ?? 0) > 0),
       },
       {
         id: "resistor",
-        title: "Step 2 — Add a Resistor (the load)",
+        title: "Step 2 — Add a Resistor (the brake)",
         body:
-          "Click Resistor. Resistors limit current and create a voltage drop.",
+          "Now tap Resistor. A resistor limits current and ‘uses up’ part of the voltage (a voltage drop across it). Think of it as the brake that keeps the rest of the circuit from getting overwhelmed — it’s why an LED doesn’t instantly burn out. More on tuning its value in a moment.",
         targetId: "tutorial-add-resistor",
         isComplete: ({ circuit }) =>
           Boolean((circuit?.counts.byType?.resistor ?? 0) > 0),
       },
       {
-        id: "wire-mode",
-        title: "Step 3 — Enable Wire Mode",
+        id: "tune-parts",
+        title: "Tune & handle parts — long-press, drag, rotate",
         body:
-          "Turn on Wire Mode so you can connect terminals. You’ll make a circuit: battery → resistor → back to battery.",
+          "Every part is hands-on. LONG-PRESS a component to open its editor and change its value (resistor ohms, battery volts, etc.). DRAG to move it. DOUBLE-TAP to fly the camera in for a close look. Need a part turned? Flip on Rotate mode and spin it so its terminals line up. Try long-pressing your resistor now — that editor is where the next step happens.",
+        canSkipRequirement: true,
+        isComplete: () => true,
+      },
+      {
+        id: "wire-mode",
+        title: "Step 3 — Turn on Wire Mode and connect",
+        body:
+          "Flip on Wire Mode, then tap one terminal and the next to lay a wire between them. Your goal is one closed loop: battery (+) → resistor → back to battery (−). In Wire Mode, tap terminals to connect; long-press a wire later to reroute or delete it.",
         targetId: "tutorial-enable-wire",
         isComplete: ({ mode }) => Boolean(mode.isWireMode),
       },
       {
         id: "close-circuit",
-        title: "Step 4 — Close the circuit so current can flow",
+        title: "Step 4 — Close the loop so current can flow",
         body:
-          "Draw wires between the battery terminals and the resistor terminals until the simulator reports a complete circuit (current can flow).",
+          "Keep wiring until the loop is fully closed — battery to resistor and all the way back. Current can only flow in a complete circuit; a single gap anywhere (an ‘open’) stops everything. Watch the status below: it flips to ‘Closed’ the moment the loop completes.",
         canSkipRequirement: false,
         isComplete: ({ circuit }) => Boolean(circuit?.metrics.isComplete),
       },
       {
         id: "simulate",
-        title: "Step 5 — Run the simulation",
+        title: "Step 5 — Run it and watch current move",
         body:
-          "Run a simulation to confirm values and visualize flow. (Tip: if current is 0, you likely have an open circuit.)",
+          "Hit Run. Glowing particles start flowing along the wires — that’s your current, made visible. If nothing moves and current reads 0, you’ve still got an open somewhere; check that every terminal is connected.",
         targetId: "tutorial-run-simulation",
         isComplete: ({ lastSimulationAt, tutorialOpenedAt }) => {
           if (!lastSimulationAt) return false;
@@ -136,9 +152,17 @@ export function BuilderInteractiveTutorial(props: {
       },
       {
         id: "wire-metrics",
-        title: "Step 6 — Read W.I.R.E. (live circuit metrics)",
+        title: "Step 6 — Read W.I.R.E. (your live dashboard)",
         body:
-          "The W.I.R.E. panel labels each quantity with a fixed color: W (Watts/Power) = blue, I (Current) = yellow-orange, R (Resistance) = green, E (Voltage) = red. The glowing particles moving along the wires use a separate color system — they show current speed and resistance, not the W, I, R, or E categories. Change the resistor value (long-press the resistor) and watch the metrics respond.",
+          "The W.I.R.E. panel is your dashboard, and each quantity has a fixed colour: W (Watts / power) = blue, I (Current) = yellow-orange, R (Resistance) = green, E (Voltage) = red. (Heads up: the glowing particles on the wires use their own colour scheme for speed and resistance — they’re not the W/I/R/E colours.) These four numbers are everything the circuit is doing, live.",
+        canSkipRequirement: true,
+        isComplete: () => true,
+      },
+      {
+        id: "dials",
+        title: "Cause & effect — what the dials actually do",
+        body:
+          "Here’s the whole game in one rule: current = voltage ÷ resistance (I = V ÷ R). Long-press your resistor and CRANK IT UP → current drops, the loop calms down, an LED dims. Turn it DOWN → current surges, parts run hot (that’s how things burn out). Now long-press the battery: more VOLTS → more current everywhere; fewer volts → less. Change one value, watch W.I.R.E. move — that intuition is the real lesson.",
         canSkipRequirement: true,
         isComplete: () => true,
       },
@@ -168,10 +192,18 @@ export function BuilderInteractiveTutorial(props: {
         isComplete: () => true,
       },
       {
-        id: "done",
-        title: "Done — you're ready for complex circuits",
+        id: "arena-fuse",
+        title: "Push parts to the limit — the Arena & F.U.S.E.",
         body:
-          "You've mastered the full approach: place components, close the circuit, read W.I.R.E. metrics, add junctions for parallel paths, collapse parallel groups to R_eq, then fill the W.I.R.E. table from Totals inward. Head to Practice Worksheets to work through series, parallel, and combination problems using this exact method.",
+          "Want to know how much a part can really take? Open the ARENA. SOLO mode is a stress bench: pick one component, ramp the current up, and watch exactly where it stops being safe and where it fails. BATTLE mode pits parts head-to-head to see which survives the most punishment. Every failure is judged by F.U.S.E. — real failure physics (heat build-up and I²t energy), not a guess — and it tells you in plain English why a part won or let go. Tap ‘Open Arena’ to try it.",
+        canSkipRequirement: true,
+        isComplete: () => true,
+      },
+      {
+        id: "done",
+        title: "Done — you're ready for real circuits",
+        body:
+          "That’s the whole loop: pick parts (push, brake, payoff), wire a closed circuit, run it, and read W.I.R.E. — then long-press to tune values and feel I = V ÷ R for yourself. Add junctions for parallel paths, collapse parallel groups to R_eq, and fill the W.I.R.E. table from Totals inward. Head to Practice Worksheets for series, parallel, and combination problems, or take parts to their limit in the Arena.",
         canSkipRequirement: true,
         isComplete: () => true,
       },
@@ -196,8 +228,9 @@ export function BuilderInteractiveTutorial(props: {
   useEffect(() => {
     if (!isOpen) return;
 
-    // Some steps need the Library open so the user can actually click the target.
+    // Some steps need the Library open so the user can actually see/click the target.
     if (
+      activeStep.id === "parts-tour" ||
       activeStep.id === "battery" ||
       activeStep.id === "resistor" ||
       activeStep.id === "wire-mode" ||
@@ -367,11 +400,25 @@ export function BuilderInteractiveTutorial(props: {
     | { label: string; action: () => void; disabled?: boolean }
     | null = (() => {
     switch (activeStep.id) {
+      case "parts-tour":
       case "battery":
       case "resistor":
         return {
           label: "Open Library",
           action: onRequestOpenLeftMenu,
+        };
+      case "tune-parts":
+        return {
+          label: modeState.isRotateMode ? "Rotate Mode On" : "Try Rotate Mode",
+          disabled: modeState.isRotateMode,
+          action: () => {
+            if (!modeState.isRotateMode) onInvokeAction("toggle-rotate-mode");
+          },
+        };
+      case "arena-fuse":
+        return {
+          label: "Open Arena",
+          action: () => onInvokeAction("open-arena"),
         };
       case "wire-mode":
       case "close-circuit":
