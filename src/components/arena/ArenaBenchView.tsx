@@ -214,7 +214,9 @@ export default function ArenaBenchView({
               ? `Ramping… ${fmtAmps(
                   component ? component.metrics.current * stressFactor : null,
                 )}`
-              : `▶ Run stress test`}
+              : complete
+                ? `↻ Re-run test`
+                : `▶ Test`}
           </button>
 
           {/* ── The envelope the user discovered ── */}

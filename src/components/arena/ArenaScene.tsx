@@ -456,14 +456,17 @@ export function ArenaScene({
       const particles = new THREE.Points(particleGeometry, particleMaterial);
       scene.add(particles);
 
+      // Solo bench (a single part on the floor) sits dead-centre so the camera
+      // frames it head-on; battle mode rings the parts around the arena edge.
+      const isSolo = agentsRef.current.length === 1;
       agentsRef.current.forEach((agent) => {
         const group = createComponentGroup(THREE, agent.renderType, agent.accent);
         group.position.set(
-          Math.cos(agent.spawnAngle) * ARENA_RADIUS,
+          isSolo ? 0 : Math.cos(agent.spawnAngle) * ARENA_RADIUS,
           0.04,
-          Math.sin(agent.spawnAngle) * ARENA_RADIUS,
+          isSolo ? 0 : Math.sin(agent.spawnAngle) * ARENA_RADIUS,
         );
-        group.rotation.y = -agent.spawnAngle + Math.PI / 2;
+        group.rotation.y = isSolo ? 0 : -agent.spawnAngle + Math.PI / 2;
         scene.add(group);
         // Collect every standard material so we can drive a heat glow across the
         // whole part (body, leads, ring) as its temperature climbs.
@@ -638,8 +641,9 @@ export function ArenaScene({
           const isMostStressed = activeAgentIdRef.current === agent.id && !isFailed;
           const isFlashing = (attackFlashUntil.get(agent.id) ?? 0) > time;
           const severity = agent.severity;
-          const seatX = Math.cos(agent.spawnAngle) * ARENA_RADIUS;
-          const seatZ = Math.sin(agent.spawnAngle) * ARENA_RADIUS;
+          const isSolo = agentsRef.current.length === 1;
+          const seatX = isSolo ? 0 : Math.cos(agent.spawnAngle) * ARENA_RADIUS;
+          const seatZ = isSolo ? 0 : Math.sin(agent.spawnAngle) * ARENA_RADIUS;
           const ph = agent.spawnAngle * 7;
 
           // How hot the part is running (also drives the glow). Beyond 1 = over
@@ -656,11 +660,11 @@ export function ArenaScene({
             const flashEnd = attackFlashUntil.get(agent.id) ?? 0;
             const popping = flashEnd > time;
             const popT = popping ? (flashEnd - time) / FAIL_POP_MS : 0; // 1 → 0
-            const shake = popping ? 0.34 * popT : 0;
+            const shake = popping ? 0.16 * popT : 0;
             group.position.x = seatX + (Math.random() - 0.5) * shake;
             group.position.z = seatZ + (Math.random() - 0.5) * shake;
             group.position.y = popping ? 0.1 + popT * 0.35 : 0.0;
-            group.rotation.z = popping ? (Math.random() - 0.5) * 0.45 * popT : 0;
+            group.rotation.z = popping ? (Math.random() - 0.5) * 0.22 * popT : 0;
             group.scale.setScalar(popping ? 0.85 + Math.sin(popT * Math.PI) * 0.55 : 0.85);
             tmpHeatColor.copy(popping ? heatWhite : charColor);
             const failEmissive = popping ? 0.4 + popT * 2.4 : 0.05;
@@ -677,13 +681,15 @@ export function ArenaScene({
               0,
               1.3,
             );
-            const jitterAmp = 0.02 + stressLevel * 0.22;
+            // Gentle strain wobble — kept subtle so the scene reads as "working
+            // hard" without the whole bench visibly vibrating.
+            const jitterAmp = 0.01 + stressLevel * 0.07;
             const freq = 0.02 + stressLevel * 0.06;
             group.position.x = seatX + Math.sin(time * freq * 1.3 + ph) * jitterAmp;
             group.position.z = seatZ + Math.cos(time * freq + ph) * jitterAmp;
             group.position.y =
-              0.04 + stressLevel * 0.05 + Math.abs(Math.sin(time * freq)) * stressLevel * 0.05;
-            group.rotation.z = Math.sin(time * freq * 1.7 + ph) * stressLevel * 0.12;
+              0.04 + stressLevel * 0.03 + Math.abs(Math.sin(time * freq)) * stressLevel * 0.03;
+            group.rotation.z = Math.sin(time * freq * 1.7 + ph) * stressLevel * 0.05;
             group.scale.setScalar((isMostStressed ? 1.07 : 1.0) + stressLevel * 0.05);
 
             if (heatT <= 1) {
