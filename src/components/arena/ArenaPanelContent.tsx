@@ -7,6 +7,7 @@ import {
   ArenaTestLog,
 } from "./ArenaInstrumentation";
 import type { ArenaScenario } from "./scenarios";
+import { overdriveCeiling } from "./stressTest";
 import type {
   ArenaBattleAgent,
   ArenaBattleLogEntry,
@@ -132,7 +133,7 @@ export function ArenaPanelContent({
         winnerName={winnerName}
         survivorCount={survivorCount}
         totalCount={agents.length}
-        stressMax={scenario.stressMax}
+        stressMax={overdriveCeiling(scenario)}
         onStartTest={onStartTest}
       />
 

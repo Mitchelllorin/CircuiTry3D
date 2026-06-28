@@ -3,9 +3,9 @@ import type { ArenaScenario } from "./scenarios";
 import { DEFAULT_SCENARIO, getScenario } from "./scenarios";
 import {
   AMBIENT_C,
-  SETTLE_MS,
   TICK_MS,
   evaluateStress,
+  overdriveCeiling,
   stressFactorAt,
   thermalFractionAt,
 } from "./stressTest";
@@ -255,6 +255,10 @@ function step(prev: BenchState): BenchState {
         survived: false,
       };
 
+  // Grow the SOA axis to track the overdrive extent so the fail marker stays in
+  // range even when the part is pushed well past its rated peak.
+  envelope.rampMax = Math.max(envelope.rampMax, value);
+
   const newLogs: ArenaBattleLogEntry[] = [];
   let lastSafeValue = prev.lastSafeValue;
   let status: ArenaBattleStatus = prev.status;
@@ -296,9 +300,11 @@ function step(prev: BenchState): BenchState {
       } · ${Math.round(out.tempC)}°C · ${Math.round(out.loadPercent)}% of rating.`,
     });
   } else {
-    // Survived this tick — conclude only once the ramp has maxed out and settled.
-    const rampMaxed = stressFactor >= scenario.stressMax - 1e-6;
-    if (rampMaxed && elapsedMs >= scenario.rampMs + SETTLE_MS) {
+    // Survived this tick — keep ramping past the rated peak into overdrive until
+    // the part fails. Only conclude as a PASS if it rides all the way to the
+    // overdrive ceiling (genuinely indestructible on this bench).
+    const hitCeiling = stressFactor >= overdriveCeiling(scenario) - 1e-6;
+    if (hitCeiling) {
       envelope.survived = true;
       envelope.failAt = null;
       status = "complete";
@@ -306,10 +312,12 @@ function step(prev: BenchState): BenchState {
         id: `bench-survived-${elapsedMs}`,
         kind: "verdict",
         round: stressFactor,
-        message: `🏁 Survived the full ramp to ${formatValue(
+        message: `🏁 Indestructible on this bench — rode past ${formatValue(
           value,
           stressor,
-        )} without failing — peaked ${Math.round(updated.peakTempC)}°C.`,
+        )} (${stressFactor.toFixed(
+          1,
+        )}× rated) without failing, peaking ${Math.round(updated.peakTempC)}°C.`,
       });
     }
   }
@@ -396,8 +404,9 @@ export function useBenchSession({
     });
   }, []);
 
+  // Fill toward the overdrive ceiling so the gauge tracks the full ramp-to-fail.
   const progress = Math.min(
-    state.elapsedMs / (state.scenario.rampMs + SETTLE_MS),
+    (state.stressFactor - 1) / (overdriveCeiling(state.scenario) - 1),
     1,
   );
 

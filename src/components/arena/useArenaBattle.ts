@@ -2,9 +2,9 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ArenaScenario } from "./scenarios";
 import { DEFAULT_SCENARIO, getScenario } from "./scenarios";
 import {
-  SETTLE_MS,
   TICK_MS,
   evaluateStress,
+  overdriveCeiling,
   stressFactorAt,
   thermalFractionAt,
 } from "./stressTest";
@@ -100,7 +100,7 @@ function createInitialBattleState(
         initialAgents.length === 1 ? "" : "s"
       } for failure in ${scenario.icon} ${scenario.name} (${Math.round(
         scenario.ambientC,
-      )}°C). Hit BATTLE to ramp to ${scenario.stressMax}× and stress them to failure.`,
+      )}°C). Hit BATTLE to ramp past ${scenario.stressMax}× into overdrive until every part fails.`,
     },
     ...initialAgents.map((agent) => ({
       id: `spawn-${agent.id}`,
@@ -234,12 +234,11 @@ function step(prev: ArenaBattleState): ArenaBattleState {
   });
 
   const survivors = agents.filter((agent) => agent.phase !== "failed");
-  const rampMaxed = stressFactor >= scenario.stressMax - 1e-6;
-  const settleDone = rampMaxed && elapsedMs >= scenario.rampMs + SETTLE_MS;
-  // Run the FULL escalation so the user can watch it unfold — only stop early if
-  // every component has already failed. Otherwise survivors keep getting pushed
-  // up the ramp (and may still fail) right to the top, then we call the verdict.
-  const concluded = survivors.length === 0 || settleDone;
+  // Ramp until EVERY part fails. Survivors keep getting pushed past the rated
+  // peak into overdrive; we only stop early once the whole field is down, or if
+  // a part rides all the way to the overdrive ceiling (proven indestructible).
+  const hitCeiling = stressFactor >= overdriveCeiling(scenario) - 1e-6;
+  const concluded = survivors.length === 0 || hitCeiling;
 
   if (!concluded) {
     return {
@@ -379,8 +378,9 @@ export function useArenaBattle({ initialAgents }: UseArenaBattleOptions) {
     return id;
   }, [state.agents]);
 
+  // Fill toward the overdrive ceiling so the gauge tracks the full ramp-to-fail.
   const progress = Math.min(
-    state.elapsedMs / (state.scenario.rampMs + SETTLE_MS),
+    (state.stressFactor - 1) / (overdriveCeiling(state.scenario) - 1),
     1,
   );
 

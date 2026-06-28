@@ -28,6 +28,20 @@ export const THERMAL_TAU_MS = 8500;
 export const TICK_MS = 120;
 /** Once the ramp is maxed, hold this long before calling survivors a PASS. */
 export const SETTLE_MS = 1600;
+/**
+ * How far PAST the scenario's rated `stressMax` we keep pushing before we give
+ * up and call a part indestructible. Both bench modes ramp until the part fails
+ * — past the datasheet peak into "overdrive" — instead of stopping at the rated
+ * peak with survivors. Capped here so a genuinely unkillable part still ends.
+ */
+export const OVERDRIVE_CEILING_MULT = 3;
+
+/** Absolute load multiple the overdrive ramp is allowed to reach. */
+export function overdriveCeiling(
+  scenario: ArenaScenario = DEFAULT_SCENARIO,
+): number {
+  return scenario.stressMax * OVERDRIVE_CEILING_MULT;
+}
 
 export type StressOutcome = {
   severity: number;
@@ -42,13 +56,24 @@ export type StressOutcome = {
   powerW: number;
 };
 
-/** Load factor (× nominal) at a given elapsed time, clamped to the scenario peak. */
+/**
+ * Load factor (× nominal) at a given elapsed time. Climbs to the scenario's
+ * rated `stressMax` over `rampMs` (the datasheet ramp), then keeps pushing into
+ * "overdrive" at a steeper slope so even robust parts are driven to failure —
+ * capped at `overdriveCeiling` so an indestructible part still ends.
+ */
 export function stressFactorAt(
   elapsedMs: number,
   scenario: ArenaScenario = DEFAULT_SCENARIO,
 ): number {
   const t = Math.max(0, elapsedMs) / scenario.rampMs;
-  return 1 + Math.min(t, 1) * (scenario.stressMax - 1);
+  const ceiling = overdriveCeiling(scenario);
+  if (t <= 1) {
+    return 1 + t * (scenario.stressMax - 1);
+  }
+  // Past the rated peak: overdrive at 2× the rated slope, up to the ceiling.
+  const overdrive = (t - 1) * (scenario.stressMax - 1) * 2;
+  return Math.min(ceiling, scenario.stressMax + overdrive);
 }
 
 /** Fraction of steady-state heat accumulated so far (0 → 1). */
