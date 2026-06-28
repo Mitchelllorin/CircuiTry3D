@@ -1,4 +1,5 @@
-const tableBody = document.querySelector('#preview-table-body');
+
+onst tableBody = document.querySelector('#preview-table-body');
 const emptyState = document.querySelector('#empty-state');
 const refreshButton = document.querySelector('#refresh-button');
 const uploadForm = document.querySelector('#upload-form');

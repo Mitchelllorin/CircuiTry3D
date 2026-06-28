@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { userHasProAccess, purchaseProUnlock, restoreProPurchases, isAndroidApp, openWebPayment, hasWebPaymentCheckout, PLAY_STORE_URL } from "../utils/playStoreBilling";
+import { userHasPremiumAccess, purchasePremiumUnlock, restorePremiumPurchases, isAndroidApp, openWebPayment, hasWebPaymentCheckout, PLAY_STORE_URL } from "../utils/playStoreBilling";
 import i18n from "../i18n";
 
 type PurchaseStatus = "idle" | "purchasing" | "restoring" | "success" | "failed" | "cancelled";
@@ -13,7 +13,7 @@ type PurchaseStatus = "idle" | "purchasing" | "restoring" | "success" | "failed"
 export default function Upgrade() {
   const { t } = useTranslation();
   const [status, setStatus] = useState<PurchaseStatus>("idle");
-  const [hasPro, setHasPro] = useState(userHasProAccess);
+  const [hasPro, setHasPro] = useState(userHasPremiumAccess);
   const isAndroid = isAndroidApp();
   const supportsDirectWebCheckout = hasWebPaymentCheckout();
 
@@ -28,10 +28,10 @@ export default function Upgrade() {
       setStatus(detail?.cancelled ? "cancelled" : "failed");
     };
 
-    window.addEventListener("circuitry3d:proUnlocked", onUnlocked);
+    window.addEventListener("circuitry3d:premiumUnlocked", onUnlocked);
     window.addEventListener("circuitry3d:purchaseFailed", onFailed);
     return () => {
-      window.removeEventListener("circuitry3d:proUnlocked", onUnlocked);
+      window.removeEventListener("circuitry3d:premiumUnlocked", onUnlocked);
       window.removeEventListener("circuitry3d:purchaseFailed", onFailed);
     };
   }, []);
@@ -44,7 +44,7 @@ export default function Upgrade() {
       return;
     }
     setStatus("purchasing");
-    const launched = await purchaseProUnlock();
+    const launched = await purchasePremiumUnlock();
     if (!launched) {
       // Not on Android and no web payment URL — can't launch native flow
       setStatus("idle");
@@ -53,7 +53,7 @@ export default function Upgrade() {
 
   const handleRestore = useCallback(async () => {
     setStatus("restoring");
-    const restored = await restoreProPurchases();
+    const restored = await restorePremiumPurchases();
     if (restored) {
       setHasPro(true);
       setStatus("success");

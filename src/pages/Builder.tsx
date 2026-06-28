@@ -131,8 +131,37 @@ const CURRENT_FLOW_PAYOFF_STORAGE_KEY =
 const INTRO_DIALOG_STORAGE_KEY = "circuitry3d:onboarding:v1";
 const JUNCTION_TIP_STORAGE_KEY = "circuitry3d:junction-tip-dismissed:v1";
 const ACTION_BAR_MODE_STORAGE_KEY = "ct3d.actionbar.mode";
+const THUMB_DESCRIPTORS_STORAGE_KEY = "ct3d.actionbar.descriptors";
 
 type ActionBarMode = "full" | "tools" | "hidden";
+
+/**
+ * Derive a short, plain-language descriptor for a component palette button.
+ * Component descriptions follow the pattern "Name - what it does"; we strip
+ * the leading name and any redundant symbol prefixes so newcomers who don't
+ * recognise a part by name still get a friendly hint (e.g. "controls current
+ * flow"). Falls back to the unit/symbol descriptor, then the label.
+ */
+function getComponentShortDescriptor(component: ComponentAction): string {
+  const raw = (component.description ?? "").trim();
+  if (raw) {
+    // Split on the first " - " / " — " separator that follows the name.
+    const parts = raw.split(/\s[—-]\s/);
+    let tail = (parts.length > 1 ? parts.slice(1).join(" - ") : raw).trim();
+    // Drop a leading repeat of the component label if present.
+    const label = (component.label ?? "").trim();
+    if (label && tail.toLowerCase().startsWith(label.toLowerCase())) {
+      tail = tail.slice(label.length).replace(/^[\s:–—-]+/, "").trim();
+    }
+    if (tail) {
+      // Keep it short — first clause only, capped length.
+      const clause = tail.split(/[.;]/)[0].trim();
+      const compact = clause.length > 38 ? `${clause.slice(0, 36).trim()}…` : clause;
+      return compact.charAt(0).toUpperCase() + compact.slice(1);
+    }
+  }
+  return component.metadata?.symbolDesc ?? component.label ?? "";
+}
 
 // Payoff retry delays: first retry shows the banner and re-triggers the flow
 // animation after the 3D scene has rendered its first frame (~480 ms).
@@ -1131,6 +1160,7 @@ type QuickAddButtonProps = {
   disabled: boolean;
   title: string;
   isActive?: boolean;
+  showDescriptor?: boolean;
 };
 
 function QuickAddButton({
@@ -1139,6 +1169,7 @@ function QuickAddButton({
   disabled,
   title,
   isActive = false,
+  showDescriptor,
 }: QuickAddButtonProps) {
   const [isHovered, setIsHovered] = useState(false);
   const thumbSrc = useComponent3DThumbnail(
@@ -1184,6 +1215,11 @@ function QuickAddButton({
         )}
       </span>
       <span className="quick-add-btn-label">{component.label}</span>
+      {showDescriptor && (
+        <span className="quick-add-btn-descriptor">
+          {getComponentShortDescriptor(component)}
+        </span>
+      )}
     </button>
   );
 }
@@ -1768,6 +1804,25 @@ export default function Builder() {
       localStorage.setItem(ACTION_BAR_MODE_STORAGE_KEY, actionBarMode);
     } catch { /* ignore */ }
   }, [actionBarMode]);
+
+  // Show plain-language descriptors under component thumbnails — persisted.
+  // Helps newcomers who may not recognise a part by name (e.g. "resistor").
+  const [showThumbDescriptors, setShowThumbDescriptors] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem(THUMB_DESCRIPTORS_STORAGE_KEY) === "true";
+    } catch {
+      return false;
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        THUMB_DESCRIPTORS_STORAGE_KEY,
+        showThumbDescriptors ? "true" : "false",
+      );
+    } catch { /* ignore */ }
+  }, [showThumbDescriptors]);
 
   // Circuit storage for save/load functionality
   const circuitStorage = useCircuitStorage();
@@ -3241,6 +3296,7 @@ export default function Builder() {
                     activeBuilderTool === "junction"
                   }
                   title={component.description || component.label}
+                  showDescriptor={showThumbDescriptors}
                 />
               ))}
             </div>
@@ -4110,6 +4166,28 @@ export default function Builder() {
                     </button>
                   );
                 })}
+                {/* React-only toggle: plain-language descriptors under the
+                    component thumbnails in the quick-add bar. */}
+                <button
+                  type="button"
+                  className="slider-btn slider-btn-stacked"
+                  onClick={() => setShowThumbDescriptors((v) => !v)}
+                  aria-pressed={showThumbDescriptors}
+                  data-active={showThumbDescriptors ? "true" : undefined}
+                  title={
+                    showThumbDescriptors
+                      ? "Hide plain-language descriptions under component icons"
+                      : "Show plain-language descriptions under component icons"
+                  }
+                  data-intent="settings"
+                >
+                  <span className="slider-label">Component Descriptors</span>
+                  <span className="slider-description">
+                    {showThumbDescriptors
+                      ? "Descriptions shown under icons"
+                      : "Descriptions hidden"}
+                  </span>
+                </button>
               </div>
             </div>
             <div className="slider-section">

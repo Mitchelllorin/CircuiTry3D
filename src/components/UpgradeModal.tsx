@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { userHasProAccess, purchaseProUnlock, isAndroidApp, openWebPayment, hasWebPaymentCheckout, PLAY_STORE_URL } from "../utils/playStoreBilling";
+import { userHasPremiumAccess, purchasePremiumUnlock, isAndroidApp, openWebPayment, hasWebPaymentCheckout, PLAY_STORE_URL } from "../utils/playStoreBilling";
 
 interface UpgradeModalProps {
   /** Whether the modal is currently visible. */
@@ -27,10 +27,10 @@ export default function UpgradeModal({ open, onClose }: UpgradeModalProps) {
       setStatus(detail?.cancelled ? "cancelled" : "failed");
     };
 
-    window.addEventListener("circuitry3d:proUnlocked", onUnlocked);
+    window.addEventListener("circuitry3d:premiumUnlocked", onUnlocked);
     window.addEventListener("circuitry3d:purchaseFailed", onFailed);
     return () => {
-      window.removeEventListener("circuitry3d:proUnlocked", onUnlocked);
+      window.removeEventListener("circuitry3d:premiumUnlocked", onUnlocked);
       window.removeEventListener("circuitry3d:purchaseFailed", onFailed);
     };
   }, []);
@@ -51,7 +51,7 @@ export default function UpgradeModal({ open, onClose }: UpgradeModalProps) {
   }, [open]);
 
   const handlePurchase = useCallback(async () => {
-    if (userHasProAccess()) {
+    if (userHasPremiumAccess()) {
       setStatus("success");
       return;
     }
@@ -61,7 +61,7 @@ export default function UpgradeModal({ open, onClose }: UpgradeModalProps) {
       return;
     }
     setStatus("purchasing");
-    const launched = await purchaseProUnlock();
+    const launched = await purchasePremiumUnlock();
     if (!launched) {
       // On web without a payment URL, revert to idle so we show the
       // "not available on web" message.
@@ -73,7 +73,7 @@ export default function UpgradeModal({ open, onClose }: UpgradeModalProps) {
   if (!open) return null;
 
   const isAndroid = isAndroidApp();
-  const alreadyPro = userHasProAccess();
+  const alreadyPro = userHasPremiumAccess();
 
   return (
     <div

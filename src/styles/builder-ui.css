@@ -1188,11 +1188,18 @@ body.builder-body::before {
 }
 
 /* Consistent button size for all action bar buttons */
-.unified-action-bar .edge-action-btn,
-.unified-action-bar .quick-add-btn {
+.unified-action-bar .edge-action-btn {
   width: 52px;
   min-width: 52px;
   min-height: 52px;
+}
+
+/* Component quick-add buttons are sized a touch larger so the enlarged 3D
+   thumbnail inside reads clearly. Width auto-grows when descriptors are on. */
+.unified-action-bar .quick-add-btn {
+  width: auto;
+  min-width: 64px;
+  min-height: 64px;
 }
 
 /* On narrow phones: tighten gap so 2 rows fit neatly */
@@ -1201,13 +1208,27 @@ body.builder-body::before {
     gap: 2px;
     padding: 2px 3px;
   }
-  .unified-action-bar .edge-action-btn,
-  .unified-action-bar .quick-add-btn {
+  .unified-action-bar .edge-action-btn {
     width: 42px;
     min-height: 42px;
     min-width: 42px;
     padding: 4px 2px 3px;
     border-radius: 9px;
+  }
+  .unified-action-bar .quick-add-btn {
+    width: auto;
+    min-height: 56px;
+    min-width: 54px;
+    padding: 4px 3px 3px;
+    border-radius: 11px;
+  }
+  .quick-add-btn-symbol {
+    width: 42px;
+    height: 42px;
+  }
+  .quick-add-btn-descriptor {
+    font-size: 6px;
+    max-width: 58px;
   }
   .unified-action-bar .edge-action-label,
   .unified-action-bar .quick-add-btn-label {
@@ -1441,16 +1462,34 @@ body.builder-body::before {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  width: 48px;
+  height: 48px;
   flex-shrink: 0;
   overflow: hidden;
 }
 
 .quick-add-btn-symbol-svg {
-  width: 34px;
-  height: 34px;
+  width: 46px;
+  height: 46px;
   overflow: visible;
+}
+
+/* ── Plain-language descriptor shown under the thumbnail (toggleable) ─────
+   Helps newcomers who may not recognise a component by name/symbol alone. */
+.quick-add-btn-descriptor {
+  display: block;
+  font-size: 7px;
+  font-weight: 500;
+  line-height: 1.15;
+  letter-spacing: 0.01em;
+  text-transform: none;
+  color: rgba(168, 200, 240, 0.62);
+  margin-top: 1px;
+  max-width: 72px;
+  text-align: center;
+  white-space: normal;
+  pointer-events: none;
+  user-select: none;
 }
 
 /* Fallback for components without a schematic symbol */

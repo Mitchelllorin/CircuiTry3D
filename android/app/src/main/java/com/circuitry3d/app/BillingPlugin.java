@@ -239,8 +239,6 @@ public class BillingPlugin extends Plugin implements PurchasesUpdatedListener {
             return;
         }
 
-        bridge.saveCall(call);
-
         List<QueryProductDetailsParams.Product> products = new ArrayList<>();
         products.add(
                 QueryProductDetailsParams.Product.newBuilder()
@@ -287,8 +285,13 @@ public class BillingPlugin extends Plugin implements PurchasesUpdatedListener {
                     if (launchResult.getResponseCode() != BillingClient.BillingResponseCode.OK) {
                         call.reject("Failed to launch billing flow: "
                                 + launchResult.getDebugMessage());
+                    } else {
+                        // Flow launched successfully. The actual purchase outcome is
+                        // delivered asynchronously via onPurchasesUpdated →
+                        // purchaseCompleted / purchaseFailed events. Resolve now so the
+                        // JS `await purchase()` promise settles instead of hanging.
+                        call.resolve();
                     }
-                    // Outcome delivered via onPurchasesUpdated → purchaseCompleted/purchaseFailed
                 }
         );
     }
@@ -309,8 +312,6 @@ public class BillingPlugin extends Plugin implements PurchasesUpdatedListener {
             call.reject("sku is required");
             return;
         }
-
-        bridge.saveCall(call);
 
         List<QueryProductDetailsParams.Product> products = new ArrayList<>();
         products.add(
@@ -349,8 +350,13 @@ public class BillingPlugin extends Plugin implements PurchasesUpdatedListener {
                     if (launchResult.getResponseCode() != BillingClient.BillingResponseCode.OK) {
                         call.reject("Failed to launch billing flow: "
                                 + launchResult.getDebugMessage());
+                    } else {
+                        // Flow launched successfully. The actual purchase outcome is
+                        // delivered asynchronously via onPurchasesUpdated →
+                        // purchaseCompleted / purchaseFailed events. Resolve now so the
+                        // JS `await purchaseInApp()` promise settles instead of hanging.
+                        call.resolve();
                     }
-                    // Outcome delivered via onPurchasesUpdated → purchaseCompleted/purchaseFailed
                 }
         );
     }

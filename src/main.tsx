@@ -9,7 +9,7 @@ import { CircuitStorageProvider } from "./context/CircuitStorageContext";
 import { GamificationProvider } from "./context/GamificationContext";
 import { initializeAndroid, registerServiceWorker } from "./hooks/capacitor/useAndroidInit";
 import { ClassroomProvider } from "./context/ClassroomContext";
-import { initBilling, restorePurchases, restoreProPurchases, isAndroidApp } from "./utils/playStoreBilling";
+import { initBilling, restorePurchases, restoreProPurchases, restorePremiumPurchases, isAndroidApp } from "./utils/playStoreBilling";
 import { setupAndroidSimBootstrap } from "./sim/androidBootstrap";
 // Initialize i18n before rendering so all components can use translations.
 import "./i18n";
@@ -146,6 +146,12 @@ try {
         });
         restoreProPurchases().catch((error) => {
           console.warn('[App] Pro unlock restore failed:', error);
+        });
+        // Restore the live one-time Premium Unlock ($6.99) too — without this,
+        // a user who already bought premium_unlock stays locked in demo mode
+        // after a reinstall / data clear until they manually hit "Restore".
+        restorePremiumPurchases().catch((error) => {
+          console.warn('[App] Premium unlock restore failed:', error);
         });
       })
       .catch((error) => {
