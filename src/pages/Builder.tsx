@@ -1795,7 +1795,9 @@ export default function Builder() {
         return stored;
       }
     } catch { /* ignore */ }
-    return "full";
+    // Default to hidden — the quick-action buttons start tucked away; the
+    // user reveals them via the action-bar toggle (Hide / Tools / All).
+    return "hidden";
   });
 
   // Persist whenever mode changes
