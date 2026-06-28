@@ -75,6 +75,7 @@ export function BuilderInteractiveTutorial(props: {
   } = props;
 
   const [stepIndex, setStepIndex] = useState(0);
+  const [isCollapsed, setIsCollapsed] = useState(false);
   const [tutorialOpenedAt, setTutorialOpenedAt] = useState(() => Date.now());
   const highlightedElementRef = useRef<HTMLElement | null>(null);
 
@@ -447,20 +448,58 @@ export function BuilderInteractiveTutorial(props: {
 
   return (
     <div className="builder-tutorial-layer" aria-live="polite">
-      <div className="builder-tutorial-card" role="dialog" aria-modal="false">
+      <div
+        className="builder-tutorial-card"
+        role="dialog"
+        aria-modal="false"
+        data-collapsed={isCollapsed ? "true" : undefined}
+      >
         <div className="builder-tutorial-header">
-          <div className="builder-tutorial-kicker">Interactive Tutorial</div>
-          <button
-            type="button"
-            className="builder-tutorial-close"
-            onClick={onClose}
-            aria-label="Close tutorial"
-            title="Close tutorial"
-          >
-            ×
-          </button>
+          <div className="builder-tutorial-kicker">
+            Interactive Tutorial
+            {isCollapsed ? (
+              <span className="builder-tutorial-kicker-step">
+                {" "}· {stepIndex + 1}/{steps.length}
+              </span>
+            ) : null}
+          </div>
+          <div className="builder-tutorial-header-buttons">
+            <button
+              type="button"
+              className="builder-tutorial-close"
+              onClick={() => setIsCollapsed((v) => !v)}
+              aria-label={isCollapsed ? "Expand tutorial" : "Minimize tutorial"}
+              title={isCollapsed ? "Expand" : "Minimize — get it out of the way"}
+            >
+              {isCollapsed ? "▢" : "—"}
+            </button>
+            <button
+              type="button"
+              className="builder-tutorial-close"
+              onClick={onClose}
+              aria-label="Close tutorial"
+              title="Close tutorial"
+            >
+              ×
+            </button>
+          </div>
         </div>
 
+        {isCollapsed ? (
+          <div className="builder-tutorial-collapsed-row">
+            <span className="builder-tutorial-collapsed-title">
+              {activeStep.title}
+            </span>
+            <button
+              type="button"
+              className="builder-tutorial-btn builder-tutorial-btn--primary"
+              onClick={() => setIsCollapsed(false)}
+            >
+              Show
+            </button>
+          </div>
+        ) : (
+        <>
         <div className="builder-tutorial-progress">
           <div className="builder-tutorial-progress-bar">
             <div
@@ -574,6 +613,8 @@ export function BuilderInteractiveTutorial(props: {
             Restart
           </button>
         </div>
+        </>
+        )}
       </div>
     </div>
   );
