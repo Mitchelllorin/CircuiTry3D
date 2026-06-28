@@ -94,8 +94,6 @@ import Classroom from "./Classroom";
 import Arcade from "./Arcade";
 import Settings from "./Settings";
 import Textbook from "./Textbook";
-import HomeCircuit from "./HomeCircuit";
-import CarCircuit from "./CarCircuit";
 import WireLibrary from "../components/practice/WireLibrary";
 import { AIHelperPanel } from "../components/builder/AIHelperPanel";
 import { CircuitExplainPanel } from "../components/builder/CircuitExplainPanel";
@@ -121,8 +119,6 @@ type WorkspacePanelMode =
   | "wire-guide"
   | "textbook"
   | "gallery"
-  | "home-circuit"
-  | "car-circuit"
   | "settings";
 
 const DEFAULT_WIRE_SEGMENT_RESISTANCE_OHM = 0.01;
@@ -2205,8 +2201,6 @@ export default function Builder() {
         pendingMode === "account" ||
         pendingMode === "pricing" ||
         pendingMode === "textbook" ||
-        pendingMode === "home-circuit" ||
-        pendingMode === "car-circuit" ||
         pendingMode === "settings"
       ) {
         openWorkspacePanelMode(pendingMode);
@@ -3172,16 +3166,6 @@ export default function Builder() {
           title: "Settings",
           subtitle: "Logo, graphics, workspace, simulation & accessibility",
         };
-      case "home-circuit":
-        return {
-          title: "Home Circuit",
-          subtitle: "Residential wiring simulator — 3D room with breaker panel, outlets, and lighting",
-        };
-      case "car-circuit":
-        return {
-          title: "Car Circuit",
-          subtitle: "Automotive electrical simulator — 3D vehicle chassis with battery, fuses, and loads",
-        };
       default:
         return null;
     }
@@ -3244,10 +3228,6 @@ export default function Builder() {
         return <Arcade />;
       case "textbook":
         return <Textbook />;
-      case "home-circuit":
-        return <HomeCircuit />;
-      case "car-circuit":
-        return <CarCircuit />;
       default:
         return null;
     }
@@ -4458,11 +4438,9 @@ export default function Builder() {
           className={
             activeWorkspacePanelMode === "arena"
               ? "workspace-mode-panel--arena"
-              : activeWorkspacePanelMode === "home-circuit" || activeWorkspacePanelMode === "car-circuit"
-                ? "workspace-mode-panel--circuit"
-                : activeWorkspacePanelMode === "settings"
-                  ? "workspace-mode-panel--settings"
-                  : undefined
+              : activeWorkspacePanelMode === "settings"
+                ? "workspace-mode-panel--settings"
+                : undefined
           }
         >
           {workspacePanelContent}
