@@ -38,6 +38,8 @@ type ArenaSceneProps = {
   workspaceMode?: boolean;
   /** Workspace mode only: whether the params panel is currently expanded. */
   panelOpen?: boolean;
+  /** Solo bench mode — the in-scene control reads "TEST" instead of "BATTLE". */
+  solo?: boolean;
 };
 
 const PHASE_BAR_COLOR: Record<string, string> = {
@@ -213,6 +215,9 @@ function createComponentGroup(
   outlineRing.position.y = 0.24;
 
   core.scale.setScalar(1.15);
+  // Tag the component body so the stress animation can shake ONLY this — never
+  // the pedestal/dais, ring, or the floating metrics anchored to the seat.
+  core.name = "core";
   group.add(core);
   group.add(outlineRing);
 
@@ -234,6 +239,7 @@ export function ArenaScene({
   onExitTransitionComplete,
   workspaceMode = false,
   panelOpen = false,
+  solo = false,
 }: ArenaSceneProps) {
   const rootRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -313,6 +319,7 @@ export function ArenaScene({
       string,
       {
         group: import("three").Group;
+        core: import("three").Object3D | null;
         materials: import("three").MeshStandardMaterial[];
         baseColor: import("three").Color;
       }
@@ -482,6 +489,7 @@ export function ArenaScene({
         });
         agentObjects.set(agent.id, {
           group,
+          core: group.getObjectByName("core") ?? null,
           materials,
           baseColor: new THREE.Color(agent.accent),
         });
@@ -636,7 +644,10 @@ export function ArenaScene({
             return;
           }
 
-          const { group, materials, baseColor } = objectEntry;
+          const { group, core, materials, baseColor } = objectEntry;
+          // Only the component body (core) ever moves under stress — the dais,
+          // ring and the metrics nameplate stay rock-steady at the seat.
+          const shaker = core ?? group;
           const isFailed = agent.phase === "failed";
           const isMostStressed = activeAgentIdRef.current === agent.id && !isFailed;
           const isFlashing = (attackFlashUntil.get(agent.id) ?? 0) > time;
@@ -660,12 +671,17 @@ export function ArenaScene({
             const flashEnd = attackFlashUntil.get(agent.id) ?? 0;
             const popping = flashEnd > time;
             const popT = popping ? (flashEnd - time) / FAIL_POP_MS : 0; // 1 → 0
+            // Dais stays put; the body alone convulses then collapses.
+            group.position.set(seatX, 0.04, seatZ);
+            const coreBase = core ? 1.15 : 1;
             const shake = popping ? 0.16 * popT : 0;
-            group.position.x = seatX + (Math.random() - 0.5) * shake;
-            group.position.z = seatZ + (Math.random() - 0.5) * shake;
-            group.position.y = popping ? 0.1 + popT * 0.35 : 0.0;
-            group.rotation.z = popping ? (Math.random() - 0.5) * 0.22 * popT : 0;
-            group.scale.setScalar(popping ? 0.85 + Math.sin(popT * Math.PI) * 0.55 : 0.85);
+            shaker.position.x = (Math.random() - 0.5) * shake;
+            shaker.position.z = (Math.random() - 0.5) * shake;
+            shaker.position.y = popping ? 0.06 + popT * 0.35 : 0.0;
+            shaker.rotation.z = popping ? (Math.random() - 0.5) * 0.22 * popT : 0;
+            shaker.scale.setScalar(
+              coreBase * (popping ? 0.85 + Math.sin(popT * Math.PI) * 0.55 : 0.85),
+            );
             tmpHeatColor.copy(popping ? heatWhite : charColor);
             const failEmissive = popping ? 0.4 + popT * 2.4 : 0.05;
             for (const material of materials) {
@@ -681,16 +697,20 @@ export function ArenaScene({
               0,
               1.3,
             );
-            // Gentle strain wobble — kept subtle so the scene reads as "working
-            // hard" without the whole bench visibly vibrating.
-            const jitterAmp = 0.01 + stressLevel * 0.07;
+            // A small, quick tremor on the BODY only — reads as "straining" in
+            // place. The dais and the metrics nameplate never move; the heat
+            // glow (below) does the heavy lifting of showing stress.
+            const coreBase = core ? 1.15 : 1;
+            const jitterAmp = 0.006 + stressLevel * 0.03;
             const freq = 0.02 + stressLevel * 0.06;
-            group.position.x = seatX + Math.sin(time * freq * 1.3 + ph) * jitterAmp;
-            group.position.z = seatZ + Math.cos(time * freq + ph) * jitterAmp;
-            group.position.y =
-              0.04 + stressLevel * 0.03 + Math.abs(Math.sin(time * freq)) * stressLevel * 0.03;
-            group.rotation.z = Math.sin(time * freq * 1.7 + ph) * stressLevel * 0.05;
-            group.scale.setScalar((isMostStressed ? 1.07 : 1.0) + stressLevel * 0.05);
+            group.position.set(seatX, 0.04, seatZ);
+            shaker.position.x = Math.sin(time * freq * 1.3 + ph) * jitterAmp;
+            shaker.position.z = Math.cos(time * freq + ph) * jitterAmp;
+            shaker.position.y = Math.abs(Math.sin(time * freq)) * stressLevel * 0.02;
+            shaker.rotation.z = Math.sin(time * freq * 1.7 + ph) * stressLevel * 0.03;
+            shaker.scale.setScalar(
+              coreBase * ((isMostStressed ? 1.04 : 1.0) + stressLevel * 0.04),
+            );
 
             if (heatT <= 1) {
               tmpHeatColor.copy(baseColor).lerp(heatHot, heatT);
@@ -769,6 +789,7 @@ export function ArenaScene({
             survivorCount={survivorCount}
             totalCount={agents.length}
             stressMax={stressMax}
+            solo={solo}
             onStartTest={onStartTest ?? (() => undefined)}
           />
         </div>

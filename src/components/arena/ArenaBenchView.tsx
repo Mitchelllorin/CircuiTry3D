@@ -98,6 +98,7 @@ export default function ArenaBenchView({
         survivorCount={agent && agent.phase !== "failed" ? 1 : 0}
         workspaceMode
         panelOpen={panelOpen}
+        solo
         onExitTransitionComplete={() => undefined}
       />
 

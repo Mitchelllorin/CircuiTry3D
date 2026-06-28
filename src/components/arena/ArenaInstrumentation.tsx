@@ -331,6 +331,7 @@ export function ArenaTestControls({
   survivorCount,
   totalCount,
   stressMax,
+  solo = false,
   onStartTest,
 }: {
   status: ArenaBattleStatus;
@@ -340,10 +341,12 @@ export function ArenaTestControls({
   survivorCount: number;
   totalCount: number;
   stressMax: number;
+  solo?: boolean;
   onStartTest: () => void;
 }) {
   const isBattling = status === "battling";
   const isComplete = status === "complete";
+  const startLabel = solo ? "▶ TEST" : "⚔ BATTLE";
 
   return (
     <div className="arena-test-console">
@@ -353,7 +356,7 @@ export function ArenaTestControls({
         onClick={onStartTest}
         disabled={isBattling}
       >
-        {isBattling ? "TESTING…" : isComplete ? "↻ RE-RUN TEST" : "⚔ BATTLE"}
+        {isBattling ? "TESTING…" : isComplete ? "↻ RE-RUN TEST" : startLabel}
       </button>
 
       <div className="arena-test-gauge" aria-hidden={!isBattling && !isComplete}>
