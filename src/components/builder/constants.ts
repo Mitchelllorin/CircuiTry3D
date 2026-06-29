@@ -20,7 +20,8 @@ export const DEFAULT_LOGO_SETTINGS: BuilderLogoSettings = {
   travelX: 70,
   travelY: 55,
   bounce: 28,
-  opacity: 25,
+  // Almost fully see-through by default — it's a watermark, not a billboard.
+  opacity: 8,
   isVisible: true,
 };
 

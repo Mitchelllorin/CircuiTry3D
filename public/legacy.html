@@ -19030,9 +19030,10 @@ Made with ? for visual learners everywhere!
         // Emissive boost multiplier applied to the base emissive value on Android to
         // compensate for the reduced HDR range available with LinearToneMapping.
         const ANDROID_EMISSIVE_MULTIPLIER = 2.0;
-        // Particle radius scale factor on Android — 1.4× so particles are large enough
-        // to survive sub-pixel rounding on high-DPI screens (DPR 2.6–3.0 on Pixel/Galaxy).
-        const ANDROID_PARTICLE_SIZE_SCALE = 1.4;
+        // Particle radius scale factor on Android. Was 1.4× for high-DPI survival, but
+        // that made the dots so fat they merged into a solid line and hid the actual
+        // FLOW. Keep them at ~desktop size so the streaming motion is visible.
+        const ANDROID_PARTICLE_SIZE_SCALE = 0.9;
         // shininess value for MeshPhongMaterial on Android.  High shininess (180+) triggers
         // complex specular maths that can produce mediump float precision errors → black/NaN
         // pixels on Adreno/Mali.  40 gives a visible specular highlight safely.
@@ -19041,7 +19042,7 @@ Made with ? for visual learners everywhere!
         // impossible to miss even if the main particle path degenerates.
         const ANDROID_FAILSAFE_PARTICLE_MULTIPLIER = 10;
         const ANDROID_FAILSAFE_MIN_PARTICLES       = 6;
-        const ANDROID_FAILSAFE_PARTICLE_RADIUS     = 0.12;
+        const ANDROID_FAILSAFE_PARTICLE_RADIUS     = 0.07;
         const ANDROID_FAILSAFE_EMISSIVE            = 2.5;
         // Desktop/web failsafe defaults kept as named constants for symmetry.
         const DEFAULT_FAILSAFE_PARTICLE_MULTIPLIER = 6;
