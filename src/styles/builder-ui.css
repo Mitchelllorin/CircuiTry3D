@@ -4182,22 +4182,27 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
 .builder-floating-logo .builder-logo-text {
   font-size: clamp(45px, 9.6vw, 96px);
   /* Tilt the wordmark back in perspective so the extruded faces read as 3D. */
-  transform: perspective(700px) rotateX(20deg);
+  transform: perspective(640px) rotateX(26deg);
 }
 
-/* Stacked offset shadows give each letter an extruded 3D body; the final soft
-   shadow grounds it and a faint glow keeps the brand colour. */
+/* Deep stacked offset shadows give each letter a solid extruded 3D body (so the
+   depth reads even when the logo is a faint watermark); the final soft shadow
+   grounds it and a glow keeps the brand colour. */
 .builder-floating-logo .builder-logo-text > span {
   text-shadow:
-    0 1px 0 rgba(2, 8, 20, 0.55),
-    0 2px 0 rgba(2, 8, 20, 0.5),
-    0 3px 0 rgba(2, 8, 20, 0.45),
-    0 4px 0 rgba(2, 8, 20, 0.4),
-    0 5px 0 rgba(2, 8, 20, 0.34),
-    0 6px 0 rgba(2, 8, 20, 0.28),
-    0 7px 1px rgba(2, 8, 20, 0.26),
-    0 11px 20px rgba(0, 0, 0, 0.5),
-    0 0 38px rgba(0, 255, 136, 0.22);
+    0 1px 0 rgba(2, 8, 20, 0.7),
+    0 2px 0 rgba(2, 8, 20, 0.66),
+    0 3px 0 rgba(2, 8, 20, 0.62),
+    0 4px 0 rgba(2, 8, 20, 0.58),
+    0 5px 0 rgba(2, 8, 20, 0.54),
+    0 6px 0 rgba(2, 8, 20, 0.5),
+    0 7px 0 rgba(2, 8, 20, 0.46),
+    0 8px 0 rgba(2, 8, 20, 0.42),
+    0 9px 0 rgba(2, 8, 20, 0.38),
+    0 10px 0 rgba(2, 8, 20, 0.34),
+    0 12px 1px rgba(2, 8, 20, 0.32),
+    0 16px 26px rgba(0, 0, 0, 0.55),
+    0 0 40px rgba(0, 255, 136, 0.22);
 }
 
 .builder-floating-logo-mark .circuitry-brandmark__img {

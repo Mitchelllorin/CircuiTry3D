@@ -13,7 +13,9 @@ import {
   resolveLabelVisibilityLevel,
 } from "./labelVisibility";
 
-export const LOGO_SETTINGS_STORAGE_KEY = "builder:logo-motion";
+// v2: bumped so the new near-transparent default opacity applies even for users
+// who already had the old 25% default persisted to localStorage.
+export const LOGO_SETTINGS_STORAGE_KEY = "builder:logo-motion:v2";
 
 export const DEFAULT_LOGO_SETTINGS: BuilderLogoSettings = {
   speed: 28,
