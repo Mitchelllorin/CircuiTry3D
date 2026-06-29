@@ -490,22 +490,61 @@ export function BuilderInteractiveTutorial(props: {
     }
   })();
 
+  // Focus frame: blur + dim everything EXCEPT a hole around the targeted element,
+  // so the one thing you need to see/tap is the only sharp, bright thing on screen.
+  // Built from four rectangles framing the hole (reliable on mobile WebView, where
+  // a single clip-path cutout is flaky) plus a glowing ring around the target.
+  const FOCUS_PAD = 10;
+  const focus =
+    spotlightRect && !isCollapsed
+      ? {
+          top: Math.max(0, spotlightRect.top - FOCUS_PAD),
+          left: Math.max(0, spotlightRect.left - FOCUS_PAD),
+          width: spotlightRect.width + FOCUS_PAD * 2,
+          height: spotlightRect.height + FOCUS_PAD * 2,
+        }
+      : null;
+
   return (
     <div className="builder-tutorial-layer" aria-live="polite">
-      {/* Spotlight: dims the whole screen except a hole punched around the element
-          this step points at (box-shadow spread = the dim; the div itself is the
-          transparent hole). pointer-events:none so the target stays tappable. */}
-      {spotlightRect && !isCollapsed && (
-        <div
-          className="tutorial-spotlight"
-          aria-hidden="true"
-          style={{
-            top: spotlightRect.top - 8,
-            left: spotlightRect.left - 8,
-            width: spotlightRect.width + 16,
-            height: spotlightRect.height + 16,
-          }}
-        />
+      {focus && (
+        <>
+          <div
+            className="tutorial-blur"
+            aria-hidden="true"
+            style={{ top: 0, left: 0, right: 0, height: focus.top }}
+          />
+          <div
+            className="tutorial-blur"
+            aria-hidden="true"
+            style={{ top: focus.top + focus.height, left: 0, right: 0, bottom: 0 }}
+          />
+          <div
+            className="tutorial-blur"
+            aria-hidden="true"
+            style={{ top: focus.top, left: 0, width: focus.left, height: focus.height }}
+          />
+          <div
+            className="tutorial-blur"
+            aria-hidden="true"
+            style={{
+              top: focus.top,
+              left: focus.left + focus.width,
+              right: 0,
+              height: focus.height,
+            }}
+          />
+          <div
+            className="tutorial-focus-ring"
+            aria-hidden="true"
+            style={{
+              top: focus.top,
+              left: focus.left,
+              width: focus.width,
+              height: focus.height,
+            }}
+          />
+        </>
       )}
       <div
         className="builder-tutorial-card"

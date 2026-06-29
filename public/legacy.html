@@ -4213,6 +4213,41 @@ body.android-optimized .zoom-btn {
                     notifyParentModeState();
                     break;
                 }
+                case 'builder:request-component-rects': {
+                    // Report each component's on-screen rectangle (via worldToScreen)
+                    // so the parent's tutorial spotlight can ring the actual part in
+                    // the 3D scene. Coordinates are viewport-aligned because the
+                    // builder canvas fills the screen.
+                    try {
+                        const list = [];
+                        const R = 1.8; // approx world half-size of a component
+                        components.forEach((c) => {
+                            if (!c || !c.position) return;
+                            const center = worldToScreen(c.position.clone());
+                            if (!center || center.z > 1) return; // behind the camera
+                            const px = worldToScreen(c.position.clone().add(new THREE.Vector3(R, 0, 0)));
+                            const pz = worldToScreen(c.position.clone().add(new THREE.Vector3(0, 0, R)));
+                            const halfW = Math.max(30, Math.abs(px.x - center.x), Math.abs(pz.x - center.x));
+                            const halfH = Math.max(26, Math.abs(px.y - center.y), Math.abs(pz.y - center.y));
+                            list.push({
+                                id: c.id || null,
+                                type: c.type || null,
+                                rect: {
+                                    left: center.x - halfW,
+                                    top: center.y - halfH,
+                                    width: halfW * 2,
+                                    height: halfH * 2,
+                                },
+                            });
+                        });
+                        if (window.parent && window.parent !== window) {
+                            window.parent.postMessage({ type: 'legacy:component-rects', payload: list }, '*');
+                        }
+                    } catch (error) {
+                        console.warn('Builder bridge: component-rects failed', error);
+                    }
+                    break;
+                }
                 case 'builder:invoke-action': {
                     if (!payload || typeof payload !== 'object' || typeof payload.action !== 'string') {
                         break;

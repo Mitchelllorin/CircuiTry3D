@@ -279,16 +279,25 @@
   border-radius: 14px;
 }
 
-/* Spotlight / coach-mark: the giant box-shadow spread is the full-screen dim;
-   the element itself is the transparent "hole" so the target pops out of a
-   darkened, focused screen. Sits in the tutorial layer ABOVE the workspace but
-   (by DOM order) below the coach card, so the card stays bright. */
-.tutorial-spotlight {
+/* Focus / coach-mark: four rectangles frame the target, each dimming + blurring
+   what's behind it, so everything except the target recedes. Reliable on mobile
+   WebView (where a single clip-path/box-shadow cutout is flaky). The target sits
+   in the un-covered gap; the ring marks it. Sits in the tutorial layer ABOVE the
+   workspace but (by DOM order) below the coach card, so the card stays bright. */
+.tutorial-blur {
   position: fixed;
-  border-radius: 16px;
   pointer-events: none;
-  box-shadow: 0 0 0 9999px rgba(2, 6, 23, 0.78);
+  background: rgba(2, 6, 23, 0.5);
+  backdrop-filter: blur(7px);
+  -webkit-backdrop-filter: blur(7px);
+}
+
+.tutorial-focus-ring {
+  position: fixed;
+  pointer-events: none;
+  border-radius: 14px;
   outline: 2.5px solid rgba(0, 255, 136, 0.9);
+  box-shadow: 0 0 22px rgba(0, 255, 136, 0.4);
   transition:
     top 0.22s ease,
     left 0.22s ease,
@@ -308,7 +317,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .tutorial-spotlight {
+  .tutorial-focus-ring {
     animation: none;
   }
 }
