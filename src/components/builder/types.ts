@@ -203,6 +203,12 @@ export type ComponentAction = {
   description?: string;
   /** Extended metadata for scalable component integration */
   metadata?: ComponentMetadata;
+  /**
+   * Preset property values applied when this card is added (e.g. a branded
+   * real-world part: { voltage: 9 } for an Energizer 522, { resistance: 330 }
+   * for a Vishay CRCW0603). Generic cards omit this and use builder defaults.
+   */
+  initialProperties?: Record<string, number>;
 };
 
 export type BuilderToolId = "select" | "wire" | "measure" | "junction";

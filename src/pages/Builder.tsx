@@ -125,6 +125,9 @@ const DEFAULT_WIRE_SEGMENT_RESISTANCE_OHM = 0.01;
 const CURRENT_FLOW_PAYOFF_STORAGE_KEY =
   "circuitry3d:onboarding:current-flow-payoff:v2";
 const INTRO_DIALOG_STORAGE_KEY = "circuitry3d:onboarding:v1";
+// First-run flag: the onboarding is now the interactive tutorial (build a real
+// circuit step by step), not the payoff demo. We auto-open the tutorial once.
+const FIRST_RUN_TUTORIAL_STORAGE_KEY = "circuitry3d:onboarding:tutorial-launched:v1";
 const JUNCTION_TIP_STORAGE_KEY = "circuitry3d:junction-tip-dismissed:v1";
 const ACTION_BAR_MODE_STORAGE_KEY = "ct3d.actionbar.mode";
 const THUMB_DESCRIPTORS_STORAGE_KEY = "ct3d.actionbar.descriptors";
@@ -1298,27 +1301,36 @@ const REAL_PARTS_CATALOG: RealPart[] = [
   { id: "schurter-ato-5a", mfr: "Schurter", name: "ATO Blade 5A", spec: "32V · automotive", builderType: "fuse", props: { current: 5 } },
 ];
 
-const REAL_PARTS_CATEGORIES = (() => {
-  const order = ["Batteries", "Resistors", "Capacitors", "LEDs", "Diodes", "BJTs", "MOSFETs", "Regulators", "Op-Amps", "ICs", "Inductors", "Crystals", "Thermistors", "Fuses"];
-  const categoryMap: Record<string, string> = {
-    battery: "Batteries", resistor: "Resistors", capacitor: "Capacitors",
-    led: "LEDs", diode: "Diodes",
-    bjt: "BJTs", "bjt-pnp": "BJTs", "bjt-npn": "BJTs",
-    mosfet: "MOSFETs", "voltage-regulator": "Regulators",
-    opamp: "Op-Amps", ic: "ICs",
-    inductor: "Inductors", crystal: "Crystals", thermistor: "Thermistors", fuse: "Fuses",
-  };
-  const grouped = new Map<string, RealPart[]>();
-  order.forEach((cat) => grouped.set(cat, []));
-  REAL_PARTS_CATALOG.forEach((p) => {
-    const cat = categoryMap[p.builderType] ?? p.builderType;
-    if (!grouped.has(cat)) grouped.set(cat, []);
-    grouped.get(cat)!.push(p);
-  });
-  // Remove empty categories
-  for (const [k, v] of grouped) { if (!v.length) grouped.delete(k); }
-  return grouped;
-})();
+// Unified component library: every branded real-world part becomes a first-class
+// card in the SAME picker as the generic components, inheriting that type's icon
+// and category tab and carrying its preset spec values. This removes the separate
+// "Real Parts Library" section that used to stack beneath the reel (and hide
+// behind it on mobile) — there is now one library, one layer, fully filterable.
+const REAL_PART_LIBRARY_ACTIONS: ComponentAction[] = REAL_PARTS_CATALOG.map(
+  (part) => {
+    const base = COMPONENT_ACTIONS.find((c) => c.builderType === part.builderType);
+    return {
+      id: part.id,
+      icon: base?.icon ?? "🔩",
+      label: part.name,
+      action: "component" as const,
+      builderType: (base?.builderType ??
+        part.builderType) as ComponentAction["builderType"],
+      // Manufacturer + datasheet spec, shown on the centered card / tooltip.
+      description: `${part.mfr} · ${part.spec}`,
+      initialProperties:
+        Object.keys(part.props).length > 0 ? part.props : undefined,
+      // Inherit the base type's metadata so the branded part filters under the
+      // same category tab (Power / Passive / Semi / …) as its generic sibling.
+      metadata: base?.metadata ? { ...base.metadata } : undefined,
+    };
+  },
+);
+
+const UNIFIED_COMPONENT_ACTIONS: ComponentAction[] = [
+  ...COMPONENT_ACTIONS,
+  ...REAL_PART_LIBRARY_ACTIONS,
+];
 
 function deriveLabelVisibilityFromShowLabels(
   showLabels: boolean,
@@ -1336,7 +1348,6 @@ export default function Builder() {
   const practiceProblemRef = useRef<string | null>(
     DEFAULT_PRACTICE_PROBLEM?.id ?? null,
   );
-  const firstRunPayoffTriggeredRef = useRef(false);
   const pendingPayoffRef = useRef(false);
   const currentFlowPayoffTimersRef = useRef<number[]>([]);
   const appBasePath = useMemo(() => {
@@ -2312,26 +2323,16 @@ export default function Builder() {
 
       postToBuilder({
         type: "builder:add-component",
-        payload: { componentType: component.builderType },
-      });
-    },
-    [postToBuilder],
-  );
-
-  const handleRealPartAdd = useCallback(
-    (part: RealPart) => {
-      if (!part?.builderType) return;
-      postToBuilder({
-        type: "builder:add-component",
         payload: {
-          componentType: part.builderType,
-          initialProperties: Object.keys(part.props).length > 0 ? part.props : undefined,
+          componentType: component.builderType,
+          // Branded/real-world cards carry preset spec values (e.g. 9V, 330Ω);
+          // generic cards leave this undefined and use the builder defaults.
+          initialProperties: component.initialProperties,
         },
       });
     },
     [postToBuilder],
   );
-
 
   const handleAdvancePracticeProblem = useCallback((currentProblemId?: string) => {
     const currentId =
@@ -2595,16 +2596,28 @@ export default function Builder() {
     };
   }, [clearCurrentFlowPayoffTimers]);
 
-  // Effect 1 — lock the canvas immediately on mount so that when the payoff
-  // explainer circuit loads (Effect 2, once the iframe is ready) it appears
-  // view-only as a showcase rather than briefly editable.  We no longer pop a
-  // separate welcome modal here: hitting "Launch" should land the user straight
-  // on the workspace with the payoff circuit + explainer banner playing.  The
-  // welcome dialog still exists and is reachable on demand via "Replay
-  // onboarding" (handleReplayOnboarding).
+  // Effect 1 — first-run onboarding is the INTERACTIVE TUTORIAL, not a payoff
+  // demo. On a user's very first visit we auto-open the step-by-step tutorial on
+  // a clean, editable canvas so they build a real circuit themselves (battery →
+  // resistor → wire the loop → run it → read W.I.R.E.). We deliberately do NOT
+  // pre-load a demo circuit or lock the canvas — the tutorial guides them from
+  // empty. It only auto-opens once; afterwards it's replayable from Help/Guides.
   useEffect(() => {
-    setOnboardingLocked(true);
-    setCircuitLocked(true);
+    let hasLaunchedTutorial = false;
+    try {
+      hasLaunchedTutorial =
+        window.localStorage.getItem(FIRST_RUN_TUTORIAL_STORAGE_KEY) === "1";
+    } catch {
+      hasLaunchedTutorial = false;
+    }
+    if (!hasLaunchedTutorial) {
+      setInteractiveTutorialOpen(true);
+      try {
+        window.localStorage.setItem(FIRST_RUN_TUTORIAL_STORAGE_KEY, "1");
+      } catch {
+        // ignore storage write failures
+      }
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // run once on mount
 
@@ -2620,49 +2633,12 @@ export default function Builder() {
     return () => window.clearTimeout(timer);
   }, [isIntroDialogVisible, handleDismissIntroDialog]);
 
-  // Effect 2 — once the iframe is ready, run the current-flow payoff demo.
-  // Runs every session (once per mount) so the demo circuit is always pre-loaded
-  // on startup, giving users immediate visual proof that current flow works.
-  useEffect(() => {
-    if (!isFrameReady) {
-      return;
-    }
-
-    // If a payoff was requested while the iframe was not yet ready (e.g., the
-    // user dismissed the intro before the iframe finished loading), run it now.
-    if (pendingPayoffRef.current) {
-      pendingPayoffRef.current = false;
-      firstRunPayoffTriggeredRef.current = true;
-      runCurrentFlowPayoffSequence({ revealBanner: true });
-      return;
-    }
-
-    if (firstRunPayoffTriggeredRef.current) {
-      return;
-    }
-
-    firstRunPayoffTriggeredRef.current = true;
-
-    // Land directly on the payoff explainer circuit — no welcome modal in
-    // between.  Mark the onboarding/payoff flags as seen (the welcome modal is
-    // now opt-in via "Replay onboarding"), keep the circuit view-only, and
-    // reveal the payoff banner so the explainer text (what current flow IS,
-    // Ohm's law, the zoom-to-atomic story) accompanies the demo circuit. The
-    // banner auto-hides after a few seconds and has a close button.
-    try {
-      window.localStorage.setItem(INTRO_DIALOG_STORAGE_KEY, "1");
-    } catch {
-      // ignore storage write failures
-    }
-    try {
-      window.localStorage.setItem(CURRENT_FLOW_PAYOFF_STORAGE_KEY, "seen");
-    } catch {
-      // ignore storage write failures
-    }
-
-    setOnboardingLocked(true);
-    runCurrentFlowPayoffSequence({ revealBanner: true });
-  }, [isFrameReady, runCurrentFlowPayoffSequence]);
+  // Effect 2 — REMOVED. The payoff demo circuit is no longer auto-loaded on
+  // startup; first-run onboarding is the interactive tutorial (Effect 1) on a
+  // clean canvas. The payoff sequence (runCurrentFlowPayoffSequence) remains in
+  // the code but is now only reachable on demand (e.g. a future "show me" action)
+  // and never fires automatically. This also resolves the mobile bug where the
+  // payoff circuit silently failed to load on the slower Capacitor WebView.
 
   useEffect(() => {
     if (!isCurrentFlowPayoffVisible) {
@@ -3659,7 +3635,7 @@ export default function Builder() {
           <div className="builder-menu-scroll">
             {ENABLE_SCROLLER_MENU ? (
               <ScrollerMenu
-                components={COMPONENT_ACTIONS}
+                components={UNIFIED_COMPONENT_ACTIONS}
                 onSelect={handleComponentAction}
                 disabled={controlsDisabled}
                 isOpen={isLeftMenuOpen}
@@ -3727,53 +3703,10 @@ export default function Builder() {
               )}
             </div>
             )}
-            {/* Real Parts Library — real branded components with manufacturer specs */}
-            <div className="slider-section" style={{ marginTop: 16 }}>
-              <span className="slider-heading">⚡ Real Parts Library</span>
-              <p style={{ fontSize: "0.68rem", color: "rgba(148,163,184,0.7)", margin: "0 0 6px", lineHeight: 1.4 }}>
-                Real manufacturer parts with datasheet specs
-              </p>
-              {Array.from(REAL_PARTS_CATEGORIES.entries()).map(([category, parts]) => (
-                <div key={category} style={{ marginBottom: 8 }}>
-                  <div style={{
-                    fontSize: "0.6rem",
-                    fontWeight: 700,
-                    letterSpacing: "0.18em",
-                    textTransform: "uppercase",
-                    color: "rgba(100,200,255,0.5)",
-                    padding: "4px 0 2px",
-                    borderTop: "1px solid rgba(100,180,255,0.1)",
-                    marginBottom: 4,
-                  }}>
-                    {category}
-                  </div>
-                  <div className="slider-stack">
-                    {parts.map((part) => (
-                      <button
-                        key={part.id}
-                        type="button"
-                        className="slider-btn"
-                        onClick={() => handleRealPartAdd(part)}
-                        disabled={controlsDisabled}
-                        aria-disabled={controlsDisabled}
-                        title={controlsDisabled ? controlDisabledTitle : `Add ${part.mfr} ${part.name} — ${part.spec}`}
-                        style={{ padding: "6px 10px", gap: 2 }}
-                      >
-                        <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "rgba(220,240,255,0.92)", lineHeight: 1.3 }}>
-                          {part.name}
-                        </span>
-                        <span style={{ fontSize: "0.6rem", color: "rgba(100,160,220,0.75)", lineHeight: 1.3 }}>
-                          {part.mfr}
-                        </span>
-                        <span style={{ fontSize: "0.6rem", color: "rgba(148,163,184,0.6)", lineHeight: 1.3 }}>
-                          {part.spec}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
+            {/* The branded "Real Parts" are now unified INTO the picker above
+                (UNIFIED_COMPONENT_ACTIONS) and filter under the same category tabs,
+                so there is no longer a separate stacked section to hide behind the
+                reel. */}
           </div>
         </nav>
       </div>

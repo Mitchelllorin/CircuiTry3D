@@ -280,9 +280,12 @@
   border-radius: 999px;
   background: rgba(15, 23, 42, 0.86);
   color: var(--arena-text);
-  padding: 12px 16px;
+  /* Compact: fit the label, not 4× its size. Space is at a premium in portrait. */
+  padding: 7px 13px;
   font: inherit;
+  font-size: 0.82rem;
   font-weight: 700;
+  white-space: nowrap;
   cursor: pointer;
   transition:
     transform 160ms ease,
@@ -887,7 +890,11 @@
   }
 
   .arena-panel__actions .arena-button {
-    flex: 1 1 auto;
+    /* Fit the label — do NOT stretch to fill the row (that's what made these
+       huge and stole space). Compact buttons leave room for real content. */
+    flex: 0 1 auto;
+    padding: 6px 11px;
+    font-size: 0.78rem;
   }
 }
 

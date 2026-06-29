@@ -7,11 +7,15 @@
   left: 0;
   right: 0;
   z-index: var(--z-mode-panel);
-  height: calc(100vh - var(--workspace-mode-panel-top-offset));
-  height: calc(100dvh - var(--workspace-mode-panel-top-offset));
-  max-height: calc(100vh - var(--workspace-mode-panel-top-offset));
-  max-height: calc(100dvh - var(--workspace-mode-panel-top-offset));
-  background: rgba(10, 20, 35, 0.625);
+  /* BOTTOM SHEET — never full-screen. Covers ~60% of the height so the live 3D
+     workspace stays visible above the panel, making it obvious you can drop the
+     sheet with the toggle. The panel background is translucent (see below) so the
+     workspace shows through it too. */
+  height: 60vh;
+  height: 60dvh;
+  max-height: 60vh;
+  max-height: 60dvh;
+  background: rgba(10, 20, 35, 0.55);
   border-top: 2px solid rgba(136, 204, 255, 0.36);
   box-shadow: 0 -8px 28px rgba(0, 0, 0, 0.58);
   transform: translateY(calc(100% - 52px));
@@ -28,7 +32,7 @@
   gap: 12px;
   min-height: 52px;
   padding: 0 14px;
-  background: rgb(20, 35, 55);
+  background: rgba(20, 35, 55, 0.78);
   border-bottom: 1px solid rgba(136, 204, 255, 0.22);
 }
 
@@ -72,11 +76,12 @@
   height: calc(100% - 52px);
   max-height: calc(100% - 52px);
   overflow-y: auto;
-  /* Opaque by default so content modes (Textbook, Arcade, Classroom, etc.)
-     don't let the persistent 3D workspace canvas bleed through behind the text.
-     Modes that intentionally show the live workspace behind the panel
-     (Settings — a short bottom sheet) re-enable translucency below. */
-  background: rgb(8, 18, 36);
+  /* Translucent on purpose: the panel is a bottom sheet and the live 3D
+     workspace must show through it (and above it), so you can always see what
+     you're working on. A soft blur keeps content legible over the moving scene. */
+  background: rgba(10, 18, 34, 0.46);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
 }
 
 .workspace-mode-panel-content {
