@@ -876,7 +876,8 @@ body.builder-body::before {
 .circuit-zoom-controls {
   position: fixed;
   bottom: calc(36px + var(--builder-safe-area-bottom, 0px));
-  right: calc(var(--builder-menu-toggle-width) + 4px + env(safe-area-inset-right, 0px));
+  /* Pushed hard to the right edge, out of the way of the workspace. */
+  right: calc(2px + env(safe-area-inset-right, 0px));
   top: auto;
   left: auto;
   transform: none;

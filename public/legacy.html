@@ -1024,10 +1024,9 @@
 
         /* ── Zoom-mode HUD badge ─────────────────────────────────────────── */
         #zoom-mode-hud {
+            /* Zoom-tier indicator removed — it sat behind the tour text box. */
+            display: none !important;
             position: fixed;
-            /* Bottom-LEFT corner — out of the way of the top action bar, the
-               bottom-centre banner and the bottom-right zoom controls, so the tier
-               indicator never sits on top of (or behind) another control. */
             top: auto;
             bottom: calc(84px + env(safe-area-inset-bottom, 0px));
             left: 12px;
@@ -4276,6 +4275,12 @@ body.android-optimized .zoom-btn {
                             case 'fit-screen':
                                 if (typeof fitToScreen === 'function') fitToScreen();
                                 break;
+                            case 'tour-focus':
+                                // Guided-tour camera sweep: focus on a named component
+                                // (data.target = 'battery' | 'resistor' | 'switch' |
+                                // 'lamp'), or 'overview' to sweep back to the whole circuit.
+                                if (typeof tourFocusCamera === 'function') tourFocusCamera(data && data.target, data && data.viaOverview);
+                                break;
                             case 'toggle-current-flow':
                                 if (typeof toggleCurrentFlowStyle === 'function') toggleCurrentFlowStyle();
                                 break;
@@ -5483,7 +5488,9 @@ body.android-optimized .zoom-btn {
         
         // Camera controls
         let cameraDistance = 15;
-        let cameraAngleX = 0, cameraAngleY = 0.5;
+        // Default to a dynamic 3/4 hero angle (rotated + tipped toward the user) so
+        // the workspace reads as 3D and alive, not a flat straight-on schematic.
+        let cameraAngleX = 0.7, cameraAngleY = 0.62;
         let cameraTarget = new THREE.Vector3(0, 0, 0);
         let isRotating = false, isPanning = false;
         let lastTouchPos = { x: 0, y: 0 };
@@ -9978,6 +9985,91 @@ body.android-optimized .zoom-btn {
 
         const _cinematicCtrl = new CinematicController();
         // ─── End Cinematic Camera Controller ─────────────────────────────────
+
+        // ─── Guided-tour camera sweep ────────────────────────────────────────
+        // Smoothly sweep the camera from wherever it is to focus on a named
+        // component, or back to the whole-circuit "home" framing stored by
+        // loadPayoffCircuit. Holds on the destination when it arrives.
+        function tourFocusCamera(target, viaOverview) {
+            if (!camera || typeof _cinematicCtrl === 'undefined') return;
+            const cur = {
+                angleX: cameraAngleX, angleY: cameraAngleY, distance: cameraDistance,
+                targetX: cameraTarget.x, targetY: cameraTarget.y, targetZ: cameraTarget.z,
+                fov: camera.fov, duration: 0,
+            };
+            const h = window._showcaseHomeCam;
+            const overviewKf = h ? {
+                angleX: h.angleX, angleY: h.angleY, distance: h.distance,
+                targetX: h.targetX, targetY: h.targetY, targetZ: h.targetZ,
+                fov: h.fov, duration: 1100, easing: 'smooth',
+            } : null;
+            if (!target || target === 'overview' || target === 'home') {
+                if (!overviewKf) { if (typeof fitToScreen === 'function') fitToScreen(); return; }
+                _cinematicCtrl.start(null, [cur, overviewKf]);
+                return;
+            }
+            if (target === 'flow') {
+                // Focused view of the current flowing through the circuit — same
+                // centre and angle as the overview, zoomed in so the moving
+                // particles read clearly.
+                if (!overviewKf) { if (typeof fitToScreen === 'function') fitToScreen(); return; }
+                const flowKf = Object.assign({}, overviewKf, {
+                    distance: overviewKf.distance * 0.62,
+                    // Drop the look-at point so the flowing circuit rides UP into the
+                    // available space (above the tour card), not behind it.
+                    targetY: overviewKf.targetY - 3,
+                    duration: 1300, easing: 'smooth',
+                });
+                _cinematicCtrl.start(null, [cur, flowKf]);
+                return;
+            }
+            if (target === 'switch-light') {
+                // Combined step: sweep up to the full circuit, pan DOWN to the light,
+                // hold, pan across to the switch, hold, then pull back to frame BOTH.
+                const list = Array.isArray(components) ? components : [];
+                const lamp = list.find(c => c && c.type === 'lamp');
+                const sw   = list.find(c => c && c.type === 'switch');
+                if (!lamp || !lamp.position || !sw || !sw.position || !overviewKf) {
+                    if (typeof fitToScreen === 'function') fitToScreen();
+                    return;
+                }
+                const partKf = (p, dur) => ({
+                    angleX: 0.7, angleY: 0.55, distance: 5.5,
+                    targetX: p.x, targetY: p.y, targetZ: p.z,
+                    fov: 52, duration: dur, easing: 'smooth',
+                });
+                const lp = lamp.position, sp = sw.position;
+                const bothKf = {
+                    angleX: 0.7, angleY: 0.58, distance: 9,
+                    targetX: (lp.x + sp.x) / 2, targetY: (lp.y + sp.y) / 2, targetZ: (lp.z + sp.z) / 2,
+                    fov: 55, duration: 1300, easing: 'smooth',
+                };
+                _cinematicCtrl.start(null, [
+                    cur,
+                    Object.assign({}, overviewKf, { duration: 1000 }), // up to the full circuit
+                    partKf(lp, 1200),                                   // down to the light
+                    partKf(lp, 1500),                                   // hold on the light
+                    partKf(sp, 1300),                                   // across to the switch
+                    partKf(sp, 1500),                                   // hold on the switch
+                    bothKf,                                             // pull back to show both
+                ]);
+                return;
+            }
+            const comp = (Array.isArray(components) ? components : []).find(c => c && c.type === target);
+            if (!comp || !comp.position) return;
+            const p = comp.position;
+            const dest = {
+                angleX: 0.7, angleY: 0.55, distance: 5.5,
+                targetX: p.x, targetY: p.y, targetZ: p.z,
+                fov: 52, duration: 1300, easing: 'smooth',
+            };
+            // viaOverview: first sweep back UP to the whole-circuit view, then DOWN
+            // onto the part — the "back up, then down onto the next part" move.
+            const kf = [cur];
+            if (viaOverview && overviewKf) kf.push(overviewKf);
+            kf.push(dest);
+            _cinematicCtrl.start(null, kf);
+        }
 
         function setupEvents() {
             const canvas = renderer.domElement;
@@ -20361,21 +20453,22 @@ Made with ? for visual learners everywhere!
         }
 
         /**
-         * loadPayoffCircuit — dedicated payoff sequence that builds the startup
-         * showcase circuit directly, bypassing all practice-UI machinery.
+         * loadPayoffCircuit — builds the startup showcase circuit directly,
+         * bypassing all practice-UI machinery.
          *
-         * The showcase is a HIGH-CURRENT, MULTI-PATH PARALLEL circuit so the very
-         * first thing a new user sees is dramatic current splitting across several
-         * branches and flowing in 3D — not a trickle through one series loop.
+         * The showcase is a simple SERIES circuit (battery → resistor → switch →
+         * light), drawn as a square and framed at a dynamic 3/4 angle toward the
+         * top of the workspace. The switch is closed, so current flows in one clean
+         * direction all the way round and the light is lit — the first thing a new
+         * user sees, and the backdrop the guided tour points at, part by part.
          *
          * Steps:
          *   1. Guard: scene + renderer must exist (init() completed successfully).
          *   2. clearAll() to start fresh.
-         *   3. Create a 12 V battery + 3 resistor branches between a shared top
-         *      rail (battery +) and bottom rail (battery −).
-         *   4. Wire both rails and each parallel branch.
-         *   5. Force currentFlowStyle = 'solid' and notify React.
-         *   6. fitToScreen() then analyzeCircuit() to spawn particles.
+         *   3. Create a 12 V battery, resistor, closed switch and a light in series.
+         *   4. Wire them in a single series path back to the battery.
+         *   5. fitToScreen(), set the hero angle, lift the circuit toward the top.
+         *   6. analyzeCircuit() to spawn the current-flow particles.
          *   7. setStatus() with a user-facing message.
          */
         function loadPayoffCircuit() {
@@ -20390,92 +20483,80 @@ Made with ? for visual learners everywhere!
                 // Pass false to preserve camera position (no viewport reset).
                 clearAll(false);
 
-                // Mark this as the payoff showcase so a F.U.S.E. branch failure degrades
-                // the flow rather than opening the circuit, and start at full brightness.
-                // (clearAll resets both, so set them AFTER clearing.)
+                // Showcase flag (stops the periodic F.U.S.E. re-check from re-popping
+                // the cards) and start at full brightness. (clearAll resets both, so
+                // set them AFTER clearing.)
                 isPayoffCircuit   = true;
                 payoffFlowDegrade = 1;
 
                 // ── Components ───────────────────────────────────────────────
-                // Textbook SERIES square — the FIRST thing a brand-new user sees.
-                // A single closed LOOP so current reads as ONE clean unidirectional
-                // flow (no opposing bus rails, no "two directions"), drawn like a
-                // schematic. It is a calm, physically-honest showcase: every part sits
-                // well within its ¼ W rating so nothing ever trips — it just flows,
-                // making invisible current visible and letting Ohm's law read at a
-                // glance (same current everywhere in series; voltage divides).
-
-                // Textbook SERIES-PARALLEL combination (matches the allaboutcircuits
-                // reference): R1 in series feeds a parallel pair R2 ∥ R3, the two
-                // recombine and return — one coherent, Kirchhoff-correct flow.
-                //   R_parallel = 300∥600 = 200Ω · R_total = 200 + 200 = 400Ω
-                //   I_total = 12/400 = 0.030 A through R1, then SPLITS:
-                //     I_R2 = 6/300 = 0.020 A · I_R3 = 6/600 = 0.010 A   (20+10 = 30 mA ✓)
-                //   drops: 6 V across R1, 6 V across the parallel group (sum = 12 V)
                 //   powers: 0.18 / 0.12 / 0.06 W  (all < ¼ W → nothing ever trips)
-                const PAYOFF_PR = 0.25;            // ¼ W parts — never trip
+                const PR = 5;                      // ample rating so the resistor never trips (it dissipates ~1.2 W)
                 const VERT = Math.PI / 2;
 
-                // Battery: left leg, vertical (+ terminal at the top-left).
-                const battery = new Component('battery', new THREE.Vector3(-10, 0, 0));
+                // Simple SERIES circuit drawn as a square — the first thing a new
+                // user sees: battery (left) → resistor (top) → switch (right, CLOSED)
+                // → light (bottom, LIT) → back to the battery. One closed series
+                // path, so the SAME current flows one clean direction all the way round.
+
+                // Battery: left side, vertical (+ at top).
+                const battery = new Component('battery', new THREE.Vector3(-8, 0, 0));
                 battery.updateProperties({ voltage: 12 });
                 if (battery.mesh) { battery.rotation = normalizeAngle(VERT); battery.mesh.rotation.y = battery.rotation; }
                 components.push(battery);
 
-                // R1 — series resistor on the top-left leg (horizontal).
-                const r1 = new Component('resistor', new THREE.Vector3(-5, 0, 6));
-                r1.updateProperties({ resistance: 200, powerRating: PAYOFF_PR, maxPower: PAYOFF_PR });
-                components.push(r1);
-                // R2, R3 — the parallel pair (vertical branches between the rails).
-                const r2 = new Component('resistor', new THREE.Vector3(0, 0, 0));
-                r2.updateProperties({ resistance: 300, powerRating: PAYOFF_PR, maxPower: PAYOFF_PR });
-                if (r2.mesh) { r2.rotation = normalizeAngle(VERT); r2.mesh.rotation.y = r2.rotation; }
-                components.push(r2);
-                const r3 = new Component('resistor', new THREE.Vector3(10, 0, 0));
-                r3.updateProperties({ resistance: 600, powerRating: PAYOFF_PR, maxPower: PAYOFF_PR });
-                if (r3.mesh) { r3.rotation = normalizeAngle(VERT); r3.mesh.rotation.y = r3.rotation; }
-                components.push(r3);
+                // Resistor: top side (horizontal).
+                const resistor = new Component('resistor', new THREE.Vector3(0, 0, 6));
+                resistor.updateProperties({ resistance: 100, powerRating: PR, maxPower: PR });
+                components.push(resistor);
 
-                // ── Junctions: top rail (TL·TM·TR) + bottom rail (BL·BM·BR) ──
-                const jTL = new Junction(new THREE.Vector3(-10, 0,  6), { snapToGridPosition: false });
-                const jTM = new Junction(new THREE.Vector3(  0, 0,  6), { snapToGridPosition: false });
-                const jTR = new Junction(new THREE.Vector3( 10, 0,  6), { snapToGridPosition: false });
-                const jBL = new Junction(new THREE.Vector3(-10, 0, -6), { snapToGridPosition: false });
-                const jBM = new Junction(new THREE.Vector3(  0, 0, -6), { snapToGridPosition: false });
-                const jBR = new Junction(new THREE.Vector3( 10, 0, -6), { snapToGridPosition: false });
-                junctions.push(jTL, jTM, jTR, jBL, jBM, jBR);
+                // Switch: right side, vertical — CLOSED so current can flow.
+                const sw = new Component('switch', new THREE.Vector3(8, 0, 0));
+                sw.updateProperties({ isOn: true });
+                if (sw.mesh) { sw.rotation = normalizeAngle(VERT); sw.mesh.rotation.y = sw.rotation; }
+                components.push(sw);
 
-                // ── Force world-matrix update before wire creation ────────────
-                // loadPayoffCircuit runs synchronously (typically before the first
-                // render frame), so every mesh's matrixWorld is still the identity
-                // from construction.  getWorldConnectionPoint() →
-                // getWorldPosition() uses parent.matrixWorld, so all terminal
-                // positions would collapse to the scene origin, producing
-                // zero-length (or incorrectly-placed) wires and invisible
-                // particles.  A single scene.updateMatrixWorld(true) traversal
-                // recomputes every local-→world matrix before we compute wire
-                // start/end positions, guaranteeing correct geometry on the
-                // first call regardless of whether a render frame has occurred.
+                // Light: bottom side (horizontal) — lights up because current flows.
+                const lamp = new Component('lamp', new THREE.Vector3(0, 0, -6));
+                lamp.updateProperties({ resistance: 10 });
+                components.push(lamp);
+
+                // ── Corner junctions of the square ───────────────────────────
+                const jTL = new Junction(new THREE.Vector3(-8, 0,  6), { snapToGridPosition: false });
+                const jTR = new Junction(new THREE.Vector3( 8, 0,  6), { snapToGridPosition: false });
+                const jBR = new Junction(new THREE.Vector3( 8, 0, -6), { snapToGridPosition: false });
+                const jBL = new Junction(new THREE.Vector3(-8, 0, -6), { snapToGridPosition: false });
+                junctions.push(jTL, jTR, jBR, jBL);
+
+                // Force world matrices before computing wire endpoints (the function
+                // runs before the first render frame, so matrixWorld is still identity).
                 scene.updateMatrixWorld(true);
 
-                // ── Wires — R1 in series, then R2 ∥ R3, recombine, return ────
-                //   B+ → TL → R1 → TM ─┬─ R2 ↓ to BM
-                //                       └─ TM→TR → R3 ↓ to BR
-                //   bottom rail BR → BM → BL → B−  (the branch currents recombine)
+                // ── Wires — one series path, in current-flow order ───────────
+                //   B+ → TL → resistor → TR → switch → BR → light → BL → B−
                 const wireSpecs = [
-                    [battery, 'positive', jTL, 'center'],
-                    [jTL,     'center',   r1,  'left'  ],
-                    [r1,      'right',    jTM, 'center'],
-                    [jTM,     'center',   r2,  'right' ],   // R2 top  (+z)
-                    [r2,      'left',     jBM, 'center'],   // R2 bottom (−z)
-                    [jTM,     'center',   jTR, 'center'],   // top rail → R3
-                    [jTR,     'center',   r3,  'right' ],   // R3 top
-                    [r3,      'left',     jBR, 'center'],   // R3 bottom
-                    [jBR,     'center',   jBM, 'center'],   // bottom rail
-                    [jBM,     'center',   jBL, 'center'],   // bottom rail → battery
-                    [jBL,     'center',   battery, 'negative'],
+                    [battery,  'positive', jTL, 'center'],
+                    [jTL,      'center',   resistor, 'left' ],
+                    [resistor, 'right',    jTR, 'center'],
+                    [jTR,      'center',   sw,  'right' ],   // switch top terminal
+                    [sw,       'left',     jBR, 'center'],   // switch bottom terminal
+                    [jBR,      'center',   lamp, 'right' ],
+                    [lamp,     'left',     jBL, 'center'],
+                    [jBL,      'center',   battery, 'negative'],
                 ];
 
+                // Route the showcase wires as clean STRAIGHT rectangle edges. The
+                // corners and terminals are axis-aligned, so free-form (direct)
+                // routing gives straight edges with no jogs — unlike the Manhattan/A*
+                // router, which detours around the parts and reads as jagged. Override
+                // the router mode just for these wires, then restore the preference.
+                let _prevRouterLS = null, _hadRouterLS = false;
+                try {
+                    _hadRouterLS = localStorage.getItem('routerMode') !== null;
+                    _prevRouterLS = localStorage.getItem('routerMode');
+                    localStorage.setItem('routerMode', 'freeform');
+                } catch (e) {}
+                window.ROUTER_MODE = 'freeform';
                 wireSpecs.forEach(([startObj, startSide, endObj, endSide]) => {
                     try {
                         const wire = new Wire(startObj, startSide, endObj, endSide);
@@ -20484,6 +20565,10 @@ Made with ? for visual learners everywhere!
                         console.warn('[CT3D Payoff] Wire creation failed:', e);
                     }
                 });
+                try {
+                    if (_hadRouterLS) localStorage.setItem('routerMode', _prevRouterLS);
+                    else localStorage.removeItem('routerMode');
+                } catch (e) {}
 
                 // ── Electron-flow style (current − → +, no deviation) ────────
                 if (currentFlowStyle !== 'misty') {
@@ -20493,29 +20578,28 @@ Made with ? for visual learners everywhere!
                     notifyParentModeState();
                 }
 
-                // ── Animate and display ──────────────────────────────────────
+                // ── Frame and energize ───────────────────────────────────────
+                // Set the dynamic 3/4 hero angle (rotated + tipped toward the user)
+                // FIRST, then fitToScreen so it frames the circuit centred and fully
+                // visible AT this angle — the position from the reference screenshot.
+                cameraAngleX = 0.7;
+                cameraAngleY = 0.62;
                 fitToScreen();
-                // Hero framing: the combination board is flat in the X–Z plane, so
-                // a head-on view collapses it into a flat line of overlapping parts.
-                // Swing the camera round and tilt it up so the board leans AWAY from
-                // the viewer and every leg reads as a distinct component at a clean
-                // 3/4 angle — components stay legible and the depth sells the 3D.
-                // (This pulls in to ~9–12 units, well under the old 28-unit cap.)
-                cameraAngleX = Math.PI / 2 - 0.4; // swing round so the loop runs across-screen, with a 3/4 skew
-                cameraAngleY = 0.62;              // ~35° up — tilts the flat board back, away from the user
-                // Pull the camera in tighter than the generic fit so the energized
-                // current-flow reads prominently the instant the circuit loads.
-                cameraDistance = Math.max(9, cameraDistance * 0.42);
+                cameraDistance *= 0.8;   // fill the view a touch more
                 updateCameraPosition();
-                // Second matrix-world update: fitToScreen() may adjust cameraTarget
-                // but does not move meshes.  This belt-and-suspenders call ensures
-                // any mesh whose dirty flag was set during wire creation (e.g. the
-                // wireGroup added to the scene during createWireSegments) has a
-                // fully-resolved matrixWorld before animateCurrentFlow() computes
-                // particle positions along the wire curves.
+                // Nudge the circuit a little higher on screen (negative vertical pan
+                // lowers the look-at point → the circuit rises).
+                applyCameraPan(0, -35);
+                // Remember this framing so the guided tour can sweep back to the
+                // whole circuit (tour-focus 'overview').
+                window._showcaseHomeCam = {
+                    angleX: cameraAngleX, angleY: cameraAngleY, distance: cameraDistance,
+                    targetX: cameraTarget.x, targetY: cameraTarget.y, targetZ: cameraTarget.z,
+                    fov: camera.fov,
+                };
                 scene.updateMatrixWorld(true);
                 analyzeCircuit();
-                setStatus('⚡ CircuiTry3D — 30 mA flows into R1, then SPLITS across the parallel pair: 20 mA + 10 mA = 30 mA back out (Kirchhoff). Voltage drops 6 V across R1 and 6 V across the pair = 12 V. Zoom in to follow the electrons to atomic scale.');
+                setStatus('⚡ A simple series circuit — battery, resistor, switch, light. The switch is closed, so current flows and the light is on.');
                 console.log('[CT3D Payoff] Payoff circuit loaded — wires:', wires.length, 'flow:', currentFlowState?.hasFlow);
             } catch (err) {
                 console.error('[CT3D Payoff] loadPayoffCircuit error:', err);

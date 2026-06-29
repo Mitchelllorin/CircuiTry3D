@@ -25,6 +25,79 @@
   padding: 14px 14px 12px;
 }
 
+/* Guided tour: lift the card clear above the F.U.S.E. watermark (its top sits
+   ~92px from the bottom), with a margin. */
+.builder-tutorial-card--tour {
+  bottom: calc(104px + env(safe-area-inset-bottom, 0px));
+}
+
+/* Guided tour: persistent "skip" pill so the user can dismiss the whole tour at
+   any point, including between cards / mid-sweep. */
+.builder-tour-skip {
+  pointer-events: auto;
+  position: fixed;
+  top: calc(10px + env(safe-area-inset-top, 0px));
+  right: calc(10px + env(safe-area-inset-right, 0px));
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(136, 204, 255, 0.3);
+  background: rgba(10, 24, 48, 0.72);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: rgba(232, 246, 255, 0.85);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  z-index: 3;
+}
+
+.builder-tour-skip:hover {
+  border-color: rgba(136, 204, 255, 0.5);
+  background: rgba(10, 24, 48, 0.88);
+}
+
+/* Guided tour: a "Next" affordance on the card so the user can advance early. */
+.builder-tour-next {
+  align-self: flex-end;
+  margin-top: 10px;
+  padding: 7px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(0, 255, 136, 0.35);
+  background: rgba(0, 255, 136, 0.1);
+  color: rgba(223, 255, 239, 0.95);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.builder-tour-next:hover {
+  border-color: rgba(0, 255, 136, 0.55);
+  background: rgba(0, 255, 136, 0.16);
+}
+
+/* Guided tour: pulse-highlight on the Circuit AI button during the closing card. */
+.tour-ai-highlight {
+  border-radius: 14px;
+  animation: tour-ai-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes tour-ai-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(0, 255, 136, 0.55), 0 0 14px rgba(0, 255, 136, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(0, 255, 136, 0), 0 0 22px rgba(0, 255, 136, 0.75);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tour-ai-highlight {
+    animation: none;
+    box-shadow: 0 0 0 3px rgba(0, 255, 136, 0.5), 0 0 18px rgba(0, 255, 136, 0.6);
+  }
+}
+
 /* Collapsed: a slim coach pill tucked in the corner, out of the way. */
 .builder-tutorial-card[data-collapsed="true"] {
   max-height: none;

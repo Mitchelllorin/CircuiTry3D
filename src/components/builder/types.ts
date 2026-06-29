@@ -5,6 +5,7 @@ export type BuilderInvokeAction =
   | "auto-arrange"
   | "reset-camera"
   | "fit-screen"
+  | "tour-focus"
   | "toggle-current-flow"
   | "toggle-polarity"
   | "cycle-layout"

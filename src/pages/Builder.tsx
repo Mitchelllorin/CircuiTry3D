@@ -31,6 +31,7 @@ import { CircuitSaveModal } from "../components/builder/modals/CircuitSaveModal"
 import { CircuitLoadModal } from "../components/builder/modals/CircuitLoadModal";
 import { CircuitRecoveryBanner } from "../components/builder/modals/CircuitRecoveryBanner";
 import { BuilderInteractiveTutorial } from "../components/builder/tutorial/BuilderInteractiveTutorial";
+import { BuilderGuidedTour } from "../components/builder/tutorial/BuilderGuidedTour";
 import {
   CompactSettingsPanel,
   type SettingsPanelTab,
@@ -125,9 +126,6 @@ const DEFAULT_WIRE_SEGMENT_RESISTANCE_OHM = 0.01;
 const CURRENT_FLOW_PAYOFF_STORAGE_KEY =
   "circuitry3d:onboarding:current-flow-payoff:v2";
 const INTRO_DIALOG_STORAGE_KEY = "circuitry3d:onboarding:v1";
-// First-run flag: the onboarding is now the interactive tutorial (build a real
-// circuit step by step), not the payoff demo. We auto-open the tutorial once.
-const FIRST_RUN_TUTORIAL_STORAGE_KEY = "circuitry3d:onboarding:tutorial-launched:v1";
 const JUNCTION_TIP_STORAGE_KEY = "circuitry3d:junction-tip-dismissed:v1";
 const ACTION_BAR_MODE_STORAGE_KEY = "ct3d.actionbar.mode";
 const THUMB_DESCRIPTORS_STORAGE_KEY = "ct3d.actionbar.descriptors";
@@ -1445,6 +1443,7 @@ export default function Builder() {
   });
   const [isInteractiveTutorialOpen, setInteractiveTutorialOpen] =
     useState(false);
+  const [isGuidedTourOpen, setGuidedTourOpen] = useState(false);
   const [isCurrentFlowPayoffVisible, setCurrentFlowPayoffVisible] =
     useState(false);
   const [isCurrentFlowPayoffRunning, setCurrentFlowPayoffRunning] =
@@ -2596,30 +2595,24 @@ export default function Builder() {
     };
   }, [clearCurrentFlowPayoffTimers]);
 
-  // Effect 1 — first-run onboarding is the INTERACTIVE TUTORIAL, not a payoff
-  // demo. On a user's very first visit we auto-open the step-by-step tutorial on
-  // a clean, editable canvas so they build a real circuit themselves (battery →
-  // resistor → wire the loop → run it → read W.I.R.E.). We deliberately do NOT
-  // pre-load a demo circuit or lock the canvas — the tutorial guides them from
-  // empty. It only auto-opens once; afterwards it's replayable from Help/Guides.
+  // Effect 1 — load the showcase circuit on launch: a simple SERIES circuit
+  // (battery → resistor → switch → light, switch closed, current flowing, light
+  // lit), framed at a dynamic 3/4 angle toward the top of the workspace. This is
+  // the backdrop the user lands on and that the point-at-the-parts guided tour
+  // walks through. (The old build-it-yourself tutorial is no longer auto-opened;
+  // it's being replaced by the tour.)
+  const showcaseLoadedRef = useRef(false);
   useEffect(() => {
-    let hasLaunchedTutorial = false;
-    try {
-      hasLaunchedTutorial =
-        window.localStorage.getItem(FIRST_RUN_TUTORIAL_STORAGE_KEY) === "1";
-    } catch {
-      hasLaunchedTutorial = false;
+    if (!isFrameReady || showcaseLoadedRef.current) {
+      return;
     }
-    if (!hasLaunchedTutorial) {
-      setInteractiveTutorialOpen(true);
-      try {
-        window.localStorage.setItem(FIRST_RUN_TUTORIAL_STORAGE_KEY, "1");
-      } catch {
-        // ignore storage write failures
-      }
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // run once on mount
+    showcaseLoadedRef.current = true;
+    triggerBuilderAction("load-payoff");
+    // The showcase is view-only — lock it so the user can't drag/edit the parts
+    // while the guided tour points at them.
+    setShowcaseLocked(true);
+    setGuidedTourOpen(true);
+  }, [isFrameReady, triggerBuilderAction]);
 
   // Effect 1b — auto-dismiss the intro dialog after a short display so the
   // user reaches the payoff 3D circuit without needing to tap anything.
@@ -4633,6 +4626,12 @@ export default function Builder() {
         lastSimulationAt={lastSimulationAt}
         isLeftMenuOpen={isLeftMenuOpen}
         onRequestOpenLeftMenu={() => setLeftMenuOpen(true)}
+        onInvokeAction={triggerBuilderAction}
+      />
+
+      <BuilderGuidedTour
+        open={isGuidedTourOpen}
+        onClose={() => setGuidedTourOpen(false)}
         onInvokeAction={triggerBuilderAction}
       />
 
