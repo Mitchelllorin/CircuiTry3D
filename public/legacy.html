@@ -5475,17 +5475,6 @@ body.android-optimized .zoom-btn {
 
         const worldUpVector = new THREE.Vector3(0, 1, 0);
         const cameraDirectionVec = new THREE.Vector3();
-        // Reusable scratch objects for the per-frame flow-particle loop. THREE's
-        // Curve.getPoint(t, target) writes into `target` instead of allocating a
-        // fresh Vector3 every call — with hundreds of particles per frame that
-        // allocation churn was the main GC/jank source. These are mutated and
-        // consumed within a single loop iteration, never retained across frames.
-        const _flowPt = new THREE.Vector3();
-        const _flowPA = new THREE.Vector3();
-        const _flowPB = new THREE.Vector3();
-        const _flowTan = new THREE.Vector3();
-        const _flowTrailPt = new THREE.Vector3();
-        const _flowQuat = new THREE.Quaternion();
         const cameraRightVec = new THREE.Vector3();
         const cameraUpVec = new THREE.Vector3();
         const PAN_SENSITIVITY_BASE = isMobile ? (isAndroid ? 0.0046 : 0.0048) : 0.0036;
@@ -8923,12 +8912,11 @@ body.android-optimized .zoom-btn {
         function animate(currentTime) {
             requestAnimationFrame(animate);
 
-            // Skip all per-frame work while the tab/page is hidden. The rAF keeps
-            // ticking cheaply and the loop self-resumes the moment we're visible
-            // again (particles continue from where they paused — visually correct).
-            if (document.hidden) {
-                return;
-            }
+            // NOTE: do NOT gate this loop on `document.hidden`. The browser already
+            // throttles requestAnimationFrame for genuinely backgrounded tabs, and
+            // Android's System WebView (Capacitor) reports document.hidden/visibility
+            // unreliably for this embedded iframe — gating here silently froze the
+            // entire animation loop on Android (no current flow, no live metrics).
 
             // Handle first call where currentTime might be undefined
             if (!currentTime) currentTime = performance.now();
@@ -9299,7 +9287,7 @@ body.android-optimized .zoom-btn {
                     if (wireData.progress > 1) wireData.progress -= 1;
                     else if (wireData.progress < 0) wireData.progress += 1;
 
-                    const position = wire.curve.getPoint(wireData.progress, _flowPt);
+                    const position = wire.curve.getPoint(wireData.progress);
                     if (!position || !position.isVector3) continue;
 
                     // ── Organic stream oscillation (all zoom tiers) ──────────
@@ -9369,12 +9357,12 @@ body.android-optimized .zoom-btn {
 
                     if (stretchToTangent) {
                         // Approximate tangent by sampling two nearby points
-                        const pA = wire.curve.getPoint(Math.max(0, wireData.progress - TANGENT_SAMPLE_DELTA), _flowPA);
-                        const pB = wire.curve.getPoint(Math.min(1, wireData.progress + TANGENT_SAMPLE_DELTA), _flowPB);
+                        const pA = wire.curve.getPoint(Math.max(0, wireData.progress - TANGENT_SAMPLE_DELTA));
+                        const pB = wire.curve.getPoint(Math.min(1, wireData.progress + TANGENT_SAMPLE_DELTA));
                         if (pA && pB && pA.isVector3 && pB.isVector3) {
-                            const tangent = _flowTan.copy(pB).sub(pA).normalize();
+                            const tangent = pB.clone().sub(pA).normalize();
                             // Align Y axis of particle (geometry long axis) to tangent
-                            const q  = _flowQuat.setFromUnitVectors(worldUpVector, tangent.lengthSq() > 0.0001 ? tangent : worldUpVector);
+                            const q  = new THREE.Quaternion().setFromUnitVectors(worldUpVector, tangent.lengthSq() > 0.0001 ? tangent : worldUpVector);
                             particle.setRotationFromQuaternion(q);
                             particle.scale.set(baseZoomScale, baseZoomScale * elongScale, baseZoomScale);
                         } else {
@@ -9434,7 +9422,7 @@ body.android-optimized .zoom-btn {
                             let trailProg = wireData.progress + offset;
                             if (trailProg > 1) trailProg -= 1;
                             if (trailProg < 0) trailProg += 1;
-                            const tp = wire.curve.getPoint(trailProg, _flowTrailPt);
+                            const tp = wire.curve.getPoint(trailProg);
                             if (tp && tp.isVector3) {
                                 trail.position.copy(tp);
                                 // Scale trail with same zoom factor

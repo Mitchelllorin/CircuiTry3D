@@ -2332,6 +2332,17 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
   padding-right: 2px;
 }
 
+/* CRITICAL: every section in the scrollable menu must keep its natural height and
+   NEVER be shrunk by the flexbox. If a child (e.g. the component film-reel) is
+   allowed to shrink to ~0 height while a tall sibling (the "Real Parts Library")
+   competes for space, the child's fixed-height inner content overflows and renders
+   ON TOP of the sibling — that's the recurring bug where the branded/real parts
+   hide behind the generic components. Forcing flex:0 0 auto + the container's own
+   overflow-y:auto makes the sections always stack and scroll instead. */
+.builder-menu-scroll > * {
+  flex: 0 0 auto;
+}
+
 .builder-menu-scroll::-webkit-scrollbar {
   width: 6px;
 }
