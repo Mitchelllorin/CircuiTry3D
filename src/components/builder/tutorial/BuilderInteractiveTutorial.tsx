@@ -78,72 +78,80 @@ export function BuilderInteractiveTutorial(props: {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [tutorialOpenedAt, setTutorialOpenedAt] = useState(() => Date.now());
   const highlightedElementRef = useRef<HTMLElement | null>(null);
+  // Spotlight: live screen rect of the element the current step points at, so we
+  // can dim the whole screen except a cut-out hole around it (coach-mark style).
+  const [spotlightRect, setSpotlightRect] = useState<{
+    top: number;
+    left: number;
+    width: number;
+    height: number;
+  } | null>(null);
 
   const steps: TutorialStep[] = useMemo(
     () => [
       {
         id: "welcome",
-        title: "Welcome — let’s build a circuit that actually works",
+        title: "Let's build a circuit",
         body:
-          "No experience needed. In a few steps you’ll wire up a real battery-and-resistor loop, watch current flow through it, and read what’s happening with W.I.R.E. — Watts (power), I (current), Resistance, and E (voltage). Hit Next and I’ll point things out as we go.",
+          "A battery, a resistor, two wires. Tap Next and I'll point at each step on screen.",
         canSkipRequirement: true,
         isComplete: () => true,
       },
       {
         id: "parts-tour",
-        title: "Meet your parts — what each one actually does",
+        title: "The parts",
         body:
-          "Open the Library (the parts drawer) and take a look. In plain English: a BATTERY is the push — it pumps charge around the loop (its voltage is the pressure). A RESISTOR is the brake — it limits how much current flows and uses up some voltage. An LED or LAMP is the payoff — it turns that current into light. A SWITCH is the gate — open = no flow, closed = flow. WIRES are the roads that connect it all. That’s a whole circuit: a push, a brake, a payoff, and roads between them.",
+          "Battery = the push. Resistor = the brake. Wires = the roads. Put them together and that's a circuit.",
         canSkipRequirement: true,
         isComplete: () => true,
       },
       {
         id: "battery",
-        title: "Step 1 — Add a Battery (the push)",
+        title: "Add a battery",
         body:
-          "Open the Library and tap Battery. The battery is your voltage source — it’s the pump that pushes charge around the loop. Its (+) terminal sits at higher pressure than (−); current leaves (+), travels the circuit, and returns to (−). No source, no flow.",
+          "Tap Battery in the Library. It's the push that drives the current.",
         targetId: "tutorial-add-battery",
         isComplete: ({ circuit }) =>
           Boolean((circuit?.counts.byType?.battery ?? 0) > 0),
       },
       {
         id: "resistor",
-        title: "Step 2 — Add a Resistor (the brake)",
+        title: "Add a resistor",
         body:
-          "Now tap Resistor. A resistor limits current and ‘uses up’ part of the voltage (a voltage drop across it). Think of it as the brake that keeps the rest of the circuit from getting overwhelmed — it’s why an LED doesn’t instantly burn out. More on tuning its value in a moment.",
+          "Now tap Resistor. It limits the current so nothing burns out.",
         targetId: "tutorial-add-resistor",
         isComplete: ({ circuit }) =>
           Boolean((circuit?.counts.byType?.resistor ?? 0) > 0),
       },
       {
         id: "tune-parts",
-        title: "Tune & handle parts — long-press, drag, rotate",
+        title: "Tune a part",
         body:
-          "Every part is hands-on. LONG-PRESS a component to open its editor and change its value (resistor ohms, battery volts, etc.). DRAG to move it. DOUBLE-TAP to fly the camera in for a close look. Need a part turned? Flip on Rotate mode and spin it so its terminals line up. Try long-pressing your resistor now — that editor is where the next step happens.",
+          "Long-press any part to change its value. Drag to move it.",
         canSkipRequirement: true,
         isComplete: () => true,
       },
       {
         id: "wire-mode",
-        title: "Step 3 — Turn on Wire Mode and connect",
+        title: "Wire it up",
         body:
-          "Flip on Wire Mode, then tap one terminal and the next to lay a wire between them. Your goal is one closed loop: battery (+) → resistor → back to battery (−). In Wire Mode, tap terminals to connect; long-press a wire later to reroute or delete it.",
+          "Turn on Wire Mode, then tap one terminal and the next to connect them.",
         targetId: "tutorial-enable-wire",
         isComplete: ({ mode }) => Boolean(mode.isWireMode),
       },
       {
         id: "close-circuit",
-        title: "Step 4 — Close the loop so current can flow",
+        title: "Close the circuit",
         body:
-          "Keep wiring until the loop is fully closed — battery to resistor and all the way back. Current can only flow in a complete circuit; a single gap anywhere (an ‘open’) stops everything. Watch the status below: it flips to ‘Closed’ the moment the loop completes.",
+          "Connect battery → resistor → back to the battery. Any gap (an 'open') and nothing flows.",
         canSkipRequirement: false,
         isComplete: ({ circuit }) => Boolean(circuit?.metrics.isComplete),
       },
       {
         id: "simulate",
-        title: "Step 5 — Run it and watch current move",
+        title: "Run it",
         body:
-          "Hit Run. Glowing particles start flowing along the wires — that’s your current, made visible. If nothing moves and current reads 0, you’ve still got an open somewhere; check that every terminal is connected.",
+          "Hit Run. The glowing dots moving along the wires are your current.",
         targetId: "tutorial-run-simulation",
         isComplete: ({ lastSimulationAt, tutorialOpenedAt }) => {
           if (!lastSimulationAt) return false;
@@ -153,58 +161,58 @@ export function BuilderInteractiveTutorial(props: {
       },
       {
         id: "wire-metrics",
-        title: "Step 6 — Read W.I.R.E. (your live dashboard)",
+        title: "Read W.I.R.E.",
         body:
-          "The W.I.R.E. panel is your dashboard, and each quantity has a fixed colour: W (Watts / power) = blue, I (Current) = yellow-orange, R (Resistance) = green, E (Voltage) = red. (Heads up: the glowing particles on the wires use their own colour scheme for speed and resistance — they’re not the W/I/R/E colours.) These four numbers are everything the circuit is doing, live.",
+          "W = power, I = current, R = resistance, E = voltage. Four live numbers — everything the circuit is doing.",
         canSkipRequirement: true,
         isComplete: () => true,
       },
       {
         id: "dials",
-        title: "Cause & effect — what the dials actually do",
+        title: "Change a value",
         body:
-          "Here’s the whole game in one rule: current = voltage ÷ resistance (I = V ÷ R). Long-press your resistor and CRANK IT UP → current drops, the loop calms down, an LED dims. Turn it DOWN → current surges, parts run hot (that’s how things burn out). Now long-press the battery: more VOLTS → more current everywhere; fewer volts → less. Change one value, watch W.I.R.E. move — that intuition is the real lesson.",
+          "Turn the resistor up → current drops. More volts → more current. That's I = V ÷ R.",
         canSkipRequirement: true,
         isComplete: () => true,
       },
       {
         id: "junction-intro",
-        title: "Step 7 — Junctions: branch your circuit",
+        title: "Add a junction",
         body:
-          "Junctions (bright yellow dots) are the key to building ANY circuit shape. Hover over a wire to see the pulsing '+' indicator, then click to drop a junction and immediately start a new branch from that point — no matter where on the wire you land. The new wire follows your current wiring mode (free, square, routing, etc.). Press J as a shortcut to add a junction at any time. Junctions are essential for parallel and series-parallel circuits.",
+          "Tap a wire to drop a junction (yellow dot) and branch a new wire from it.",
         canSkipRequirement: true,
         isComplete: ({ circuit }) =>
           Boolean((circuit?.counts.junctions ?? 0) > 0),
       },
       {
         id: "junction-parallel",
-        title: "Step 8 — Build a parallel path",
+        title: "Make a parallel branch",
         body:
-          "Place two junctions on the wire that connects your battery to the resistor — one on each side. Then add a second resistor and wire it between those two junctions to create a parallel branch. Each wiring mode draws a different style of route from a junction: free draws straight lines, square routes at 90°, and routing uses smart pathfinding. Current divides between the branches and total resistance drops below the smallest individual branch.",
+          "Wire a second resistor between two junctions. The current splits between the two paths.",
         canSkipRequirement: true,
         isComplete: () => true,
       },
       {
         id: "wire-table-method",
-        title: "Step 9 — Solve with the W.I.R.E. table",
+        title: "Solve it on paper",
         body:
-          "The W.I.R.E. table is the standard worksheet for any circuit. Rows: W (Watts) · I (Current) · R (Resistance) · E (Voltage). Columns: one per real component plus Circuit Totals. For combination circuits, follow this order: First, collapse each parallel group to R_eq in your working space using (R_a × R_b) / (R_a + R_b). R_eq is a working-space value only — it does NOT get its own table column. Second, fill the Totals column: enter R_T (all series resistances added) and E_T, then solve I_T = E_T / R_T. Third, fill component columns: series elements copy I_T into their I cell; parallel-branch elements copy the group voltage (I_T × R_eq) into their E cell and solve I = E / R. Fourth, solve W = E × I for every component and verify that component watts sum to Totals-W. Open Practice Worksheets to try this on a real problem.",
+          "The W.I.R.E. table works any circuit. Open Practice to try one.",
         canSkipRequirement: true,
         isComplete: () => true,
       },
       {
         id: "arena-fuse",
-        title: "Push parts to the limit — the Arena & F.U.S.E.",
+        title: "Push parts to failure",
         body:
-          "Want to know how much a part can really take? Open the ARENA. SOLO mode is a stress bench: pick one component, ramp the current up, and watch exactly where it stops being safe and where it fails. BATTLE mode pits parts head-to-head to see which survives the most punishment. Every failure is judged by F.U.S.E. — real failure physics (heat build-up and I²t energy), not a guess — and it tells you in plain English why a part won or let go. Tap ‘Open Arena’ to try it.",
+          "Open the Arena: ramp the current up and watch exactly where a part fails. Real physics, not a guess.",
         canSkipRequirement: true,
         isComplete: () => true,
       },
       {
         id: "done",
-        title: "Done — you're ready for real circuits",
+        title: "You've got it",
         body:
-          "That’s the whole loop: pick parts (push, brake, payoff), wire a closed circuit, run it, and read W.I.R.E. — then long-press to tune values and feel I = V ÷ R for yourself. Add junctions for parallel paths, collapse parallel groups to R_eq, and fill the W.I.R.E. table from Totals inward. Head to Practice Worksheets for series, parallel, and combination problems, or take parts to their limit in the Arena.",
+          "Pick parts, wire a circuit, run it, read W.I.R.E. That's the app.",
         canSkipRequirement: true,
         isComplete: () => true,
       },
@@ -265,6 +273,42 @@ export function BuilderInteractiveTutorial(props: {
     element.classList.add("tutorial-highlight");
     highlightedElementRef.current = element;
     element.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }, [activeStep.targetId, isOpen]);
+
+  // Track the target's live screen rect every frame so the spotlight hole follows
+  // it (the target can move as panels open or the library reel scrolls). Only
+  // commits to state when the rect actually changes, to avoid per-frame re-renders.
+  useEffect(() => {
+    if (!isOpen || !activeStep.targetId) {
+      setSpotlightRect(null);
+      return;
+    }
+    let raf = 0;
+    const tick = () => {
+      const el = document.querySelector<HTMLElement>(
+        `[data-tutorial-id="${activeStep.targetId}"]`,
+      );
+      if (el) {
+        const r = el.getBoundingClientRect();
+        setSpotlightRect((prev) => {
+          if (
+            prev &&
+            Math.abs(prev.top - r.top) < 0.5 &&
+            Math.abs(prev.left - r.left) < 0.5 &&
+            Math.abs(prev.width - r.width) < 0.5 &&
+            Math.abs(prev.height - r.height) < 0.5
+          ) {
+            return prev;
+          }
+          return { top: r.top, left: r.left, width: r.width, height: r.height };
+        });
+      } else {
+        setSpotlightRect((prev) => (prev ? null : prev));
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
   }, [activeStep.targetId, isOpen]);
 
   useEffect(() => {
@@ -448,6 +492,21 @@ export function BuilderInteractiveTutorial(props: {
 
   return (
     <div className="builder-tutorial-layer" aria-live="polite">
+      {/* Spotlight: dims the whole screen except a hole punched around the element
+          this step points at (box-shadow spread = the dim; the div itself is the
+          transparent hole). pointer-events:none so the target stays tappable. */}
+      {spotlightRect && !isCollapsed && (
+        <div
+          className="tutorial-spotlight"
+          aria-hidden="true"
+          style={{
+            top: spotlightRect.top - 8,
+            left: spotlightRect.left - 8,
+            width: spotlightRect.width + 16,
+            height: spotlightRect.height + 16,
+          }}
+        />
+      )}
       <div
         className="builder-tutorial-card"
         role="dialog"

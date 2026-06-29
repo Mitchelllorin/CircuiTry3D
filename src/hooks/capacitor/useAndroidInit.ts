@@ -136,6 +136,26 @@ export async function minimizeApp(): Promise<void> {
 
 // Register service worker for PWA
 export function registerServiceWorker(): void {
+  // DEV (vite dev server — including testing on a phone over the LAN): NEVER use
+  // the caching service worker. It serves stale bundles, which makes it look like
+  // fixes didn't land. Actively unregister any existing SW and wipe its caches so
+  // a device that previously cached the dev build self-heals on the next load.
+  if (import.meta.env.DEV) {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker
+        .getRegistrations()
+        .then((regs) => regs.forEach((r) => r.unregister()))
+        .catch(() => {});
+    }
+    if (typeof caches !== 'undefined' && caches.keys) {
+      caches
+        .keys()
+        .then((keys) => keys.forEach((k) => caches.delete(k)))
+        .catch(() => {});
+    }
+    return;
+  }
+
   if ('serviceWorker' in navigator && !isCapacitor()) {
     // Only register service worker for web, not native app
     window.addEventListener('load', async () => {

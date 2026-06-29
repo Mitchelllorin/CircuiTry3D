@@ -10,10 +10,11 @@
   position: absolute;
   left: calc(16px + env(safe-area-inset-left, 0px));
   bottom: calc(16px + env(safe-area-inset-bottom, 0px));
-  width: min(340px, calc(100vw - 32px));
-  /* Never let the coach card dominate the screen — cap it and scroll inside so
-     it stays a small side panel, not a menu over the thing it's explaining. */
-  max-height: min(72vh, calc(100vh - 32px));
+  width: min(320px, calc(100vw - 28px));
+  /* Stay a SMALL coach card pinned to the bottom — never a wall over the
+     workspace. Short copy keeps it short; this cap guarantees it can't grow tall
+     enough to cover what it's pointing at. Scrolls inside if a step runs long. */
+  max-height: 42dvh;
   display: flex;
   flex-direction: column;
   background: rgba(10, 24, 48, 0.92);
@@ -276,4 +277,38 @@
     0 0 0 4px rgba(0, 255, 136, 0.12),
     0 0 24px rgba(0, 255, 136, 0.35);
   border-radius: 14px;
+}
+
+/* Spotlight / coach-mark: the giant box-shadow spread is the full-screen dim;
+   the element itself is the transparent "hole" so the target pops out of a
+   darkened, focused screen. Sits in the tutorial layer ABOVE the workspace but
+   (by DOM order) below the coach card, so the card stays bright. */
+.tutorial-spotlight {
+  position: fixed;
+  border-radius: 16px;
+  pointer-events: none;
+  box-shadow: 0 0 0 9999px rgba(2, 6, 23, 0.78);
+  outline: 2.5px solid rgba(0, 255, 136, 0.9);
+  transition:
+    top 0.22s ease,
+    left 0.22s ease,
+    width 0.22s ease,
+    height 0.22s ease;
+  animation: tutorial-spotlight-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes tutorial-spotlight-pulse {
+  0%,
+  100% {
+    outline-color: rgba(0, 255, 136, 0.9);
+  }
+  50% {
+    outline-color: rgba(0, 255, 136, 0.4);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tutorial-spotlight {
+    animation: none;
+  }
 }
