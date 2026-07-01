@@ -159,6 +159,7 @@
       height: clamp(72px, 14vw, 124px);
       margin: 0 auto;
       perspective: 1200px;
+      pointer-events: none; /* decorative — never intercept taps meant for the CTA */
     }
     .wordmark3d > canvas {
       width: 100%;
@@ -949,7 +950,7 @@
       </div>
 
       <div class="hero-cta">
-        <a class="btn-primary" href="/#/app" id="launch-btn">
+        <a class="btn-primary" href="/#/app" id="launch-btn" target="_top">
           🚀 Launch App
         </a>
       </div>
@@ -1345,7 +1346,7 @@
         An advanced 3D electrical circuit design simulator — see what's possible.
       </p>
       <div class="cta-wrap">
-        <a class="btn-primary" href="/#/app" id="cta-launch-btn">
+        <a class="btn-primary" href="/#/app" id="cta-launch-btn" target="_top">
           🚀 Launch App
         </a>
       </div>
@@ -1397,30 +1398,30 @@
 
       var sendNavigationMessage = function (pathTarget) {
         if (!pathTarget) return false;
-        // Primary: directly set the top-level page's hash.  This is more
-        // reliable than postMessage because it does not depend on the parent
-        // correctly identifying event.source (which some browsers report as
-        // null for sandboxed iframes even when allow-same-origin is set).
-        // Requires allow-top-navigation-by-user-activation in the sandbox.
-        try {
-          if (window.top && window.top !== window) {
-            window.top.location.hash = pathTarget;
-            return true;
-          }
-        } catch (_) {
-          // Direct access blocked — fall back to postMessage bridge.
-        }
-        // Fallback: postMessage for environments where direct hash navigation
-        // is unavailable (e.g. cross-origin deployment or stricter sandboxing).
+        var handled = false;
+        // Primary: postMessage to the parent app. Home.tsx handles this reliably
+        // (it accepts the "null" origin some mobile browsers report for sandboxed
+        // iframes), whereas directly setting window.top.location.hash can silently
+        // no-op on mobile while still succeeding — which swallowed the tap and made
+        // Launch need several presses.
         try {
           if (window.parent && window.parent !== window) {
             window.parent.postMessage({ type: "landing:navigate", path: pathTarget }, "*");
-            return true;
+            handled = true;
           }
         } catch (_) {
-          // Ignore bridge failures — fall back to native navigation
+          // Ignore bridge failures — try direct nav below.
         }
-        return false;
+        // Belt-and-suspenders: also set the top hash directly.
+        try {
+          if (window.top && window.top !== window) {
+            window.top.location.hash = pathTarget;
+            handled = true;
+          }
+        } catch (_) {
+          // Direct access blocked — the postMessage above (or native nav) covers it.
+        }
+        return handled;
       };
 
       var interceptLink = function (el) {
