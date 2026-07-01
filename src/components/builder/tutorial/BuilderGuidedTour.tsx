@@ -6,6 +6,7 @@ type BuilderGuidedTourProps = {
   open: boolean;
   onClose: () => void;
   onInvokeAction: (action: BuilderInvokeAction, data?: Record<string, unknown>) => void;
+  onStartBuildAlong: () => void;
 };
 
 type TourStep = {
@@ -141,7 +142,12 @@ const TOUR_STEPS: TourStep[] = [
   },
 ];
 
-export function BuilderGuidedTour({ open, onClose, onInvokeAction }: BuilderGuidedTourProps) {
+export function BuilderGuidedTour({
+  open,
+  onClose,
+  onInvokeAction,
+  onStartBuildAlong,
+}: BuilderGuidedTourProps) {
   const [step, setStep] = useState(0);
   const [textVisible, setTextVisible] = useState(false);
 
@@ -244,6 +250,11 @@ export function BuilderGuidedTour({ open, onClose, onInvokeAction }: BuilderGuid
           {!isLast && (
             <button type="button" className="builder-tour-next" onClick={goNext}>
               Next ›
+            </button>
+          )}
+          {current?.id === "build" && (
+            <button type="button" className="builder-tour-next" onClick={onStartBuildAlong}>
+              Build it with me ›
             </button>
           )}
         </div>

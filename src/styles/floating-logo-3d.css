@@ -1,0 +1,62 @@
+/* Live 3D floating wordmark canvas. Size comes from CSS (the renderer matches its
+   drawing buffer to clientWidth/Height); the gentle "rock" is CSS, driven by the
+   --rock-angle / --rock-duration the component sets from the logo3d settings. */
+.floating-logo-3d-canvas {
+  display: block;
+  width: clamp(190px, 44vw, 440px);
+  aspect-ratio: 3.7 / 1;
+  height: auto;
+  transform-origin: center center;
+  animation: floating-logo-3d-rock var(--rock-duration, 6s) ease-in-out infinite alternate;
+  will-change: transform;
+}
+
+@keyframes floating-logo-3d-rock {
+  from {
+    transform: perspective(760px) rotateY(calc(-1 * var(--rock-angle, 5deg)));
+  }
+  to {
+    transform: perspective(760px) rotateY(var(--rock-angle, 5deg));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .floating-logo-3d-canvas {
+    animation: none;
+    transform: perspective(760px) rotateY(0deg);
+  }
+}
+
+/* When the floating logo hosts the live 3D canvas: near-transparent watermark by
+   default (it drifts gently behind the workspace). */
+.builder-floating-logo--3d {
+  opacity: 0.1 !important;
+}
+
+/* r3f workspace logo — a fixed-size box so the <Canvas> gets a real drawing size
+   (matches the Automotive3D / ThePrints3D .workspace-logo). */
+.workspace-logo-3d {
+  width: min(360px, 64vw);
+  height: 150px;
+  pointer-events: none;
+}
+
+.workspace-logo-3d canvas {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+}
+
+/* Fixed 3D brand mark for headers — small, inline. */
+.header-logo-3d {
+  width: 116px;
+  height: 30px;
+  pointer-events: none;
+  flex: 0 0 auto;
+}
+
+.header-logo-3d canvas {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+}

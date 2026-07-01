@@ -4180,6 +4180,14 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
   will-change: transform, opacity;
 }
 
+/* Real 3D wordmark image fills the floating logo; the container carries the
+   near-transparent --logo-opacity and the drift animation. */
+.builder-floating-logo-img {
+  display: block;
+  width: clamp(190px, 44vw, 440px);
+  height: auto;
+}
+
 .builder-floating-logo .builder-logo-text {
   font-size: clamp(45px, 9.6vw, 96px);
   /* Tilt the wordmark back in perspective so the extruded faces read as 3D. */

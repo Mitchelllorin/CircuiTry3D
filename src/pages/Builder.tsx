@@ -32,6 +32,8 @@ import { CircuitLoadModal } from "../components/builder/modals/CircuitLoadModal"
 import { CircuitRecoveryBanner } from "../components/builder/modals/CircuitRecoveryBanner";
 import { BuilderInteractiveTutorial } from "../components/builder/tutorial/BuilderInteractiveTutorial";
 import { BuilderGuidedTour } from "../components/builder/tutorial/BuilderGuidedTour";
+import { BuilderBuildAlong } from "../components/builder/tutorial/BuilderBuildAlong";
+import { WorkspaceLogo3D } from "../components/builder/branding/WorkspaceLogo3D";
 import {
   CompactSettingsPanel,
   type SettingsPanelTab,
@@ -127,6 +129,9 @@ const CURRENT_FLOW_PAYOFF_STORAGE_KEY =
   "circuitry3d:onboarding:current-flow-payoff:v2";
 const INTRO_DIALOG_STORAGE_KEY = "circuitry3d:onboarding:v1";
 const JUNCTION_TIP_STORAGE_KEY = "circuitry3d:junction-tip-dismissed:v1";
+// Set once the user dismisses the guided tour "for good" — after that it no longer
+// auto-opens on launch (still re-launchable from the Guides menu).
+const TOUR_DISMISSED_KEY = "circuitry3d:onboarding:tour-dismissed:v1";
 const ACTION_BAR_MODE_STORAGE_KEY = "ct3d.actionbar.mode";
 const THUMB_DESCRIPTORS_STORAGE_KEY = "ct3d.actionbar.descriptors";
 
@@ -1444,6 +1449,7 @@ export default function Builder() {
   const [isInteractiveTutorialOpen, setInteractiveTutorialOpen] =
     useState(false);
   const [isGuidedTourOpen, setGuidedTourOpen] = useState(false);
+  const [isBuildAlongOpen, setBuildAlongOpen] = useState(false);
   const [isCurrentFlowPayoffVisible, setCurrentFlowPayoffVisible] =
     useState(false);
   const [isCurrentFlowPayoffRunning, setCurrentFlowPayoffRunning] =
@@ -2612,7 +2618,34 @@ export default function Builder() {
     // while the guided tour points at them.
     setShowcaseLocked(true);
     setGuidedTourOpen(true);
+    // The showcase has junctions; suppress the junction tip so it can't pop over
+    // the tour.
+    junctionTipTriggeredRef.current = true;
   }, [isFrameReady, triggerBuilderAction]);
+
+  // Effect 1a — showcase load watchdog. On slower devices (Android) the very first
+  // load-payoff trigger sometimes races the builder's init and the parts never
+  // appear. While the tour is open with an empty workspace, re-fire the load until
+  // the parts show (or give up after a few tries) so the circuit reliably renders.
+  const showcaseRetriesRef = useRef(0);
+  useEffect(() => {
+    if (!isGuidedTourOpen) {
+      showcaseRetriesRef.current = 0;
+      return;
+    }
+    const componentCount = circuitState?.counts?.components ?? 0;
+    if (componentCount > 0 || showcaseRetriesRef.current >= 5) {
+      if (componentCount > 0) {
+        showcaseRetriesRef.current = 0;
+      }
+      return;
+    }
+    const id = window.setTimeout(() => {
+      showcaseRetriesRef.current += 1;
+      triggerBuilderAction("load-payoff");
+    }, 1400);
+    return () => window.clearTimeout(id);
+  }, [isGuidedTourOpen, circuitState, triggerBuilderAction]);
 
   // Effect 1b — auto-dismiss the intro dialog after a short display so the
   // user reaches the payoff 3D circuit without needing to tap anything.
@@ -3462,7 +3495,7 @@ export default function Builder() {
 
           {/* Junction info tip — shown until dismissed, explains the role
               of junctions and how to use them so they are never missed */}
-          {isJunctionTipVisible && (
+          {isJunctionTipVisible && !isGuidedTourOpen && !isBuildAlongOpen && (
             <div className="junction-info-tip" role="note" aria-label="Junction nodes tip">
               <span className="junction-info-tip-icon" aria-hidden="true">─●─</span>
               <div className="junction-info-tip-body">
@@ -4136,6 +4169,33 @@ export default function Builder() {
                 <button
                   type="button"
                   className="slider-chip"
+                  onClick={() => {
+                    setBuildAlongOpen(false);
+                    triggerBuilderAction("load-payoff");
+                    setShowcaseLocked(true);
+                    setGuidedTourOpen(true);
+                  }}
+                  title="Replay the guided tour of the showcase circuit."
+                >
+                  <span className="slider-chip-label">Take the Tour</span>
+                </button>
+                <button
+                  type="button"
+                  className="slider-chip"
+                  onClick={() => {
+                    setGuidedTourOpen(false);
+                    setShowcaseLocked(false);
+                    setCircuitLocked(false);
+                    triggerBuilderAction("clear-workspace");
+                    setBuildAlongOpen(true);
+                  }}
+                  title="Build a circuit yourself, step by step."
+                >
+                  <span className="slider-chip-label">Build it with me</span>
+                </button>
+                <button
+                  type="button"
+                  className="slider-chip"
                   onClick={() => openHelpCenter("shortcuts")}
                   title="Open the keyboard and gesture shortcuts reference."
                 >
@@ -4338,14 +4398,10 @@ export default function Builder() {
 
       <div
         ref={floatingLogoRef}
-        className="builder-floating-logo"
+        className="builder-floating-logo builder-floating-logo--3d"
         aria-hidden="true"
       >
-        <span className="builder-logo-text" aria-hidden="true">
-          <span className="builder-logo-circui">Circui</span>
-          <span className="builder-logo-try">Try</span>
-          <span className="builder-logo-3d">3D</span>
-        </span>
+        <WorkspaceLogo3D />
       </div>
 
       {activeWorkspacePanelMode && workspacePanelMeta && workspacePanelContent && (
@@ -4631,8 +4687,39 @@ export default function Builder() {
 
       <BuilderGuidedTour
         open={isGuidedTourOpen}
-        onClose={() => setGuidedTourOpen(false)}
+        onClose={() => {
+          // Dismiss for good — it won't auto-open again (Guides menu re-launches it).
+          setGuidedTourOpen(false);
+          try {
+            window.localStorage.setItem(TOUR_DISMISSED_KEY, "1");
+          } catch {
+            /* ignore */
+          }
+        }}
         onInvokeAction={triggerBuilderAction}
+        onStartBuildAlong={() => {
+          // Hand off from the tour into the build-it-yourself walkthrough on a
+          // clean, unlocked canvas (and don't auto-show the tour again).
+          setGuidedTourOpen(false);
+          setShowcaseLocked(false);
+          setCircuitLocked(false);
+          triggerBuilderAction("clear-workspace");
+          setBuildAlongOpen(true);
+          try {
+            window.localStorage.setItem(TOUR_DISMISSED_KEY, "1");
+          } catch {
+            /* ignore */
+          }
+        }}
+      />
+
+      <BuilderBuildAlong
+        open={isBuildAlongOpen}
+        onClose={() => setBuildAlongOpen(false)}
+        circuitState={circuitState}
+        modeState={modeState}
+        onInvokeAction={triggerBuilderAction}
+        onRequestOpenLeftMenu={() => setLeftMenuOpen(true)}
       />
 
       {/* Circuit AI helper — floating action button + sliding chat panel */}

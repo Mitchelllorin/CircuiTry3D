@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import WordMark from "../../WordMark";
+import { HeaderLogo3D } from "../branding/WorkspaceLogo3D";
 import "../../../styles/workspace-mode-panel.css";
 
 type WorkspaceModePanelProps = {
@@ -23,7 +23,7 @@ export function WorkspaceModePanel({
     <div className={`workspace-mode-panel${isOpen ? " open" : ""}${className ? ` ${className}` : ""}`}>
       <div className="workspace-mode-panel-header">
         <div className="workspace-mode-panel-brand" aria-hidden="true">
-          <WordMark size="sm" decorative />
+          <HeaderLogo3D />
         </div>
         <button
           type="button"

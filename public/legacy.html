@@ -10014,10 +10014,10 @@ body.android-optimized .zoom-btn {
                 // particles read clearly.
                 if (!overviewKf) { if (typeof fitToScreen === 'function') fitToScreen(); return; }
                 const flowKf = Object.assign({}, overviewKf, {
-                    distance: overviewKf.distance * 0.62,
-                    // Drop the look-at point so the flowing circuit rides UP into the
-                    // available space (above the tour card), not behind it.
-                    targetY: overviewKf.targetY - 3,
+                    distance: overviewKf.distance * 0.48,
+                    // Drop the look-at point a little so the flowing circuit rides UP
+                    // into the available space (above the tour card), not behind it.
+                    targetY: overviewKf.targetY - 2,
                     duration: 1300, easing: 'smooth',
                 });
                 _cinematicCtrl.start(null, [cur, flowKf]);
@@ -10034,13 +10034,13 @@ body.android-optimized .zoom-btn {
                     return;
                 }
                 const partKf = (p, dur) => ({
-                    angleX: 0.7, angleY: 0.55, distance: 5.5,
+                    angleX: 0.7, angleY: 0.55, distance: 7,
                     targetX: p.x, targetY: p.y, targetZ: p.z,
                     fov: 52, duration: dur, easing: 'smooth',
                 });
                 const lp = lamp.position, sp = sw.position;
                 const bothKf = {
-                    angleX: 0.7, angleY: 0.58, distance: 9,
+                    angleX: 0.7, angleY: 0.58, distance: 11,
                     targetX: (lp.x + sp.x) / 2, targetY: (lp.y + sp.y) / 2, targetZ: (lp.z + sp.z) / 2,
                     fov: 55, duration: 1300, easing: 'smooth',
                 };
