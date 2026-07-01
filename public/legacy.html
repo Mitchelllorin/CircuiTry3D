@@ -507,7 +507,7 @@
         }
 
         .step-voltage { border-left-color: #ff4444; }
-        .step-current { border-left-color: #ff8844; }
+        .step-current { border-left-color: #ffd633; }
         .step-resistance { border-left-color: #44ff88; }
         .step-power { border-left-color: #4488ff; }
 
@@ -1339,9 +1339,9 @@
         .wire-w .wire-letter { color: #4488ff; }
         .wire-w .wire-value { color: #4488ff; }
         
-        .wire-i { border-color: #ff8844; }
-        .wire-i .wire-letter { color: #ff8844; }
-        .wire-i .wire-value { color: #ff8844; }
+        .wire-i { border-color: #ffd633; }
+        .wire-i .wire-letter { color: #ffd633; }
+        .wire-i .wire-value { color: #ffd633; }
         
         .wire-r { border-color: #44ff88; }
         .wire-r .wire-letter { color: #44ff88; }
@@ -5246,7 +5246,7 @@ body.android-optimized .zoom-btn {
         // W.I.R.E. Color coding
         const WIRE_COLORS = {
             W: '#4488ff', // Power (Watts) - Blue
-            I: '#ff8844', // Current (Amps) - Orange  
+            I: '#ffd633', // Current (Amps) - Yellow
             R: '#44ff88', // Resistance (Ohms) - Green
             E: '#ff4444'  // Voltage (Volts) - Red
         };
@@ -20149,7 +20149,7 @@ Made with ? for visual learners everywhere!
                     break;
                 case 'I':
                     formulaEl.textContent = 'I = E ? R (Current = EMF/Voltage ? Resistance)';
-                    formulaEl.style.color = '#ff8844';
+                    formulaEl.style.color = '#ffd633';
                     setStatus('⚡ CURRENT: I = E ÷ R | Measured in Amperes (A)');
                     break;
                 case 'R':
@@ -20180,7 +20180,7 @@ Made with ? for visual learners everywhere!
                     break;
                 case 'I':
                     formulaEl.textContent = 'I = W ? E (Current = Power ? EMF/Voltage)';
-                    formulaEl.style.color = '#ff8844';
+                    formulaEl.style.color = '#ffd633';
                     setStatus('⚡ CURRENT: I = W ÷ E | From power triangle | Measured in Amperes (A)');
                     break;
                 case 'E':
@@ -20400,7 +20400,7 @@ Made with ? for visual learners everywhere!
                     student: studentCurrent.toFixed(3) + 'A',
                     correct: lastKnownValues.current.toFixed(3) + 'A',
                     isCorrect: currentCorrect,
-                    color: '#ff8844'
+                    color: '#ffd633'
                 });
                 if (!currentCorrect) allCorrect = false;
             }

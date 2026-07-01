@@ -3652,6 +3652,21 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
   color: var(--wire-e);
 }
 
+/* Colour the VALUE too, so the whole W.I.R.E. readout is colour-coded (E=red,
+   W=blue, R=green, I=yellow). */
+.ticker-wire-metric--watts .ticker-wire-value {
+  color: var(--wire-w);
+}
+.ticker-wire-metric--current .ticker-wire-value {
+  color: var(--wire-i);
+}
+.ticker-wire-metric--resistance .ticker-wire-value {
+  color: var(--wire-r);
+}
+.ticker-wire-metric--voltage .ticker-wire-value {
+  color: var(--wire-e);
+}
+
 .ticker-wrapper {
   width: 100%;
   height: 100%;

@@ -12,12 +12,12 @@
    * in src/schematic/currentFlowAnimation.ts and public/legacy.html).
    *
    * W = Watts (Power)      → Blue
-   * I = Current (Amps)     → Yellow-Orange
+   * I = Current (Amps)     → Yellow
    * R = Resistance (Ohms)  → Green
    * E = Voltage (Volts)    → Red
    */
   --wire-w: #4a90ff;
-  --wire-i: #ffaa33;
+  --wire-i: #ffd633;
   --wire-r: #00cc66;
   --wire-e: #ff4444;
   --brand-blue-dim: rgba(168, 216, 255, 0.18);

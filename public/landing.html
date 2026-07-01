@@ -110,9 +110,9 @@
       align-items: center;
       justify-content: center;
       padding:
-        max(80px, env(safe-area-inset-top, 0px))
+        max(28px, env(safe-area-inset-top, 0px))
         max(16px, env(safe-area-inset-right, 0px))
-        max(80px, env(safe-area-inset-bottom, 0px))
+        max(28px, env(safe-area-inset-bottom, 0px))
         max(16px, env(safe-area-inset-left, 0px));
       text-align: center;
       overflow: hidden;
@@ -131,7 +131,7 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: clamp(16px, 4vw, 32px);
+      gap: clamp(9px, 2.2vw, 18px);
       max-width: 860px;
       width: 100%;
     }
@@ -156,7 +156,7 @@
     .wordmark3d {
       position: relative;
       width: min(94vw, 780px);
-      height: clamp(104px, 23vw, 220px);
+      height: clamp(72px, 14vw, 124px);
       margin: 0 auto;
       perspective: 1200px;
     }
@@ -193,9 +193,9 @@
       justify-content: center;
     }
 
-    /* Logo icon */
+    /* Logo icon — small; the 3D wordmark above is the primary brand. */
     .logo-mark {
-      width: clamp(140px, 36vw, 240px);
+      width: clamp(64px, 15vw, 104px);
       filter: drop-shadow(0 0 20px rgba(45,212,191,0.42));
     }
     .logo-mark img { width: 100%; height: auto; display: block; }
