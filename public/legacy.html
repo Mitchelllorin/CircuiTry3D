@@ -6476,8 +6476,7 @@ body.android-optimized .zoom-btn {
                                 : 'open';
                     return `
                         <div style="font-size: ${fontSize}; font-weight: 600;">
-                            <span style="color: ${WIRE_COLORS.I};">I</span>
-                            <span style="color: ${valueColor};"> ${formatCurrent(0, { allowZero: true })}</span>
+                            <span style="color: ${WIRE_COLORS.I};">I ${formatCurrent(0, { allowZero: true })}</span>
                             <span style="color: #ff8888;"> | ${reasonText}</span>
                         </div>
                     `;
@@ -6486,8 +6485,7 @@ body.android-optimized .zoom-btn {
                 if (metrics.state === 'idle') {
                     return `
                         <div style="font-size: ${fontSize}; font-weight: 600;">
-                            <span style="color: ${WIRE_COLORS.I};">I</span>
-                            <span style="color: ${valueColor};"> ${formatCurrent(0, { allowZero: true })}</span>
+                            <span style="color: ${WIRE_COLORS.I};">I ${formatCurrent(0, { allowZero: true })}</span>
                             <span style="color: #a0b4c8;"> | idle</span>
                         </div>
                     `;
@@ -6495,27 +6493,29 @@ body.android-optimized .zoom-btn {
 
                 const parts = [];
 
+                // Whole readout (letter + value) in the W.I.R.E. property colour so
+                // the metric reads at a glance: W=blue, I=yellow, R=green, E=red.
                 if (isFinite(metrics.power)) {
                     parts.push(
-                        `<span style="color: ${WIRE_COLORS.W};">W</span><span style="color: ${valueColor};"> ${formatPower(metrics.power, { allowZero: true })}</span>`
+                        `<span style="color: ${WIRE_COLORS.W};">W ${formatPower(metrics.power, { allowZero: true })}</span>`
                     );
                 }
 
                 if (isFinite(metrics.current)) {
                     parts.push(
-                        `<span style="color: ${WIRE_COLORS.I};">I</span><span style="color: ${valueColor};"> ${formatCurrent(metrics.current, { allowZero: true })}</span>`
+                        `<span style="color: ${WIRE_COLORS.I};">I ${formatCurrent(metrics.current, { allowZero: true })}</span>`
                     );
                 }
 
                 if (isFinite(metrics.resistance)) {
                     parts.push(
-                        `<span style="color: ${WIRE_COLORS.R};">R</span><span style="color: ${valueColor};"> ${formatResistance(metrics.resistance, { allowOpen: true })}</span>`
+                        `<span style="color: ${WIRE_COLORS.R};">R ${formatResistance(metrics.resistance, { allowOpen: true })}</span>`
                     );
                 }
 
                 if (isFinite(metrics.voltageDrop)) {
                     parts.push(
-                        `<span style="color: ${WIRE_COLORS.E};">E</span><span style="color: ${valueColor};"> ${formatVoltage(metrics.voltageDrop, { allowZero: true })}</span>`
+                        `<span style="color: ${WIRE_COLORS.E};">E ${formatVoltage(metrics.voltageDrop, { allowZero: true })}</span>`
                     );
                 }
 
