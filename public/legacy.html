@@ -6461,7 +6461,7 @@ body.android-optimized .zoom-btn {
                     return '';
                 }
 
-                const fontSize = isMobile ? '11px' : '10px';
+                const fontSize = isMobile ? '9.5px' : '9px';
                 const valueColor = '#e8f6ff';
                 const separator = '<span style="color: rgba(190, 210, 240, 0.75);"> | </span>';
 
@@ -6523,7 +6523,9 @@ body.android-optimized .zoom-btn {
                     return '';
                 }
 
-                return `<div style="font-size: ${fontSize}; font-weight: 600;">${parts.join(separator)}</div>`;
+                // Stack the metrics vertically so the readout reads W.I.R.E. top to
+                // bottom — each colour-coded line on its own row.
+                return `<div style="font-size: ${fontSize}; font-weight: 600; display: flex; flex-direction: column; align-items: flex-start; line-height: 1.3;">${parts.map(function (p) { return '<div>' + p + '</div>'; }).join('')}</div>`;
             }
 
             getFailureBadgeMarkup() {
@@ -6563,15 +6565,16 @@ body.android-optimized .zoom-btn {
                 
                 const worldPos = new THREE.Vector3();
                 worldPos.setFromMatrixPosition(this.mesh.matrixWorld);
-                worldPos.y += 4; // Anchor point above component top
-                
+                worldPos.y += 5.5; // Anchor further above the component top
+
                 const screenPos = worldToScreen(worldPos);
-                
+
                 // CSS transform: translate(-50%, -100%) centres the label
-                // horizontally and aligns its bottom to this anchor point,
-                // so the label always floats above the component, never over it.
+                // horizontally and aligns its bottom to this anchor point, so the
+                // label floats above the component. The extra 14px screen gap keeps
+                // the (now taller, stacked) readout clearly off the part at any zoom.
                 this.labelDiv.style.left = screenPos.x + 'px';
-                this.labelDiv.style.top = screenPos.y + 'px';
+                this.labelDiv.style.top = (screenPos.y - 14) + 'px';
                 
                 // Hide label if component is behind camera
                 this.labelDiv.style.display = screenPos.z > 1 ? 'none' : (showLabels ? 'block' : 'none');
