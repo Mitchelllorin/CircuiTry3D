@@ -6904,24 +6904,50 @@ body.android-optimized .zoom-btn {
             }
 
             createSwitchMesh(group) {
-                // Switch base
-                const baseGeometry = new THREE.BoxGeometry(0.8, 0.2, 0.4);
-                const baseMaterial = new THREE.MeshStandardMaterial({ color: 0x666666, metalness: 0.3, roughness: 0.65 });
-                const base = new THREE.Mesh(baseGeometry, baseMaterial);
-                group.add(base);
+                const segments = isMobile ? 10 : 16;
+                const isOn = this.properties.isOn;
 
-                // Switch lever
-                const leverGeometry = new THREE.BoxGeometry(0.1, 0.4, 0.1);
-                const leverMaterial = new THREE.MeshStandardMaterial({ 
-                    color: this.properties.isOn ? 0x00ff00 : 0xff0000,
-                    metalness: 0.1,
-                    roughness: 0.6
+                // ── Housing: dark rounded base plate ──
+                const bodyMat = new THREE.MeshStandardMaterial({ color: 0x2b2f36, metalness: 0.35, roughness: 0.6 });
+                const body = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.24, 0.5), bodyMat);
+                group.add(body);
+
+                // Chrome bezel the toggle pokes through, and a hex mounting nut.
+                const chrome = new THREE.MeshStandardMaterial({ color: 0xcfd4da, metalness: 0.95, roughness: 0.18 });
+                const collar = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.2, 0.12, segments), chrome);
+                collar.position.y = 0.15;
+                group.add(collar);
+                const nut = new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.19, 0.06, 6), chrome);
+                nut.position.y = 0.09;
+                group.add(nut);
+
+                // ── Toggle assembly: pivots around the collar (ON leans right, OFF left) ──
+                const toggle = new THREE.Group();
+                toggle.position.y = 0.18;
+                const shaftMat = new THREE.MeshStandardMaterial({ color: 0x1c1f24, metalness: 0.5, roughness: 0.4 });
+                const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.07, 0.34, segments), shaftMat);
+                shaft.position.y = 0.17;
+                toggle.add(shaft);
+                const knob = new THREE.Mesh(new THREE.SphereGeometry(0.09, segments, segments), shaftMat);
+                knob.position.y = 0.36;
+                knob.scale.y = 1.25;
+                toggle.add(knob);
+
+                // Status bead on the knob — glows green when ON, red when OFF.
+                const statusColor = isOn ? 0x22cc44 : 0xdd3322;
+                const statusMat = new THREE.MeshStandardMaterial({
+                    color: statusColor, emissive: statusColor, emissiveIntensity: 0.6,
+                    metalness: 0.2, roughness: 0.4,
                 });
-                const lever = new THREE.Mesh(leverGeometry, leverMaterial);
-                lever.position.y = 0.3;
-                lever.rotation.z = this.properties.isOn ? 0 : Math.PI / 6;
-                group.add(lever);
-                this.leverMesh = lever;
+                const status = new THREE.Mesh(new THREE.SphereGeometry(0.045, segments, segments), statusMat);
+                status.position.y = 0.45;
+                toggle.add(status);
+
+                toggle.rotation.z = isOn ? -Math.PI / 7 : Math.PI / 7;
+                group.add(toggle);
+
+                this.leverMesh = toggle;         // rotation target
+                this.switchStatusMesh = status;  // colour target
 
                 this.addLeads(group);
             }
@@ -8252,8 +8278,12 @@ body.android-optimized .zoom-btn {
             updateProperties(newProperties) {
                 Object.assign(this.properties, newProperties);
                 if (this.type === 'switch' && this.leverMesh) {
-                    this.leverMesh.material.color.setHex(this.properties.isOn ? 0x00ff00 : 0xff0000);
-                    this.leverMesh.rotation.z = this.properties.isOn ? 0 : Math.PI / 6;
+                    this.leverMesh.rotation.z = this.properties.isOn ? -Math.PI / 7 : Math.PI / 7;
+                    if (this.switchStatusMesh) {
+                        const c = this.properties.isOn ? 0x22cc44 : 0xdd3322;
+                        this.switchStatusMesh.material.color.setHex(c);
+                        this.switchStatusMesh.material.emissive.setHex(c);
+                    }
                 }
 
                 // Refresh color bands whenever the resistance of a resistor changes
