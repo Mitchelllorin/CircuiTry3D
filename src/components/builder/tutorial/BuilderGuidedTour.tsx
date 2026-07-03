@@ -35,9 +35,6 @@ const DIRECT_SWEEP_MS = 1400;
 const VIA_OVERVIEW_SWEEP_MS = 2500;
 // Sweep back up to the full circuit (overviewKf duration in tourFocusCamera).
 const OVERVIEW_SWEEP_MS = 1200;
-// Full light → switch → both choreography (sum of segment durations in
-// tourFocusCamera's 'switch-light' sequence).
-const SWITCH_LIGHT_SEQ_MS = 7800;
 
 const TOUR_STEPS: TourStep[] = [
   {
@@ -98,20 +95,29 @@ const TOUR_STEPS: TourStep[] = [
     readMs: 23000,
   },
   {
-    id: "switch-light",
+    id: "lamp",
     text:
-      "The Switch and the Light. The switch is the control — like a tap, it lets " +
-      "the current flow or shuts it off completely. The light is where the energy " +
-      "goes to work: current forced through it makes it glow. The rate of that work " +
-      "is Power, measured in Watts (W) — W = Voltage × Current (E × I). In the water " +
-      "analogy: Voltage is the pump, Current is the water, and Power is the work the " +
+      "This is the Light — where the energy goes to work. Current forced through it " +
+      "makes it glow. The rate of that work is Power, measured in Watts (W): " +
+      "W = Voltage × Current (E × I). In the water analogy, Power is the work the " +
       "water actually does — the wheel it turns, the light it lights.",
-    focus: "switch-light",
+    focus: "lamp",
     sweepOnEnter: true,
-    viaOverview: false,
-    // Text appears once the light → switch → both choreography settles on both.
-    textDelayMs: SWITCH_LIGHT_SEQ_MS,
-    readMs: 25000,
+    viaOverview: true,
+    textDelayMs: VIA_OVERVIEW_SWEEP_MS,
+    readMs: 20000,
+  },
+  {
+    id: "switch",
+    text:
+      "This is the Switch — the control. Like a tap, it lets the current flow or " +
+      "shuts it off completely. Open the switch and the circuit breaks: no complete " +
+      "path, no current, and the light goes out.",
+    focus: "switch",
+    sweepOnEnter: true,
+    viaOverview: true,
+    textDelayMs: VIA_OVERVIEW_SWEEP_MS,
+    readMs: 18000,
   },
   {
     id: "wire",

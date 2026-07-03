@@ -3245,6 +3245,7 @@ export default function Builder() {
       data-left-menu-open={isLeftMenuOpen ? "true" : "false"}
       data-right-menu-open={isRightMenuOpen ? "true" : "false"}
       data-bottom-menu-open={isBottomMenuOpen ? "true" : "false"}
+      data-tour-active={isGuidedTourOpen ? "true" : "false"}
     >
     <CurrentFlowAnimation />
 

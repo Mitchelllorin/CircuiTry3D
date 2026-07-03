@@ -873,6 +873,14 @@ body.builder-body::before {
    No container box — just the three bare symbol buttons.
    Offset by the toggle tab width so the Controls panel toggle (32px wide at right:0)
    never obscures the zoom buttons. */
+/* During the guided tour the workspace is a clean stage — hide the quick-action
+   buttons and the zoom controls so nothing blocks the circuit. They return for
+   the build-along / normal use. */
+.builder-shell[data-tour-active="true"] .unified-action-bar,
+.builder-shell[data-tour-active="true"] .circuit-zoom-controls {
+  display: none !important;
+}
+
 .circuit-zoom-controls {
   position: fixed;
   bottom: calc(36px + var(--builder-safe-area-bottom, 0px));
