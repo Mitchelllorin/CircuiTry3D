@@ -98,12 +98,18 @@ export function BuilderBuildAlong({
   const [rect, setRect] = useState<Rect | null>(null);
 
   // On open: start at step 0 and pop the parts library so parts are reachable.
+  // Depend ONLY on `open` — if we also depended on onRequestOpenLeftMenu, an
+  // un-memoized parent callback would give a new reference on every re-render
+  // (e.g. as circuitState updates while you build), re-firing this effect and
+  // snapping you back to step 0 mid-build. That was the "loops back to the
+  // start" bug.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (open) {
       setStep(0);
       onRequestOpenLeftMenu();
     }
-  }, [open, onRequestOpenLeftMenu]);
+  }, [open]);
 
   // Auto-advance the instant the real circuit state satisfies the current step.
   useEffect(() => {
