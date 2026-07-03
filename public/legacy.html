@@ -6525,7 +6525,7 @@ body.android-optimized .zoom-btn {
 
                 // Stack the metrics vertically so the readout reads W.I.R.E. top to
                 // bottom — each colour-coded line on its own row.
-                return `<div style="font-size: ${fontSize}; font-weight: 600; display: flex; flex-direction: column; align-items: flex-start; gap: 5px; line-height: 1.15;">${parts.map(function (p) { return '<div>' + p + '</div>'; }).join('')}</div>`;
+                return `<div style="font-size: ${fontSize}; font-weight: 600; display: flex; flex-direction: column; align-items: flex-start; gap: 10px; line-height: 1.35;">${parts.map(function (p) { return '<div style="white-space: nowrap;">' + p + '</div>'; }).join('')}</div>`;
             }
 
             getFailureBadgeMarkup() {
@@ -7168,26 +7168,74 @@ body.android-optimized .zoom-btn {
             }
 
             createLampMesh(group) {
-                const segments = isMobile ? 10 : 18;
-                // Lamp bulb (sphere)
-                const bulbGeometry = new THREE.SphereGeometry(0.3, segments, segments);
-                const bulbMaterial = new THREE.MeshStandardMaterial({
-                    color: 0xffdd44,
-                    metalness: 0.0,
-                    roughness: 0.05,
-                    transparent: true,
-                    opacity: 0.7
-                });
-                const bulb = new THREE.Mesh(bulbGeometry, bulbMaterial);
-                bulb.position.y = 0.2;
-                group.add(bulb);
+                const segments = isMobile ? 12 : 20;
 
-                // Lamp base
-                const baseGeometry = new THREE.CylinderGeometry(0.2, 0.15, 0.3, segments);
-                const baseMaterial = new THREE.MeshStandardMaterial({ color: 0x888888, metalness: 0.85, roughness: 0.22 });
-                const base = new THREE.Mesh(baseGeometry, baseMaterial);
-                base.position.y = -0.15;
+                // ── Glass envelope: classic A-shape bulb via a lathed profile ──
+                const glassProfile = [
+                    new THREE.Vector2(0.10, -0.02),
+                    new THREE.Vector2(0.12, 0.04),
+                    new THREE.Vector2(0.20, 0.12),
+                    new THREE.Vector2(0.28, 0.24),
+                    new THREE.Vector2(0.31, 0.36),
+                    new THREE.Vector2(0.29, 0.48),
+                    new THREE.Vector2(0.21, 0.58),
+                    new THREE.Vector2(0.10, 0.65),
+                    new THREE.Vector2(0.0, 0.68),
+                ];
+                const glassGeometry = new THREE.LatheGeometry(glassProfile, segments);
+                const glassMaterial = new THREE.MeshStandardMaterial({
+                    color: 0xfff4d6, metalness: 0.0, roughness: 0.06,
+                    transparent: true, opacity: 0.30,
+                    emissive: 0xffcc66, emissiveIntensity: 0.22,
+                    side: THREE.DoubleSide,
+                });
+                const glass = new THREE.Mesh(glassGeometry, glassMaterial);
+                glass.name = 'lampGlass';
+                group.add(glass);
+
+                // ── Filament: glowing zig-zag inside the glass ──
+                const filamentPoints = [];
+                const zig = 5;
+                for (let i = 0; i <= zig; i++) {
+                    const y = 0.30 + (i / zig) * 0.14;
+                    const x = (i % 2 === 0 ? -0.07 : 0.07);
+                    filamentPoints.push(new THREE.Vector3(x, y, 0));
+                }
+                const filamentCurve = new THREE.CatmullRomCurve3(filamentPoints);
+                const filamentGeometry = new THREE.TubeGeometry(filamentCurve, 24, 0.012, 5, false);
+                const filamentMaterial = new THREE.MeshStandardMaterial({
+                    color: 0xffbb33, emissive: 0xffaa22, emissiveIntensity: 1.8,
+                    metalness: 0.3, roughness: 0.4,
+                });
+                const filament = new THREE.Mesh(filamentGeometry, filamentMaterial);
+                filament.name = 'lampFilament';
+                group.add(filament);
+
+                // Two support wires from the base up to the filament.
+                const supportMat = new THREE.MeshStandardMaterial({ color: 0xaaaaaa, metalness: 0.85, roughness: 0.3 });
+                [-0.07, 0.07].forEach((x) => {
+                    const w = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.22, 6), supportMat);
+                    w.position.set(x, 0.19, 0);
+                    group.add(w);
+                });
+
+                // ── Brass screw base + threads + contact tip ──
+                const brass = new THREE.MeshStandardMaterial({ color: 0xc9a24b, metalness: 0.9, roughness: 0.32 });
+                const base = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.10, 0.16, segments), brass);
+                base.position.y = -0.10;
                 group.add(base);
+                for (let i = 0; i < 3; i++) {
+                    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.108, 0.013, 6, segments), brass);
+                    ring.rotation.x = Math.PI / 2;
+                    ring.position.y = -0.055 - i * 0.045;
+                    group.add(ring);
+                }
+                const tip = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.05, 0.065, 0.045, segments),
+                    new THREE.MeshStandardMaterial({ color: 0x2b2b2b, metalness: 0.5, roughness: 0.5 })
+                );
+                tip.position.y = -0.205;
+                group.add(tip);
 
                 this.addLeads(group);
             }
@@ -8130,25 +8178,10 @@ body.android-optimized .zoom-btn {
             }
             
             createPolarityIndicators() {
+                // Removed: the separate red +/blue - polarity overlays were redundant
+                // with the battery mesh's own integrated +/- markings. Keep the field
+                // an empty array so the update helpers stay safe no-ops.
                 this.polarityDivs = [];
-                
-                if (this.type === 'battery') {
-                    // Create + indicator for positive terminal
-                    const positiveDiv = document.createElement('div');
-                    positiveDiv.className = 'polarity-indicator polarity-positive';
-                    positiveDiv.textContent = '+';
-                    positiveDiv.style.display = showPolarityIndicators ? 'block' : 'none';
-                    document.body.appendChild(positiveDiv);
-                    this.polarityDivs.push({ div: positiveDiv, side: 'positive' });
-                    
-                    // Create - indicator for negative terminal
-                    const negativeDiv = document.createElement('div');
-                    negativeDiv.className = 'polarity-indicator polarity-negative';
-                    negativeDiv.textContent = '−';
-                    negativeDiv.style.display = showPolarityIndicators ? 'block' : 'none';
-                    document.body.appendChild(negativeDiv);
-                    this.polarityDivs.push({ div: negativeDiv, side: 'negative' });
-                }
             }
             
             updatePolarityDisplay(show) {
@@ -10061,11 +10094,12 @@ body.android-optimized .zoom-btn {
             if (!comp || !comp.position) return;
             const p = comp.position;
             const dest = {
-                angleX: 0.7, angleY: 0.55, distance: 5.5,
-                // Lower the look-at point so the focused part rides UP into the top
-                // of the view — the explaining card sits at the bottom, so this keeps
-                // the card off the component it's describing.
-                targetX: p.x, targetY: p.y - 2, targetZ: p.z,
+                angleX: 0.7, angleY: 0.55, distance: 5.0,
+                // Push the part front-and-centre of the AVAILABLE space: the card sits
+                // at the bottom, so lift the look-at point ~1 unit. That centres the
+                // component in the open area above the card without shoving it up to
+                // the top edge (a bigger offset read as "out of focus").
+                targetX: p.x, targetY: p.y - 1, targetZ: p.z,
                 fov: 52, duration: 1300, easing: 'smooth',
             };
             // viaOverview: first sweep back UP to the whole-circuit view, then DOWN
