@@ -881,6 +881,13 @@ body.builder-body::before {
   display: none !important;
 }
 
+/* ...except on the tour's closing "meet your Circuit AI" card, where we bring the
+   action bar back so the pulsing AI button is actually visible in its real resting
+   spot — otherwise the copy says "right here" while pointing at a hidden button. */
+.builder-shell[data-tour-active="true"][data-tour-reveal-ai="true"] .unified-action-bar {
+  display: flex !important;
+}
+
 .circuit-zoom-controls {
   position: fixed;
   bottom: calc(36px + var(--builder-safe-area-bottom, 0px));

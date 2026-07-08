@@ -195,18 +195,21 @@ export function BuilderGuidedTour({
     return () => timers.forEach((t) => window.clearTimeout(t));
   }, [open, step, onInvokeAction]);
 
-  // On the closing "go build" card, pulse-highlight the Circuit AI button so the
-  // user knows where help lives.
+  // On the closing "go build" card, reveal the action bar (the tour hides it for a
+  // clean stage) and pulse-highlight the Circuit AI button so the user actually
+  // sees where help lives — the copy says "right here", so it has to be visible.
   useEffect(() => {
     if (!open || TOUR_STEPS[step]?.id !== "build") {
       return;
     }
+    const shell = document.querySelector(".builder-shell");
+    shell?.setAttribute("data-tour-reveal-ai", "true");
     const el = document.querySelector(".edge-action-btn--ai");
-    if (!el) {
-      return;
-    }
-    el.classList.add("tour-ai-highlight");
-    return () => el.classList.remove("tour-ai-highlight");
+    el?.classList.add("tour-ai-highlight");
+    return () => {
+      shell?.removeAttribute("data-tour-reveal-ai");
+      el?.classList.remove("tour-ai-highlight");
+    };
   }, [open, step]);
 
   if (!open) {
