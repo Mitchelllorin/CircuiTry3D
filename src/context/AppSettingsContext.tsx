@@ -41,6 +41,8 @@ export type AppSettings = {
     gridHue: number; // 0-360
     snapToGrid: boolean;
     cameraSensitivity: number; // 0-100
+    centerInView: boolean; // keep the circuit centered in the space panels leave
+    translucentMenus: boolean; // see-through menus/cards so the workspace shows through
   };
   simulation: {
     currentFlowSpeed: number; // 0-100
@@ -80,6 +82,8 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
     gridHue: 210,
     snapToGrid: true,
     cameraSensitivity: 50,
+    centerInView: true,
+    translucentMenus: true,
   },
   simulation: {
     currentFlowSpeed: 50,

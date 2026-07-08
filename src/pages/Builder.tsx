@@ -1662,6 +1662,7 @@ export default function Builder() {
       gridHue: appWorkspaceSettings.gridHue,
       // Map 0–100 → 0.3×–2.0× particle speed (50 = default 1.0×).
       flowSpeedScale: 0.3 + (appCurrentFlowSpeed / 100) * 1.7,
+      translucentMenus: appWorkspaceSettings.translucentMenus,
     });
   }, [
     isFrameReady,
@@ -1669,6 +1670,17 @@ export default function Builder() {
     appCurrentFlowSpeed,
     triggerBuilderAction,
   ]);
+
+  // See-through menus setting drives the React-side coach cards too (the iframe
+  // menus are handled via the apply-scene-settings bridge above). A body class
+  // keeps the CSS simple and applies regardless of where the card is portalled.
+  useEffect(() => {
+    document.body.classList.toggle(
+      "ct-opaque-menus",
+      !appWorkspaceSettings.translucentMenus,
+    );
+    return () => document.body.classList.remove("ct-opaque-menus");
+  }, [appWorkspaceSettings.translucentMenus]);
 
   // Handle cinematic state updates from legacy.html (playing/recording status, waypoint count)
   useEffect(() => {
@@ -1852,6 +1864,73 @@ export default function Builder() {
   const [cinematicRecordError, setCinematicRecordError] = useState<string | null>(null);
   const [showGalleryToast, setShowGalleryToast] = useState(false);
   const galleryToastTimerRef = useRef<number | null>(null);
+
+  // "Center circuit in available space": measure the UI that occludes the canvas
+  // (top metrics ticker + the bottom-sheet workspace panel) and push CSS-px insets
+  // into the iframe so the 3D camera re-aims to keep the circuit centered in what's
+  // actually visible, not hidden behind an open panel. Off → send zero insets (the
+  // iframe treats all-zero as a no-op, restoring plain centering).
+  const centerInView = appWorkspaceSettings.centerInView;
+  useEffect(() => {
+    if (!isFrameReady) {
+      return;
+    }
+    if (!centerInView) {
+      triggerBuilderAction("set-view-insets", { top: 0, right: 0, bottom: 0, left: 0 });
+      return;
+    }
+    let raf = 0;
+    // Panels slide with a ~0.26s CSS transition; re-measure across a short window
+    // so the circuit tracks the panel as it animates, then settles.
+    const deadline =
+      (typeof performance !== "undefined" ? performance.now() : 0) + 500;
+    const send = () => {
+      const vh = window.innerHeight || 1;
+      let top = 0;
+      let bottom = 0;
+      const ticker = document.querySelector(".ticker-wire-fixed");
+      if (ticker) {
+        const r = ticker.getBoundingClientRect();
+        if (r.height > 0 && r.top < vh * 0.4) {
+          top = Math.min(vh * 0.4, Math.max(0, r.bottom));
+        }
+      }
+      // Only the non-modal bottom sheet occludes while you keep building; the
+      // full-screen `.builder-panel-overlay` modals cover everything, so there's
+      // nothing to re-center behind them.
+      document.querySelectorAll(".workspace-mode-panel.open").forEach((el) => {
+        const r = (el as HTMLElement).getBoundingClientRect();
+        if (r.height > 0 && r.width > 0) {
+          bottom = Math.max(bottom, vh - r.top);
+        }
+      });
+      bottom = Math.min(bottom, vh * 0.72);
+      triggerBuilderAction("set-view-insets", { top, right: 0, bottom, left: 0 });
+      const now = typeof performance !== "undefined" ? performance.now() : deadline;
+      if (now < deadline) {
+        raf = requestAnimationFrame(send);
+      }
+    };
+    send();
+    const onResize = () => send();
+    window.addEventListener("resize", onResize);
+    window.addEventListener("orientationchange", onResize);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("resize", onResize);
+      window.removeEventListener("orientationchange", onResize);
+    };
+  }, [
+    isFrameReady,
+    centerInView,
+    triggerBuilderAction,
+    isWorkspacePanelOpen,
+    isTroubleshootPanelOpen,
+    isGuidesPanelOpen,
+    isEnvironmentalPanelOpen,
+    isSettingsPanelOpen,
+    isExplainPanelOpen,
+  ]);
   // Create a mock circuit state for demo (in production, extract from iframe)
   const currentCircuitState = useMemo(() => ({
     nodes: [],

@@ -73,6 +73,8 @@ const CONFIG: CategoryConfig[] = [
       { kind: "slider", key: "gridHue", label: "Grid color (hue)", min: 0, max: 360, step: 1, format: (v) => `${v}°` },
       { kind: "slider", key: "cameraSensitivity", label: "Camera sensitivity", min: 0, max: 100, step: 1, format: pct },
       { kind: "toggle", key: "snapToGrid", label: "Snap components to grid" },
+      { kind: "toggle", key: "centerInView", label: "Center circuit in available space", hint: "Keep the circuit centered in the area left visible by open panels" },
+      { kind: "toggle", key: "translucentMenus", label: "See-through menus", hint: "Make menus and coach cards translucent so you can still see the workspace behind them" },
     ],
   },
   {

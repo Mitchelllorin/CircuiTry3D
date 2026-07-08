@@ -44,6 +44,7 @@ export type BuilderInvokeAction =
   | "cinematic-clear-waypoints"
   | "set-grid-style"
   | "apply-scene-settings"
+  | "set-view-insets"
   | "load-payoff"
   | "run-payoff-flow";
 

@@ -231,16 +231,29 @@
             max-width: 320px;
             padding: 0;
             border-radius: 12px;
-            background: rgba(10, 22, 44, 0.94);
+            /* See-through so the workspace stays visible behind the menu; the
+               strong backdrop blur keeps the text readable over the 3D scene.
+               -webkit- prefix is REQUIRED for the blur to work on iOS Safari. */
+            background: rgba(10, 22, 44, 0.6);
             border: 1px solid rgba(136, 204, 255, 0.35);
             box-shadow: 0 16px 32px rgba(0, 0, 0, 0.45);
             z-index: 10000;
-            backdrop-filter: blur(18px);
+            backdrop-filter: blur(22px);
+            -webkit-backdrop-filter: blur(22px);
             touch-action: auto;
         }
 
         .component-context-menu[data-visible="true"] {
             display: flex;
+        }
+
+        /* "See-through menus" setting OFF → solid menus again (body.opaque-menus is
+           toggled by the apply-scene-settings bridge from the app Settings page). */
+        body.opaque-menus .component-context-menu {
+            background: rgba(10, 22, 44, 0.94);
+        }
+        body.opaque-menus .edit-popup {
+            background: rgba(6, 14, 30, 0.96);
         }
 
         .component-menu-header {
@@ -1118,8 +1131,11 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: rgba(0,0,0,0.95);
-            backdrop-filter: blur(15px);
+            /* See-through to the workspace behind it; strong backdrop blur keeps
+               the fields readable. -webkit- prefix REQUIRED for iOS Safari blur. */
+            background: rgba(6, 14, 30, 0.62);
+            backdrop-filter: blur(22px);
+            -webkit-backdrop-filter: blur(22px);
             border: 2px solid #00ff88;
             border-radius: 16px;
             padding: 24px;
@@ -4275,6 +4291,20 @@ body.android-optimized .zoom-btn {
                             case 'fit-screen':
                                 if (typeof fitToScreen === 'function') fitToScreen();
                                 break;
+                            case 'set-view-insets': {
+                                // "Center in available space": React measures the
+                                // occluding UI and sends CSS-px insets so the camera
+                                // re-aims to keep the circuit in the visible region.
+                                const clampInset = (v) => (typeof v === 'number' && isFinite(v) && v > 0) ? v : 0;
+                                viewInsets = {
+                                    top: clampInset(data.top),
+                                    right: clampInset(data.right),
+                                    bottom: clampInset(data.bottom),
+                                    left: clampInset(data.left),
+                                };
+                                if (typeof updateCameraPosition === 'function') updateCameraPosition();
+                                break;
+                            }
                             case 'tour-focus':
                                 // Guided-tour camera sweep: focus on a named component
                                 // (data.target = 'battery' | 'resistor' | 'switch' |
@@ -4325,6 +4355,10 @@ body.android-optimized .zoom-btn {
                                     }
                                     if (typeof data.flowSpeedScale === 'number') {
                                         userFlowSpeedScale = Math.max(0.15, Math.min(2.5, data.flowSpeedScale));
+                                    }
+                                    if (typeof data.translucentMenus === 'boolean') {
+                                        // Off → add .opaque-menus so the menus go back to solid.
+                                        document.body.classList.toggle('opaque-menus', !data.translucentMenus);
                                     }
                                     if (typeof applyGridStyle === 'function' &&
                                         (typeof data.gridBrightness === 'number' ||
@@ -5492,6 +5526,17 @@ body.android-optimized .zoom-btn {
         // the workspace reads as 3D and alive, not a flat straight-on schematic.
         let cameraAngleX = 0.7, cameraAngleY = 0.62;
         let cameraTarget = new THREE.Vector3(0, 0, 0);
+        // "Center in available space" — CSS-px insets of UI that occludes the
+        // canvas (top metrics ticker, bottom-sheet panels, side menus). The React
+        // host measures the open panels and pushes these via the set-view-insets
+        // bridge action; updateCameraPosition() then aims the camera so the circuit
+        // sits centered in the UNoccluded rectangle instead of dead-center behind a
+        // panel. All-zero (the default) makes the offset an exact no-op.
+        let viewInsets = { top: 0, right: 0, bottom: 0, left: 0 };
+        const _viewOffsetRight = new THREE.Vector3();
+        const _viewOffsetUp = new THREE.Vector3();
+        const _viewOffsetDir = new THREE.Vector3();
+        const _viewAim = new THREE.Vector3();
         let isRotating = false, isPanning = false;
         let lastTouchPos = { x: 0, y: 0 };
         let lastTwoFingerCenter = { x: 0, y: 0 };
@@ -9711,17 +9756,56 @@ body.android-optimized .zoom-btn {
         }
 
 
+        // World-space offset that shifts the camera's aim point so the circuit
+        // (which lives around cameraTarget) appears centered in the visible region
+        // left by open UI panels, not behind them. Returns into `_viewAim` the
+        // point the camera should actually look at. When all insets are 0 this
+        // resolves to exactly cameraTarget (no behavioural change).
+        function computeAimWithInsets() {
+            _viewAim.copy(cameraTarget);
+            const { top, right, bottom, left } = viewInsets;
+            if (!top && !right && !bottom && !left) {
+                return _viewAim;
+            }
+            const H = (renderer && renderer.domElement && renderer.domElement.clientHeight)
+                || window.innerHeight || 1;
+            const fov = (camera && camera.fov) ? camera.fov : 50;
+            // World units spanned by one CSS pixel at the target plane.
+            const worldPerPixel = (2 * cameraDistance * Math.tan((fov * Math.PI / 180) / 2)) / H;
+
+            // Camera basis from the orbit angles (independent of the aim point).
+            _viewOffsetDir.set(
+                -Math.cos(cameraAngleY) * Math.cos(cameraAngleX),
+                -Math.sin(cameraAngleY),
+                -Math.cos(cameraAngleY) * Math.sin(cameraAngleX)
+            ).normalize();
+            _viewOffsetRight.crossVectors(_viewOffsetDir, worldUpVector).normalize();
+            if (_viewOffsetRight.lengthSq() === 0) _viewOffsetRight.set(1, 0, 0);
+            _viewOffsetUp.crossVectors(_viewOffsetRight, _viewOffsetDir).normalize();
+
+            // Screen-space push of the visible-region centre from the true centre.
+            // +sx → visible centre is right of screen centre; +sy → below it.
+            const sx = (left - right) / 2;
+            const sy = (top - bottom) / 2;
+            // Move the AIM point opposite so the content shifts toward the visible
+            // centre: aim left to push content right; aim up to push content down.
+            _viewAim.addScaledVector(_viewOffsetRight, -sx * worldPerPixel);
+            _viewAim.addScaledVector(_viewOffsetUp, sy * worldPerPixel);
+            return _viewAim;
+        }
+
         function updateCameraPosition() {
             const x = cameraDistance * Math.cos(cameraAngleY) * Math.cos(cameraAngleX);
             const y = cameraDistance * Math.sin(cameraAngleY);
             const z = cameraDistance * Math.cos(cameraAngleY) * Math.sin(cameraAngleX);
-            
+
+            const aim = computeAimWithInsets();
             camera.position.set(
-                cameraTarget.x + x, 
-                cameraTarget.y + y, 
-                cameraTarget.z + z
+                aim.x + x,
+                aim.y + y,
+                aim.z + z
             );
-            camera.lookAt(cameraTarget);
+            camera.lookAt(aim);
         }
 
         function zoomIn() {
