@@ -43,7 +43,7 @@ const BUILD_STEPS: BuildStep[] = [
   },
   {
     id: "battery",
-    text: "Open the parts library and tap a Battery to drop it onto the workspace — your power source.",
+    text: "In the Component Library on the left, tap a Battery to drop it into the workspace — your power source.",
     isDone: (c) => countOf(c, "battery") > 0,
   },
   {

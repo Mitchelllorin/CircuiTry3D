@@ -3850,6 +3850,11 @@
         let scopeBuffer = [];
         const SCOPE_BUFFER_SIZE = 220;
         let isDragging = false, selectedComponent = null;
+        // True while a freshly-added part is a "held ghost" waiting to be dropped
+        // (from the library). In this state a single tap/click anywhere on the grid
+        // snaps the part under the pointer and drops it there — one-tap placement.
+        // Cleared the moment the part is placed (handleRelease).
+        let isPlacing = false;
         let _nodeHighlightTimer = null; // Auto-dim timer for lit terminal nodes after wire-placement procedure
         let currentFlowParticles = [];
         let currentWireGlows    = []; // additive-blended glow tubes around active wires
@@ -9244,16 +9249,22 @@ body.android-optimized .zoom-btn {
                 if (!c.mesh) continue;
                 c.mesh.getWorldPosition(_layerWorldPosTmp);
                 const finalOpacity = _getProximityOpacity(_layerWorldPosTmp);
-                if (finalOpacity < 0.01) {
+                // A part still being placed (held ghost from the library) renders
+                // semi-transparent so it reads as a preview, not a committed part.
+                // handleRelease() forces this pass to re-run so it restores to solid
+                // the instant it's dropped.
+                const ghostFactor = (isPlacing && c === selectedComponent) ? 0.4 : 1;
+                const compOpacity = finalOpacity * ghostFactor;
+                if (compOpacity < 0.01) {
                     c.mesh.visible = false;
                 } else {
                     c.mesh.visible = true;
-                    _traverseMeshes(c.mesh, finalOpacity);
+                    _traverseMeshes(c.mesh, compOpacity);
                 }
                 // Fade DOM label together with the component
                 if (c.labelDiv) {
-                    c.labelDiv.style.opacity      = fullyVisible ? '' : finalOpacity.toFixed(2);
-                    c.labelDiv.style.pointerEvents = finalOpacity < 0.2 ? 'none' : '';
+                    c.labelDiv.style.opacity      = (fullyVisible && ghostFactor === 1) ? '' : compOpacity.toFixed(2);
+                    c.labelDiv.style.pointerEvents = compOpacity < 0.2 ? 'none' : '';
                 }
             }
 
@@ -9818,6 +9829,32 @@ body.android-optimized .zoom-btn {
             updateCameraPosition();
         }
 
+        // Bounds the pan target so the circuit can never be flung off into empty
+        // space (the "camera flew away and I can't get it back" bug). You can pan
+        // to frame any part of the circuit plus a margin of slack, but no further.
+        // Cheap: reads component/junction positions only. Empty workspace → clamps
+        // near origin. Programmatic camera moves (fit-to-screen, tour) set
+        // cameraTarget directly and intentionally bypass this.
+        const PAN_TARGET_MARGIN = 12; // world units of slack beyond the outermost part
+        function clampPanTarget() {
+            let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
+            const consider = (p) => {
+                if (!p) return;
+                if (p.x < minX) minX = p.x;
+                if (p.x > maxX) maxX = p.x;
+                if (p.z < minZ) minZ = p.z;
+                if (p.z > maxZ) maxZ = p.z;
+            };
+            components.forEach(c => consider(c && c.position));
+            junctions.forEach(j => consider(j && j.position));
+            if (minX === Infinity) {
+                // Empty workspace — hold the target near origin.
+                minX = maxX = minZ = maxZ = 0;
+            }
+            cameraTarget.x = Math.max(minX - PAN_TARGET_MARGIN, Math.min(maxX + PAN_TARGET_MARGIN, cameraTarget.x));
+            cameraTarget.z = Math.max(minZ - PAN_TARGET_MARGIN, Math.min(maxZ + PAN_TARGET_MARGIN, cameraTarget.z));
+        }
+
         function applyCameraPan(deltaX, deltaY, multiplier = 1) {
             if ((deltaX === 0 && deltaY === 0) || Number.isNaN(deltaX) || Number.isNaN(deltaY)) {
                 return;
@@ -9842,6 +9879,9 @@ body.android-optimized .zoom-btn {
             } else if (cameraTarget.y < -50) {
                 cameraTarget.y = -50;
             }
+
+            // Keep the target within reach of the circuit so it can't fly off-screen.
+            clampPanTarget();
 
             updateCameraPosition();
         }
@@ -10463,6 +10503,17 @@ body.android-optimized .zoom-btn {
                     return;
                 }
 
+                // One-tap placement: a part is held as a ghost (just added from the
+                // library). Snap it under the finger now so a plain tap drops it right
+                // here; a drag then fine-tunes before lift. Skip rotation/long-press.
+                if (isPlacing && selectedComponent) {
+                    cancelLongPress();
+                    isRotating = false;
+                    isPanning = false;
+                    handleComponentDrag(touch.clientX, touch.clientY);
+                    return;
+                }
+
                 // Start long press timer when allowed
                 if (shouldAllowLongPress()) {
                     startLongPressTimer(touch.clientX, touch.clientY);
@@ -10661,6 +10712,16 @@ body.android-optimized .zoom-btn {
                     // Only enable camera rotation when locked - no component interaction
                     isRotating = true;
                     lastTouchPos = { x: e.clientX, y: e.clientY };
+                    return;
+                }
+
+                // One-tap placement: a held ghost part (just added from the library)
+                // drops where you click. Snap it under the cursor now; mouseup commits.
+                if (isPlacing && selectedComponent) {
+                    cancelLongPress();
+                    isRotating = false;
+                    isPanning = false;
+                    handleComponentDrag(e.clientX, e.clientY);
                     return;
                 }
 
@@ -11042,6 +11103,19 @@ body.android-optimized .zoom-btn {
                 0,
                 Math.round(position.z / GRID_SIZE) * GRID_SIZE
             );
+        }
+
+        // "Shopping-cart wheel-lock": a dragged part can't leave the workspace. The
+        // visible grid spans ±(gridSize/2) world units (20 mobile / 40 desktop);
+        // clamp the part inside that square (minus a one-cell margin so it stays
+        // fully ON the grid). Stops the "dragged it off and now I can't get it
+        // back" bug — the part just stops at the edge instead of flying into the
+        // void. Mutates and returns the passed Vector3.
+        function clampToWorkspace(pos) {
+            const half = (isMobile ? 20 : 40) / 2 - GRID_SIZE;
+            pos.x = Math.max(-half, Math.min(half, pos.x));
+            pos.z = Math.max(-half, Math.min(half, pos.z));
+            return pos;
         }
 
         function showSnapIndicator(position, wireSnapMode) {
@@ -13824,7 +13898,7 @@ body.android-optimized .zoom-btn {
             if (!isWireMode) {
                 const worldPos = screenToWorld(clientX, clientY);
                 if (worldPos && selectedComponent && isDragging) {
-                    const snappedPos = snapToGrid(worldPos);
+                    const snappedPos = clampToWorkspace(snapToGrid(worldPos));
                     
                     if (selectedComponent.mesh) {
                         selectedComponent.mesh.position.copy(snappedPos);
@@ -13869,7 +13943,7 @@ body.android-optimized .zoom-btn {
         function handleComponentDrag(clientX, clientY) {
             const worldPos = screenToWorld(clientX, clientY);
             if (worldPos && selectedComponent) {
-                const snappedPos = snapToGrid(worldPos);
+                const snappedPos = clampToWorkspace(snapToGrid(worldPos));
 
                 // Show orange snap ring when hovering over an existing wire (no connections yet),
                 // green for a normal grid position.
@@ -13890,11 +13964,22 @@ body.android-optimized .zoom-btn {
 
         function handleRelease() {
             isDragging = false;
+            const wasPlacing = isPlacing;
+            isPlacing = false;
             hideSnapIndicator();
+            // Just dropped a held ghost → force _updateLayerVisibility to run a full
+            // pass next frame (these sentinels make its change-detection fire) so the
+            // part restores from translucent-preview to solid immediately.
+            if (wasPlacing) {
+                _layerVisibDist = -999;
+                _layerVisibTargetX = -999;
+                _layerVisibTargetY = -999;
+                _layerVisibTargetZ = -999;
+            }
             
             if (selectedComponent) {
                 // Final snap to grid
-                const snappedPos = snapToGrid(selectedComponent.position);
+                const snappedPos = clampToWorkspace(snapToGrid(selectedComponent.position));
                 selectedComponent.position.copy(snappedPos);
                 if (selectedComponent.mesh) {
                     selectedComponent.mesh.position.copy(snappedPos);
@@ -15949,29 +16034,24 @@ Made with ? for visual learners everywhere!
                 hideSnapIndicator();
             }
 
-            // Choose a placement that won't collide. The old logic dropped each
-            // part onto one of 16 fixed staggered cells with no occupancy check, so
-            // parts piled up and their large fixed-size labels garbled. Instead we
-            // drop new parts into clear space just BELOW the existing circuit (so
-            // their labels don't collide with it), then nudge to the nearest free
-            // cell — reusing the same obstacle helpers the wire router uses.
+            // Choose a spawn cell that won't collide. Anchor at the view centre (below)
+            // and nudge to the nearest free cell so the held ghost never spawns on top
+            // of an existing part — reusing the same obstacle helpers the wire router
+            // uses. The user then taps to drop it wherever they actually want it.
             const placementObstacles = (typeof getObstacleRects === 'function')
                 ? getObstacleRects(GRID_SIZE * 0.9)
                 : [];
             const _cellFree = (px, pz) =>
                 typeof cellBlocked !== 'function' || !cellBlocked(px, pz, placementObstacles);
 
-            // Anchor below-centre of the existing cluster (or workspace centre when
-            // the canvas is empty). Placing below — with a clear gap — keeps the new
-            // part's label out of the existing circuit's label band.
-            let startX = 2, startZ = 0;
-            const _placed = components.filter(c => c && c.position);
-            if (_placed.length > 0) {
-                let sumX = 0, maxZ = -Infinity;
-                _placed.forEach(c => { sumX += c.position.x; maxZ = Math.max(maxZ, c.position.z); });
-                startX = Math.round((sumX / _placed.length) / GRID_SIZE) * GRID_SIZE;
-                startZ = maxZ + GRID_SIZE * 4; // clear gap below everything else
-            }
+            // Anchor the new part at the CENTRE OF THE CURRENT VIEW so it appears as a
+            // held ghost right where the user is looking — not off-screen below the
+            // circuit (the old behaviour, which made it look like nothing happened).
+            // cameraTarget is the camera's look-at point, so its grid cell sits dead
+            // centre on screen. The free-cell search below nudges it off any occupied
+            // cell, then the user taps anywhere to drop it exactly where they want.
+            const _viewCenter = clampToWorkspace(snapToGrid(cameraTarget));
+            let startX = _viewCenter.x, startZ = _viewCenter.z;
 
             let position = snapToGrid(new THREE.Vector3(startX, 0, startZ));
             if (!_cellFree(position.x, position.z)) {
@@ -15998,6 +16078,7 @@ Made with ? for visual learners everywhere!
                 }
             }
 
+            position = clampToWorkspace(position);
             const component = new Component(type, position);
             // Apply real-world branded component properties if provided
             if (initialProperties && typeof initialProperties === 'object') {
@@ -16009,8 +16090,12 @@ Made with ? for visual learners everywhere!
             _layerVisibTargetY = -999;
             _layerVisibTargetZ = -999;
             selectComponent(component, { startDragging: true, silent: true });
+            // Enter one-tap placement: the part is a held ghost at view centre; the
+            // next tap/click anywhere snaps it under the pointer and drops it.
+            isPlacing = true;
+            showSnapIndicator(position, false);
 
-            setStatus(`⚡ ${type} added - drag to grid position, tap to place, long press to edit values`);
+            setStatus(`⚡ ${type} ready — tap where you want it, or drag to position`);
             updateCircuitInfo();
             closeAllSubmenus();
         }
