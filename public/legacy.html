@@ -226,11 +226,11 @@
             position: fixed;
             display: none;
             flex-direction: column;
-            gap: 6px;
-            min-width: 200px;
-            max-width: 320px;
+            gap: 4px;
+            min-width: 168px;
+            max-width: 236px;
             padding: 0;
-            border-radius: 12px;
+            border-radius: 11px;
             /* See-through so the workspace stays visible behind the menu; the
                strong backdrop blur keeps the text readable over the 3D scene.
                -webkit- prefix is REQUIRED for the blur to work on iOS Safari. */
@@ -257,42 +257,42 @@
         }
 
         .component-menu-header {
-            padding: 14px 14px 12px 14px;
+            padding: 8px 11px 7px 11px;
             border-bottom: 1px solid rgba(136, 204, 255, 0.2);
             background: rgba(20, 40, 80, 0.5);
-            border-radius: 12px 12px 0 0;
+            border-radius: 11px 11px 0 0;
         }
 
         .component-menu-title {
-            font-size: 16px;
+            font-size: 13.5px;
             font-weight: 700;
             color: rgba(136, 204, 255, 0.95);
-            margin-bottom: 6px;
-            letter-spacing: 0.5px;
+            margin-bottom: 3px;
+            letter-spacing: 0.4px;
         }
 
         .component-menu-description {
-            font-size: 12px;
-            line-height: 1.5;
+            font-size: 11px;
+            line-height: 1.35;
             color: rgba(180, 200, 220, 0.85);
             font-weight: 400;
         }
 
         .component-menu-actions {
-            padding: 8px;
+            padding: 6px;
             display: flex;
             flex-direction: column;
-            gap: 6px;
+            gap: 4px;
         }
 
         .component-context-menu button {
             border: 1px solid rgba(136, 204, 255, 0.18);
-            border-radius: 10px;
+            border-radius: 8px;
             background: rgba(34, 62, 108, 0.78);
             color: rgba(228, 240, 255, 0.96);
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 600;
-            padding: 10px 12px;
+            padding: 8px 11px;
             text-align: left;
             display: flex;
             align-items: center;
@@ -1136,9 +1136,9 @@
             background: rgba(6, 14, 30, 0.62);
             backdrop-filter: blur(22px);
             -webkit-backdrop-filter: blur(22px);
-            border: 2px solid #00ff88;
-            border-radius: 16px;
-            padding: 24px;
+            border: 1px solid rgba(0, 255, 136, 0.7);
+            border-radius: 12px;
+            padding: 13px 14px;
             z-index: 10001;
             display: none;
             width: 90%;
@@ -1152,35 +1152,35 @@
         
         .edit-popup h3 {
             color: #00ff88;
-            margin: 0 0 20px 0;
+            margin: 0 0 10px 0;
             text-align: center;
-            font-size: 20px;
+            font-size: 14px;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 0.5px;
         }
         
         .edit-row {
-            margin-bottom: 20px;
+            margin-bottom: 11px;
         }
-        
+
         .edit-row label {
             display: block;
             color: #ccc;
-            margin-bottom: 8px;
-            font-size: 16px;
+            margin-bottom: 4px;
+            font-size: 12.5px;
             font-weight: 600;
         }
-        
+
         .edit-row input, .edit-row select {
             width: 100%;
-            padding: 16px;
-            border: 2px solid #555;
-            border-radius: 12px;
+            padding: 8px 11px;
+            border: 1px solid #555;
+            border-radius: 8px;
             background: rgba(255,255,255,0.1);
             color: white;
-            font-size: 16px;
+            font-size: 16px; /* keep >=16px so iOS doesn't zoom the page on focus */
             transition: border-color 0.3s ease;
-            min-height: 56px;
+            min-height: 40px;
         }
         
         .edit-row input:focus, .edit-row select:focus {
@@ -1191,20 +1191,20 @@
         
         .edit-buttons {
             display: flex;
-            gap: 16px;
-            margin-top: 24px;
+            gap: 9px;
+            margin-top: 13px;
         }
-        
+
         .edit-btn {
             flex: 1;
-            padding: 16px;
+            padding: 9px;
             border: none;
-            border-radius: 12px;
+            border-radius: 8px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
-            font-size: 16px;
-            min-height: 56px;
+            font-size: 14px;
+            min-height: 40px;
         }
         
         .edit-btn.save {
@@ -1226,18 +1226,18 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
+            margin-bottom: 11px;
         }
-        
+
         .edit-close {
             background: transparent;
             border: none;
             color: #ff4444;
-            font-size: 28px;
+            font-size: 22px;
             cursor: pointer;
             padding: 0;
-            width: 40px;
-            height: 40px;
+            width: 32px;
+            height: 32px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -1246,21 +1246,21 @@
         .edit-actions {
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 8px;
         }
-        
+
         .edit-action-btn {
             width: 100%;
-            padding: 16px;
-            border: 2px solid #00ff88;
-            border-radius: 12px;
+            padding: 9px;
+            border: 1px solid #00ff88;
+            border-radius: 8px;
             background: rgba(0,255,136,0.1);
             color: white;
-            font-size: 16px;
+            font-size: 14px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
-            min-height: 56px;
+            min-height: 40px;
         }
         
         .edit-action-btn:hover, .edit-action-btn:active {
@@ -5526,7 +5526,10 @@ body.android-optimized .zoom-btn {
         let componentPlacementIndex = 0;
         
         // Camera controls
-        let cameraDistance = 15;
+        // Default pulled in from 15 → 8: at fov 75, distance 15 showed ~23 world
+        // units of height, so a ~2-unit part was a tiny ~9% of the screen ("why
+        // are we zoomed out so much"). 8 frames a starter circuit up close.
+        let cameraDistance = 8;
         // Default to a dynamic 3/4 hero angle (rotated + tipped toward the user) so
         // the workspace reads as 3D and alive, not a flat straight-on schematic.
         let cameraAngleX = 0.7, cameraAngleY = 0.62;
@@ -15390,7 +15393,7 @@ body.android-optimized .zoom-btn {
 
         // View functions
         function resetCamera() {
-            cameraDistance = 15;
+            cameraDistance = 8;
             cameraAngleX = 0;
             cameraAngleY = 0.5;
             cameraTarget.set(0, 0, 0);
@@ -15418,7 +15421,10 @@ body.android-optimized .zoom-btn {
             const maxDim = Math.max(size.x, size.y, size.z);
             
             cameraTarget.copy(center);
-            cameraDistance = Math.max(10, maxDim * 2);
+            // fov 75 fits a circuit of size D at distance ~0.65*D; the old 2×
+            // (with a floor of 10) left a huge empty margin. 1.4× + floor 6 frames
+            // it close with just enough breathing room.
+            cameraDistance = Math.max(6, maxDim * 1.4);
             updateCameraPosition();
             
             setStatus('⚡ View fitted to circuit');
@@ -16044,14 +16050,23 @@ Made with ? for visual learners everywhere!
             const _cellFree = (px, pz) =>
                 typeof cellBlocked !== 'function' || !cellBlocked(px, pz, placementObstacles);
 
-            // Anchor the new part at the CENTRE OF THE CURRENT VIEW so it appears as a
-            // held ghost right where the user is looking — not off-screen below the
-            // circuit (the old behaviour, which made it look like nothing happened).
-            // cameraTarget is the camera's look-at point, so its grid cell sits dead
-            // centre on screen. The free-cell search below nudges it off any occupied
-            // cell, then the user taps anywhere to drop it exactly where they want.
-            const _viewCenter = clampToWorkspace(snapToGrid(cameraTarget));
-            let startX = _viewCenter.x, startZ = _viewCenter.z;
+            // Spawn the new part as a held GHOST on the UPPER-LEFT — about 3/4 of the
+            // way up, just beside the left-hand drawer/library — so it appears right
+            // where the user pulled it from and reads as "here's your part, drag it
+            // into place" (or tap where you want it). We convert a screen point to
+            // world so it stays visible at any camera angle/zoom; the free-cell search
+            // below nudges it off any occupied cell.
+            let _anchor = null;
+            const _canvasRect = (renderer && renderer.domElement)
+                ? renderer.domElement.getBoundingClientRect() : null;
+            if (_canvasRect && _canvasRect.width > 0 && typeof screenToWorld === 'function') {
+                // 22% across (just right of the drawer), 25% down (~3/4 up the side).
+                _anchor = screenToWorld(
+                    _canvasRect.left + _canvasRect.width * 0.22,
+                    _canvasRect.top + _canvasRect.height * 0.25);
+            }
+            const _spawn = clampToWorkspace(snapToGrid(_anchor || cameraTarget));
+            let startX = _spawn.x, startZ = _spawn.z;
 
             let position = snapToGrid(new THREE.Vector3(startX, 0, startZ));
             if (!_cellFree(position.x, position.z)) {
@@ -16095,7 +16110,7 @@ Made with ? for visual learners everywhere!
             isPlacing = true;
             showSnapIndicator(position, false);
 
-            setStatus(`⚡ ${type} ready — tap where you want it, or drag to position`);
+            setStatus(`⚡ ${type} ready — drag it into place, or tap where you want it`);
             updateCircuitInfo();
             closeAllSubmenus();
         }
