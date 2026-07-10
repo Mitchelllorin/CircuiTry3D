@@ -17,6 +17,25 @@
   --builder-muted: rgba(200, 220, 255, 1.0);
   --builder-muted-soft: rgba(200, 220, 255, 0.62);
   --builder-shadow: rgba(3, 8, 28, 0.6);
+
+  /* ── UNIFIED GLASS-SURFACE + SHAPE STANDARD ──────────────────────────────
+     One look for EVERY menu, panel, card, toolbar and control button. Point
+     surfaces at these tokens instead of hand-styling; overriding --glass-bg
+     under body.ct-opaque-menus flips the whole UI solid in one line. Menus are
+     almost-transparent by default — readability comes from the blur, not the
+     fill. Always pair -webkit-backdrop-filter with backdrop-filter. */
+  --glass-bg: rgba(11, 12, 34, 0.44);       /* content panels — very see-through */
+  --glass-bg-chrome: rgba(11, 12, 34, 0.7); /* triggers/buttons — present enough to read as controls */
+  --glass-bg-solid: rgba(11, 12, 34, 0.95);
+  --glass-blur: blur(20px);
+  --glass-border: 1px solid rgba(168, 216, 255, 0.26);
+  --glass-border-strong: 1px solid rgba(168, 216, 255, 0.5);
+  --glass-shadow: 0 12px 28px rgba(3, 8, 28, 0.5);
+  --radius-control: 10px; /* small buttons */
+  --radius-tab: 14px;     /* toggle tabs, cards, action buttons */
+  --radius-panel: 18px;   /* drawers / bottom sheets */
+  --control-size: 34px;   /* zoom / cinematic / icon buttons */
+
   /* Toggle tabs - slimmer for minimal footprint */
   --builder-menu-toggle-width: 32px;
   --builder-menu-toggle-height: 72px;
@@ -35,12 +54,13 @@
     hsl(300, 70%, 55%),
     hsl(359, 70%, 55%)
   );
-  --builder-menu-right-width: 172px;
+  /* Right drawer mirrors the left exactly (was 172px / 580 — asymmetric). */
+  --builder-menu-right-width: 180px;
   --builder-menu-bottom-width: min(500px, calc(100vw - 128px));
   --builder-menu-bottom-height: clamp(320px, 65vh, 600px);
   /* Side panel heights — tall enough to scroll through content */
   --builder-menu-left-height: clamp(320px, 65vh, 600px);
-  --builder-menu-right-height: clamp(300px, 65vh, 580px);
+  --builder-menu-right-height: clamp(320px, 65vh, 600px);
   --builder-safe-area-top: env(safe-area-inset-top, 0px);
   --builder-safe-area-bottom: env(safe-area-inset-bottom, 0px);
   --builder-safe-area-left: env(safe-area-inset-left, 0px);
@@ -923,11 +943,11 @@ body.builder-body::before {
 /* Panels overlap the zoom controls — no shift needed, open panel has z-index:1000 */
 
 .circuit-zoom-btn {
-  width: 30px;
-  height: 30px;
-  border-radius: 8px;
-  border: 1px solid rgba(168, 216, 255, 0.18);
-  background: rgba(8, 8, 30, 0.52);
+  width: var(--control-size);
+  height: var(--control-size);
+  border-radius: var(--radius-control);
+  border: var(--glass-border);
+  background: var(--glass-bg-chrome);
   color: rgba(180, 215, 255, 0.88);
   font-size: 18px;
   line-height: 1;
@@ -935,7 +955,8 @@ body.builder-body::before {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  backdrop-filter: blur(6px);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
   box-shadow: none;
   transition:
     background 0.15s ease,
@@ -1660,16 +1681,21 @@ body.builder-body::before {
   }
 }
 
+/* "See-through menus" OFF → flip every glass surface solid in one line. */
+body.ct-opaque-menus {
+  --glass-bg: var(--glass-bg-solid);
+  --glass-bg-chrome: var(--glass-bg-solid);
+}
+
 .builder-menu {
   position: relative;
-  /* Near-opaque so the workspace (lightning, nameplates) can't bleed THROUGH the
-     panel — important on mobile browsers where backdrop-filter blur is ignored
-     and the old 0.92 fill showed the sharp background straight through. */
-  background: rgba(10, 9, 30, 0.985);
-  border: 1px solid var(--builder-border);
+  /* Unified glass surface: almost-transparent, readability from the blur. */
+  background: var(--glass-bg);
+  border: var(--glass-border);
   border-radius: 0;
-  box-shadow: 0 12px 28px var(--builder-shadow);
-  backdrop-filter: blur(18px);
+  box-shadow: var(--glass-shadow);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
   color: inherit;
   display: flex;
   flex-direction: column;
@@ -1689,27 +1715,31 @@ body.builder-body::before {
   height: var(--builder-menu-left-height);
   flex-shrink: 0;
   overflow: hidden;
-  border-radius: 0 20px 20px 0;
+  border-radius: 0 var(--radius-panel) var(--radius-panel) 0;
   border-left: none;
 }
 
-/* Right menu — side-edge drawer layout */
+/* Right menu — mirror of the left drawer (identical width/height, mirrored radius) */
 .builder-menu-right {
   width: var(--builder-menu-right-width);
   height: var(--builder-menu-right-height);
   flex-shrink: 0;
   overflow: hidden;
-  border-radius: 20px 0 0 20px;
+  border-radius: var(--radius-panel) 0 0 var(--radius-panel);
   border-right: none;
 }
 
+/* Bottom "Insights" sheet — same glass container + rounded top corners so it
+   matches its two side siblings instead of being a hard square. */
 .builder-menu-bottom {
   width: 100%;
   height: var(--builder-menu-bottom-height);
   max-height: 100%;
   overflow-y: auto;
   gap: 12px;
-  padding: 18px;
+  padding: 16px 14px;
+  border-radius: var(--radius-panel) var(--radius-panel) 0 0;
+  border-bottom: none;
   display: flex;
   flex-direction: column;
 }
@@ -2152,8 +2182,8 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
 }
 
 .builder-menu-toggle {
-  border: 1px solid var(--builder-border-strong);
-  background: rgba(12, 10, 36, 0.95);
+  border: var(--glass-border-strong);
+  background: var(--glass-bg-chrome);
   color: var(--builder-text);
   display: flex;
   flex-direction: column;
@@ -2174,26 +2204,27 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
   box-shadow:
     0 4px 12px var(--builder-shadow),
     0 0 12px rgba(168, 216, 255, 0.15);
-  backdrop-filter: blur(14px);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
   writing-mode: vertical-rl;
   text-orientation: mixed;
 }
 
 /* Left toggle tab — slim vertical handle at the left edge, rounded right side */
 .builder-menu-toggle-left {
-  border-radius: 0 14px 14px 0;
+  border-radius: 0 var(--radius-tab) var(--radius-tab) 0;
   border-left: none;
-  border-right: 1px solid var(--builder-border-strong);
+  border-right: var(--glass-border-strong);
   box-shadow:
     2px 0 12px var(--builder-shadow),
     2px 0 16px rgba(168, 216, 255, 0.18);
 }
 
-/* Right toggle tab — slim vertical handle at the right edge, rounded left side */
+/* Right toggle tab — mirror of the left */
 .builder-menu-toggle-right {
-  border-radius: 14px 0 0 14px;
+  border-radius: var(--radius-tab) 0 0 var(--radius-tab);
   border-right: none;
-  border-left: 1px solid var(--builder-border-strong);
+  border-left: var(--glass-border-strong);
   box-shadow:
     -2px 0 12px var(--builder-shadow),
     -2px 0 16px rgba(168, 216, 255, 0.18);
@@ -2243,18 +2274,18 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
 
 .builder-menu-toggle-bottom {
   width: auto;
-  min-width: 80px;
-  max-width: 160px;
-  height: var(--builder-menu-toggle-width);
-  min-height: var(--builder-menu-toggle-width);
+  min-width: 96px;
+  max-width: 180px;
+  height: auto;
+  min-height: 32px;
   flex-shrink: 0;
-  padding: 2px 20px;
+  padding: 7px 24px;
   margin: 0 auto;
   align-self: center;
   writing-mode: horizontal-tb;
   text-orientation: mixed;
   flex-direction: row;
-  border-radius: 14px 14px 0 0;
+  border-radius: var(--radius-tab) var(--radius-tab) 0 0;
   border-bottom: none;
   box-shadow:
     0 -2px 12px var(--builder-shadow),
@@ -4961,7 +4992,7 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
   :root {
     /* Tablet - slimmer toggles */
     --builder-menu-left-width: 160px;
-    --builder-menu-right-width: 156px;
+    --builder-menu-right-width: 160px; /* mirror left */
     --builder-menu-bottom-width: min(440px, calc(100vw - 96px));
     --builder-menu-bottom-height: 216px;
     --builder-menu-toggle-width: 28px;
@@ -4969,7 +5000,7 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
     --builder-ticker-height: 28px;
     --builder-ticker-top: 68px;
     --builder-menu-left-height: clamp(280px, 60vh, 540px);
-    --builder-menu-right-height: clamp(260px, 60vh, 520px);
+    --builder-menu-right-height: clamp(280px, 60vh, 540px); /* mirror left */
   }
 
   /* Side panels remain centered (top:50%) at all widths */
@@ -4999,7 +5030,7 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
   :root {
     /* Mobile - slim but tappable toggles */
     --builder-menu-left-width: 140px;
-    --builder-menu-right-width: 136px;
+    --builder-menu-right-width: 140px; /* mirror left */
     --builder-menu-bottom-width: calc(100vw - 24px);
     --builder-menu-bottom-height: 188px;
     --builder-menu-toggle-width: 26px;
@@ -5009,7 +5040,7 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
     --builder-floating-button-size: 40px;
     --builder-ticker-top: 64px;
     --builder-menu-left-height: clamp(260px, 60vh, 500px);
-    --builder-menu-right-height: clamp(240px, 58vh, 480px);
+    --builder-menu-right-height: clamp(260px, 60vh, 500px); /* mirror left */
   }
 
   /* Side panels remain centered at all widths */
@@ -5209,7 +5240,7 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
     /* Ticker is hidden; side menus position just below the mode bar */
     --builder-ticker-top: 0px;
     --builder-menu-left-height: 200px;
-    --builder-menu-right-height: 180px;
+    --builder-menu-right-height: 200px; /* mirror left */
   }
 
   /* Hide the decorative ticker to free vertical space. */

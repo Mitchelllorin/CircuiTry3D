@@ -259,22 +259,33 @@
   color: rgba(150, 255, 180, 0.9);
 }
 
-/* ── Film-strip toggle button (bottom perimeter bar) ─────────────────────── */
+/* ── Cinematic-camera button — part of the control-button family (matches the
+   zoom stack above it: same square size, radius, glass fill and blur). ─────── */
 .cinematic-fab {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 4px;
-  padding: 0 10px;
-  height: 32px;
-  border-radius: 8px;
-  border: 1px solid rgba(136, 204, 255, 0.25);
-  background: rgba(255, 255, 255, 0.04);
-  color: rgba(200, 230, 255, 0.75);
-  font-size: 13px;
+  width: var(--control-size);
+  height: var(--control-size);
+  padding: 0;
+  border-radius: var(--radius-control);
+  border: var(--glass-border);
+  background: var(--glass-bg-chrome);
+  color: rgba(200, 230, 255, 0.85);
+  font-size: 15px;
   cursor: pointer;
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
   transition: border-color 0.15s, background 0.15s, color 0.15s;
   white-space: nowrap;
+}
+
+/* Only while actively recording does it widen to fit the "REC" label. */
+.cinematic-fab.cinematic-fab--recording {
+  width: auto;
+  padding: 0 9px;
+  font-size: 13px;
 }
 
 .cinematic-fab:hover {

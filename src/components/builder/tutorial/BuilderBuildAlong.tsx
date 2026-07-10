@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type {
   BuilderInvokeAction,
   LegacyCircuitState,
@@ -12,7 +12,7 @@ type BuildAlongProps = {
   circuitState: LegacyCircuitState | null;
   modeState: LegacyModeState;
   onInvokeAction: (action: BuilderInvokeAction, data?: Record<string, unknown>) => void;
-  onRequestOpenLeftMenu: () => void;
+  onRequestSetLeftMenu: (open: boolean) => void;
 };
 
 type Rect = { top: number; left: number; width: number; height: number };
@@ -23,19 +23,31 @@ type BuildStep = {
   // CSS selector for the control this step is about — spotlit (blur everything
   // else) and ringed while the step is active.
   target?: string;
+  // Whether this step needs the component library drawer. It is closed for every
+  // other step so the workspace — and the long-press editor — stay visible.
+  library?: boolean;
   // Auto-advance when the real circuit state satisfies this (omit for read-only
   // / mechanic steps that advance with the Next button).
   isDone?: (circuit: LegacyCircuitState | null, mode: LegacyModeState) => boolean;
+  // Offer Next even on an auto-advancing step, so a user who can't work out the
+  // gesture is never trapped.
+  skippable?: boolean;
 };
 
 const countOf = (circuit: LegacyCircuitState | null, type: string) =>
   circuit?.counts?.byType?.[type] ?? 0;
 
+// A part is counted the instant it is picked up as a ghost, so "placed" means
+// counted AND no longer held.
+const placed = (circuit: LegacyCircuitState | null, type: string) =>
+  countOf(circuit, type) > 0 && !circuit?.isPlacing;
+
 // Padding around a spotlit target.
 const PAD = 8;
 
 // Stage 1: place every part yourself, learn the mechanics, wire it up, read the
-// W.I.R.E. metrics. (Practice/worksheet + F.U.S.E. are the next stages.)
+// W.I.R.E. metrics, then meet the junction node. (Practice/worksheet + F.U.S.E.
+// are the next stages.)
 const BUILD_STEPS: BuildStep[] = [
   {
     id: "intro",
@@ -43,31 +55,37 @@ const BUILD_STEPS: BuildStep[] = [
   },
   {
     id: "battery",
-    text: "In the Component Library on the left, tap a Battery to drop it into the workspace — your power source.",
-    isDone: (c) => countOf(c, "battery") > 0,
+    text: "Tap Battery once to pick it up — it follows you as a ghost. Tap the grid to drop it. Now it's real.",
+    target: '[data-tutorial-id="tutorial-add-battery"]',
+    library: true,
+    isDone: (c) => placed(c, "battery"),
   },
   {
     id: "edit",
-    text: "Tap a part to select it. Long-press it to open its editor — change voltage, resistance and more.",
+    text: "Long-press the battery to open its editor — change its voltage, and more.",
   },
   {
     id: "rotate",
-    text: "Drag a part to move it, and use rotate to spin it so its two terminals line up with your layout.",
+    text: "Drag a part to move it. Long-press and rotate to line its two terminals up with your layout.",
   },
   {
     id: "resistor",
-    text: "Add a Resistor — it limits how much current can flow.",
-    isDone: (c) => countOf(c, "resistor") > 0,
+    text: "Same two taps: pick up a Resistor, then tap the grid. It limits how much current can flow.",
+    target: '[data-tutorial-id="tutorial-add-resistor"]',
+    library: true,
+    isDone: (c) => placed(c, "resistor"),
   },
   {
     id: "lamp",
     text: "Add a Light — it shows the power being used; it glows when current flows.",
-    isDone: (c) => countOf(c, "lamp") > 0,
+    library: true,
+    isDone: (c) => placed(c, "lamp"),
   },
   {
     id: "switch",
     text: "Add a Switch — it opens and closes the circuit, like a tap on the current.",
-    isDone: (c) => countOf(c, "switch") > 0,
+    library: true,
+    isDone: (c) => placed(c, "switch"),
   },
   {
     id: "wire",
@@ -81,6 +99,22 @@ const BUILD_STEPS: BuildStep[] = [
     target: ".ticker-wire-fixed",
   },
   {
+    id: "junction-intro",
+    text: "One part left to meet: the Junction ─●─. It's a solder node — the one place three or more wires can meet.",
+    target: '[data-component-action="junction"]',
+  },
+  {
+    id: "junction-place",
+    text: "Add a Junction, then tap a wire to split it. Current can now take two paths at once — that's a parallel circuit.",
+    target: '[data-component-action="junction"]',
+    isDone: (c) => (c?.counts?.junctions ?? 0) > 0,
+    skippable: true,
+  },
+  {
+    id: "junction-kcl",
+    text: "Every amp that flows into a junction flows back out. Nothing is lost there — that's the law that makes parallel circuits solvable.",
+  },
+  {
     id: "done",
     text: "You built a working circuit. Next we'll cover the W.I.R.E. solving method and F.U.S.E. — but first, go play.",
   },
@@ -92,24 +126,39 @@ export function BuilderBuildAlong({
   circuitState,
   modeState,
   onInvokeAction,
-  onRequestOpenLeftMenu,
+  onRequestSetLeftMenu,
 }: BuildAlongProps) {
   const [step, setStep] = useState(0);
   const [rect, setRect] = useState<Rect | null>(null);
 
-  // On open: start at step 0 and pop the parts library so parts are reachable.
-  // Depend ONLY on `open` — if we also depended on onRequestOpenLeftMenu, an
-  // un-memoized parent callback would give a new reference on every re-render
-  // (e.g. as circuitState updates while you build), re-firing this effect and
-  // snapping you back to step 0 mid-build. That was the "loops back to the
+  // Held in a ref so the drawer effect below can call it without taking it as a
+  // dependency: an un-memoized parent callback gives a new reference on every
+  // re-render (circuitState updates constantly while you build), which would
+  // re-fire any effect that depended on it. That was the "loops back to the
   // start" bug.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const setLeftMenu = useRef(onRequestSetLeftMenu);
+  useEffect(() => {
+    setLeftMenu.current = onRequestSetLeftMenu;
+  });
+
+  // On open: start at step 0. Depend ONLY on `open` — see the note above.
   useEffect(() => {
     if (open) {
       setStep(0);
-      onRequestOpenLeftMenu();
     }
   }, [open]);
+
+  // The library drawer is open only while a step actually needs it, AND only
+  // until a part is picked up. The moment you grab a ghost the drawer gets out
+  // of the way — it used to sit over the workspace hiding the very part (and
+  // long-press editor) the next step talks about.
+  const isPlacing = Boolean(circuitState?.isPlacing);
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+    setLeftMenu.current(Boolean(BUILD_STEPS[step]?.library) && !isPlacing);
+  }, [open, step, isPlacing]);
 
   // Auto-advance the instant the real circuit state satisfies the current step.
   useEffect(() => {
@@ -158,7 +207,9 @@ export function BuilderBuildAlong({
 
   const current = BUILD_STEPS[step];
   const isLast = step >= BUILD_STEPS.length - 1;
-  const canManualAdvance = !current.isDone; // mechanic/info steps advance via Next
+  // Mechanic/info steps advance via Next; so do auto-steps flagged skippable, so
+  // a gesture you can't work out never traps you.
+  const canManualAdvance = !current.isDone || Boolean(current.skippable);
 
   const advance = () => setStep((x) => Math.min(x + 1, BUILD_STEPS.length - 1));
 
@@ -212,9 +263,22 @@ export function BuilderBuildAlong({
       <div className="builder-tutorial-card builder-tutorial-card--tour">
         <div className="builder-tutorial-header">
           <span className="builder-tutorial-kicker">Build it with me</span>
-          <span className="builder-tutorial-kicker-step">
-            {Math.min(step + 1, BUILD_STEPS.length)} / {BUILD_STEPS.length}
-          </span>
+          <div className="builder-tutorial-header-buttons">
+            <span className="builder-tutorial-kicker-step">
+              {Math.min(step + 1, BUILD_STEPS.length)} / {BUILD_STEPS.length}
+            </span>
+            {/* Dismiss on the card itself — the Skip pill is pinned to the far
+                top-right corner, which is easy to miss and awkward to reach. */}
+            <button
+              type="button"
+              className="builder-tutorial-close"
+              onClick={onClose}
+              aria-label="Close the build-along walkthrough"
+              title="Close"
+            >
+              ✕
+            </button>
+          </div>
         </div>
         <div className="builder-tutorial-body">
           <p className="builder-tutorial-text">{current.text}</p>

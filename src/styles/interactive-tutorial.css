@@ -17,23 +17,16 @@
   max-height: 38dvh;
   display: flex;
   flex-direction: column;
-  /* See-through so the workspace it points at stays visible behind the card;
-     the strong backdrop blur keeps the coach text readable over the 3D scene.
-     -webkit- prefix is REQUIRED for the blur to work on iOS Safari — without it
-     a translucent card would show the raw scene sharply behind the text. */
-  background: rgba(10, 24, 48, 0.6);
-  border: 1px solid rgba(136, 204, 255, 0.35);
-  border-radius: 13px;
-  box-shadow: 0 14px 34px rgba(3, 12, 32, 0.7);
-  backdrop-filter: blur(22px);
-  -webkit-backdrop-filter: blur(22px);
+  /* Unified glass surface — almost-transparent by default (readability from the
+     blur), matching every other menu/card. body.ct-opaque-menus flips
+     --glass-bg solid globally, so no per-card opaque override is needed. */
+  background: var(--glass-bg);
+  border: var(--glass-border-strong);
+  border-radius: var(--radius-tab);
+  box-shadow: var(--glass-shadow);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
   padding: 9px 11px 10px;
-}
-
-/* "See-through menus" setting OFF → solid coach card again (body.ct-opaque-menus
-   is toggled from the app Settings page via Builder). */
-body.ct-opaque-menus .builder-tutorial-card {
-  background: rgba(10, 24, 48, 0.92);
 }
 
 /* Guided tour: lift the card clear above the F.U.S.E. watermark (its top sits

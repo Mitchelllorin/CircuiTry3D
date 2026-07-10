@@ -259,20 +259,6 @@ export type FuseAnalysisResult = {
 
 // ── Component Catalog ─────────────────────────────────────────────────────────
 
-export type CatalogComponent = {
-  id: string;
-  manufacturer: string;
-  name: string;
-  spec: string;
-  type: string;
-  featured?: boolean;
-  properties: Record<string, number>;
-  ratedThresholds?: {
-    maxVoltageV?: number;
-    maxCurrentA?: number;
-    maxPowerW?: number;
-    maxTempC?: number;
-    minTempC?: number;
-    thermalResistanceCA?: number;
-  };
-};
+// Defined in the app-neutral catalog so the Builder and the Arena share one
+// shape. Re-exported here for the Arena's existing `./types` import paths.
+export type { CatalogComponent } from "../../data/componentCatalog";

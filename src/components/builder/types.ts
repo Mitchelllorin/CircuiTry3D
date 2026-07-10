@@ -91,6 +91,12 @@ export type LegacyCircuitState = {
    * This is used for tutorial step validation (e.g., "did the user run a sim?").
    */
   updatedAt: string;
+  /**
+   * True while a part is held as a translucent ghost, after pickup but before it
+   * is dropped on the grid. The part is already counted in `counts` at pickup, so
+   * this is the only way to tell "holding it" from "placed it".
+   */
+  isPlacing?: boolean;
   counts: {
     components: number;
     wires: number;

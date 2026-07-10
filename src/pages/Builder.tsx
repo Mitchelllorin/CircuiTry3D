@@ -79,6 +79,11 @@ import {
   ENABLE_SCROLLER_MENU,
 } from "../components/builder/constants";
 import {
+  CATALOG_COMPONENTS,
+  builderTypeFor,
+  toWorkspaceProperties,
+} from "../data/componentCatalog";
+import {
   clampLabelVisibilityLevel,
   getLabelVisibilityDescription,
   getNextLabelToggleTitle,
@@ -1234,99 +1239,40 @@ const INTRO_WELCOME = {
 
 const GALLERY_TOAST_DURATION_MS = 6000;
 
-/** Real-world branded components available in the main workspace library. */
-type RealPart = {
-  id: string;
-  mfr: string;
-  name: string;
-  spec: string;
-  builderType: string;
-  props: Record<string, number>;
-};
-
-const REAL_PARTS_CATALOG: RealPart[] = [
-  // ── Batteries ─────────────────────────────────────────────────────────
-  { id: "energizer-522-9v", mfr: "Energizer", name: "522 9V", spec: "9V · 565mAh", builderType: "battery", props: { voltage: 9 } },
-  { id: "panasonic-lr6-aa", mfr: "Panasonic", name: "LR6 AA", spec: "1.5V · 2850mAh", builderType: "battery", props: { voltage: 1.5 } },
-  // ── Resistors ──────────────────────────────────────────────────────────
-  { id: "vishay-crcw0402-100r", mfr: "Vishay", name: "CRCW0402 100Ω", spec: "0402 · 1% · 63mW", builderType: "resistor", props: { resistance: 100 } },
-  { id: "vishay-crcw0603-330r", mfr: "Vishay", name: "CRCW0603 330Ω", spec: "0603 · 1% · 100mW", builderType: "resistor", props: { resistance: 330 } },
-  { id: "vishay-crcw0603-1k", mfr: "Vishay", name: "CRCW0603 1kΩ", spec: "0603 · 1% · 100mW", builderType: "resistor", props: { resistance: 1000 } },
-  { id: "vishay-crcw0603-10k", mfr: "Vishay", name: "CRCW0603 10kΩ", spec: "0603 · 1% · 100mW", builderType: "resistor", props: { resistance: 10000 } },
-  { id: "yageo-cfr-1k", mfr: "Yageo", name: "CFR-25JB 1kΩ", spec: "axial · 5% · 250mW", builderType: "resistor", props: { resistance: 1000 } },
-  { id: "yageo-cfr-10k", mfr: "Yageo", name: "CFR-25JB 10kΩ", spec: "axial · 5% · 250mW", builderType: "resistor", props: { resistance: 10000 } },
-  { id: "bourns-cr0603-100k", mfr: "Bourns", name: "CR0603 100kΩ", spec: "0603 · 1% · 100mW", builderType: "resistor", props: { resistance: 100000 } },
-  // ── Capacitors ────────────────────────────────────────────────────────
-  { id: "murata-gcj-1uf", mfr: "Murata", name: "GCJ316R71H 1µF", spec: "0805 · 50V · X7R", builderType: "capacitor", props: { capacitance: 1 } },
-  { id: "panasonic-eeufm-100uf", mfr: "Panasonic", name: "EEU-FM1E101 100µF", spec: "radial · 25V · 105°C", builderType: "capacitor", props: { capacitance: 100 } },
-  { id: "nichicon-ufw-470uf", mfr: "Nichicon", name: "UFW1C471 470µF", spec: "radial · 16V · 105°C", builderType: "capacitor", props: { capacitance: 470 } },
-  // ── LEDs ──────────────────────────────────────────────────────────────
-  { id: "vishay-tlhr5400-red", mfr: "Vishay", name: "TLHR5400 Red", spec: "T-1 3/4 · 2.0V · 630nm", builderType: "led", props: { resistance: 10 } },
-  { id: "wurth-led-green", mfr: "Würth", name: "151031VS Green", spec: "SMD · 2.1V · 525nm", builderType: "led", props: { resistance: 10 } },
-  { id: "osram-lb-d47b-blue", mfr: "Osram", name: "LB D47B Blue", spec: "SMD · 3.0V · 470nm", builderType: "led", props: { resistance: 10 } },
-  { id: "cree-c503b-white", mfr: "Cree", name: "C503B White", spec: "T-1 3/4 · 3.2V · 6000K", builderType: "led", props: { resistance: 10 } },
-  // ── Diodes ────────────────────────────────────────────────────────────
-  { id: "on-semi-1n4148", mfr: "ON Semi", name: "1N4148", spec: "DO-35 · 100V · 300mA", builderType: "diode", props: { forwardVoltage: 0.72 } },
-  { id: "on-semi-1n4007", mfr: "ON Semi", name: "1N4007", spec: "DO-41 · 1000V · 1A", builderType: "diode", props: { forwardVoltage: 0.7 } },
-  { id: "vishay-1n5819", mfr: "Vishay", name: "1N5819 Schottky", spec: "DO-41 · 40V · 1A", builderType: "diode", props: { forwardVoltage: 0.34 } },
-  // ── BJTs ──────────────────────────────────────────────────────────────
-  { id: "on-semi-2n2222a", mfr: "ON Semi", name: "2N2222A NPN", spec: "TO-18 · 40V · 600mA", builderType: "bjt", props: { gain: 100 } },
-  { id: "on-semi-2n3904", mfr: "ON Semi", name: "2N3904 NPN", spec: "TO-92 · 40V · 200mA", builderType: "bjt", props: { gain: 100 } },
-  { id: "on-semi-2n3906", mfr: "ON Semi", name: "2N3906 PNP", spec: "TO-92 · 40V · 200mA", builderType: "bjt-pnp", props: { gain: 100 } },
-  { id: "stmicro-bc547", mfr: "STMicro", name: "BC547 NPN", spec: "TO-92 · 45V · 100mA", builderType: "bjt", props: { gain: 110 } },
-  { id: "on-semi-tip31c", mfr: "ON Semi", name: "TIP31C NPN", spec: "TO-220 · 100V · 3A · 40W", builderType: "bjt", props: { gain: 25 } },
-  // ── MOSFETs ───────────────────────────────────────────────────────────
-  { id: "infineon-irf540n", mfr: "Infineon", name: "IRF540N N-MOS", spec: "TO-220 · 100V · 33A", builderType: "mosfet", props: { threshold: 4 } },
-  { id: "on-semi-2n7000", mfr: "ON Semi", name: "2N7000 N-MOS", spec: "TO-92 · 60V · 200mA", builderType: "mosfet", props: { threshold: 2.1 } },
-  // ── Voltage Regulators ────────────────────────────────────────────────
-  { id: "ti-lm7805", mfr: "Texas Instruments", name: "LM7805 5V", spec: "TO-220 · 5V · 1.5A", builderType: "voltage-regulator", props: { outputVoltage: 5, maxCurrent: 1.5 } },
-  { id: "ti-lm7812", mfr: "Texas Instruments", name: "LM7812 12V", spec: "TO-220 · 12V · 1.5A", builderType: "voltage-regulator", props: { outputVoltage: 12, maxCurrent: 1.5 } },
-  { id: "ti-lm317", mfr: "Texas Instruments", name: "LM317T Adj", spec: "TO-220 · 1.2–37V · 1.5A", builderType: "voltage-regulator", props: { outputVoltage: 5, maxCurrent: 1.5 } },
-  // ── Op-Amps ───────────────────────────────────────────────────────────
-  { id: "ti-lm358", mfr: "Texas Instruments", name: "LM358N", spec: "DIP-8 · dual · 32V", builderType: "opamp", props: { gain: 100000 } },
-  { id: "ti-lm741", mfr: "Texas Instruments", name: "LM741CN", spec: "DIP-8 · single · 18V", builderType: "opamp", props: { gain: 100000 } },
-  // ── ICs ───────────────────────────────────────────────────────────────
-  { id: "ti-ne555", mfr: "Texas Instruments", name: "NE555P Timer", spec: "DIP-8 · 4.5–16V", builderType: "ic", props: {} },
-  { id: "ti-74hc595", mfr: "Texas Instruments", name: "SN74HC595N", spec: "DIP-16 · shift register", builderType: "ic", props: {} },
-  { id: "ti-cd4011be", mfr: "Texas Instruments", name: "CD4011BE NAND", spec: "DIP-14 · 3–18V", builderType: "ic", props: {} },
-  // ── Inductors ─────────────────────────────────────────────────────────
-  // inductance is in mH in the workspace (47µH = 0.047mH, 100µH = 0.1mH)
-  { id: "sumida-cdrh4d28-47uh", mfr: "Sumida", name: "CDRH4D28 47µH", spec: "SMD · 700mA sat", builderType: "inductor", props: { inductance: 0.047 } },
-  { id: "bourns-srr1260-100uh", mfr: "Bourns", name: "SRR1260 100µH", spec: "SMD · 2.1A sat", builderType: "inductor", props: { inductance: 0.1 } },
-  // ── Crystals ──────────────────────────────────────────────────────────
-  { id: "abracon-abls-16mhz", mfr: "Abracon", name: "ABLS 16MHz", spec: "HC-49/US · 18pF · ±20ppm", builderType: "crystal", props: { frequency: 16000000 } },
-  { id: "ecs-8mhz", mfr: "ECS", name: "ECS-80 8MHz", spec: "HC-49/US · 20pF · ±30ppm", builderType: "crystal", props: { frequency: 8000000 } },
-  // ── Thermistors ───────────────────────────────────────────────────────
-  { id: "vishay-ntcle100-10k", mfr: "Vishay", name: "NTCLE100 10kΩ", spec: "B=3950K · 5% · NTC", builderType: "thermistor", props: { resistance: 10000 } },
-  // ── Fuses ─────────────────────────────────────────────────────────────
-  { id: "littelfuse-251001", mfr: "Littelfuse", name: "251001 1A", spec: "250V · fast blow · glass", builderType: "fuse", props: { current: 1 } },
-  { id: "littelfuse-250500", mfr: "Littelfuse", name: "250500 500mA", spec: "250V · fast blow · glass", builderType: "fuse", props: { current: 0.5 } },
-  { id: "schurter-ato-5a", mfr: "Schurter", name: "ATO Blade 5A", spec: "32V · automotive", builderType: "fuse", props: { current: 5 } },
-];
-
 // Unified component library: every branded real-world part becomes a first-class
 // card in the SAME picker as the generic components, inheriting that type's icon
 // and category tab and carrying its preset spec values. This removes the separate
 // "Real Parts Library" section that used to stack beneath the reel (and hide
 // behind it on mobile) — there is now one library, one layer, fully filterable.
-const REAL_PART_LIBRARY_ACTIONS: ComponentAction[] = REAL_PARTS_CATALOG.map(
+//
+// Derived from the shared catalog rather than a second hand-written list, so a
+// branded part is defined once and the Builder and the Arena can never drift.
+// Families the 3D workspace can't draw (ICs) yield no builderType and are
+// skipped — they used to spawn an unhandled component type.
+const REAL_PART_LIBRARY_ACTIONS: ComponentAction[] = CATALOG_COMPONENTS.flatMap(
   (part) => {
-    const base = COMPONENT_ACTIONS.find((c) => c.builderType === part.builderType);
-    return {
-      id: part.id,
-      icon: base?.icon ?? "🔩",
-      label: part.name,
-      action: "component" as const,
-      builderType: (base?.builderType ??
-        part.builderType) as ComponentAction["builderType"],
-      // Manufacturer + datasheet spec, shown on the centered card / tooltip.
-      description: `${part.mfr} · ${part.spec}`,
-      initialProperties:
-        Object.keys(part.props).length > 0 ? part.props : undefined,
-      // Inherit the base type's metadata so the branded part filters under the
-      // same category tab (Power / Passive / Semi / …) as its generic sibling.
-      metadata: base?.metadata ? { ...base.metadata } : undefined,
-    };
+    const builderType = builderTypeFor(part);
+    if (!builderType) {
+      return [];
+    }
+    const base = COMPONENT_ACTIONS.find((c) => c.builderType === builderType);
+    const properties = toWorkspaceProperties(part);
+    return [
+      {
+        id: part.id,
+        icon: base?.icon ?? "🔩",
+        label: part.name,
+        action: "component" as const,
+        builderType: builderType as ComponentAction["builderType"],
+        // Manufacturer + datasheet spec, shown on the centered card / tooltip.
+        description: `${part.manufacturer} · ${part.spec}`,
+        initialProperties:
+          Object.keys(properties).length > 0 ? properties : undefined,
+        // Inherit the base type's metadata so the branded part filters under the
+        // same category tab (Power / Passive / Semi / …) as its generic sibling.
+        metadata: base?.metadata ? { ...base.metadata } : undefined,
+      },
+    ];
   },
 );
 
@@ -2702,6 +2648,17 @@ export default function Builder() {
     junctionTipTriggeredRef.current = true;
   }, [isFrameReady, triggerBuilderAction]);
 
+  // Both walkthroughs teach the 3D workspace, and their overlay layer (z 1260)
+  // paints above every workspace panel. Leaving build mode — into the Arena,
+  // Practice, Settings — used to leave the coach card stranded on top of a
+  // surface it knows nothing about. Close them when the workspace changes.
+  useEffect(() => {
+    if (workspaceMode !== "build") {
+      setGuidedTourOpen(false);
+      setBuildAlongOpen(false);
+    }
+  }, [workspaceMode]);
+
   // Effect 1a — showcase load watchdog. On slower devices (Android) the very first
   // load-payoff trigger sometimes races the builder's init and the parts never
   // appear. While the tour is open with an empty workspace, re-fire the load until
@@ -3539,38 +3496,44 @@ export default function Builder() {
               <span className="edge-action-label" aria-hidden="true">Help</span>
             </button>
 
-            {/* 3-step visibility toggle — always visible, even when mode is hidden */}
-            <div
-              className="action-bar-toggle"
-              role="group"
-              aria-label="Action bar visibility"
+            {/* Single reveal toggle — cycles hidden → tools (partial) → full → hidden.
+                Grid icon = "open the tools / quick actions"; ✕ when fully open = hide.
+                (Replaces the old 3-segment All/Tools/Hide bar; the gear moved out to
+                the workspace stack as the Settings button.) */}
+            <button
+              type="button"
+              className={`action-bar-cycle action-bar-cycle--${actionBarMode}`}
+              onClick={() =>
+                setActionBarMode(
+                  actionBarMode === "hidden"
+                    ? "tools"
+                    : actionBarMode === "tools"
+                      ? "full"
+                      : "hidden",
+                )
+              }
+              aria-label="Toggle quick actions and tools"
+              title={
+                actionBarMode === "hidden"
+                  ? "Show tool buttons"
+                  : actionBarMode === "tools"
+                    ? "Show all buttons"
+                    : "Hide buttons"
+              }
             >
-              {(
-                [
-                  { mode: "full",   icon: "⊞", label: "All"  },
-                  { mode: "tools",  icon: "⚙", label: "Tools" },
-                  { mode: "hidden", icon: "✕", label: "Hide"  },
-                ] as const
-              ).map(({ mode, icon, label }) => (
-                <button
-                  key={mode}
-                  type="button"
-                  className={`action-bar-toggle-seg${actionBarMode === mode ? " action-bar-toggle-seg--active" : ""}`}
-                  onClick={() => setActionBarMode(mode)}
-                  aria-pressed={actionBarMode === mode}
-                  title={
-                    mode === "full"
-                      ? "Show all buttons"
-                      : mode === "tools"
-                        ? "Show tool buttons only (hide component shortcuts)"
-                        : "Hide action bar"
-                  }
-                >
-                  <span className="action-bar-toggle-seg-icon" aria-hidden="true">{icon}</span>
-                  <span className="action-bar-toggle-seg-label">{label}</span>
-                </button>
-              ))}
-            </div>
+              {actionBarMode === "full" ? (
+                <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M18 6 6 18M6 6l12 12" />
+                </svg>
+              ) : (
+                <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <rect x="3" y="3" width="7" height="7" rx="1" />
+                  <rect x="14" y="3" width="7" height="7" rx="1" />
+                  <rect x="3" y="14" width="7" height="7" rx="1" />
+                  <rect x="14" y="14" width="7" height="7" rx="1" />
+                </svg>
+              )}
+            </button>
           </div>
 
           {/* Junction info tip — shown until dismissed, explains the role
@@ -4461,7 +4424,10 @@ export default function Builder() {
             aria-pressed={labelVisibilityLevel > 0}
             title={labelToggleTitle}
           >
-            🏷
+            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M20.59 13.41 13.42 20.6a2 2 0 0 1-2.83 0L3 13V3h10l7.59 7.59a2 2 0 0 1 0 2.82z" />
+              <circle cx="7.5" cy="7.5" r="1.2" />
+            </svg>
           </button>
           <button
             type="button"
@@ -4471,7 +4437,29 @@ export default function Builder() {
             aria-expanded={isCinematicOpen}
             title="Cinematic Camera"
           >
-            {cinematicIsRecording ? <><span className="cinematic-rec-dot" aria-hidden="true" />REC</> : "🎬"}
+            {cinematicIsRecording ? (
+              <><span className="cinematic-rec-dot" aria-hidden="true" />REC</>
+            ) : (
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="m22 8-6 4 6 4V8z" />
+                <rect x="2" y="6" width="14" height="12" rx="2" />
+              </svg>
+            )}
+          </button>
+          {/* Settings — the gear lives out in the workspace control stack (below the
+              cinematic camera); all settings open from here. */}
+          <button
+            type="button"
+            className={`circuit-zoom-btn${isSettingsPanelOpen ? " circuit-zoom-btn--active" : ""}`}
+            onClick={() => setSettingsPanelOpen((open) => !open)}
+            aria-label={isSettingsPanelOpen ? "Close settings" : "Open settings"}
+            aria-expanded={isSettingsPanelOpen}
+            title="Settings"
+          >
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="3" />
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+            </svg>
           </button>
         </div>
       )}
@@ -4799,7 +4787,7 @@ export default function Builder() {
         circuitState={circuitState}
         modeState={modeState}
         onInvokeAction={triggerBuilderAction}
-        onRequestOpenLeftMenu={() => setLeftMenuOpen(true)}
+        onRequestSetLeftMenu={setLeftMenuOpen}
       />
 
       {/* Circuit AI helper — floating action button + sliding chat panel */}
