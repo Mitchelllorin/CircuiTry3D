@@ -195,59 +195,6 @@ export function BuilderGuidedTour({
     return () => timers.forEach((t) => window.clearTimeout(t));
   }, [open, step, onInvokeAction]);
 
-  // Center the focused subject (current flow / a part) in the space ABOVE the
-  // coach card — the same "center in available space" pipeline the circuit uses
-  // for open panels. We measure the card (and the top ticker) and push CSS-px
-  // view insets into the 3D view; the camera re-aims so the subject rides up
-  // clear of the card instead of sitting behind it. When no card is showing
-  // (mid-sweep, or tour closed) we clear the insets so it re-centers full-frame
-  // — that's the "panel pops out → pull to centre, panel gone → push back" feel.
-  // This replaces the old per-step magic camera Y offsets in tourFocusCamera.
-  useEffect(() => {
-    if (!open || !showCard) {
-      onInvokeAction("set-view-insets", { top: 0, right: 0, bottom: 0, left: 0 });
-      return;
-    }
-    let raf = 0;
-    // The card fades/lays out over a beat; re-measure across a short window so the
-    // aim tracks it in, then settles.
-    const deadline =
-      (typeof performance !== "undefined" ? performance.now() : 0) + 700;
-    const measure = () => {
-      const vh = window.innerHeight || 1;
-      let top = 0;
-      const ticker = document.querySelector(".ticker-wire-fixed");
-      if (ticker) {
-        const r = ticker.getBoundingClientRect();
-        if (r.height > 0 && r.top < vh * 0.4) {
-          top = Math.min(vh * 0.4, Math.max(0, r.bottom));
-        }
-      }
-      let bottom = 0;
-      const card = document.querySelector(".builder-tutorial-card--tour");
-      if (card) {
-        const r = card.getBoundingClientRect();
-        if (r.height > 0) {
-          bottom = Math.min(vh * 0.6, Math.max(0, vh - r.top));
-        }
-      }
-      onInvokeAction("set-view-insets", { top, right: 0, bottom, left: 0 });
-      const now = typeof performance !== "undefined" ? performance.now() : deadline;
-      if (now < deadline) {
-        raf = requestAnimationFrame(measure);
-      }
-    };
-    measure();
-    const onResize = () => measure();
-    window.addEventListener("resize", onResize);
-    window.addEventListener("orientationchange", onResize);
-    return () => {
-      cancelAnimationFrame(raf);
-      window.removeEventListener("resize", onResize);
-      window.removeEventListener("orientationchange", onResize);
-    };
-  }, [open, showCard, step, onInvokeAction]);
-
   // On the closing "go build" card, reveal the action bar (the tour hides it for a
   // clean stage) and pulse-highlight the Circuit AI button so the user actually
   // sees where help lives — the copy says "right here", so it has to be visible.
