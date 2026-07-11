@@ -10212,9 +10212,10 @@ body.android-optimized .zoom-btn {
                 if (!overviewKf) { if (typeof fitToScreen === 'function') fitToScreen(); return; }
                 const flowKf = Object.assign({}, overviewKf, {
                     distance: overviewKf.distance * 0.48,
-                    // Drop the look-at point a little so the flowing circuit rides UP
-                    // into the available space (above the tour card), not behind it.
-                    targetY: overviewKf.targetY - 2,
+                    // Centre stays true — the guided tour pushes view insets from the
+                    // coach card, so computeAimWithInsets() lifts the flow into the
+                    // available space above the card automatically (no magic offset).
+                    targetY: overviewKf.targetY,
                     duration: 1300, easing: 'smooth',
                 });
                 _cinematicCtrl.start(null, [cur, flowKf]);
@@ -10257,11 +10258,10 @@ body.android-optimized .zoom-btn {
             const p = comp.position;
             const dest = {
                 angleX: 0.7, angleY: 0.55, distance: 5.0,
-                // Push the part front-and-centre of the AVAILABLE space: the card sits
-                // at the bottom, so lift the look-at point ~1 unit. That centres the
-                // component in the open area above the card without shoving it up to
-                // the top edge (a bigger offset read as "out of focus").
-                targetX: p.x, targetY: p.y - 1, targetZ: p.z,
+                // Aim dead-centre on the part; the guided tour pushes view insets from
+                // the coach card, so computeAimWithInsets() lifts it into the available
+                // space above the card automatically (no per-step magic offset).
+                targetX: p.x, targetY: p.y, targetZ: p.z,
                 fov: 52, duration: 1300, easing: 'smooth',
             };
             // viaOverview: first sweep back UP to the whole-circuit view, then DOWN
