@@ -31,6 +31,11 @@
   --glass-border: 1px solid rgba(168, 216, 255, 0.26);
   --glass-border-strong: 1px solid rgba(168, 216, 255, 0.5);
   --glass-shadow: 0 12px 28px rgba(3, 8, 28, 0.5);
+  /* Legibility guarantee: with near-transparent fills the 3D scene shows
+     through, so text can wash out over a bright patch (grid lines, a glowing
+     bulb). A soft dark halo keeps every glass-surface label standing out
+     against the background — the one non-negotiable of the glass look. */
+  --glass-text-shadow: 0 1px 2px rgba(2, 6, 20, 0.72);
   --radius-control: 10px; /* small buttons */
   --radius-tab: 14px;     /* toggle tabs, cards, action buttons */
   --radius-panel: 18px;   /* drawers / bottom sheets */
@@ -908,6 +913,14 @@ body.builder-body::before {
   display: flex !important;
 }
 
+/* ...and force the Circuit AI button itself visible even if the bar was left in
+   'hidden' or 'tools' mode (those modes set display:none !important on children).
+   Otherwise the closing card reveals an empty bar and the pulse points at nothing.
+   Higher specificity than the bar-mode hide rules, so it wins. */
+.builder-shell[data-tour-active="true"][data-tour-reveal-ai="true"] .unified-action-bar > .edge-action-btn--ai {
+  display: flex !important;
+}
+
 .circuit-zoom-controls {
   position: fixed;
   bottom: calc(36px + var(--builder-safe-area-bottom, 0px));
@@ -1697,6 +1710,7 @@ body.ct-opaque-menus {
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
   color: inherit;
+  text-shadow: var(--glass-text-shadow);
   display: flex;
   flex-direction: column;
   gap: 12px;
