@@ -50,6 +50,15 @@ const PAD = 8;
 // are the next stages.)
 const BUILD_STEPS: BuildStep[] = [
   {
+    id: "welcome",
+    text: "I can show you how to build a circuit — it's easy as Pi (3.14 repeating). Ha, math joke! This is your CircuiTry3D workspace. The camera controls are so intuitive you probably already know how.",
+  },
+  {
+    id: "camera",
+    // Narrated by CAMERA_BEATS below — this text shows before the demo starts.
+    text: "Let me show you the camera controls — watch the buttons on the right.",
+  },
+  {
     id: "intro",
     text: "Now build one yourself — I'll guide every step. Drag the canvas any time to look around.",
   },
@@ -120,6 +129,39 @@ const BUILD_STEPS: BuildStep[] = [
   },
 ];
 
+// The "camera" step plays these beats in order: name a control, pulse its button,
+// and run the real camera move so the user sees exactly what it does. The
+// workspace is NOT blurred here (no spotlight target) so the motion is visible.
+type CameraBeat = {
+  text: string;
+  selector: string;
+  action: BuilderInvokeAction;
+  // How many times to fire the action for a clearly visible move.
+  reps: number;
+};
+const CAMERA_BEATS: CameraBeat[] = [
+  {
+    text: "This is Zoom In — tap + (or pinch out) to move closer.",
+    selector: '.circuit-zoom-controls button[aria-label="Zoom in"]',
+    action: "zoom-in",
+    reps: 3,
+  },
+  {
+    text: "This ⊡ centers everything back on screen — your reset view.",
+    selector: '.circuit-zoom-controls button[aria-label="Fit circuit to screen"]',
+    action: "fit-screen",
+    reps: 1,
+  },
+  {
+    text: "And this is Zoom Out — tap − (or pinch in) to pull back.",
+    selector: '.circuit-zoom-controls button[aria-label="Zoom out"]',
+    action: "zoom-out",
+    reps: 3,
+  },
+];
+// How long each beat holds before the next one.
+const BEAT_MS = 2400;
+
 export function BuilderBuildAlong({
   open,
   onClose,
@@ -159,6 +201,48 @@ export function BuilderBuildAlong({
     }
     setLeftMenu.current(Boolean(BUILD_STEPS[step]?.library) && !isPlacing);
   }, [open, step, isPlacing]);
+
+  // On the opening "welcome" step, sweep the camera once around the (empty)
+  // workspace — the intro shot. Fires on entry only.
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+    if (BUILD_STEPS[step]?.id === "welcome") {
+      onInvokeAction("tour-focus", { target: "orbit" });
+    }
+  }, [open, step, onInvokeAction]);
+
+  // The "camera" step narrates the camera controls: for each beat, pulse the
+  // button and run its real move. -1 = not running (show the step's own text).
+  const [cameraBeat, setCameraBeat] = useState(-1);
+  useEffect(() => {
+    if (!open || BUILD_STEPS[step]?.id !== "camera") {
+      setCameraBeat(-1);
+      return;
+    }
+    const timers: number[] = [];
+    const clearPulse = () =>
+      document
+        .querySelectorAll(".tutorial-control-pulse")
+        .forEach((el) => el.classList.remove("tutorial-control-pulse"));
+    CAMERA_BEATS.forEach((beat, i) => {
+      timers.push(
+        window.setTimeout(() => {
+          setCameraBeat(i);
+          clearPulse();
+          document.querySelector(beat.selector)?.classList.add("tutorial-control-pulse");
+          for (let r = 0; r < beat.reps; r++) {
+            timers.push(window.setTimeout(() => onInvokeAction(beat.action), r * 300));
+          }
+        }, i * BEAT_MS),
+      );
+    });
+    return () => {
+      timers.forEach((t) => window.clearTimeout(t));
+      clearPulse();
+    };
+  }, [open, step, onInvokeAction]);
 
   // Auto-advance the instant the real circuit state satisfies the current step.
   useEffect(() => {
@@ -281,7 +365,9 @@ export function BuilderBuildAlong({
           </div>
         </div>
         <div className="builder-tutorial-body">
-          <p className="builder-tutorial-text">{current.text}</p>
+          <p className="builder-tutorial-text">
+            {cameraBeat >= 0 ? CAMERA_BEATS[cameraBeat].text : current.text}
+          </p>
         </div>
         {isLast ? (
           <button type="button" className="builder-tour-next" onClick={onClose}>

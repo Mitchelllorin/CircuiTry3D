@@ -10210,14 +10210,41 @@ body.android-optimized .zoom-btn {
                 // centre and angle as the overview, zoomed in so the moving
                 // particles read clearly.
                 if (!overviewKf) { if (typeof fitToScreen === 'function') fitToScreen(); return; }
+                const flowDist = overviewKf.distance * 0.48;
+                const flowFov = overviewKf.fov || 52;
+                // Centre the current in the available space (above the tour card) by
+                // the SAME rule the component steps use: they lift the look-at point
+                // 1 world unit at distance 5.0 / fov 52, which pushes the subject up a
+                // fixed FRACTION of the frame height. Reproduce that fraction at the
+                // flow's own zoom so the current lands in the same sweet spot as every
+                // part, instead of a magic constant that drifts with the framing.
+                const partLiftFraction = 1 / (2 * 5.0 * Math.tan((52 * Math.PI / 180) / 2));
+                const flowVisibleHeight = 2 * flowDist * Math.tan((flowFov * Math.PI / 180) / 2);
                 const flowKf = Object.assign({}, overviewKf, {
-                    distance: overviewKf.distance * 0.48,
-                    // Drop the look-at point a little so the flowing circuit rides UP
-                    // into the available space (above the tour card), not behind it.
-                    targetY: overviewKf.targetY - 2,
+                    distance: flowDist,
+                    targetY: overviewKf.targetY - partLiftFraction * flowVisibleHeight,
                     duration: 1300, easing: 'smooth',
                 });
                 _cinematicCtrl.start(null, [cur, flowKf]);
+                return;
+            }
+            if (target === 'orbit') {
+                // Gentle cinematic sweep AROUND the (possibly empty) workspace —
+                // the build-along intro shot. Orbit the azimuth a full turn at the
+                // current framing and settle back exactly where we started, so the
+                // move is non-destructive to the user's view.
+                const at = (dAngle, dur) => ({
+                    angleX: cameraAngleX + dAngle, angleY: cameraAngleY,
+                    distance: cameraDistance,
+                    targetX: cameraTarget.x, targetY: cameraTarget.y, targetZ: cameraTarget.z,
+                    fov: camera.fov, duration: dur, easing: 'smooth',
+                });
+                _cinematicCtrl.start(null, [
+                    cur,
+                    at(Math.PI * (2 / 3), 1600),
+                    at(Math.PI * (4 / 3), 1600),
+                    at(Math.PI * 2, 1600),
+                ]);
                 return;
             }
             if (target === 'switch-light') {

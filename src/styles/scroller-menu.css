@@ -58,8 +58,10 @@
   height: 26px;
   padding: 0 8px;
   border-radius: 13px;
-  border: 1px solid var(--builder-border);
-  background: rgba(14, 12, 40, 0.7);
+  /* Unified glass standard (was hard-coded rgba, so it ignored both the shared
+     look and the "see-through menus" solid toggle). */
+  border: var(--glass-border);
+  background: var(--glass-bg-chrome);
   color: var(--builder-muted-soft);
   font-size: 10px;
   font-weight: 600;
@@ -104,8 +106,10 @@
   height: 28px;
   padding: 0 8px;
   border-radius: 8px;
-  border: 1px solid var(--builder-border);
-  background: rgba(14, 12, 40, 0.85);
+  /* Unified glass standard — the search textbox now shares the control shade
+     and responds to the solid toggle like every other surface. */
+  border: var(--glass-border);
+  background: var(--glass-bg-chrome);
   color: var(--builder-text);
   font-size: 11px;
   font-family: "DM Sans", "Inter", system-ui, sans-serif;
@@ -774,9 +778,12 @@
    When mode = 'hidden', keep ONLY the toggle floating at the right end of
    where the action bar would normally be.
    The .unified-action-bar gets data-bar-mode="hidden" and hides all children
-   except .action-bar-toggle.
+   except the cycle toggle (.action-bar-cycle) — the one control that lets the
+   user bring the buttons back. (Was ".action-bar-toggle"; the button class was
+   renamed to .action-bar-cycle and this exception was never updated, so the
+   toggle hid itself and "hidden" became a one-way trip.)
    --------------------------------------------------------------------------- */
-.unified-action-bar[data-bar-mode="hidden"] > *:not(.action-bar-toggle) {
+.unified-action-bar[data-bar-mode="hidden"] > *:not(.action-bar-cycle) {
   display: none !important;
 }
 

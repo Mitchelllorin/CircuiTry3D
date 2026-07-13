@@ -102,6 +102,20 @@
   }
 }
 
+/* Build-along: transient pulse on a control being demonstrated (e.g. the zoom
+   buttons in the camera-controls beat). Reuses the AI pulse look. */
+.tutorial-control-pulse {
+  animation: tour-ai-pulse 1.1s ease-in-out infinite;
+  z-index: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tutorial-control-pulse {
+    animation: none;
+    box-shadow: 0 0 0 3px rgba(0, 255, 136, 0.5), 0 0 18px rgba(0, 255, 136, 0.6);
+  }
+}
+
 /* Collapsed: a slim coach pill tucked in the corner, out of the way. */
 .builder-tutorial-card[data-collapsed="true"] {
   max-height: none;
