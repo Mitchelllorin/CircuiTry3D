@@ -1799,7 +1799,7 @@ body.ct-opaque-menus {
    (mirrors Controls: nav at its screen edge, toggle adjacent on the inside). */
 .builder-menu-stage-left {
   left: 0;
-  top: 44%;
+  top: 34%;
   bottom: auto;
   /* row-reverse: nav is the leftmost child (at screen-left when open),
      toggle is the rightmost child (at the toggle-width peek position when closed) */
@@ -1822,7 +1822,7 @@ body.ct-opaque-menus {
 .builder-menu-stage-right {
   right: 0;
   left: auto;
-  top: 44%;
+  top: 34%;
   bottom: auto;
   flex-direction: row; /* in row at right:0 — toggle fills the stage width when closed */
   width: var(--builder-menu-toggle-width); /* closed: only the toggle tab is visible */
@@ -5179,7 +5179,7 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
 
   /* Side panels on touch devices: use same transform-based approach as desktop */
   .builder-menu-stage-left {
-    top: 50%;
+    top: 40%;
     width: calc(var(--builder-menu-left-width) + var(--builder-menu-toggle-width));
     transform: translateX(calc(-1 * var(--builder-menu-left-width))) translateY(-50%);
   }
@@ -5189,7 +5189,7 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
   }
 
   .builder-menu-stage-right {
-    top: 50%;
+    top: 40%;
     width: var(--builder-menu-toggle-width);
     transform: translateY(-50%);
   }
