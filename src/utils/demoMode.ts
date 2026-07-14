@@ -4,23 +4,47 @@
  * VITE_DEMO_MODE=true at build time restricts the component palette to the 6
  * free components (battery, resistor, LED, switch, ground, junction).
  *
- * Two unlock paths:
- *  1. Android AAB — user purchases the one-time "premium_unlock" in-app
- *     product via Google Play.  purchasePremiumUnlock() persists the
- *     purchase in localStorage; the app reloads so IS_DEMO_MODE re-evaluates.
- *  2. Web demo — owner enters the owner password in the DemoBanner dialog.
+ * Set VITE_DEMO_MODE=true at build time (see .env.production) to enable demo
+ * mode. When the flag is absent or false the full component set is used.
  *
- * Build-time env vars:
- *   VITE_DEMO_MODE=true      — enables demo mode (set in .env.capacitor and
- *                               via CI variables for the web preview build).
- *   VITE_OWNER_KEY_HASH=...  — SHA-256 hex digest of the owner password
- *                               (GitHub Actions secret; optional).
+ * The owner can unlock the full version at runtime by authenticating via the
+ * /api/owner endpoint. The unlock is persisted in localStorage under
+ * OWNER_STORAGE_KEY and is checked on every page load.
  *
- * To reset back to demo mode append ?demo_reset to any URL.
+ * To reset back to demo mode append ?demo_reset to any URL (e.g.
+ * https://circuitry3d.vercel.app/?demo_reset).
  */
 
 /** localStorage key that stores the owner-unlock flag. */
 export const OWNER_STORAGE_KEY = "circuitry3d_owner_unlocked";
+
+/** Returns true when the owner has unlocked full access via /api/owner. */
+function isOwnerUnlocked(): boolean {
+  try {
+    // Handle ?demo_reset — clear the unlock and redirect to the clean URL.
+    if (typeof location !== "undefined" && new URLSearchParams(location.search).has("demo_reset")) {
+      localStorage.removeItem(OWNER_STORAGE_KEY);
+      const url = new URL(location.href);
+      url.searchParams.delete("demo_reset");
+      location.replace(url.toString());
+      return false;
+    }
+    return (
+      typeof localStorage !== "undefined" &&
+      localStorage.getItem(OWNER_STORAGE_KEY) === "true"
+    );
+  } catch {
+    return false;
+  }
+}
+
+const BUILD_IS_DEMO: boolean = import.meta.env.VITE_DEMO_MODE === "true";
+
+/**
+ * True when the app is running in demo/preview mode.
+ * False when the build flag is off OR when the owner has authenticated.
+ */
+export const IS_DEMO_MODE: boolean = BUILD_IS_DEMO && !isOwnerUnlocked();
 
 /**
  * Returns true when the owner has unlocked full access.

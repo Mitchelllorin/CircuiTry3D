@@ -366,6 +366,41 @@ body {
   flex: 1;
 }
 
+/* Arena page — full-height iframe wrapper for arena.html */
+.arena-html-page {
+  flex: 1;
+  display: flex;
+  min-height: calc(100vh - 72px - var(--app-safe-area-top));
+  min-height: calc(100dvh - 72px - var(--app-safe-area-top));
+}
+
+.arena-html-page iframe {
+  flex: 1;
+}
+
+/* When the React shell is in arena mode, arena.html owns the full viewport
+   (same pattern as is-landing). No GlobalModeBar/TipsTicker/footer renders. */
+.app-shell.is-arena .app-content {
+  overflow: hidden;
+  padding: 0;
+}
+
+.app-shell.is-arena .app-content > * {
+  padding: 0;
+  overflow: hidden;
+}
+
+.app-shell.is-arena .arena-html-page {
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: 0;
+}
+
+.app-shell.is-arena .arena-html-page iframe {
+  height: 100vh;
+  height: 100dvh;
+}
+
 .app-shell.is-landing .app-content {
   overflow: visible;
 }

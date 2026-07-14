@@ -130,29 +130,21 @@ function AppLayout() {
   const { t } = useTranslation();
   const isLanding = location.pathname === "/";
   const isWorkspace = location.pathname === "/app";
-  const isPromo = location.pathname === "/promo";
-  const isPromo2 = location.pathname === "/promo2";
-  const isPromo3 = location.pathname === "/promo3";
-  const isPromo4 = location.pathname === "/promo4";
-  const isPromo5 = location.pathname === "/promo5";
-  const isPromo7 = location.pathname === "/promo7";
-  const isPromo9 = location.pathname === "/promo9";
-  const isAnyPromo = isPromo || isPromo2 || isPromo3 || isPromo4 || isPromo5 || isPromo7 || isPromo9;
+  // arena.html is a full-screen self-contained 3D app (like landing.html).
+  // Hide the React shell chrome (GlobalModeBar, TipsTicker, footer) so
+  // arena.html's own navigation is the only nav the user sees.
+  const isArena = location.pathname === "/arena";
   const shellRef = useRef<HTMLDivElement>(null);
 
   const shellClass = [
     "app-shell",
     isLanding && "is-landing",
     isWorkspace && "is-workspace",
-    isPromo && "is-promo",
-    isPromo2 && "is-promo2",
-    isPromo3 && "is-promo3",
-    isPromo4 && "is-promo4",
-    isPromo5 && "is-promo5",
-    isPromo7 && "is-promo7",
-    isPromo9 && "is-promo9",
+    isArena && "is-arena",
   ].filter(Boolean).join(" ");
-  const contentClass = isLanding || isAnyPromo ? "app-content is-landing" : "app-content";
+  // Arena uses its own full-viewport CSS scoped to `.app-shell.is-arena` in layout.css.
+  // Only landing.html needs the `is-landing` content class.
+  const contentClass = isLanding ? "app-content is-landing" : "app-content";
 
   useLayoutEffect(() => {
     const shell = shellRef.current;
@@ -187,15 +179,15 @@ function AppLayout() {
       ref={shellRef}
       style={IS_DEMO_MODE ? { paddingTop: "var(--demo-banner-height, 38px)" } : undefined}
     >
-      {/* Global Mode Bar - shown on all pages except landing and promo */}
-      {!isLanding && !isAnyPromo && <GlobalModeBar />}
+      {/* Global Mode Bar - shown on all pages except landing and the arena (which has its own nav) */}
+      {!isLanding && !isArena && <GlobalModeBar />}
       <main className={contentClass}>
         <Outlet />
       </main>
-      {/* Tips & facts ticker - workspace only */}
-      {isWorkspace && <TipsTicker />}
-      {/* Site footer with legal links - shown on all pages except landing, workspace & promo */}
-      {!isLanding && !isWorkspace && !isAnyPromo && (
+      {/* Tips & facts ticker - shown on all pages except landing and arena */}
+      {!isLanding && !isArena && <TipsTicker />}
+      {/* Site footer with legal links - shown on all pages except landing, workspace, and arena */}
+      {!isLanding && !isWorkspace && !isArena && (
         <footer className="app-footer">
           <Link to="/privacy" className="app-footer-link">{t("footer.privacyPolicy")}</Link>
           <span className="app-footer-sep" aria-hidden="true">·</span>

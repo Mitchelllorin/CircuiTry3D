@@ -1218,1369 +1218,140 @@
       color: #7fffd4;
     }
 
-/* ── Panel Tabs ──────────────────────────────────────────────────────── */
-.panel-tabs {
-  display: flex;
-  gap: 3px;
-  margin-bottom: 4px;
-  flex-shrink: 0;
-  padding: 4px;
-  background: rgba(5, 10, 25, 0.55);
-  border-radius: 14px;
-  border: 1px solid rgba(136, 204, 255, 0.10);
-}
-.panel-tab-btn {
-  flex: 1;
-  position: relative;
-  padding: 6px 3px;
-  border-radius: 10px;
-  border: 1px solid transparent;
-  background: transparent;
-  color: rgba(148, 163, 184, 0.6);
-  font-size: 9.5px;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  text-align: center;
-  cursor: pointer;
-  transition: background 0.2s var(--ease-out), color 0.2s, border-color 0.18s;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  line-height: 1.3;
-}
-.panel-tab-btn.active {
-  background: rgba(30, 50, 80, 0.85);
-  border-color: rgba(56, 189, 248, 0.30);
-  color: #7dd3fc;
-  box-shadow: 0 1px 6px rgba(0,0,0,0.45), 0 0 0 1px rgba(56,189,248,0.08) inset;
-}
-.panel-tab-btn:hover:not(.active) {
-  background: rgba(56, 189, 248, 0.07);
-  color: rgba(224, 242, 254, 0.8);
-}
-.tab-badge {
-  position: absolute;
-  top: 3px;
-  right: 4px;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #39ffb7;
-  box-shadow: 0 0 6px rgba(57, 255, 183, 0.8);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  pointer-events: none;
-}
-.tab-badge.visible {
-  opacity: 1;
-}
-.panel-tab-pane {
-  display: none;
-}
-.panel-tab-pane.active {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
+    /* ── FUSE™ Tier Gating UI ──────────────────────────────────────────────── */
+    .fuse-tier-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 0.58rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      pointer-events: auto;
+      cursor: pointer;
+      border: 1px solid;
+      transition: opacity 0.18s ease, box-shadow 0.18s ease;
+      user-select: none;
+      background: none;
+      font-family: inherit;
+      line-height: 1.6;
+    }
 
-/* ── Drop Zone ─────────────────────────────────────────────────────── */
-.import-dropzone {
-  border: 2px dashed rgba(136, 204, 255, 0.35);
-  border-radius: 12px;
-  padding: 16px 12px;
-  text-align: center;
-  cursor: pointer;
-  transition: border-color 0.2s ease, background 0.2s ease;
-  background: rgba(8, 15, 28, 0.4);
-  position: relative;
-}
-.import-dropzone:hover {
-  border-color: rgba(57, 255, 183, 0.45);
-  background: rgba(5, 25, 18, 0.5);
-}
-.import-dropzone.drag-over {
-  border-color: rgba(57, 255, 183, 0.7);
-  background: rgba(5, 30, 22, 0.45);
-}
-.import-dropzone input[type="file"] {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  cursor: pointer;
-  width: 100%;
-  height: 100%;
-}
-.import-dropzone-label {
-  font-size: 12px;
-  color: rgba(148, 163, 184, 0.8);
-  pointer-events: none;
-}
-.import-dropzone-label strong {
-  color: #7dd3fc;
-}
-.import-url-row {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-}
-.import-url-row input {
-  flex: 1;
-  padding: 7px 10px;
-  border-radius: 9px;
-  border: 1px solid rgba(51, 65, 85, 0.9);
-  background: rgba(8, 15, 28, 0.92);
-  color: var(--text-strong);
-  font-size: 12px;
-}
-.import-url-btn {
-  padding: 7px 12px;
-  border-radius: 9px;
-  border: 1px solid rgba(56, 189, 248, 0.4);
-  background: rgba(14, 116, 144, 0.2);
-  color: #7dd3fc;
-  font-size: 11px;
-  font-weight: 700;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background 0.15s;
-}
-.import-url-btn:hover { background: rgba(14, 116, 144, 0.38); }
-.import-paste-area {
-  width: 100%;
-  min-height: 72px;
-  padding: 8px 10px;
-  border-radius: 10px;
-  border: 1px solid rgba(51, 65, 85, 0.9);
-  background: rgba(8, 15, 28, 0.92);
-  color: var(--text-strong);
-  font-size: 11px;
-  font-family: "Inter", monospace;
-  resize: vertical;
-  box-sizing: border-box;
-}
-.import-validation-summary {
-  font-size: 11px;
-  padding: 7px 10px;
-  border-radius: 8px;
-  border: 1px solid rgba(136, 204, 255, 0.2);
-  background: rgba(12, 22, 42, 0.65);
-  color: rgba(148, 163, 184, 0.9);
-  display: none;
-}
-.import-validation-summary.visible { display: block; }
-.import-validation-summary.ok { border-color: rgba(52, 211, 153, 0.4); color: #6ee7b7; }
-.import-validation-summary.warn { border-color: rgba(251, 146, 60, 0.4); color: #fed7aa; }
+    .fuse-tier-badge:hover {
+      box-shadow: 0 0 10px currentColor;
+      opacity: 0.9;
+    }
 
-/* Vendor badge colors */
-.vendor-badge {
-  display: inline-block;
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  margin-left: 4px;
-  vertical-align: middle;
-}
-.vendor-ti { background: rgba(220, 38, 38, 0.2); border: 1px solid rgba(220,38,38,0.4); color: #fca5a5; }
-.vendor-infineon { background: rgba(6, 182, 212, 0.2); border: 1px solid rgba(6,182,212,0.4); color: #67e8f9; }
-.vendor-stmicro { background: rgba(59, 130, 246, 0.2); border: 1px solid rgba(59,130,246,0.4); color: #93c5fd; }
-.vendor-vishay { background: rgba(250, 204, 21, 0.2); border: 1px solid rgba(250,204,21,0.4); color: #fde68a; }
-.vendor-murata { background: rgba(167, 139, 250, 0.2); border: 1px solid rgba(167,139,250,0.4); color: #c4b5fd; }
-.vendor-onsemi { background: rgba(52, 211, 153, 0.2); border: 1px solid rgba(52,211,153,0.4); color: #6ee7b7; }
-.vendor-ref { background: rgba(100, 116, 139, 0.2); border: 1px solid rgba(100,116,139,0.4); color: #94a3b8; }
+    .fuse-tier-free         { border-color: rgba(148,163,184,0.4); color: #94a3b8; background: rgba(148,163,184,0.08); }
+    .fuse-tier-student      { border-color: rgba(57,255,183,0.5);  color: #39ffb7; background: rgba(57,255,183,0.10); }
+    .fuse-tier-educator     { border-color: rgba(96,165,250,0.55); color: #93c5fd; background: rgba(96,165,250,0.10); }
+    .fuse-tier-institutional{ border-color: rgba(168,85,247,0.6);  color: #c4b5fd; background: rgba(168,85,247,0.10); }
 
-/* ── Metric card health colors ───────────────────────────────────────── */
-.metric-card.health-safe .metric-value { color: #4ade80; }
-.metric-card.health-warn .metric-value { color: #fbbf24; }
-.metric-card.health-critical .metric-value { color: #f87171; }
-.metric-card.health-safe { border-color: rgba(74, 222, 128, 0.4); }
-.metric-card.health-warn { border-color: rgba(251, 191, 36, 0.4); }
-.metric-card.health-critical { border-color: rgba(248, 113, 113, 0.4); }
+    .fuse-locked {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 11px;
+      color: rgba(148, 163, 184, 0.6);
+      padding: 7px 9px;
+      border-radius: 8px;
+      border: 1px dashed rgba(136, 204, 255, 0.2);
+      background: rgba(8, 15, 28, 0.4);
+    }
 
-/* Abs max exceeded banner */
-.abs-max-banner {
-  display: none;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 12px;
-  border-radius: 10px;
-  background: rgba(127, 29, 29, 0.35);
-  border: 1px solid rgba(239, 68, 68, 0.5);
-  color: #fca5a5;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  margin-bottom: 8px;
-  animation: failure-card-in 0.3s var(--spring) both;
-}
-.abs-max-banner.visible {
-  display: flex;
-}
+    .fuse-locked-icon {
+      opacity: 0.55;
+    }
 
-/* Tolerance range sub-line */
-.metric-tolerance {
-  font-size: 10px;
-  color: rgba(148, 163, 184, 0.6);
-  font-style: italic;
-}
+    .fuse-upgrade-btn {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 150, 50, 0.6);
+      color: #fb923c;
+      background: rgba(255, 150, 50, 0.1);
+      cursor: pointer;
+      text-decoration: none;
+      white-space: nowrap;
+      pointer-events: auto;
+      transition: background 0.15s ease;
+      flex-shrink: 0;
+    }
 
-/* ── FUSE Test Presets ───────────────────────────────────────────────── */
-.preset-row {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-.preset-row label {
-  font-size: 11px;
-  color: var(--text-muted);
-  white-space: nowrap;
-}
-.preset-row select {
-  flex: 1;
-  padding: 7px 8px;
-  border-radius: 9px;
-  border: 1px solid rgba(51, 65, 85, 0.9);
-  background: rgba(8, 15, 28, 0.92);
-  color: var(--text-strong);
-  font-size: 12px;
-}
-.preset-locked .row input {
-  opacity: 0.55;
-  pointer-events: none;
-}
+    .fuse-upgrade-btn:hover {
+      background: rgba(255, 150, 50, 0.2);
+    }
 
-/* ── Stress Timeline Strip ───────────────────────────────────────────── */
-.stress-timeline {
-  position: fixed;
-  bottom: calc(12px + var(--safe-bottom));
-  left: calc(360px + var(--safe-left) + 16px);
-  right: calc(16px + var(--safe-right));
-  height: 76px;
-  background: rgba(8, 12, 24, 0.82);
-  border: 1px solid rgba(96, 165, 250, 0.28);
-  border-radius: 12px;
-  backdrop-filter: blur(14px);
-  z-index: 5;
-  display: flex;
-  flex-direction: column;
-  padding: 8px 12px 6px;
-  gap: 4px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
-}
-.stress-timeline-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  flex-shrink: 0;
-}
-.stress-timeline-label {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: rgba(148, 163, 184, 0.75);
-}
-.stress-timeline-controls {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-}
-.stress-ctrl-btn {
-  padding: 3px 9px;
-  border-radius: 6px;
-  border: 1px solid rgba(136, 204, 255, 0.3);
-  background: rgba(12, 22, 42, 0.5);
-  color: #7dd3fc;
-  font-size: 11px;
-  cursor: pointer;
-  transition: background 0.15s;
-}
-.stress-ctrl-btn:hover { background: rgba(14, 116, 144, 0.3); }
-.stress-timeline-canvas {
-  flex: 1;
-  width: 100%;
-  cursor: crosshair;
-  border-radius: 6px;
-  display: block;
-}
+    /* Plan Preview selector inside the panel */
+    .plan-preview-row {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
 
-/* ── Fuse Sizing Calculator ─────────────────────────────────────────── */
-.fuse-calc {
-  background: rgba(8, 15, 28, 0.55);
-  border: 1px solid rgba(251, 191, 36, 0.3);
-  border-radius: 12px;
-  padding: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.fuse-calc-title {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: #fde68a;
-}
-.fuse-calc-result {
-  padding: 8px 10px;
-  border-radius: 8px;
-  background: rgba(251, 191, 36, 0.1);
-  border: 1px solid rgba(251, 191, 36, 0.3);
-  font-size: 12px;
-  color: #fde68a;
-  min-height: 36px;
-}
-.fuse-wire-coord {
-  padding: 6px 10px;
-  border-radius: 8px;
-  background: rgba(8, 15, 28, 0.5);
-  border: 1px solid rgba(136, 204, 255, 0.18);
-  font-size: 11px;
-  color: rgba(148, 163, 184, 0.9);
-  min-height: 28px;
-}
+    .plan-chip {
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      cursor: pointer;
+      border: 1px solid rgba(136, 204, 255, 0.25);
+      color: rgba(148, 163, 184, 0.7);
+      background: rgba(12, 22, 42, 0.4);
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
+    }
 
-/* ── Mobile bottom sheet ─────────────────────────────────────────────── */
-@media (max-width: 700px), (pointer: coarse) {
-  .panel {
-    top: auto !important;
-    left: 0 !important;
-    right: 0 !important;
-    bottom: 0 !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    max-height: 55vh !important;
-    border-radius: 20px 20px 0 0;
-    border-bottom: none;
-    transform: translateY(calc(100% - 52px));
-    transition: transform 0.32s cubic-bezier(0.32, 0, 0.67, 0);
-    padding-top: 10px;
-  }
-  .panel.sheet-open {
-    transform: translateY(0);
-  }
-  .panel-drag-handle {
-    display: block;
-  }
-  .stress-timeline {
-    left: 8px;
-    right: 8px;
-    bottom: calc(60px + var(--safe-bottom));
-  }
-}
-.panel-drag-handle {
-  display: none;
-  width: 40px;
-  height: 5px;
-  border-radius: 999px;
-  background: rgba(136, 204, 255, 0.3);
-  margin: 0 auto 8px;
-  cursor: grab;
-  flex-shrink: 0;
-}
-/* Panel resize handle (desktop) */
-.panel-resize-handle {
-  position: absolute;
-  top: 0;
-  right: -5px;
-  width: 10px;
-  height: 100%;
-  cursor: ew-resize;
-  z-index: 10;
-}
+    .plan-chip:hover {
+      border-color: rgba(136, 204, 255, 0.5);
+      color: #e2e8f0;
+    }
 
-/* ── Catalog browser (Featured/Catalog tab) ──────────────────────────── */
-.catalog-search-row {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-}
-.catalog-search-input {
-  flex: 1;
-  padding: 7px 10px;
-  border-radius: 9px;
-  border: 1px solid rgba(51, 65, 85, 0.9);
-  background: rgba(8, 15, 28, 0.92);
-  color: var(--text-strong);
-  font-size: 12px;
-}
-.catalog-pagination {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-  font-size: 11px;
-  color: var(--text-muted);
-}
-.catalog-page-btn {
-  padding: 3px 8px;
-  border-radius: 6px;
-  border: 1px solid rgba(136, 204, 255, 0.3);
-  background: rgba(12, 22, 42, 0.5);
-  color: #7dd3fc;
-  font-size: 11px;
-  cursor: pointer;
-  transition: background 0.15s;
-}
-.catalog-page-btn:disabled { opacity: 0.35; cursor: default; }
+    .plan-chip.active {
+      background: rgba(57, 255, 183, 0.12);
+      border-color: rgba(57, 255, 183, 0.5);
+      color: #39ffb7;
+    }
 
-/* ── Battle FAB (mobile / coarse-pointer) ───────────────────────────── */
-.battle-fab {
-  display: none;
-}
-@media (pointer: coarse), (max-width: 700px) {
-  .battle-fab {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    position: fixed;
-    bottom: calc(62px + var(--safe-bottom));
-    right: calc(16px + var(--safe-right));
-    z-index: 10;
-    padding: 0 26px;
-    min-height: 56px;
-    border-radius: 999px;
-    border: 1.5px solid rgba(94, 234, 212, 0.6);
-    background: rgba(15, 23, 42, 0.96);
-    color: #5eead4;
-    font-weight: 800;
-    font-size: 16px;
-    letter-spacing: 0.04em;
-    box-shadow: 0 0 20px rgba(94, 234, 212, 0.25), 0 8px 24px rgba(0,0,0,0.65);
-    cursor: pointer;
-    touch-action: manipulation;
-    backdrop-filter: blur(12px);
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
-  }
-  .battle-fab:active {
-    transform: scale(0.95);
-  }
-  .battle-fab.battle-mode {
-    color: #ff8b2b;
-    border-color: rgba(255, 139, 43, 0.65);
-    box-shadow: 0 0 22px rgba(255, 139, 43, 0.3), 0 8px 24px rgba(0,0,0,0.65);
-  }
-}
+    .plan-preview-note {
+      font-size: 10px;
+      color: rgba(100, 116, 139, 0.75);
+      line-height: 1.5;
+      margin-top: 2px;
+    }
 
-/* ── Battle result overlay ──────────────────────────────────────────── */
-.battle-result-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 200;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  background: rgba(0, 0, 0, 0.82);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.3s ease;
-  will-change: opacity;
-}
-.battle-result-overlay.active {
-  opacity: 1;
-  pointer-events: auto;
-}
-.battle-result-trophy {
-  font-size: clamp(56px, 18vw, 88px);
-  animation: trophy-pop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) both;
-}
-.battle-result-title {
-  font-size: clamp(26px, 9vw, 48px);
-  font-weight: 900;
-  letter-spacing: -0.02em;
-  color: #fbbf24;
-  text-shadow: 0 0 22px rgba(251, 191, 36, 0.75), 0 0 46px rgba(251, 191, 36, 0.3);
-  animation: slide-up 0.4s 0.14s cubic-bezier(0.34, 1.56, 0.64, 1) both;
-  text-align: center;
-  padding: 0 16px;
-}
-.battle-result-title.tie {
-  color: #94a3b8;
-  text-shadow: none;
-}
-.battle-result-winner-name {
-  font-size: clamp(13px, 4.5vw, 22px);
-  font-weight: 700;
-  color: #f8fafc;
-  opacity: 0.92;
-  text-align: center;
-  padding: 0 24px;
-  animation: slide-up 0.4s 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) both;
-}
-.battle-result-loser-line {
-  font-size: clamp(11px, 3.2vw, 15px);
-  color: rgba(148, 163, 184, 0.65);
-  text-align: center;
-  padding: 0 24px;
-  animation: slide-up 0.4s 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
-}
-.battle-result-tap-hint {
-  margin-top: 20px;
-  font-size: 11px;
-  color: rgba(148, 163, 184, 0.45);
-  animation: slide-up 0.4s 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
-}
-@keyframes trophy-pop {
-  from { opacity: 0; transform: scale(0.25) rotate(-18deg); }
-  to   { opacity: 1; transform: scale(1) rotate(0deg); }
-}
-@keyframes slide-up {
-  from { opacity: 0; transform: translateY(18px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
+    /* "Powered by FUSE™" footer */
+    .fuse-footer {
+      text-align: center;
+      font-size: 10px;
+      color: rgba(100, 116, 139, 0.72);
+      letter-spacing: 0.06em;
+      padding: 10px 8px 4px;
+      border-top: 1px solid rgba(136, 204, 255, 0.1);
+    }
 
-/* ── Outcome badges (winner / loser) ────────────────────────────────── */
-.outcome-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  padding: 2px 9px;
-  border-radius: 999px;
-  font-size: 9px;
-  font-weight: 800;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  margin-left: 8px;
-  vertical-align: middle;
-  animation: badge-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both;
-}
-.outcome-winner {
-  background: rgba(251, 191, 36, 0.18);
-  border: 1px solid rgba(251, 191, 36, 0.55);
-  color: #fbbf24;
-}
-.outcome-loser {
-  background: rgba(239, 68, 68, 0.15);
-  border: 1px solid rgba(239, 68, 68, 0.4);
-  color: #fca5a5;
-}
-.outcome-tie {
-  background: rgba(148, 163, 184, 0.1);
-  border: 1px solid rgba(148, 163, 184, 0.35);
-  color: #94a3b8;
-}
-@keyframes badge-in {
-  from { opacity: 0; transform: scale(0.7); }
-  to   { opacity: 1; transform: scale(1); }
-}
+    .fuse-footer-brand {
+      color: #ff9944;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+    }
 
-/* ── Battle result banner (inside FUSE tab) ─────────────────────────── */
-.battle-result-banner {
-  display: none;
-  flex-direction: column;
-  align-items: center;
-  gap: 5px;
-  padding: 14px 16px;
-  border-radius: 14px;
-  background: rgba(251, 191, 36, 0.08);
-  border: 1.5px solid rgba(251, 191, 36, 0.35);
-  text-align: center;
-  animation: failure-card-in 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
-}
-.battle-result-banner.visible { display: flex; }
-.battle-result-banner.tie {
-  background: rgba(148, 163, 184, 0.07);
-  border-color: rgba(148, 163, 184, 0.28);
-}
-.battle-result-banner-icon { font-size: 26px; }
-.battle-result-banner-title {
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: #fbbf24;
-}
-.battle-result-banner.tie .battle-result-banner-title { color: #94a3b8; }
-.battle-result-banner-desc {
-  font-size: 11px;
-  color: rgba(148, 163, 184, 0.8);
-  line-height: 1.4;
-}
+    .fuse-footer a {
+      color: #39ffb7;
+      text-decoration: none;
+    }
 
-/* ── Run/Compare button: compare-mode highlight ─────────────────────── */
-#btn-run.battle-mode {
-  border-color: rgba(56, 189, 248, 0.65);
-  color: #38bdf8;
-  box-shadow: 0 0 14px rgba(56, 189, 248, 0.22);
-}
-
-/* ── Workflow step breadcrumb ────────────────────────────────────────── */
-.workflow-steps {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 6px 10px;
-  background: rgba(5, 10, 25, 0.55);
-  border-radius: 10px;
-  border: 1px solid rgba(136, 204, 255, 0.10);
-  margin-bottom: 8px;
-  flex-shrink: 0;
-}
-.workflow-step {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  color: rgba(148, 163, 184, 0.45);
-  transition: color 0.3s ease, opacity 0.3s ease;
-  white-space: nowrap;
-}
-.workflow-step.active {
-  color: #38bdf8;
-  animation: step-pulse 2s ease-in-out infinite;
-}
-.workflow-step.done {
-  color: #34d399;
-  opacity: 0.75;
-}
-.workflow-step-num {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  font-size: 9px;
-  font-weight: 900;
-  border: 1.5px solid currentColor;
-  flex-shrink: 0;
-}
-.workflow-step.done .workflow-step-num {
-  background: rgba(52, 211, 153, 0.2);
-}
-.workflow-step.done .workflow-step-num::after {
-  content: "✓";
-  font-size: 8px;
-}
-.workflow-step.done .workflow-step-num span { display: none; }
-.workflow-step-arrow {
-  font-size: 8px;
-  color: rgba(148, 163, 184, 0.28);
-  margin: 0 2px;
-}
-@keyframes step-pulse {
-  0%, 100% { opacity: 1; }
-  50%       { opacity: 0.65; }
-}
-
-/* ── First-run guided tooltip ────────────────────────────────────────── */
-.first-run-tooltip {
-  position: fixed;
-  z-index: 100;
-  top: calc(164px + var(--safe-top));
-  left: calc(16px + var(--safe-left));
-  width: 340px;
-  max-width: calc(100vw - 32px);
-  background: rgba(8, 20, 44, 0.97);
-  border: 1px solid rgba(57, 255, 183, 0.45);
-  border-radius: 14px;
-  padding: 14px 16px;
-  box-shadow: 0 0 0 1px rgba(57,255,183,0.12), 0 12px 40px rgba(0,0,0,0.7);
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  animation: tooltip-in 0.4s var(--spring) both;
-}
-.first-run-tooltip.hidden {
-  display: none;
-}
-.first-run-tooltip-icon { font-size: 22px; line-height: 1; }
-.first-run-tooltip-body {
-  font-size: 12px;
-  line-height: 1.6;
-  color: rgba(200, 220, 255, 0.92);
-}
-.first-run-tooltip-body strong { color: #39ffb7; }
-.first-run-tooltip-dismiss {
-  align-self: flex-end;
-  padding: 5px 12px;
-  border-radius: 999px;
-  border: 1px solid rgba(57, 255, 183, 0.35);
-  background: rgba(57, 255, 183, 0.08);
-  color: #39ffb7;
-  font-size: 11px;
-  font-weight: 700;
-  cursor: pointer;
-  letter-spacing: 0.06em;
-  transition: background 0.15s;
-}
-.first-run-tooltip-dismiss:hover { background: rgba(57, 255, 183, 0.18); }
-@keyframes tooltip-in {
-  from { opacity: 0; transform: translateY(-8px) scale(0.97); }
-  to   { opacity: 1; transform: translateY(0) scale(1); }
-}
-
-/* ── Scene hint overlay ──────────────────────────────────────────────── */
-.scene-hint {
-  position: fixed;
-  bottom: calc(16px + var(--safe-bottom));
-  right: calc(16px + var(--safe-right));
-  z-index: 5;
-  background: rgba(5, 10, 25, 0.82);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(56, 189, 248, 0.28);
-  border-radius: 12px;
-  padding: 8px 14px;
-  font-size: 11px;
-  color: rgba(148, 163, 184, 0.88);
-  pointer-events: none;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  animation: scene-hint-in 0.5s 0.3s var(--ease-out) both;
-}
-.scene-hint.fade-out {
-  animation: scene-hint-out 0.6s var(--ease-out) both;
-}
-.scene-hint.hidden { display: none; }
-@keyframes scene-hint-in {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-@keyframes scene-hint-out {
-  from { opacity: 1; transform: translateY(0); }
-  to   { opacity: 0; transform: translateY(8px); }
-}
-
-/* ── Component name labels over 3D scene ─────────────────────────────── */
-.scene-label {
-  position: fixed;
-  z-index: 2;
-  pointer-events: none;
-  will-change: transform;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 3px;
-  transition: opacity 0.3s ease;
-}
-.scene-label.hidden { opacity: 0; pointer-events: none; }
-.scene-label-slot {
-  font-size: 9px;
-  font-weight: 900;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: #39ffb7;
-  background: rgba(4, 40, 30, 0.82);
-  border: 1px solid rgba(57, 255, 183, 0.45);
-  border-radius: 6px;
-  padding: 2px 7px;
-  line-height: 1.4;
-}
-.scene-label-slot.slot-b { color: #38bdf8; background: rgba(4, 20, 50, 0.82); border-color: rgba(56, 189, 248, 0.45); }
-.scene-label-name {
-  font-size: 10px;
-  font-weight: 700;
-  color: rgba(226, 232, 240, 0.9);
-  background: rgba(5, 10, 25, 0.72);
-  border-radius: 5px;
-  padding: 2px 7px;
-  max-width: 120px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  text-align: center;
-}
-.scene-label-line {
-  width: 1px;
-  height: 16px;
-  background: linear-gradient(to bottom, rgba(57, 255, 183, 0.5), transparent);
-}
-.scene-label.slot-b .scene-label-line { background: linear-gradient(to bottom, rgba(56, 189, 248, 0.5), transparent); }
-
-/* ── Import section collapse ─────────────────────────────────────────── */
-.import-toggle-btn {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 7px 12px;
-  border-radius: 999px;
-  border: 1px solid rgba(136, 204, 255, 0.3);
-  background: rgba(12, 22, 42, 0.35);
-  color: rgba(148, 163, 184, 0.85);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  cursor: pointer;
-  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
-  text-transform: uppercase;
-}
-.import-toggle-btn:hover {
-  background: rgba(24, 32, 60, 0.55);
-  border-color: rgba(136, 204, 255, 0.5);
-  color: var(--text-strong);
-}
-.import-methods {
-  display: none;
-  flex-direction: column;
-  gap: 8px;
-}
-.import-methods.expanded { display: flex; }
-
-/* ── Branded components section collapse ──────────────────────────────── */
-.menu-toggle-btn {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 7px 12px;
-  border-radius: 999px;
-  border: 1px solid rgba(136, 204, 255, 0.3);
-  background: rgba(12, 22, 42, 0.35);
-  color: rgba(148, 163, 184, 0.85);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  cursor: pointer;
-  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
-  text-transform: uppercase;
-}
-.menu-toggle-btn:hover {
-  background: rgba(24, 32, 60, 0.55);
-  border-color: rgba(136, 204, 255, 0.5);
-  color: var(--text-strong);
-}
-.branded-components-menu {
-  display: none;
-  flex-direction: column;
-  gap: 8px;
-}
-.branded-components-menu.expanded { display: flex; }
-
-/* ── In-panel CTA buttons ────────────────────────────────────────────── */
-.tab-cta-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  width: 100%;
-  padding: 12px 16px;
-  border-radius: 14px;
-  border: 1px solid rgba(57, 255, 183, 0.45);
-  background: rgba(4, 40, 30, 0.35);
-  color: #39ffb7;
-  font-size: 13px;
-  font-weight: 800;
-  letter-spacing: 0.02em;
-  cursor: pointer;
-  transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.15s var(--spring);
-  margin-top: 4px;
-}
-.tab-cta-btn:hover {
-  background: rgba(4, 40, 30, 0.6);
-  box-shadow: 0 0 22px rgba(57, 255, 183, 0.18);
-  transform: translateY(-1px);
-}
-.tab-cta-btn:active { transform: scale(0.98); }
-.tab-cta-btn.run-cta {
-  border-color: rgba(57, 255, 183, 0.65);
-  box-shadow: 0 0 16px rgba(57, 255, 183, 0.15), inset 0 1px 0 rgba(255,255,255,0.04);
-  font-size: 14px;
-}
-.tab-cta-btn.secondary {
-  border-color: rgba(136, 204, 255, 0.3);
-  background: rgba(12, 22, 42, 0.35);
-  color: #94a3b8;
-  font-size: 12px;
-}
-.tab-cta-btn.secondary:hover { color: var(--text-strong); }
-
-/* ── Empty-state CTA in Metrics/FUSE tabs ────────────────────────────── */
-.tab-empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  padding: 24px 16px;
-  text-align: center;
-}
-.tab-empty-state-icon { font-size: 32px; opacity: 0.6; }
-.tab-empty-state-text {
-  font-size: 12px;
-  color: rgba(148, 163, 184, 0.7);
-  line-height: 1.5;
-}
-
-/* ── Metric annotation (contextual micro-copy) ───────────────────────── */
-.metric-annotation {
-  font-size: 9.5px;
-  color: rgba(100, 116, 139, 0.8);
-  line-height: 1.35;
-  font-style: italic;
-  margin-top: 1px;
-}
-
-/* ── FUSE severity legend ────────────────────────────────────────────── */
-.fuse-legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  padding: 10px 12px;
-  background: rgba(5, 8, 20, 0.55);
-  border-radius: 10px;
-  border: 1px solid rgba(136, 204, 255, 0.10);
-  margin-bottom: 4px;
-}
-.fuse-legend-item {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  cursor: help;
-  border-radius: 999px;
-  padding: 3px 8px;
-  border: 1px solid transparent;
-  transition: border-color 0.15s ease, background 0.15s ease;
-}
-.fuse-legend-item:hover {
-  background: rgba(136, 204, 255, 0.06);
-  border-color: rgba(136, 204, 255, 0.2);
-}
-.fuse-legend-item.l-safe     { color: #34d399; }
-.fuse-legend-item.l-stressed { color: #fbbf24; }
-.fuse-legend-item.l-warning  { color: #fb923c; }
-.fuse-legend-item.l-critical { color: #f87171; }
-.fuse-legend-item.l-destroyed { color: #fef2f2; }
-
-/* ── Fuse sizing calc shortcut in FUSE tab ───────────────────────────── */
-.fuse-calc-shortcut {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 9px 12px;
-  border-radius: 10px;
-  border: 1px solid rgba(251, 146, 60, 0.3);
-  background: rgba(124, 45, 18, 0.1);
-  color: #fed7aa;
-  font-size: 11px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: background 0.2s ease, border-color 0.2s ease;
-  letter-spacing: 0.04em;
-}
-.fuse-calc-shortcut:hover {
-  background: rgba(124, 45, 18, 0.22);
-  border-color: rgba(251, 146, 60, 0.55);
-}
-
-/* ── Compare result banner: updated wording ──────────────────────────── */
-.outcome-badge.outcome-winner { }
-.outcome-badge.outcome-better {
-  background: rgba(52, 211, 153, 0.15);
-  border: 1px solid rgba(52, 211, 153, 0.45);
-  color: #34d399;
-}
-.outcome-badge.outcome-higher-stress {
-  background: rgba(251, 146, 60, 0.15);
-  border: 1px solid rgba(251, 146, 60, 0.4);
-  color: #fb923c;
-}
-
-/* ── FUSE Report ─────────────────────────────────────────────────────── */
-.fuse-report-actions {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-.fuse-report-btn {
-  flex: 1;
-  padding: 8px 12px;
-  border-radius: 9px;
-  border: 1px solid rgba(251, 146, 60, 0.45);
-  background: rgba(124, 45, 18, 0.2);
-  color: #fed7aa;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  cursor: pointer;
-  transition: background 0.2s, border-color 0.2s, transform 0.15s;
-  text-align: center;
-}
-.fuse-report-btn:hover { background: rgba(124, 45, 18, 0.38); border-color: rgba(251, 146, 60, 0.7); }
-.fuse-report-btn:active { transform: scale(0.97); }
-
-/* ── Catalog target selector (Load as A / B) ─────────────────────── */
-.catalog-target-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 11px;
-  color: rgba(148, 163, 184, 0.7);
-  margin-bottom: 6px;
-}
-.catalog-target-btn {
-  padding: 2px 10px;
-  border-radius: 8px;
-  border: 1px solid rgba(57,255,183,0.22);
-  background: transparent;
-  color: rgba(148,163,184,0.65);
-  font-size: 11px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-.catalog-target-btn.active[data-target="A"] {
-  background: rgba(57,255,183,0.1);
-  border-color: rgba(57,255,183,0.55);
-  color: #39ffb7;
-}
-.catalog-target-btn.active[data-target="B"] {
-  background: rgba(251,191,36,0.1);
-  border-color: rgba(251,191,36,0.55);
-  color: #fbbf24;
-}
-
-/* ── Run History ─────────────────────────────────────────────────── */
-.run-history-list {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.history-item {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 8px 10px;
-  border-radius: 10px;
-  background: rgba(8,15,28,0.55);
-  border: 1px solid rgba(51,65,85,0.6);
-  transition: border-color 0.15s;
-}
-.history-item:hover { border-color: rgba(57,255,183,0.28); }
-.history-item-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 6px;
-}
-.history-item-name {
-  font-size: 12px;
-  font-weight: 600;
-  color: rgba(224,242,254,0.88);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  flex: 1;
-}
-.history-item-time {
-  font-size: 10px;
-  color: rgba(148,163,184,0.5);
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-.history-item-metrics {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  font-size: 10px;
-  color: rgba(148,163,184,0.72);
-}
-.history-item-severity {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-.his-sev-safe     { color: #34d399; }
-.his-sev-stressed { color: #fbbf24; }
-.his-sev-warning  { color: #fb923c; }
-.his-sev-critical { color: #f87171; }
-.his-sev-failed   { color: #fef2f2; text-shadow: 0 0 6px rgba(239,68,68,0.7); }
-.history-empty {
-  font-size: 12px;
-  color: rgba(148,163,184,0.45);
-  text-align: center;
-  padding: 10px 0;
-}
-.history-clear-btn {
-  font-size: 10px;
-  font-weight: 600;
-  color: rgba(148,163,184,0.5);
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 2px 6px;
-  border-radius: 6px;
-  transition: color 0.15s;
-}
-.history-clear-btn:hover { color: #f87171; }
-
-/* ── Catalog type-filter pills ───────────────────────────────────────── */
-.catalog-type-filters {
-  display: flex;
-  gap: 6px;
-  overflow-x: auto;
-  padding-bottom: 4px;
-  scrollbar-width: none;
-  -webkit-overflow-scrolling: touch;
-  flex-wrap: nowrap;
-  margin-bottom: 4px;
-}
-.catalog-type-filters::-webkit-scrollbar { display: none; }
-.catalog-type-pill {
-  flex-shrink: 0;
-  padding: 3px 10px;
-  border-radius: 999px;
-  border: 1px solid rgba(57,255,183,0.22);
-  background: transparent;
-  color: rgba(148,163,184,0.7);
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  cursor: pointer;
-  transition: all 0.15s;
-  white-space: nowrap;
-  text-transform: uppercase;
-}
-.catalog-type-pill:hover {
-  border-color: rgba(57,255,183,0.5);
-  color: #e2e8f0;
-}
-.catalog-type-pill.active {
-  background: rgba(57,255,183,0.12);
-  border-color: rgba(57,255,183,0.6);
-  color: #39ffb7;
-}
-/* Catalog full scrollable list (replaces paginated grid) */
-.featured-component-list {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  max-height: 380px;
-  overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(57,255,183,0.25) transparent;
-  padding-right: 2px;
-}
-.featured-component-list::-webkit-scrollbar { width: 4px; }
-.featured-component-list::-webkit-scrollbar-track { background: transparent; }
-.featured-component-list::-webkit-scrollbar-thumb { background: rgba(57,255,183,0.25); border-radius: 4px; }
-/* Category group header inside the list */
-.catalog-category-label {
-  font-size: 9px;
-  font-weight: 800;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: rgba(148,163,184,0.45);
-  padding: 6px 2px 2px;
-  border-top: 1px solid rgba(255,255,255,0.06);
-  margin-top: 4px;
-}
-.catalog-category-label:first-child { border-top: none; margin-top: 0; }
-/* Compact featured component row */
-.featured-component-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 7px 10px;
-  border-radius: 9px;
-  border: 1px solid rgba(51,65,85,0.55);
-  background: rgba(8,15,28,0.5);
-  cursor: pointer;
-  transition: border-color 0.15s, background 0.15s;
-  text-align: left;
-}
-.featured-component-row:hover {
-  border-color: rgba(57,255,183,0.4);
-  background: rgba(57,255,183,0.05);
-}
-.featured-component-row.selected {
-  border-color: rgba(57,255,183,0.7);
-  background: rgba(57,255,183,0.1);
-}
-.fcrw-type-badge {
-  flex-shrink: 0;
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  background: rgba(57,255,183,0.08);
-  border: 1px solid rgba(57,255,183,0.18);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
-}
-.fcrw-info { flex: 1; min-width: 0; }
-.fcrw-name {
-  font-size: 12px;
-  font-weight: 700;
-  color: rgba(224,242,254,0.92);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.fcrw-mfr {
-  font-size: 10px;
-  color: rgba(148,163,184,0.65);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.fcrw-spec {
-  font-size: 9px;
-  color: rgba(100,116,139,0.7);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.fcrw-load-btns {
-  flex-shrink: 0;
-  display: flex;
-  gap: 4px;
-}
-.fcrw-slot-btn {
-  padding: 3px 8px;
-  border-radius: 7px;
-  border: 1px solid rgba(57,255,183,0.3);
-  background: rgba(57,255,183,0.06);
-  color: #39ffb7;
-  font-size: 10px;
-  font-weight: 800;
-  cursor: pointer;
-  transition: all 0.12s;
-}
-.fcrw-slot-btn:hover { background: rgba(57,255,183,0.15); border-color: rgba(57,255,183,0.6); }
-.fcrw-slot-btn.slot-b {
-  border-color: rgba(251,191,36,0.3);
-  background: rgba(251,191,36,0.06);
-  color: #fbbf24;
-}
-.fcrw-slot-btn.slot-b:hover { background: rgba(251,191,36,0.15); border-color: rgba(251,191,36,0.6); }
-
-/* ── Component Library Panel Retraction ──────────────────────────────── */
-.panel {
-  transition: transform 0.32s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.32s ease;
-}
-.panel.lib-hidden {
-  transform: translateX(calc(-100% - 32px - var(--safe-left)));
-  box-shadow: none;
-  pointer-events: none;
-}
-
-/* Toggle button — floats to the right edge of the panel */
-.lib-toggle {
-  position: fixed;
-  top: calc(164px + var(--safe-top));
-  left: calc(16px + var(--safe-left) + 340px + 8px);
-  z-index: 10;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  border: 2px solid rgba(57,255,183,0.6);
-  background: rgba(4, 20, 14, 0.94);
-  color: #39ffb7;
-  font-size: 17px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  backdrop-filter: blur(12px);
-  box-shadow: 0 0 18px rgba(57,255,183,0.2), 0 4px 14px rgba(0,0,0,0.55);
-  transition: left 0.32s cubic-bezier(0.16, 1, 0.3, 1), transform 0.15s ease,
-              box-shadow 0.2s ease, background 0.2s ease, border-color 0.2s ease;
-  touch-action: manipulation;
-}
-.lib-toggle:hover {
-  background: rgba(4, 40, 28, 0.98);
-  box-shadow: 0 0 26px rgba(57,255,183,0.35), 0 4px 18px rgba(0,0,0,0.6);
-  border-color: rgba(57,255,183,0.9);
-  transform: scale(1.1);
-}
-.lib-toggle:active { transform: scale(0.93); }
-.lib-toggle.panel-closed {
-  left: calc(16px + var(--safe-left));
-  border-color: rgba(57,255,183,0.35);
-  background: rgba(8, 15, 28, 0.88);
-}
-.lib-toggle.panel-closed:hover {
-  border-color: rgba(57,255,183,0.75);
-  background: rgba(4, 40, 28, 0.96);
-}
-
-/* Tooltip label shown on hover */
-.lib-toggle-tip {
-  position: absolute;
-  left: calc(100% + 10px);
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: #39ffb7;
-  background: rgba(4, 20, 14, 0.92);
-  border: 1px solid rgba(57,255,183,0.3);
-  border-radius: 7px;
-  padding: 4px 9px;
-  white-space: nowrap;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.18s ease;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-}
-.lib-toggle:hover .lib-toggle-tip { opacity: 1; }
-
-/* Adjust toggle position for embedded (is-embedded) mode — panel top shifts */
-html.is-embedded .lib-toggle {
-  top: calc(var(--parent-clearance, 70px) + 68px + var(--safe-top));
-}
-
-/* Mobile: hide toggle button (use bottom-sheet drag handle instead) */
-@media (max-width: 700px), (pointer: coarse) {
-  .lib-toggle {
-    width: 36px;
-    height: 36px;
-    font-size: 14px;
-    /* Keep visible — users need it to open the panel */
-  }
-}
-
-/* ── Branded CircuiTry3D Library Header ───────────────────────────────── */
-.ct3d-lib-brand {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid rgba(57,255,183,0.14);
-  margin-bottom: 2px;
-  flex-shrink: 0;
-}
-.ct3d-lib-brand-logo {
-  font-size: 14px;
-  font-weight: 900;
-  letter-spacing: -0.01em;
-  display: inline-flex;
-  gap: 1px;
-  filter: drop-shadow(0 0 6px rgba(57,255,183,0.3));
-}
-.ct3d-lib-brand-logo .ct3d-g {
-  color: #39ffb7;
-  text-shadow: 0 0 8px rgba(57,255,183,0.55);
-}
-.ct3d-lib-brand-logo .ct3d-o {
-  color: #ff8b2b;
-  text-shadow: 0 0 6px rgba(255,139,43,0.5);
-}
-.ct3d-lib-brand-badge {
-  font-size: 9px;
-  font-weight: 800;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: rgba(57,255,183,0.75);
-  background: rgba(57,255,183,0.08);
-  border: 1px solid rgba(57,255,183,0.28);
-  border-radius: 999px;
-  padding: 2px 8px;
-  white-space: nowrap;
-}
+    .fuse-footer a:hover {
+      text-decoration: underline;
+    }
   </style>
 </head>
 <body>
@@ -2590,6 +1361,7 @@ html.is-embedded .lib-toggle {
       <span class="arena-brand-orange">Try</span>
       <span class="arena-brand-green">3D</span>
       <span class="fuse-tag" title="Failure Understanding Simulation Engine — FUSE™">FUSE™</span>
+      <button class="fuse-tier-badge fuse-tier-free" id="tier-badge" title="FUSE™ access tier — click to preview other tiers">Free</button>
     </div>
     <div class="arena-for-everyone" aria-label="For Everyone">👥 For Everyone — to facilitate and enhance the learning</div>
     <nav class="arena-nav" aria-label="Main navigation">
@@ -2863,71 +1635,99 @@ html.is-embedded .lib-toggle {
             ⚙️ Go to Test tab →
           </button>
         </div>
+        <div class="row compare-only">
+          <label for="component-b">Component B</label>
+          <select id="component-b"></select>
+        </div>
+      </section>
+      <section class="panel-section">
+        <div class="section-heading">Test Variables</div>
+        <div class="row">
+          <label for="input-voltage">Voltage (V)</label>
+          <input id="input-voltage" type="number" value="5" step="0.1" />
+        </div>
+        <div class="row">
+          <label for="input-frequency">Frequency (Hz)</label>
+          <input id="input-frequency" type="number" value="1000" step="1" />
+        </div>
+        <div class="row">
+          <label for="input-temperature">Ambient Temp (C)</label>
+          <input id="input-temperature" type="number" value="25" step="1" />
+        </div>
+        <div class="row">
+          <label for="input-humidity">Humidity (%)</label>
+          <input id="input-humidity" type="number" value="45" step="1" />
+        </div>
+        <div class="row">
+          <label for="input-duty">Duty Cycle (%)</label>
+          <input id="input-duty" type="number" value="100" step="1" />
+        </div>
+        <div class="row">
+          <label for="input-duration">Duration (s)</label>
+          <input id="input-duration" type="number" value="60" step="1" />
+        </div>
+        <div class="row">
+          <label for="input-load">Load Impedance (Ohm)</label>
+          <input id="input-load" type="number" value="100" step="1" />
+        </div>
+      </section>
+      <section class="panel-section">
+        <div class="section-heading">Metrics ? Component A</div>
+        <div id="metrics-a" class="metric-grid"></div>
+      </section>
+      <section class="panel-section compare-only">
+        <div class="section-heading">Metrics ? Component B</div>
+        <div id="metrics-b" class="metric-grid"></div>
+      </section>
+      <section class="panel-section compare-only">
+        <div class="section-heading">Relative Delta</div>
+        <div id="metrics-delta" class="metric-grid"></div>
+      </section>
+      <section class="panel-section">
+        <div class="section-heading">FUSE™ Analysis — A</div>
+        <div class="failure-analysis" id="failure-a"></div>
+      </section>
+      <section class="panel-section compare-only">
+        <div class="section-heading">FUSE™ Analysis — B</div>
+        <div class="failure-analysis" id="failure-b"></div>
+      </section>
+      <section class="panel-section">
+        <div class="section-heading">Status</div>
+        <div class="stat" id="stat-out">Ready.</div>
+      </section>
+      <section class="panel-section" id="featured-section">
+        <div class="panel-header">
+          <div class="section-heading">Featured Components</div>
+          <span class="chip-btn" style="cursor:default;pointer-events:none;">Real-World Specs</span>
+        </div>
+        <p class="panel-subtext">Test against real manufacturer datasheets. Click any card to load it into Component A.</p>
+        <div class="featured-component-grid" id="featured-component-grid">
+          <!-- Cards injected by script below -->
+        </div>
+        <div class="partner-cta">
+          <span class="partner-cta-text">Have a component you'd like featured here?</span>
+          <a class="partner-cta-link" href="/#/partnerships" target="_top">Partner with us →</a>
+        </div>
+      </section>
 
-        <!-- Battle result banner: shown after compare-mode test -->
-        <div class="battle-result-banner" id="battle-result-banner" role="status" aria-live="polite"></div>
-        <section class="panel-section">
-          <div class="section-heading" id="fuse-heading-a">FUSE™ Analysis — A</div>
-          <div class="failure-analysis" id="failure-a" aria-live="polite" aria-label="FUSE analysis component A"></div>
-        </section>
-        <section class="panel-section compare-only">
-          <div class="section-heading" id="fuse-heading-b">FUSE™ Analysis — B</div>
-          <div class="failure-analysis" id="failure-b" aria-live="polite" aria-label="FUSE analysis component B"></div>
-        </section>
+      <!-- Plan Preview — lets users demo different FUSE™ access tiers -->
+      <section class="panel-section" id="plan-preview-section">
+        <div class="section-heading">Plan Preview</div>
+        <p class="plan-preview-note">Preview FUSE™ gating for each access tier. In production, your plan is determined by your account.</p>
+        <div class="plan-preview-row" id="plan-chips">
+          <button class="plan-chip active" data-tier="free">Free</button>
+          <button class="plan-chip" data-tier="student">Student</button>
+          <button class="plan-chip" data-tier="educator">Educator</button>
+          <button class="plan-chip" data-tier="institutional">Institutional</button>
+        </div>
+      </section>
 
-        <!-- ── F.U.S.E. Push-to-Failure Simulator ──────────────────────── -->
-        <section class="panel-section">
-          <div class="section-heading">
-            💥 Push to Failure
-            <span class="fuse-tag" style="margin-left:4px;" title="Failure Understanding Simulation Engine">F.U.S.E.</span>
-          </div>
-          <div class="push-fail-section">
-            <p class="push-fail-desc">
-              Ramp up electrical &amp; thermal stress until a failure mode is triggered.
-              Watch the 3D component react in real time.
-            </p>
-            <div class="push-fail-controls">
-              <button class="push-fail-btn" id="btn-push-fail-a" aria-label="Push Component A to failure" disabled>
-                🔴 Push A to Fail
-              </button>
-              <button class="push-fail-btn push-fail-btn-b compare-only" id="btn-push-fail-b" aria-label="Push Component B to failure" disabled>
-                🟣 Push B to Fail
-              </button>
-            </div>
-            <div class="push-fail-result" id="push-fail-result-a" role="status" aria-live="polite"></div>
-            <div class="push-fail-result compare-only" id="push-fail-result-b" role="status" aria-live="polite"></div>
-          </div>
-        </section>
-
-        <!-- Fuse sizing calculator shortcut -->
-        <section class="panel-section">
-          <button class="fuse-calc-shortcut" id="btn-goto-fuse-calc" aria-label="Open Fuse Sizing Calculator in Test tab">
-            ⚡ Open Fuse Sizing Calculator →
-          </button>
-        </section>
-
-        <section class="panel-section">
-          <div class="section-heading">Export Report</div>
-          <div class="fuse-report-actions">
-            <button class="fuse-report-btn" id="btn-export-fuse" aria-label="Export FUSE report as JSON">⬇ FUSE Report v2.0</button>
-          </div>
-          <p class="panel-subtext" style="margin-top:4px;">Exports structured FUSE™ report with failure modes, derating recommendations, and time-to-failure estimates.</p>
-        </section>
+      <div class="fuse-footer">
+        Powered by <span class="fuse-footer-brand">FUSE™</span> · Failure Understanding Simulation Engine ·
+        <a href="/#/pricing" target="_top">Upgrade Plan →</a>
       </div>
-
-      <!-- ── Tab: Composition ────────────────────────── -->
-      <div class="panel-tab-pane" id="tab-composition" role="tabpanel">
-        <section class="panel-section" id="composition-section">
-          <div class="panel-header">
-            <div class="section-heading">⚛ Component Composition</div>
-            <button class="composition-cutaway-btn" id="btn-cutaway" aria-pressed="false" aria-label="Toggle cutaway view">Cutaway</button>
-          </div>
-          <div id="composition-a" aria-label="Component A material composition"></div>
-        </section>
-      </div>
-
-    </div><!-- end .panel-scroll -->
-  </div><!-- end .panel -->
+    </div>
+    </div>
     <div id="explosion-dom-flash" aria-hidden="true"></div>
     <!-- Battle result overlay (flash animation after compare test) -->
     <div class="battle-result-overlay" id="battle-result-overlay" role="dialog" aria-modal="true" aria-label="Compare result" aria-live="assertive"></div>
@@ -2961,22 +1761,6 @@ html.is-embedded .lib-toggle {
 
     <canvas id="arena"></canvas>
     <script src="vendor/three.min.js"></script>
-    <script>
-      // If the local vendor bundle didn't load (e.g. corrupted cache), try the CDN
-      // as a fallback. Use createElement instead of document.write so this works
-      // reliably across all Android WebView versions and is non-blocking.
-      if (typeof window.THREE === "undefined") {
-        var s = document.createElement('script');
-        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
-        s.crossOrigin = 'anonymous';
-        var cur = document.currentScript || document.scripts[document.scripts.length - 1];
-        if (cur && cur.parentNode) {
-          cur.parentNode.insertBefore(s, cur.nextSibling);
-        } else {
-          document.head.appendChild(s);
-        }
-      }
-    </script>
     <script src="js/component-failure-engine.js"></script>
     <script src="js/component-compositions.js"></script>
     <script>
@@ -3011,6 +1795,111 @@ html.is-embedded .lib-toggle {
       };
 
       const ARENA_STORAGE_KEY = "circuiTry3d.arena.import";
+
+      // ── FUSE™ Tier Gating ──────────────────────────────────────────────────
+      // Tier hierarchy: free → student → educator → institutional
+      // In production, the tier is determined by server-side authentication.
+      // The tier stored in localStorage here is for demo/preview purposes only.
+      const FUSE_TIER_STORAGE_KEY = "circuiTry3d.fuseTier";
+
+      const FUSE_TIERS = {
+        free:          { label: "Free",          rank: 0 },
+        student:       { label: "Student",       rank: 1 },
+        educator:      { label: "Educator",      rank: 2 },
+        institutional: { label: "Institutional", rank: 3 },
+      };
+
+      function getFuseTier() {
+        try {
+          const stored = window.localStorage?.getItem(FUSE_TIER_STORAGE_KEY);
+          if (stored && FUSE_TIERS[stored]) {
+            return stored;
+          }
+        } catch (_) { /* storage unavailable */ }
+        return "free";
+      }
+
+      function setFuseTier(tier) {
+        if (!FUSE_TIERS[tier]) {
+          return;
+        }
+        try {
+          window.localStorage?.setItem(FUSE_TIER_STORAGE_KEY, tier);
+        } catch (_) { /* storage unavailable */ }
+        updateTierUI(tier);
+        // Re-run last test with the new tier so gating applies immediately.
+        if (state.lastRun) {
+          runTest();
+        }
+      }
+
+      function fuseTierAtLeast(required) {
+        return FUSE_TIERS[getFuseTier()]?.rank >= (FUSE_TIERS[required]?.rank ?? 0);
+      }
+
+      function updateTierUI(tier) {
+        const badge = document.getElementById("tier-badge");
+        if (badge) {
+          badge.textContent = FUSE_TIERS[tier]?.label ?? "Free";
+          badge.className = `fuse-tier-badge fuse-tier-${tier}`;
+        }
+        // Sync plan-chip active state
+        document.querySelectorAll(".plan-chip").forEach((chip) => {
+          chip.classList.toggle("active", chip.dataset.tier === tier);
+        });
+        // Show/hide export button based on tier
+        const exportBtn = document.getElementById("btn-export");
+        if (exportBtn) {
+          exportBtn.disabled = !fuseTierAtLeast("educator");
+          exportBtn.title = fuseTierAtLeast("educator")
+            ? "Export results as JSON"
+            : "Export requires Educator or higher plan — upgrade to unlock";
+        }
+        // Show/hide compare mode based on tier
+        const modeSelect = document.getElementById("mode");
+        if (modeSelect) {
+          const compareOpt = modeSelect.querySelector('option[value="compare"]');
+          if (compareOpt) {
+            compareOpt.disabled = !fuseTierAtLeast("student");
+            compareOpt.textContent = fuseTierAtLeast("student")
+              ? "Compare (A vs B)"
+              : "Compare (A vs B) 🔒";
+          }
+          // Revert to single mode if free tier is set while in compare mode
+          if (!fuseTierAtLeast("student") && state.mode === "compare") {
+            state.mode = "single";
+            modeSelect.value = "single";
+            updateCompareVisibility();
+          }
+        }
+      }
+
+      function initTierUI() {
+        const tier = getFuseTier();
+        updateTierUI(tier);
+
+        // Tier badge click cycles through tiers (dev convenience)
+        const badge = document.getElementById("tier-badge");
+        if (badge) {
+          badge.addEventListener("click", () => {
+            const tierKeys = Object.keys(FUSE_TIERS);
+            const current = getFuseTier();
+            const next = tierKeys[(tierKeys.indexOf(current) + 1) % tierKeys.length];
+            setFuseTier(next);
+          });
+        }
+
+        // Plan Preview chips
+        document.querySelectorAll(".plan-chip").forEach((chip) => {
+          chip.addEventListener("click", () => {
+            const t = chip.dataset.tier;
+            if (t && FUSE_TIERS[t]) {
+              setFuseTier(t);
+            }
+          });
+        });
+      }
+      // ── End FUSE™ Tier Gating ───────────────────────────────────────────────
 
       const STORAGE_KEYS = {
         prefix: "circuitry:arena-session:",
@@ -4384,6 +3273,7 @@ html.is-embedded .lib-toggle {
             core = new THREE.Mesh(new THREE.OctahedronGeometry(0.75, 0), material);
             break;
           }
+        }
 
         group.add(core);
         group.userData.core = core;
@@ -5290,6 +4180,8 @@ html.is-embedded .lib-toggle {
           return;
         }
 
+        const tier = getFuseTier();
+
         const severityLabel =
           failure.severity >= 2.5 ? "DESTROYED" :
           failure.severity >= 1.5 ? "CRITICAL" :
@@ -5328,67 +4220,59 @@ html.is-embedded .lib-toggle {
         badge.className = `failure-badge ${severityClass}`;
         badge.textContent = `${icon} ${severityLabel}`;
 
-        // Severity progress bar
-        const barTrack = document.createElement("div");
-        barTrack.className = "failure-severity-bar-track";
-        const barFill = document.createElement("div");
-        barFill.className = `failure-severity-bar-fill ${barClass}`;
-        barFill.style.width = "0%";
-        barTrack.appendChild(barFill);
-        // Trigger CSS width transition in the next paint frame so the browser
-        // registers the initial 0% state before animating to the target width.
-        requestAnimationFrame(() => {
-          barFill.style.width = `${barWidthPct}%`;
-        });
+        container.appendChild(fuseLabel);
+        container.appendChild(badge);
 
-        const name = document.createElement("div");
-        name.className = "failure-name";
-        name.textContent = failure.name || "Failure";
+        // ── Tier gate: failure name (Student+) ─────────────────────────────
+        if (fuseTierAtLeast("student")) {
+          const name = document.createElement("div");
+          name.className = "failure-name";
+          name.textContent = failure.name || "Failure";
+          container.appendChild(name);
+        } else {
+          const locked = document.createElement("div");
+          locked.className = "fuse-locked";
+          const lockIcon1 = document.createElement("span");
+          lockIcon1.className = "fuse-locked-icon";
+          lockIcon1.textContent = "🔒";
+          const lockText1 = document.createElement("span");
+          lockText1.textContent = "Failure name hidden on Free plan";
+          const upgradeLink1 = document.createElement("a");
+          upgradeLink1.className = "fuse-upgrade-btn";
+          upgradeLink1.href = "/pricing";
+          upgradeLink1.target = "_top";
+          upgradeLink1.textContent = "Upgrade";
+          locked.appendChild(lockIcon1);
+          locked.appendChild(lockText1);
+          locked.appendChild(upgradeLink1);
+          container.appendChild(locked);
+        }
 
-        const desc = document.createElement("div");
-        desc.className = "failure-desc";
-        desc.textContent = failure.description || "";
-
-        card.appendChild(fuseLabel);
-        card.appendChild(badge);
-
-        // Risk score meter
-        const riskSeverityStr =
-          failure.severity >= 2.5 ? "failed" :
-          failure.severity >= 1.5 ? "critical" :
-          failure.severity >= 0.8 ? "warning" : "stressed";
-
-        const riskMeter = document.createElement("div");
-        riskMeter.className = "failure-risk-meter";
-
-        const riskLabel = document.createElement("div");
-        riskLabel.className = "failure-risk-label";
-        riskLabel.textContent = "Risk Score";
-
-        const riskScore = document.createElement("div");
-        riskScore.className = "failure-risk-score risk-" + riskSeverityStr;
-        // Risk scores map each severity tier to a 0-100 scale:
-        // safe=0 (no risk), stressed=28 (low), warning=58 (moderate),
-        // critical=82 (high), failed=100 (component destroyed)
-        const severityToScore = { "safe": 0, "stressed": 28, "warning": 58, "critical": 82, "failed": 100 };
-        riskScore.textContent = (severityToScore[riskSeverityStr] || 0).toString();
-
-        const riskArc = document.createElement("div");
-        riskArc.className = "failure-risk-arc";
-        const riskArcFill = document.createElement("div");
-        riskArcFill.className = "failure-risk-arc-fill risk-" + riskSeverityStr;
-        setTimeout(() => { riskArcFill.style.width = (severityToScore[riskSeverityStr] || 0) + "%"; }, 50);
-        riskArc.appendChild(riskArcFill);
-
-        riskMeter.appendChild(riskLabel);
-        riskMeter.appendChild(riskScore);
-        riskMeter.appendChild(riskArc);
-        card.appendChild(riskMeter);
-
-        card.appendChild(barTrack);
-        card.appendChild(name);
-        card.appendChild(desc);
-        container.appendChild(card);
+        // ── Tier gate: physical description (Educator+) ────────────────────
+        if (fuseTierAtLeast("educator")) {
+          const desc = document.createElement("div");
+          desc.className = "failure-desc";
+          desc.textContent = failure.description || "";
+          container.appendChild(desc);
+        } else if (fuseTierAtLeast("student")) {
+          // Student sees a teaser prompt for the description
+          const locked = document.createElement("div");
+          locked.className = "fuse-locked";
+          const lockIcon2 = document.createElement("span");
+          lockIcon2.className = "fuse-locked-icon";
+          lockIcon2.textContent = "🔒";
+          const lockText2 = document.createElement("span");
+          lockText2.textContent = "Physical description unlocks on Educator plan";
+          const upgradeLink2 = document.createElement("a");
+          upgradeLink2.className = "fuse-upgrade-btn";
+          upgradeLink2.href = "/pricing";
+          upgradeLink2.target = "_top";
+          upgradeLink2.textContent = "Upgrade";
+          locked.appendChild(lockIcon2);
+          locked.appendChild(lockText2);
+          locked.appendChild(upgradeLink2);
+          container.appendChild(locked);
+        }
       }
 
       // ---------- Composition Panel ----------
@@ -5833,9 +4717,16 @@ html.is-embedded .lib-toggle {
           clearFailureVisuals(group);
           return;
         }
-        applyFailureVisuals(group, failure);
-        if (failure.severity >= 2) {
-          triggerPulse(Math.min(failure.severity / 3, 1));
+        // ── Tier gate: visual particle effects (Student+) ──────────────────
+        if (fuseTierAtLeast("student")) {
+          applyFailureVisuals(group, failure);
+          if (failure.severity >= 2) {
+            triggerPulse(Math.min(failure.severity / 3, 1));
+          }
+        } else {
+          // Free tier: clear particles, just energize the component at a high level
+          clearFailureParticles(group);
+          energizeComponent(group, Math.min(failure.severity / 3 + 0.3, 1));
         }
       }
 
@@ -6864,6 +5755,17 @@ html.is-embedded .lib-toggle {
           state.selectedA = state.components[0];
         }
 
+        // ── Tier gate: compare mode (Student+) ────────────────────────────
+        if (state.mode === "compare" && !fuseTierAtLeast("student")) {
+          state.mode = "single";
+          const modeSelect = document.getElementById("mode");
+          if (modeSelect) {
+            modeSelect.value = "single";
+          }
+          updateCompareVisibility();
+          setStatus("Compare mode requires a Student plan or higher. Running single component test.");
+        }
+
         const componentA = state.selectedA;
         const metricsA = computeComponentMetrics(componentA, state.testVariables);
         let componentB = null;
@@ -6916,114 +5818,22 @@ html.is-embedded .lib-toggle {
           importManifest: state.importManifest,
         };
 
-        // ── Push to run history (capped at 20, persisted to localStorage) ──
-        {
-          const sevLabel = (s) => s >= 2.5 ? "failed" : s >= 2 ? "critical" : s >= 1 ? "warning" : s >= 0.5 ? "stressed" : "safe";
-          state.runHistory.unshift({
-            id: Date.now(),
-            timestamp: state.lastRun.timestamp,
-            mode: state.lastRun.mode,
-            componentAName: componentA.name,
-            componentBName: componentB ? componentB.name : null,
-            metricsA: {
-              currentRms: metricsA.currentRms,
-              powerDissipation: metricsA.powerDissipation,
-              thermalRise: metricsA.thermalRise,
-            },
-            metricsB: metricsB ? {
-              currentRms: metricsB.currentRms,
-              powerDissipation: metricsB.powerDissipation,
-              thermalRise: metricsB.thermalRise,
-            } : null,
-            severityA: sevLabel(failureA?.severity ?? 0),
-            severityB: failureB ? sevLabel(failureB?.severity ?? 0) : null,
-            testVoltage: state.testVariables.voltage,
-            testTemperatureC: state.testVariables.temperatureC,
-          });
-          if (state.runHistory.length > 20) state.runHistory.pop();
-          try { localStorage.setItem("arena.v1.runHistory", JSON.stringify(state.runHistory)); } catch (e) { /* quota */ }
-          renderRunHistory();
-        }
-
-        const summaryParts = [`A: ${formatWithUnit(metricsA.currentRms, "A")} - ${formatWithUnit(metricsA.powerDissipation, "W")}`];
-        if (metricsB) {
-          summaryParts.push(`B: ${formatWithUnit(metricsB.currentRms, "A")} - ${formatWithUnit(metricsB.powerDissipation, "W")}`);
-        }
-        setStatus(`Test complete. ${summaryParts.join(" | ")}`);
-
-        // Notify React shell of updated metrics and FUSE state
-        postToReact({
-          type: "arena:metrics-update",
-          componentId: componentA.id,
-          metrics: {
-            powerDissipation: metricsA.powerDissipation,
-            currentRms: metricsA.currentRms,
-            thermalRise: metricsA.thermalRise,
-            impedance: metricsA.impedance,
-            efficiency: metricsA.efficiency,
-          },
-        });
-        if (failureA && failureA.severity > 0) {
-          const alertLevel = failureA.severity >= 2 ? "critical" : "warn";
-          postToReact({
-            type: "arena:fuse-event",
-            severity: alertLevel,
-            componentId: componentA.id,
-            failureModes: failureA.mode ? [failureA.name || (typeof failureA.mode === "object" ? failureA.mode.name : "") || ""] : [],
-          });
-        }
-        postToReact({ type: "arena:status", message: "Test complete.", testRunning: false, componentCount: state.components.length });
-
-        // Apply metric health colors and tolerance bands
-        applyMetricHealthColors("metrics-a", metricsA, componentA);
-        if (metricsB) applyMetricHealthColors("metrics-b", metricsB, componentB);
-        addToleranceSubLines("metrics-a", metricsA, componentA);
-        if (metricsB) addToleranceSubLines("metrics-b", metricsB, componentB);
-
-        if (state.mode === "compare" && componentB) {
-          // Determine and display winner/loser
-          const nameA = componentA.name || componentA.id || "Component A";
-          const nameB = componentB.name || componentB.id || "Component B";
-          const winner = determineWinner(failureA, failureB);
-          renderBattleResult(winner, nameA, nameB, failureA, failureB);
-          // Pre-switch to FUSE tab and scroll to top BEFORE showing overlay so
-          // results are visible the instant the overlay is dismissed (no scroll needed).
-          const fuseTabBtnPre = document.querySelector('.panel-tab-btn[data-tab="fuse"]');
-          if (fuseTabBtnPre) fuseTabBtnPre.click();
-          const panelScrollPre = document.querySelector(".panel-scroll");
-          if (panelScrollPre) panelScrollPre.scrollTop = 0;
-          const panel = document.getElementById("arena-panel");
-          if (panel) panel.classList.add("sheet-open");
-          showBattleResultOverlay(winner, nameA, nameB, failureA, failureB);
+        // ── FUSE™-branded status message ──────────────────────────────────
+        const worstFailure = (failureB && failureB.severity > (failureA?.severity ?? 0)) ? failureB : failureA;
+        let statusMsg;
+        if (worstFailure && worstFailure.severity > 0 && fuseTierAtLeast("student")) {
+          const sev = worstFailure.severity.toFixed(1);
+          statusMsg = `FUSE™ detected: ${worstFailure.name} — severity ${sev}/3`;
+        } else if (worstFailure && worstFailure.severity > 0) {
+          statusMsg = `FUSE™ detected a failure condition — upgrade to Student plan to see details`;
         } else {
-          // Auto-switch to Metrics tab for single-component tests
-          const metricsTabBtn = document.querySelector('.panel-tab-btn[data-tab="metrics"]');
-          if (metricsTabBtn) metricsTabBtn.click();
-          // Scroll panel to top so metrics are immediately visible
-          const panelScroll = document.querySelector(".panel-scroll");
-          if (panelScroll) panelScroll.scrollTop = 0;
+          const summaryParts = [`A: ${formatWithUnit(metricsA.currentRms, "A")} - ${formatWithUnit(metricsA.powerDissipation, "W")}`];
+          if (metricsB) {
+            summaryParts.push(`B: ${formatWithUnit(metricsB.currentRms, "A")} - ${formatWithUnit(metricsB.powerDissipation, "W")}`);
+          }
+          statusMsg = `FUSE™: All components operating within rated limits. ${summaryParts.join(" | ")}`;
         }
-        // Show notification badges
-        const metricsBadge = document.getElementById("badge-metrics");
-        const fuseBadge = document.getElementById("badge-fuse");
-        if (metricsBadge) metricsBadge.classList.add("visible");
-        if (fuseBadge) fuseBadge.classList.add("visible");
-
-        // Enable Export button now that results are available
-        const exportBtn = document.getElementById("btn-export");
-        if (exportBtn) {
-          exportBtn.disabled = false;
-          exportBtn.title = "Download metrics as JSON";
-        }
-
-        // Hide empty-state placeholders in Metrics and FUSE tabs
-        const metricsEmpty = document.getElementById("metrics-empty-state");
-        if (metricsEmpty) metricsEmpty.style.display = "none";
-        const fuseEmpty = document.getElementById("fuse-empty-state");
-        if (fuseEmpty) fuseEmpty.style.display = "none";
-
-        // Advance workflow to "done" on all steps
-        updateWorkflowStep(3, true);
+        setStatus(statusMsg);
       }
 
       function summarizeComponent(component) {
@@ -7558,6 +6368,12 @@ html.is-embedded .lib-toggle {
       }
 
       function exportResults() {
+        // ── Tier gate: Export Results (Educator+) ─────────────────────────
+        if (!fuseTierAtLeast("educator")) {
+          setStatus("Export requires an Educator plan or higher. Visit /pricing to upgrade.");
+          return;
+        }
+
         if (!state.lastRun) {
           setStatus("Run a test before exporting results.");
           return;
@@ -7679,6 +6495,7 @@ html.is-embedded .lib-toggle {
 
         initThree();
         registerEvents();
+        initTierUI();
         initializeCatalog();
         populateComponentSelectors();
         readTestVariables();

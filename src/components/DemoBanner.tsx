@@ -1,11 +1,5 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
-import {
-  IS_DEMO_MODE,
-  OWNER_KEY_HASH_CONFIGURED,
-  verifyOwnerPassword,
-} from "../utils/demoMode";
-import { grantOwnerAccess } from "../utils/ownerAccess";
-import { isAndroidApp } from "../utils/playStoreBilling";
+import { useRef, useState } from "react";
+import { IS_DEMO_MODE, OWNER_STORAGE_KEY } from "../utils/demoMode";
 
 const PLAY_STORE_URL =
   "https://play.google.com/store/apps/details?id=com.circuitry3d.app";
@@ -18,24 +12,21 @@ function getPasswordBorderColor(status: UnlockStatus): string {
 }
 
 /**
- * A fixed banner shown at the top of every page when the web demo is running
- * in demo mode (i.e. the public web deployment or PR preview). Informs users
- * that this is a limited preview and directs them to the Play Store.
- *
- * NOT rendered inside the Android app — in the AAB the paywall is surfaced
- * through the component library panel instead (no intrusive banner).
+ * A fixed banner shown at the top of every page when the app is running in
+ * demo mode (i.e. the Vercel web deployment). Informs users that this is a
+ * limited preview and directs them to the Play Store for the full release.
  *
  * The owner can click the subtle lock icon to enter their owner password.
+ * A successful authentication call to /api/owner stores the unlock flag in
+ * localStorage and reloads the page with full-access enabled.
  */
 export default function DemoBanner() {
   const [unlockOpen, setUnlockOpen] = useState(false);
   const [password, setPassword] = useState("");
-  const [status, setStatus] = useState<UnlockStatus>("idle");
+  const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Not in demo mode, or running inside the Android app — render nothing.
-  // The Android paywall is handled via the in-app billing flow in Builder.tsx.
-  if (!IS_DEMO_MODE || isAndroidApp()) {
+  if (!IS_DEMO_MODE) {
     return null;
   }
 
@@ -46,30 +37,31 @@ export default function DemoBanner() {
     setTimeout(() => inputRef.current?.focus(), 50);
   };
 
-  const closeUnlock = useCallback(() => {
+  const closeUnlock = () => {
     setUnlockOpen(false);
     setPassword("");
     setStatus("idle");
-  }, []);
-
-  // Dismiss unlock dialog on Escape
-  useEffect(() => {
-    if (!unlockOpen) return;
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") closeUnlock();
-    };
-    document.addEventListener("keydown", handleEscape);
-    return () => document.removeEventListener("keydown", handleEscape);
-  }, [unlockOpen, closeUnlock]);
+  };
 
   const handleUnlock = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!password) return;
     setStatus("loading");
     try {
-      const ok = await verifyOwnerPassword(password);
-      if (ok) {
-        grantOwnerAccess();
+      const res = await fetch("/api/owner", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password }),
+      });
+      if (!res.ok) {
+        setStatus("error");
+        setPassword("");
+        setTimeout(() => inputRef.current?.focus(), 50);
+        return;
+      }
+      const data = (await res.json()) as { ok: boolean };
+      if (data.ok) {
+        localStorage.setItem(OWNER_STORAGE_KEY, "true");
         window.location.reload();
       } else {
         setStatus("error");
@@ -78,8 +70,6 @@ export default function DemoBanner() {
       }
     } catch {
       setStatus("error");
-      setPassword("");
-      setTimeout(() => inputRef.current?.focus(), 50);
     }
   };
 
@@ -130,7 +120,8 @@ export default function DemoBanner() {
           ⚡ Demo Version
         </span>
         <span style={{ opacity: 0.85 }}>
-          Web demo &mdash; full component library available. For the best experience, get the native app.
+          Limited component library &mdash; Battery, Resistor, LED, Switch, Ground &amp; Junction
+          only.
         </span>
         <a
           href={PLAY_STORE_URL}
@@ -167,8 +158,7 @@ export default function DemoBanner() {
           🚀 Get Full Version on Play Store
         </a>
 
-        {/* Subtle owner-unlock button — only shown when OWNER_KEY_HASH is configured */}
-        {OWNER_KEY_HASH_CONFIGURED && (
+        {/* Subtle owner-unlock button — visible but unobtrusive */}
         <button
           type="button"
           aria-label="Owner access"
@@ -194,7 +184,6 @@ export default function DemoBanner() {
         >
           🔑
         </button>
-        )}
       </div>
 
       {/* Owner unlock dialog */}
@@ -258,7 +247,7 @@ export default function DemoBanner() {
               autoComplete="current-password"
               style={{
                 background: "rgba(136,204,255,0.07)",
-                border: `1px solid ${getPasswordBorderColor(status)}`,
+                border: `1px solid ${status === "error" ? "rgba(255,120,120,0.6)" : "rgba(136,204,255,0.3)"}`,
                 borderRadius: "6px",
                 padding: "8px 12px",
                 color: "rgba(200,225,255,0.9)",
@@ -268,7 +257,7 @@ export default function DemoBanner() {
             />
 
             {status === "error" && (
-              <p style={{ margin: 0, fontSize: "0.75rem", color: "rgba(255,120,120,0.9)", lineHeight: 1.5 }}>
+              <p style={{ margin: 0, fontSize: "0.75rem", color: "rgba(255,120,120,0.9)" }}>
                 Incorrect password. Try again.
               </p>
             )}
