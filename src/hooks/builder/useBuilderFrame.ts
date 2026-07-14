@@ -326,16 +326,15 @@ export function useBuilderFrame({
       return;
     }
 
-    // Flush actions that were queued while the iframe was still loading.
+    // Flush any pending messages that were queued before the frame was ready
     const frameWindow = iframeRef.current?.contentWindow;
     if (frameWindow && pendingMessages.current.length > 0) {
-      const queuedMessages = pendingMessages.current.splice(0);
-      queuedMessages.forEach((message) => {
+      const messagesToSend = pendingMessages.current.splice(0);
+      messagesToSend.forEach((message) => {
         try {
           frameWindow.postMessage(message, "*");
         } catch (error) {
-          console.warn("Failed to flush pending builder message", message, error);
-          pendingMessages.current.push(message);
+          console.warn("Failed to flush pending message", message, error);
         }
       });
     }

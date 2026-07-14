@@ -3312,26 +3312,83 @@
     </style>
 </head>
 <body>
-    <!-- Demo version banner – visible only in standalone demo mode (not embedded) -->
-    <div id="demo-mode-banner" role="banner" aria-label="Demo version notice">
-        <span class="demo-badge">⚡ Demo Version</span>
-        <span style="opacity:0.85">Web demo &mdash; full component library available. For the best experience, get the native app.</span>
-        <a class="demo-cta" href="https://play.google.com/store/apps/details?id=com.circuitry3d.app" target="_blank" rel="noopener noreferrer">
-            🚀 Get Full Version on Play Store
-        </a>
-    </div>
-    <!-- Zoom-mode layer indicator (shows current visualisation tier when zoomed in) -->
-    <div id="zoom-mode-hud" aria-live="polite" aria-atomic="true"></div>
-    <!-- AC/DC conflict explosion overlay -->
-    <div id="hazard-overlay"></div>
-    <!-- Short circuit flash overlay -->
-    <div id="short-circuit-overlay"></div>
-    <!-- FUSE™ failure notification toasts -->
-    <div id="fuse-toast-container" aria-live="polite"></div>
-    <!-- FUSE™ corner watermark -->
-    <div id="fuse-watermark" role="img" aria-label="Powered by FUSE™ — Failure Understanding Simulation Engine">
-        ⚡ F.U.S.E.™
-        <span class="fuse-watermark-sub">Failure Understanding Simulation Engine</span>
+    <!-- Landing Page -->
+    <div id="landing-page" class="landing-page">
+        <div class="landing-logo logo-pulse"><span class="logo-circui">Circui</span><span class="logo-try">Try</span><span style="color:#00ff88">3D</span></div>
+        <div class="landing-subtitle">Professional Circuit Design</div>
+        
+        <div class="circuit-preview">
+            <svg class="circuit-svg" viewBox="0 0 320 140">
+                <!-- Standard CircuiTry3D circuit layout: battery left, zigzag resistors -->
+
+                <!-- Battery symbol (left side, vertical orientation) -->
+                <line x1="60" y1="85" x2="60" y2="75" stroke="#ff8844" stroke-width="2.5" stroke-linecap="round" />
+                <line x1="54" y1="75" x2="66" y2="75" stroke="#ff8844" stroke-width="3" stroke-linecap="round" />
+                <line x1="57" y1="65" x2="63" y2="65" stroke="#ff8844" stroke-width="2" stroke-linecap="round" />
+                <line x1="60" y1="65" x2="60" y2="55" stroke="#ff8844" stroke-width="2.5" stroke-linecap="round" />
+                <text class="circuit-voltage" x="42" y="74">12V</text>
+
+                <!-- Wire: battery top to TL corner -->
+                <line x1="60" y1="55" x2="60" y2="25" stroke="#66bbff" stroke-width="2.5" stroke-linecap="round" />
+                <line x1="60" y1="25" x2="110" y2="25" stroke="#66bbff" stroke-width="2.5" stroke-linecap="round" />
+
+                <!-- R1: top horizontal resistor (standard 3-peak zigzag) -->
+                <g transform="translate(160, 25)" stroke="#00ff88" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="-30,0 -22,0 -17,-10 -7,10 3,-10 13,10 18,0 30,0" />
+                </g>
+                <text class="circuit-text" x="160" y="16" text-anchor="middle">R1</text>
+
+                <!-- Wire: R1 to TR corner -->
+                <line x1="190" y1="25" x2="260" y2="25" stroke="#66bbff" stroke-width="2.5" stroke-linecap="round" />
+
+                <!-- Wire: TR corner down to R2 -->
+                <line x1="260" y1="25" x2="260" y2="40" stroke="#66bbff" stroke-width="2.5" stroke-linecap="round" />
+
+                <!-- R2: right vertical resistor (standard 3-peak zigzag, rotated) -->
+                <g transform="translate(260, 70) rotate(90)" stroke="#00ff88" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="-30,0 -22,0 -17,-10 -7,10 3,-10 13,10 18,0 30,0" />
+                </g>
+                <text class="circuit-text" x="280" y="74">R2</text>
+
+                <!-- Wire: R2 to BR corner -->
+                <line x1="260" y1="100" x2="260" y2="115" stroke="#66bbff" stroke-width="2.5" stroke-linecap="round" />
+
+                <!-- Wire: BR to R3 -->
+                <line x1="260" y1="115" x2="210" y2="115" stroke="#66bbff" stroke-width="2.5" stroke-linecap="round" />
+
+                <!-- R3: bottom horizontal resistor (standard 3-peak zigzag) -->
+                <g transform="translate(160, 115)" stroke="#00ff88" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="-30,0 -22,0 -17,-10 -7,10 3,-10 13,10 18,0 30,0" />
+                </g>
+                <text class="circuit-text" x="160" y="134">R3</text>
+
+                <!-- Wire: R3 to BL corner -->
+                <line x1="110" y1="115" x2="60" y2="115" stroke="#66bbff" stroke-width="2.5" stroke-linecap="round" />
+
+                <!-- Wire: BL corner up to battery bottom -->
+                <line x1="60" y1="115" x2="60" y2="85" stroke="#66bbff" stroke-width="2.5" stroke-linecap="round" />
+
+                <!-- Junction nodes at corners -->
+                <circle cx="60" cy="25" r="3" fill="#00ff88" stroke="#0f172a" stroke-width="1" />
+                <circle cx="260" cy="25" r="3" fill="#00ff88" stroke="#0f172a" stroke-width="1" />
+                <circle cx="260" cy="115" r="3" fill="#00ff88" stroke="#0f172a" stroke-width="1" />
+                <circle cx="60" cy="115" r="3" fill="#00ff88" stroke="#0f172a" stroke-width="1" />
+            </svg>
+        </div>
+        
+        <button class="launch-button" id="launch-btn" style="display:none">
+            Launch CircuiTry
+        </button>
+        
+        <div class="loading-progress" id="loading-progress" style="display: none;">
+            <div class="loading-bar"></div>
+        </div>
+        
+        <div class="loading-text" id="loading-text" style="display: none;">
+            circuit environment initializing
+        </div>
+        
+        <div class="version-text">Professional Edition v2.0</div>
     </div>
 
     <!-- CircuiTry3D floating workspace logo (near-invisible watermark by default) -->
@@ -22097,7 +22154,7 @@ Made with ? for visual learners everywhere!
                     { id: 'B1', type: 'battery', position: [-10, 0, 0], rotation: 1.5707963267948966, properties: { voltage: 9 } },
                     { id: 'SW1', type: 'switch', position: [0, 0, 6], properties: { resistance: 0.1, isOn: false } },
                     { id: 'R1', type: 'resistor', position: [10, 0, 0], rotation: 1.5707963267948966, properties: { resistance: 220 } },
-                    { id: 'R2', type: 'resistor', position: [0, 0, -6], properties: { resistance: 180 } }
+                    { id: 'R2', type: 'resistor', position: [0, 0, -6], properties: { resistance: 150 } }
                 ],
                 junctions: [
                     { id: 'J_TL', position: [-10, 0, 6] },
@@ -22126,8 +22183,8 @@ Made with ? for visual learners everywhere!
                 components: [
                     { id: 'B1', type: 'battery', position: [-10, 0, 0], rotation: 1.5707963267948966, properties: { voltage: 12 } },
                     { id: 'R1', type: 'resistor', position: [0, 0, 6], properties: { resistance: 150 } },
-                    { id: 'R2', type: 'resistor', position: [10, 0, 0], rotation: 1.5707963267948966, properties: { resistance: 220 } },
-                    { id: 'R3', type: 'resistor', position: [0, 0, -6], properties: { resistance: 330 } }
+                    { id: 'R2', type: 'resistor', position: [10, 0, 0], rotation: 1.5707963267948966, properties: { resistance: 330 } },
+                    { id: 'R3', type: 'resistor', position: [0, 0, -6], properties: { resistance: 220 } }
                 ],
                 junctions: [
                     { id: 'J_TL', position: [-10, 0, 6] },
@@ -22141,8 +22198,7 @@ Made with ? for visual learners everywhere!
                     { from: { ref: 'R1', side: 'right' }, to: { ref: 'J_TR', side: 'center' } },
                     { from: { ref: 'J_TR', side: 'center' }, to: { ref: 'R2', side: 'right' } },
                     { from: { ref: 'R2', side: 'left' }, to: { ref: 'J_BR', side: 'center' } },
-                    { from: { ref: 'J_BR', side: 'center' }, to: { ref: 'R3', side: 'right' } },
-                    { from: { ref: 'J_BL', side: 'center' }, to: { ref: 'B1', side: 'negative' } }
+                    { from: { ref: 'J_BR', side: 'center' }, to: { ref: 'R3', side: 'right' } }
                 ]
             },
             troubleshoot_short_circuit: {
@@ -22155,7 +22211,7 @@ Made with ? for visual learners everywhere!
                 components: [
                     { id: 'B1', type: 'battery', position: [-10, 0, 0], rotation: 1.5707963267948966, properties: { voltage: 9 } },
                     { id: 'R1', type: 'resistor', position: [0, 0, 6], properties: { resistance: 220 } },
-                    { id: 'R2', type: 'resistor', position: [10, 0, 0], rotation: 1.5707963267948966, properties: { resistance: 180 } },
+                    { id: 'R2', type: 'resistor', position: [10, 0, 0], rotation: 1.5707963267948966, properties: { resistance: 150 } },
                     { id: 'R3', type: 'resistor', position: [0, 0, -6], properties: { resistance: 330 } }
                 ],
                 junctions: [
@@ -22168,8 +22224,7 @@ Made with ? for visual learners everywhere!
                     { from: { ref: 'B1', side: 'positive' }, to: { ref: 'J_TL', side: 'center' } },
                     { from: { ref: 'J_TL', side: 'center' }, to: { ref: 'R1', side: 'left' } },
                     { from: { ref: 'R1', side: 'right' }, to: { ref: 'J_TR', side: 'center' } },
-                    { from: { ref: 'J_TR', side: 'center' }, to: { ref: 'R2', side: 'right' } },
-                    { from: { ref: 'R2', side: 'left' }, to: { ref: 'J_BR', side: 'center' } },
+                    { from: { ref: 'J_TR', side: 'center' }, to: { ref: 'J_BR', side: 'center' } },
                     { from: { ref: 'J_BR', side: 'center' }, to: { ref: 'R3', side: 'right' } },
                     { from: { ref: 'R3', side: 'left' }, to: { ref: 'J_BL', side: 'center' } },
                     { from: { ref: 'J_BL', side: 'center' }, to: { ref: 'B1', side: 'negative' } },
@@ -22187,7 +22242,7 @@ Made with ? for visual learners everywhere!
                     { id: 'B1', type: 'battery', position: [-10, 0, 0], rotation: 1.5707963267948966, properties: { voltage: 9 } },
                     { id: 'LED1', type: 'led', position: [0, 0, 6], properties: { resistance: 60 } },
                     { id: 'R1', type: 'resistor', position: [10, 0, 0], rotation: 1.5707963267948966, properties: { resistance: 220 } },
-                    { id: 'R2', type: 'resistor', position: [0, 0, -6], properties: { resistance: 180 } }
+                    { id: 'R2', type: 'resistor', position: [0, 0, -6], properties: { resistance: 150 } }
                 ],
                 junctions: [
                     { id: 'J_TL', position: [-10, 0, 6] },

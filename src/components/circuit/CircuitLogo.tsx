@@ -1,11 +1,21 @@
 import type { FC, SVGProps } from "react";
-import { LOGO_COLORS } from "../../schematic/visualConstants";
+import { LOGO_COLORS, RESISTOR_SPECS } from "../../schematic/visualConstants";
 
 type CircuitLogoProps = SVGProps<SVGSVGElement> & {
   size?: number | string;
   className?: string;
 };
 
+/**
+ * CircuitLogo component renders the CircuiTry3D brand logo
+ * following the centralized visual standards for circuit diagrams.
+ *
+ * Visual style follows the schematic style guidelines:
+ * - Zigzag resistors (3-peak CircuiTry3D standard from RESISTOR_SPECS)
+ * - Battery with correct polarity (long = +, short = -)
+ * - Junction nodes at corners
+ * - Orthogonal wire routing (90° angles)
+ */
 export const CircuitLogo: FC<CircuitLogoProps> = ({
   size = 240,
   className = "",
@@ -134,8 +144,9 @@ export const CircuitLogo: FC<CircuitLogoProps> = ({
         {/* Top horizontal wire to R1 */}
         <line x1="55" y1="50" x2="100" y2="50" stroke="url(#wireGradient)" strokeWidth="3.5" />
 
+        {/* R1 - Horizontal resistor using standard zigzag pattern (3-peak CircuiTry3D standard) */}
         <g transform="translate(130, 50)" stroke="url(#componentGradient)" strokeWidth="3.5" filter="url(#glow)">
-          <polyline points="-30,0 -22,0 -17,-10 -7,10 3,-10 13,10 18,0 30,0" />
+          <polyline points={RESISTOR_SPECS.integratedPoints} />
         </g>
 
         <line x1="160" y1="50" x2="205" y2="50" stroke="url(#wireGradient)" strokeWidth="3.5" />
@@ -144,7 +155,7 @@ export const CircuitLogo: FC<CircuitLogoProps> = ({
         <line x1="205" y1="50" x2="205" y2="75" stroke="url(#wireGradient)" strokeWidth="3.5" />
 
         <g transform="translate(205, 105) rotate(90)" stroke="url(#componentGradient)" strokeWidth="3.5" filter="url(#glow)">
-          <polyline points="-30,0 -22,0 -17,-10 -7,10 3,-10 13,10 18,0 30,0" />
+          <polyline points={RESISTOR_SPECS.integratedPoints} />
         </g>
 
         <line x1="205" y1="135" x2="205" y2="150" stroke="url(#wireGradient)" strokeWidth="3.5" />
@@ -153,7 +164,7 @@ export const CircuitLogo: FC<CircuitLogoProps> = ({
         <line x1="205" y1="150" x2="155" y2="150" stroke="url(#wireGradient)" strokeWidth="3.5" />
 
         <g transform="translate(125, 150)" stroke="url(#componentGradient)" strokeWidth="3.5" filter="url(#glow)">
-          <polyline points="-30,0 -22,0 -17,-10 -7,10 3,-10 13,10 18,0 30,0" />
+          <polyline points={RESISTOR_SPECS.integratedPoints} />
         </g>
 
         <line x1="95" y1="150" x2="55" y2="150" stroke="url(#wireGradient)" strokeWidth="3.5" />

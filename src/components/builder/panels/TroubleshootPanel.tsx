@@ -1,179 +1,259 @@
-import type { MouseEvent } from "react";
-import BrandMark from "../../BrandMark";
-import type { TroubleshootingProblem } from "../../../data/troubleshootingProblems";
+import { useCallback, useMemo } from "react";
+import troubleshootingProblems from "../../../data/troubleshootingProblems";
+import { TroubleshootDiagram } from "../../troubleshoot/TroubleshootDiagram";
+import WordMark from "../../WordMark";
+import "../../../styles/troubleshoot-panel.css";
 
-interface TroubleshootPanelProps {
+type TroubleshootPanelProps = {
   isOpen: boolean;
-  onClose: () => void;
-  problems: TroubleshootingProblem[];
+  onToggle: () => void;
   activeProblemId: string | null;
-  onChangeProblemId: (id: string | null) => void;
+  onProblemChange: (problemId: string | null) => void;
   solvedIds: string[];
   status: string | null;
   isChecking: boolean;
-  isFrameReady: boolean;
   onReset: () => void;
-  onCheckFix: () => void;
-  onNextProblem: () => void;
-}
+  onCheck: () => void;
+  onNext: () => void;
+  onClose: () => void;
+  isFrameReady: boolean;
+  isCircuitLocked: boolean;
+  onUnlockCircuit: () => void;
+};
 
 export function TroubleshootPanel({
   isOpen,
-  onClose,
-  problems,
+  onToggle,
   activeProblemId,
-  onChangeProblemId,
+  onProblemChange,
   solvedIds,
   status,
   isChecking,
-  isFrameReady,
   onReset,
-  onCheckFix,
-  onNextProblem,
+  onCheck,
+  onNext,
+  onClose,
+  isFrameReady,
+  isCircuitLocked,
+  onUnlockCircuit,
 }: TroubleshootPanelProps) {
-  const activeProblem =
-    activeProblemId && problems.length
-      ? problems.find((problem) => problem.id === activeProblemId) ?? null
-      : null;
+  const activeProblem = useMemo(
+    () => troubleshootingProblems.find((p) => p.id === activeProblemId) ?? null,
+    [activeProblemId]
+  );
 
-  const handleOverlayClick = () => {
-    onClose();
-  };
+  const progressCount = solvedIds.length;
+  const totalCount = troubleshootingProblems.length;
+  const isSolved = activeProblem ? solvedIds.includes(activeProblem.id) : false;
 
-  const handleShellClick = (event: MouseEvent<HTMLDivElement>) => {
-    event.stopPropagation();
-  };
+  const handleProblemSelect = useCallback(
+    (event: React.ChangeEvent<HTMLSelectElement>) => {
+      const nextId = event.target.value || null;
+      onProblemChange(nextId);
+    },
+    [onProblemChange]
+  );
 
-  const progressLabel = `${solvedIds.length}/${problems.length}`;
+  const getStatusClass = useCallback((statusText: string | null): string => {
+    if (!statusText) return "";
+    if (statusText.toLowerCase().includes("solved")) return "troubleshoot-status--success";
+    if (statusText.toLowerCase().includes("not solved")) return "troubleshoot-status--warning";
+    if (statusText.toLowerCase().includes("checking")) return "troubleshoot-status--checking";
+    return "";
+  }, []);
 
   return (
-    <div
-      className={`builder-panel-overlay builder-panel-overlay--troubleshoot${isOpen ? " open" : ""}`}
-      role="dialog"
-      aria-modal="true"
-      aria-hidden={!isOpen}
-      onClick={handleOverlayClick}
-    >
-      <div
-        className="builder-panel-shell builder-panel-shell--troubleshoot"
-        onClick={handleShellClick}
-      >
-        <div className="builder-panel-brand" aria-hidden="true">
-          <BrandMark size="sm" decorative />
+    <div className={`troubleshoot-panel${isOpen ? " open" : ""}`}>
+      <div className="troubleshoot-panel-header">
+        <div className="troubleshoot-panel-brand" aria-hidden="true">
+          <WordMark size="sm" decorative />
         </div>
         <button
           type="button"
-          className="builder-panel-close"
-          onClick={onClose}
-          aria-label="Close troubleshooting mode"
+          className="troubleshoot-panel-toggle"
+          onClick={onToggle}
+          aria-expanded={isOpen}
+          aria-label={isOpen ? "Collapse troubleshoot panel" : "Expand troubleshoot panel"}
         >
-          X
+          <span className="toggle-icon">{isOpen ? "▼" : "▲"}</span>
+          <span className="toggle-label">
+            <span className="toggle-label-icon">🩺</span>
+            {isSolved ? "✓ Problem Solved" : "Troubleshoot Mode"}
+          </span>
         </button>
-        <div className="builder-panel-body builder-panel-body--troubleshoot">
-          <div className="troubleshoot-shell">
-            <div className="troubleshoot-header">
-              <div>
-                <h2>Troubleshooting</h2>
-                <p>
-                  Load a broken circuit, find the fault, then restore current
-                  flow.
-                </p>
+        <div className="troubleshoot-panel-progress">
+          <span className="progress-badge">
+            {progressCount}/{totalCount} solved
+          </span>
+        </div>
+        {isOpen && (
+          <button
+            type="button"
+            className="troubleshoot-panel-close"
+            onClick={onClose}
+            aria-label="Exit troubleshoot mode"
+          >
+            Exit
+          </button>
+        )}
+      </div>
+
+      <div className="troubleshoot-panel-body">
+        <div className="troubleshoot-panel-content">
+          <div className="troubleshoot-problem-selector">
+            <label className="troubleshoot-select-label">
+              Problem
+              <select
+                value={activeProblemId ?? ""}
+                onChange={handleProblemSelect}
+                className="troubleshoot-select"
+              >
+                {troubleshootingProblems.map((problem) => (
+                  <option key={problem.id} value={problem.id}>
+                    {problem.title}
+                    {solvedIds.includes(problem.id) ? " ✓" : ""}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          {activeProblem && (
+            <div className="troubleshoot-overview-row">
+              {/* Left column: Problem description */}
+              <div className="troubleshoot-description-column">
+                <div className="troubleshoot-problem-card">
+                  <div className="troubleshoot-problem-header">
+                    <h3 className="troubleshoot-problem-title">
+                      {activeProblem.title}
+                    </h3>
+                    {isSolved && (
+                      <span className="troubleshoot-solved-badge">Solved</span>
+                    )}
+                  </div>
+                  <p className="troubleshoot-problem-prompt">
+                    {activeProblem.prompt}
+                  </p>
+
+                  {/* Schematic description */}
+                  <p className="troubleshoot-schematic-description">
+                    {activeProblem.schematic.description}
+                  </p>
+
+                  {activeProblem.hints && activeProblem.hints.length > 0 && (
+                    <details className="troubleshoot-hints">
+                      <summary className="troubleshoot-hints-toggle">
+                        💡 Show hints ({activeProblem.hints.length})
+                      </summary>
+                      <ul className="troubleshoot-hints-list">
+                        {activeProblem.hints.map((hint, index) => (
+                          <li key={index} className="troubleshoot-hint-item">
+                            {hint}
+                          </li>
+                        ))}
+                      </ul>
+                    </details>
+                  )}
+                </div>
               </div>
-              <div className="troubleshoot-meta">
-                <label className="troubleshoot-control">
-                  <span className="troubleshoot-label">Problem</span>
-                  <select
-                    className="troubleshoot-select"
-                    value={activeProblemId ?? ""}
-                    onChange={(event) => {
-                      const nextId = event.target.value || null;
-                      onChangeProblemId(nextId);
-                    }}
-                  >
-                    {problems.map((problem) => (
-                      <option key={problem.id} value={problem.id}>
-                        {problem.title}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <div className="troubleshoot-progress" aria-label="Progress">
-                  <span>Progress</span>
-                  <strong>{progressLabel}</strong>
+
+              {/* Right column: 2D Schematic */}
+              <div className="troubleshoot-schematic-column">
+                <div className="troubleshoot-schematic-card">
+                  <div className="troubleshoot-schematic-header">
+                    <span className="troubleshoot-schematic-label">Circuit Schematic</span>
+                    <span className="troubleshoot-schematic-topology">
+                      {activeProblem.schematic.topology} circuit
+                    </span>
+                  </div>
+                  <div className="troubleshoot-schematic-diagram">
+                    <TroubleshootDiagram schematic={activeProblem.schematic} />
+                  </div>
+                  <p className="troubleshoot-schematic-hint">
+                    Red elements indicate the fault location
+                  </p>
                 </div>
               </div>
             </div>
+          )}
 
-            {activeProblem ? (
-              <div className="troubleshoot-card">
-                <div className="troubleshoot-card-title">
-                  <h3>{activeProblem.title}</h3>
-                  {solvedIds.includes(activeProblem.id) ? (
-                    <span className="troubleshoot-badge">Solved</span>
-                  ) : null}
+          {status && (
+            <div
+              className={`troubleshoot-status ${getStatusClass(status)}`}
+              role="status"
+              aria-live="polite"
+            >
+              {status}
+            </div>
+          )}
+
+          {/* Lock state banner - shows when circuit is locked for analysis */}
+          {isCircuitLocked && activeProblem && !isSolved && (
+            <div className="troubleshoot-lock-banner">
+              <div className="lock-banner-content">
+                <span className="lock-icon">🔒</span>
+                <div className="lock-text">
+                  <strong>Circuit Locked</strong>
+                  <span>Study the schematic and hints above, then unlock to start fixing.</span>
                 </div>
-                <p>{activeProblem.prompt}</p>
-                {activeProblem.hints?.length ? (
-                  <ul className="troubleshoot-hints">
-                    {activeProblem.hints.map((hint) => (
-                      <li key={hint}>{hint}</li>
-                    ))}
-                  </ul>
-                ) : null}
               </div>
-            ) : (
-              <div className="troubleshoot-status">
-                No troubleshooting problems available.
-              </div>
-            )}
-
-            {status ? (
-              <div className="troubleshoot-status" role="status">
-                {status}
-              </div>
-            ) : null}
-
-            <div className="troubleshoot-actions">
               <button
                 type="button"
-                className="slider-chip"
-                onClick={onReset}
-                disabled={!activeProblem}
-                aria-disabled={!activeProblem}
+                className="troubleshoot-action-btn troubleshoot-action-btn--unlock"
+                onClick={onUnlockCircuit}
+                disabled={!isFrameReady}
               >
-                <span className="slider-chip-label">Reset Circuit</span>
+                🔓 Start Fixing
               </button>
-              <button
-                type="button"
-                className="slider-chip"
-                onClick={onCheckFix}
-                disabled={!activeProblem || !isFrameReady}
-                aria-disabled={!activeProblem || !isFrameReady}
-                title={
-                  !isFrameReady
-                    ? "Workspace is still loading"
-                    : "Run simulation and check if current flows"
-                }
-              >
-                <span className="slider-chip-label">
+            </div>
+          )}
+
+          <div className="troubleshoot-actions">
+            {!isCircuitLocked && (
+              <>
+                <button
+                  type="button"
+                  className="troubleshoot-action-btn troubleshoot-action-btn--reset"
+                  onClick={onReset}
+                  disabled={!activeProblem}
+                >
+                  Reset Circuit
+                </button>
+                <button
+                  type="button"
+                  className="troubleshoot-action-btn troubleshoot-action-btn--check"
+                  onClick={onCheck}
+                  disabled={!activeProblem || !isFrameReady || isChecking}
+                  aria-busy={isChecking}
+                >
                   {isChecking ? "Checking…" : "Check Fix"}
-                </span>
-              </button>
-              <button
-                type="button"
-                className="slider-chip"
-                onClick={onNextProblem}
-                disabled={!problems.length}
-                aria-disabled={!problems.length}
-              >
-                <span className="slider-chip-label">Next Problem</span>
-              </button>
-            </div>
+                </button>
+              </>
+            )}
+            <button
+              type="button"
+              className="troubleshoot-action-btn troubleshoot-action-btn--next"
+              onClick={onNext}
+              disabled={troubleshootingProblems.length === 0}
+            >
+              Next Problem →
+            </button>
+          </div>
 
-            <div className="troubleshoot-tip">
-              Tip: You can also tap the floating ▶ button to run a simulation
-              anytime.
-            </div>
+          <div className="troubleshoot-workspace-tip">
+            <span className="tip-icon">👆</span>
+            <span className="tip-text">
+              {isCircuitLocked
+                ? "The 3D circuit is visible in the workspace above. Zoom and pan to inspect it before fixing!"
+                : "The 3D circuit is visible in the workspace above. Zoom and pan to inspect the circuit, then fix the fault!"}
+            </span>
+          </div>
+
+          <div className="troubleshoot-tip">
+            <span className="tip-icon">💡</span>
+            <span className="tip-text">
+              Tap the floating ▶ button to run a simulation anytime.
+            </span>
           </div>
         </div>
       </div>
@@ -181,3 +261,4 @@ export function TroubleshootPanel({
   );
 }
 
+export default TroubleshootPanel;

@@ -28,6 +28,7 @@ import { WorkspaceModePanel } from "../components/builder/panels/WorkspaceModePa
 import { EnvironmentalPanel } from "../components/builder/panels/EnvironmentalPanel";
 import { MeasurementToolsPanel } from "../components/builder/panels/MeasurementToolsPanel";
 import { WireLibraryPanel } from "../components/builder/panels/WireLibraryPanel";
+import { TroubleshootPanel } from "../components/builder/panels/TroubleshootPanel";
 import {
   type EnvironmentalScenario,
   getDefaultScenario,
@@ -1765,7 +1766,22 @@ export default function Builder() {
         setTroubleshootPanelOpen(false);
         openHelpCenter("overview");
       } else if (pendingMode === "troubleshoot") {
-        enterTroubleshootMode();
+        setWorkspaceMode("troubleshoot");
+        setTroubleshootPanelOpen(true);
+        setTroubleshootStatus(null);
+        setTroubleshootCheckPending(false);
+        setTroubleshootPendingCheckProblemId(null);
+        setCircuitLocked(true);
+        const nextProblem =
+          troubleshootingProblems.find((problem) => problem.id === activeTroubleshootId) ??
+          troubleshootingProblems[0] ??
+          null;
+        if (nextProblem) {
+          if (nextProblem.id !== activeTroubleshootId) {
+            setActiveTroubleshootId(nextProblem.id);
+          }
+          triggerBuilderAction("load-preset", { preset: nextProblem.preset });
+        }
       }
 
       // Sync back to global context
@@ -4418,61 +4434,75 @@ export default function Builder() {
         </div>
       </div>
 
-      <TroubleshootPanel
-        isOpen={isTroubleshootPanelOpen}
-        onClose={exitTroubleshootMode}
-        problems={troubleshootingProblems}
-        activeProblemId={activeTroubleshootId}
-        onChangeProblemId={(nextId) => {
-          if (!nextId) {
-            setActiveTroubleshootId(null);
+      {/* Troubleshoot Panel - Compact floating panel following Practice pattern */}
+      {workspaceMode === "troubleshoot" && (
+        <TroubleshootPanel
+          isOpen={isTroubleshootPanelOpen}
+          onToggle={() => setTroubleshootPanelOpen(!isTroubleshootPanelOpen)}
+          activeProblemId={activeTroubleshootId}
+          onProblemChange={(nextId) => {
+            setTroubleshootCheckPending(false);
+            setTroubleshootPendingCheckProblemId(null);
+            setActiveTroubleshootId(nextId);
             setTroubleshootStatus(null);
-            return;
-          }
-          const next =
-            troubleshootingProblems.find((problem) => problem.id === nextId) ??
-            null;
-          if (next) {
-            openTroubleshootProblem(next);
-          }
-        }}
-        solvedIds={troubleshootSolvedIds}
-        status={troubleshootStatus}
-        isChecking={isTroubleshootCheckPending}
-        isFrameReady={isFrameReady}
-        onReset={() => {
-          if (!activeTroubleshootProblem) return;
-          queueOrLoadTroubleshootPreset(activeTroubleshootProblem.preset);
-          setCircuitLocked(false);
-          setTroubleshootStatus(
-            "Reset loaded. Fix the fault, then tap Check Fix.",
-          );
-        }}
-        onCheckFix={() => {
-          if (!activeTroubleshootProblem) return;
-          setTroubleshootStatus("Checking…");
-          setTroubleshootPendingCheckProblemId(activeTroubleshootProblem.id);
-          setTroubleshootCheckPending(true);
-          triggerBuilderAction("run-simulation");
-        }}
-        onNextProblem={() => {
-          if (!troubleshootingProblems.length) return;
-          const index = activeTroubleshootProblem
-            ? troubleshootingProblems.findIndex(
-                (p) => p.id === activeTroubleshootProblem.id,
-              )
-            : -1;
-          const next =
-            troubleshootingProblems[
-              (index + 1 + troubleshootingProblems.length) %
-                troubleshootingProblems.length
-            ] ??
-            troubleshootingProblems[0] ??
-            null;
-          if (!next) return;
-          openTroubleshootProblem(next);
-        }}
-      />
+            const next = troubleshootingProblems.find((p) => p.id === nextId) ?? null;
+            if (next) {
+              triggerBuilderAction("load-preset", { preset: next.preset });
+              setWorkspaceModeWithGlobalSync("troubleshoot");
+              setTroubleshootPanelOpen(true);
+              setCircuitLocked(true);
+            }
+          }}
+          solvedIds={troubleshootSolvedIds}
+          status={troubleshootStatus}
+          isChecking={isTroubleshootCheckPending}
+          onReset={() => {
+            if (!activeTroubleshootProblem) return;
+            setWorkspaceModeWithGlobalSync("troubleshoot");
+            setTroubleshootPanelOpen(true);
+            setTroubleshootCheckPending(false);
+            setTroubleshootPendingCheckProblemId(null);
+            triggerBuilderAction("load-preset", { preset: activeTroubleshootProblem.preset });
+            setCircuitLocked(true);
+            setTroubleshootStatus("Circuit reset. Study the schematic, then click Start Fixing.");
+          }}
+          onCheck={() => {
+            if (!activeTroubleshootProblem) return;
+            setWorkspaceModeWithGlobalSync("troubleshoot");
+            setTroubleshootPanelOpen(true);
+            setTroubleshootStatus("Checking…");
+            setTroubleshootPendingCheckProblemId(activeTroubleshootProblem.id);
+            setTroubleshootCheckPending(true);
+            triggerBuilderAction("run-simulation");
+          }}
+          onNext={() => {
+            if (!troubleshootingProblems.length) return;
+            const index = activeTroubleshootProblem
+              ? troubleshootingProblems.findIndex((p) => p.id === activeTroubleshootProblem.id)
+              : -1;
+            const next =
+              troubleshootingProblems[(index + 1 + troubleshootingProblems.length) % troubleshootingProblems.length] ??
+              troubleshootingProblems[0] ??
+              null;
+            if (!next) return;
+            setWorkspaceModeWithGlobalSync("troubleshoot");
+            setTroubleshootPanelOpen(true);
+            setTroubleshootCheckPending(false);
+            setTroubleshootPendingCheckProblemId(null);
+            setActiveTroubleshootId(next.id);
+            setTroubleshootStatus(null);
+            triggerBuilderAction("load-preset", { preset: next.preset });
+            setCircuitLocked(true);
+          }}
+          onClose={exitTroubleshootMode}
+          isFrameReady={isFrameReady}
+          isCircuitLocked={isCircuitLocked}
+          onUnlockCircuit={() => {
+            setCircuitLocked(false);
+            setTroubleshootStatus("Circuit unlocked! Fix the fault, then tap Check Fix.");
+          }}
+        />
+      )}
 
       <div
         className={`builder-panel-overlay builder-panel-overlay--logo-settings${isLogoSettingsOpen ? " open" : ""}`}

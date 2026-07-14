@@ -107,7 +107,7 @@ export const ResistorSymbol: FC<SchematicSymbolProps> = ({
       {/* Lead wires */}
       <line x1={-RESISTOR_SPECS.totalHalfSpan} y1="0" x2={-RESISTOR_SPECS.bodyHalfWidth} y2="0" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
       <line x1={RESISTOR_SPECS.bodyHalfWidth} y1="0" x2={RESISTOR_SPECS.totalHalfSpan} y2="0" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
-      {/* Keep Circuitry3D's current zigzag resistor standard unchanged */}
+      {/* Zigzag body (3-peak CircuiTry3D standard) */}
       <polyline
         points={RESISTOR_SPECS.zigzagPoints}
         stroke={color}
