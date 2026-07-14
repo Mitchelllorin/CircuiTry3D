@@ -122,30 +122,40 @@
       <line x1="55" y1="150" x2="55" y2="115" />
     </g>
 
-    <circle cx="55" cy="50" r="3.5" fill="#00ff88" stroke="#0f172a" strokeWidth="1.5" />
-    <circle cx="205" cy="50" r="3.5" fill="#00ff88" stroke="#0f172a" strokeWidth="1.5" />
-    <circle cx="205" cy="150" r="3.5" fill="#00ff88" stroke="#0f172a" strokeWidth="1.5" />
-    <circle cx="55" cy="150" r="3.5" fill="#00ff88" stroke="#0f172a" strokeWidth="1.5" />
+    <!-- Junction nodes at battery wire connections -->
+    <circle cx="55" cy="55" r="2.5" fill="#00ff88" stroke="#0f172a" stroke-width="1" />
+    <circle cx="55" cy="72" r="2.5" fill="#00ff88" stroke="#0f172a" stroke-width="1" />
 
-    <text x="35" y="35" fontSize="8" fill="#94a3b8" fontWeight="bold">1</text>
-    <text x="220" y="35" fontSize="8" fill="#94a3b8" fontWeight="bold">2</text>
-    <text x="220" y="165" fontSize="8" fill="#94a3b8" fontWeight="bold">3</text>
-    <text x="35" y="165" fontSize="8" fill="#94a3b8" fontWeight="bold">4</text>
-  </g>
-  <!-- R2 unknown value -->
-  <text x="498" y="260"
-        font-family="system-ui, -apple-system, sans-serif" font-size="18"
-        fill="#ff2b2b" font-weight="800" text-anchor="start"
-        stroke="#050b1f" stroke-width="1.5" paint-order="stroke fill">?</text>
-
-  <g fontFamily="system-ui, -apple-system, sans-serif" fontSize="9" fill="#88ccff" textAnchor="middle" fontWeight="600">
-    <text x="30" y="83">9V</text>
-    <text x="130" y="35">R₁ = 3 kΩ</text>
-    <text x="225" y="105">R₂ = 10 kΩ</text>
-    <text x="125" y="172">R₃ = ? kΩ</text>
+    <!-- Node number labels -->
+    <text x="42" y="14" font-size="8" fill="#94a3b8" font-weight="bold">1</text>
+    <text x="218" y="14" font-size="8" fill="#94a3b8" font-weight="bold">2</text>
+    <text x="218" y="122" font-size="8" fill="#94a3b8" font-weight="bold">3</text>
+    <text x="42" y="122" font-size="8" fill="#94a3b8" font-weight="bold">4</text>
   </g>
 
-  <!-- ── ANIMATED PHOTONS (two particles with comet tails) ── -->
+  <!-- Battery schematic symbol - RED VERTICAL PLATES at the end of wire stubs -->
+  <!-- Standard schematic battery: VERTICAL long plate (positive) at top, VERTICAL short plate (negative) at bottom -->
+  <g>
+    <!-- Positive plate (longer VERTICAL line) at x=38, centered around y=55 -->
+    <line x1="38" y1="49" x2="38" y2="61" stroke="#ff0000" stroke-width="3.5" stroke-linecap="round" filter="url(#glow)" />
+    <!-- Negative plate (shorter VERTICAL line) at x=38, centered around y=72 -->
+    <line x1="38" y1="67" x2="38" y2="77" stroke="#ff0000" stroke-width="2.5" stroke-linecap="round" filter="url(#glow)" />
+  </g>
+  <!-- Polarity marker + to the left of positive plate -->
+  <text x="28" y="58" font-size="10" fill="#00ff88" font-weight="bold" text-anchor="end">+</text>
+  <!-- 9V label further to the left, centered between plates -->
+  <text x="18" y="67" font-size="10" fill="#88ccff" font-weight="bold" text-anchor="end">9V</text>
+  <!-- Polarity marker − to the left of negative plate -->
+  <text x="28" y="76" font-size="10" fill="#94a3b8" font-weight="bold" text-anchor="end">−</text>
+
+  <!-- Component labels -->
+  <g font-family="system-ui, -apple-system, sans-serif" font-size="9" fill="#88ccff" text-anchor="middle" font-weight="600">
+    <text x="140" y="10">R₁ = 3 kΩ</text>
+    <text x="232" y="75">R₂</text>
+    <text x="140" y="125">R₃ = 5 kΩ</text>
+  </g>
+
+  <!-- Animated photons (two bright particles with comet tails) -->
   <g aria-hidden="true" filter="url(#photonGlow)">
     <!-- Photon A -->
     <g>
