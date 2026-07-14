@@ -3073,68 +3073,42 @@ export default function Builder() {
           className="builder-floating-action builder-floating-action--left"
           style={{ left: leftFloatingOffset }}
         >
-          <button
-            type="button"
-            className="builder-floating-button"
-            data-variant="clear"
-            onClick={handleClearWorkspace}
-            disabled={controlsDisabled}
-            aria-disabled={controlsDisabled}
-            aria-label="Clear workspace"
-            title={controlsDisabled ? controlDisabledTitle : "Clear all components, wires, and analysis data"}
-          >
-            <span className="builder-floating-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" focusable="false">
-                <path
-                  d="M9 4h6l1 2h4v2H4V6h4l1-2Z"
-                  fill="currentColor"
-                  fillOpacity="0.82"
-                />
-                <rect
-                  x="6.5"
-                  y="7.5"
-                  width="11"
-                  height="12.5"
-                  rx="2"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.6"
-                />
-                <path d="M10 11v5m4-5v5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-              </svg>
-            </span>
-          </button>
-        </div>
-        <div
-          className="builder-floating-action builder-floating-action--right"
-          style={{ right: rightFloatingOffset }}
+          <span className="builder-floating-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" role="img" focusable="false" aria-hidden="true">
+              <path
+                fill="currentColor"
+                d="M9 3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1h4a1 1 0 1 1 0 2h-.92l-1.1 15.2A2 2 0 0 1 15 22H9a2 2 0 0 1-1.98-1.8L6.02 5H5a1 1 0 1 1 0-2h4Zm1 .5V5h4V3.5h-4Zm-1.88 3 1 14h6.76l1-14H8.12ZM10 10a1 1 0 0 1 2 0v7a1 1 0 1 1-2 0v-7Zm4 0a1 1 0 1 1 2 0v7a1 1 0 1 1-2 0v-7Z"
+              />
+            </svg>
+          </span>
+          <span className="sr-only">Clear workspace</span>
+        </button>
+      </div>
+      <div
+        className="builder-floating-action builder-floating-action--right"
+        style={{ right: rightFloatingOffset }}
+      >
+        <button
+          type="button"
+          className="builder-floating-button"
+          data-variant="simulate"
+          onClick={handleRunSimulationClick}
+          disabled={controlsDisabled}
+          aria-disabled={controlsDisabled}
+          data-pulse={isSimulatePulsing ? "true" : undefined}
+          title={controlsDisabled ? controlDisabledTitle : "Run the current circuit simulation"}
         >
-          <button
-            type="button"
-            className="builder-floating-button"
-            data-variant="simulate"
-            onClick={handleRunSimulationClick}
-            disabled={controlsDisabled}
-            aria-disabled={controlsDisabled}
-            data-pulse={isSimulatePulsing ? "true" : undefined}
-            aria-label="Run simulation"
-            title={controlsDisabled ? controlDisabledTitle : "Run the current circuit simulation"}
-          >
-            <span className="builder-floating-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" focusable="false">
-                <circle
-                  cx="12"
-                  cy="12"
-                  r="9"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.6"
-                />
-                <polygon points="10 8 16 12 10 16" fill="currentColor" />
-              </svg>
-            </span>
-          </button>
-        </div>
+          <span className="builder-floating-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" role="img" focusable="false" aria-hidden="true">
+              <path
+                fill="currentColor"
+                d="M8.39 5.05a1 1 0 0 1 1.02.05l8 5a1 1 0 0 1 0 1.68l-8 5A1 1 0 0 1 8 16V7a1 1 0 0 1 .39-.95ZM10 8.62v5.76L14.52 12 10 8.62Z"
+              />
+            </svg>
+          </span>
+          <span className="sr-only">Run simulation</span>
+        </button>
+      </div>
 
       <div ref={floatingLogoRef} className="builder-floating-logo" aria-hidden="true">
         <span className="builder-logo-circui">Circui</span>
