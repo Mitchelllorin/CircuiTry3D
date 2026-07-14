@@ -980,9 +980,60 @@
             box-shadow: 0 6px 18px rgba(170,136,255,0.55);
         }
 
-        .quick-action-bar {
+        .zoom-controls {
+            display: flex;
+            flex-direction: row;
+            gap: 8px;
+        }
+
+        .panel-top-bar {
             position: fixed;
-            bottom: 248px;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            height: 60px;
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            z-index: 95;
+            background: rgba(0,0,0,0.95);
+            backdrop-filter: blur(15px);
+            border-radius: 0 0 16px 16px;
+            border: 2px solid rgba(0,255,136,0.4);
+            border-top: none;
+        }
+
+        .zoom-btn {
+            background: rgba(0, 0, 0, 0.75);
+            border: 2px solid rgba(0, 255, 136, 0.5);
+            color: #00ff88;
+            border-radius: 50%;
+            width: 48px;
+            height: 48px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 24px;
+            line-height: 1;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(8px);
+            transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+            padding: 0;
+        }
+
+        .zoom-btn:hover, .zoom-btn:active {
+            background: rgba(0, 255, 136, 0.15);
+            transform: scale(1.1);
+            box-shadow: 0 6px 18px rgba(0, 255, 136, 0.35);
+        }
+
+        #view-only-banner {
+            position: fixed;
+            top: 12px;
             left: 50%;
             transform: translateX(-50%);
             display: flex;
@@ -1471,11 +1522,6 @@
                 border-top: 2px solid rgba(0,255,136,0.4);
                 border-bottom: 2px solid rgba(0,255,136,0.4);
             }
-
-            .zoom-controls {
-                bottom: 20px;
-                right: 20px;
-            }
             
             .analysis-toggle {
                 width: 40px;
@@ -1590,11 +1636,6 @@
                 left: 10px;
                 right: 10px;
                 bottom: 10px;
-            }
-
-            .zoom-controls {
-                bottom: 10px;
-                right: 10px;
             }
             
             .status {
@@ -3309,6 +3350,25 @@
             <button class="hazard-close" onclick="dismissHazardWarning()">Understood — Remove the Connection</button>
         </div>
     </div>
+    
+    <div class="panel-top-bar" id="panel-top-bar">
+        <button class="analysis-toggle" onclick="toggleAnalysis()">Toggle</button>
+        <div class="zoom-controls" id="zoom-controls">
+            <button class="zoom-btn" onclick="zoomIn()" title="Zoom In" aria-label="Zoom In">+</button>
+            <button class="zoom-btn" onclick="zoomOut()" title="Zoom Out" aria-label="Zoom Out">−</button>
+        </div>
+    </div>
+
+    <div class="wire-analysis-fixed" id="wire-analysis">
+        <div class="analysis-tabs">
+            <button class="analysis-tab active" onclick="switchAnalysisTab('wire')" id="tab-wire">W.I.R.E.</button>
+            <button class="analysis-tab" onclick="switchAnalysisTab('eir')" id="tab-eir">EIR</button>
+            <button class="analysis-tab" onclick="switchAnalysisTab('power')" id="tab-power">Power</button>
+            <button class="analysis-tab" onclick="switchAnalysisTab('worksheet')" id="tab-worksheet">Sheet</button>
+            <button class="analysis-tab" onclick="switchAnalysisTab('problem')" id="tab-problem">Solve</button>
+            <button class="analysis-tab" onclick="switchAnalysisTab('practice')" id="tab-practice">Practice</button>
+            <button class="analysis-tab" onclick="switchAnalysisTab('meter')" id="tab-meter">Meter</button>
+        </div>
 
         <!-- W.I.R.E. Method Panel -->
         <div class="analysis-content" id="content-wire">
