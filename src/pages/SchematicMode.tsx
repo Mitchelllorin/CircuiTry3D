@@ -279,35 +279,237 @@ const MODE_TABS: { key: ViewMode; label: string }[] = [
   { key: "builder", label: "Custom Builder" },
 ];
 
-const STANDARD_LABELS: Record<SchematicStandard, string> = {
-  ansi: "ANSI",
-  ieee: "IEEE",
-  iec: "IEC",
+type SchematicRenderDrawerProps = {
+  open: boolean;
+  onClose: () => void;
+  onNavigate: (mode: ViewMode) => void;
+  onSelectProblem: (problemId: string) => void;
+  onSelectCatalog: (entry: CatalogEntry) => void;
+  selectedProblemId: string | null;
+  selectedCatalogId: string;
+  problems: PracticeProblem[];
+  catalog: CatalogEntry[];
 };
+
+function SchematicRenderDrawer({
+  open,
+  onClose,
+  onNavigate,
+  onSelectProblem,
+  onSelectCatalog,
+  selectedProblemId,
+  selectedCatalogId,
+  problems,
+  catalog,
+}: SchematicRenderDrawerProps) {
+  const [activeTab, setActiveTab] = useState<"scenes" | "components">("scenes");
+
+  useEffect(() => {
+    if (!open || typeof document === "undefined") {
+      return;
+    }
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previous;
+    };
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [open, onClose]);
+
+  const groupedProblems = useMemo(() => groupProblems(problems), [problems]);
+
+  const truncate = useCallback((text: string, limit = 140) => {
+    if (text.length <= limit) {
+      return text;
+    }
+    return `${text.slice(0, limit - 1)}…`;
+  }, []);
+
+  const handleProblemClick = useCallback(
+    (problem: PracticeProblem) => {
+      onSelectProblem(problem.id);
+      onNavigate("practice");
+      onClose();
+    },
+    [onClose, onNavigate, onSelectProblem]
+  );
+
+  const handleCatalogClick = useCallback(
+    (entry: CatalogEntry) => {
+      onSelectCatalog(entry);
+      onNavigate("builder");
+      onClose();
+    },
+    [onClose, onNavigate, onSelectCatalog]
+  );
+
+  if (!open) {
+    return null;
+  }
+
+  return (
+    <div className="schematic-drawer-backdrop" role="presentation" onClick={onClose}>
+      <aside
+        className="schematic-drawer"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="schematic-drawer-title"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <header className="schematic-drawer-header">
+          <div>
+            <h2 id="schematic-drawer-title">3D Render Catalog</h2>
+            <p>
+              Flip through every preset scene and component symbol without losing your place. Pick an item to jump
+              directly into the matching view.
+            </p>
+          </div>
+          <button
+            type="button"
+            className="schematic-drawer-close"
+            aria-label="Close 3D render catalog"
+            onClick={onClose}
+          >
+            Close
+          </button>
+        </header>
+
+        <nav className="schematic-drawer-tabs" role="tablist" aria-label="Render catalog sections">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === "scenes"}
+            className={activeTab === "scenes" ? "drawer-tab is-active" : "drawer-tab"}
+            onClick={() => setActiveTab("scenes")}
+          >
+            Practice Scenes
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === "components"}
+            className={activeTab === "components" ? "drawer-tab is-active" : "drawer-tab"}
+            onClick={() => setActiveTab("components")}
+          >
+            Component Symbols
+          </button>
+        </nav>
+
+        <div className="schematic-drawer-body">
+          {activeTab === "scenes" ? (
+            problems.length ? (
+              TOPOLOGY_ORDER.map((topology) => {
+                const bucket = groupedProblems[topology];
+                if (!bucket || !bucket.length) {
+                  return null;
+                }
+                return (
+                  <section key={topology} className="drawer-section">
+                    <header className="drawer-section-header">
+                      <h3>{TOPOLOGY_LABEL[topology]}</h3>
+                      <span>{bucket.length} preset{bucket.length === 1 ? "" : "s"}</span>
+                    </header>
+                    <div className="drawer-card-list">
+                      {bucket.map((problem) => (
+                        <button
+                          key={problem.id}
+                          type="button"
+                          className={
+                            problem.id === selectedProblemId ? "drawer-card is-active" : "drawer-card"
+                          }
+                          onClick={() => handleProblemClick(problem)}
+                        >
+                          <span className="drawer-card-title">{problem.title}</span>
+                          <span className="drawer-card-meta">
+                            {DIFFICULTY_LABEL[problem.difficulty]} · {TOPOLOGY_LABEL[problem.topology]}
+                          </span>
+                          <p className="drawer-card-desc">{truncate(problem.prompt)}</p>
+                          {problem.conceptTags.length > 0 && (
+                            <ul className="drawer-card-tags">
+                              {problem.conceptTags.map((tag) => (
+                                <li key={tag}>{tag}</li>
+                              ))}
+                            </ul>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  </section>
+                );
+              })
+            ) : (
+              <div className="drawer-empty">No practice presets available yet.</div>
+            )
+          ) : catalog.length ? (
+            <section className="drawer-section">
+              <header className="drawer-section-header">
+                <h3>Component Symbols</h3>
+                <span>{catalog.length} items</span>
+              </header>
+              <div className="drawer-component-grid">
+                {catalog.map((entry) => (
+                  <button
+                    key={entry.id}
+                    type="button"
+                    className={
+                      entry.id === selectedCatalogId ? "drawer-component is-active" : "drawer-component"
+                    }
+                    onClick={() => handleCatalogClick(entry)}
+                  >
+                    <span className="drawer-component-icon" aria-hidden="true">
+                      {entry.icon}
+                    </span>
+                    <span className="drawer-component-name">{entry.name}</span>
+                    <p className="drawer-component-desc">{entry.description}</p>
+                    {entry.tags?.length ? (
+                      <ul className="drawer-component-tags">
+                        {entry.tags.map((tag) => (
+                          <li key={tag}>{tag}</li>
+                        ))}
+                      </ul>
+                    ) : null}
+                  </button>
+                ))}
+              </div>
+            </section>
+          ) : (
+            <div className="drawer-empty">Component catalog is empty.</div>
+          )}
+        </div>
+      </aside>
+    </div>
+  );
+}
 
 export default function SchematicMode() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [drawerInitialId, setDrawerInitialId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("practice");
-  const [catalogDrawerOpen, setCatalogDrawerOpen] = useState(false);
-  const [catalogSelectionRequest, setCatalogSelectionRequest] = useState<string | null>(null);
-
-  const openCatalogDrawer = useCallback(() => setCatalogDrawerOpen(true), []);
-  const closeCatalogDrawer = useCallback(() => setCatalogDrawerOpen(false), []);
-
-  const handleDrawerSelect = useCallback(
-    (entry: CatalogEntry) => {
-      setCatalogSelectionRequest(entry.id);
-      if (viewMode !== "builder") {
-        setViewMode("builder");
-      }
-      setCatalogDrawerOpen(false);
-    },
-    [viewMode]
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [selectedProblemId, setSelectedProblemId] = useState<string | null>(
+    practiceProblems[0]?.id ?? DEFAULT_PRACTICE_PROBLEM?.id ?? null
   );
+  const [selectedCatalogId, setSelectedCatalogId] = useState<string>(COMPONENT_CATALOG[0]?.id ?? "");
 
-  const handleCatalogSelectionHandled = useCallback(() => {
-    setCatalogSelectionRequest(null);
+  const handleProblemSelect = useCallback((problemId: string) => {
+    setSelectedProblemId(problemId);
+  }, []);
+
+  const handleCatalogSelect = useCallback((entry: CatalogEntry) => {
+    setSelectedCatalogId(entry.id);
   }, []);
 
   return (
@@ -318,59 +520,57 @@ export default function SchematicMode() {
           <h1>Schematic Mode</h1>
           <p>{MODE_SUMMARY[viewMode]}</p>
         </div>
-        <div className="schematic-controls">
-          <div className="schematic-tabs" role="tablist" aria-label="Schematic mode selector">
-            {MODE_TABS.map(({ key, label }) => (
-              <button
-                key={key}
-                type="button"
-                role="tab"
-                aria-selected={viewMode === key}
-                className={viewMode === key ? "schematic-toggle is-active" : "schematic-toggle"}
-                onClick={() => setViewMode(key)}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
+        <div className="schematic-controls" role="tablist" aria-label="Schematic mode selector">
+          {MODE_TABS.map(({ key, label }) => (
+            <button
+              key={key}
+              type="button"
+              role="tab"
+              aria-selected={viewMode === key}
+              className={viewMode === key ? "schematic-toggle is-active" : "schematic-toggle"}
+              onClick={() => setViewMode(key)}
+            >
+              {label}
+            </button>
+          ))}
           <button
             type="button"
-            className="schematic-catalog-button"
-            onClick={openCatalogDrawer}
-            aria-haspopup="dialog"
-            aria-expanded={catalogDrawerOpen}
+            className="schematic-drawer-trigger"
+            onClick={() => setDrawerOpen(true)}
           >
-            View 3D Catalog
+            Browse 3D Catalog
           </button>
         </div>
       </header>
 
       {viewMode === "practice" ? (
-        <PracticeModeView />
+        <PracticeModeView selectedProblemId={selectedProblemId} onSelectProblem={handleProblemSelect} />
       ) : (
-        <BuilderModeView
-          catalogSelectionRequest={catalogSelectionRequest}
-          onCatalogSelectionHandled={handleCatalogSelectionHandled}
-        />
+        <BuilderModeView selectedCatalogId={selectedCatalogId} onSelectCatalog={handleCatalogSelect} />
       )}
 
-      <RenderCatalogDrawer
-        open={catalogDrawerOpen}
-        entries={COMPONENT_CATALOG}
-        onClose={closeCatalogDrawer}
-        onSelectEntry={handleDrawerSelect}
+      <SchematicRenderDrawer
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        onNavigate={(mode) => setViewMode(mode)}
+        onSelectProblem={handleProblemSelect}
+        onSelectCatalog={handleCatalogSelect}
+        selectedProblemId={selectedProblemId}
+        selectedCatalogId={selectedCatalogId}
+        problems={practiceProblems}
+        catalog={COMPONENT_CATALOG}
       />
     </div>
   );
 }
 
-type CatalogOpener = (componentId?: string) => void;
+type PracticeModeViewProps = {
+  selectedProblemId: string | null;
+  onSelectProblem: (problemId: string) => void;
+};
 
-function PracticeModeView({ onShowCatalog }: { onShowCatalog: CatalogOpener }) {
+function PracticeModeView({ selectedProblemId, onSelectProblem }: PracticeModeViewProps) {
   const grouped = useMemo(() => groupProblems(practiceProblems), []);
-  const fallbackProblemId = practiceProblems[0]?.id ?? null;
-
-  const [selectedProblemId, setSelectedProblemId] = useState<string | null>(fallbackProblemId);
   const [tableRevealed, setTableRevealed] = useState(false);
   const [stepsVisible, setStepsVisible] = useState(false);
   const [answerRevealed, setAnswerRevealed] = useState(false);
@@ -630,7 +830,7 @@ function PracticeModeView({ onShowCatalog }: { onShowCatalog: CatalogOpener }) {
       (currentIndex >= 0 && bucket[(currentIndex + 1) % bucket.length]) || practiceProblems[0] || null;
 
     if (nextProblem) {
-      setSelectedProblemId(nextProblem.id);
+      onSelectProblem(nextProblem.id);
     }
   };
 
@@ -646,35 +846,31 @@ function PracticeModeView({ onShowCatalog }: { onShowCatalog: CatalogOpener }) {
           </div>
         </header>
 
-        {!renderDrawerDesktop && (
-          <div className="schematic-mobile-open">
-            <button type="button" className="render-drawer-toggle" onClick={handleOpenRenderDrawer}>
-              Browse 3D Renders
-            </button>
-          </div>
-        )}
-
-        <div className="schematic-body">
-          <RenderCatalogDrawer
-            open={renderDrawerOpen}
-            isDesktop={renderDrawerDesktop}
-            sections={renderCatalogSections}
-            selectedProblemId={selectedProblem.id}
-            onSelect={handleSelectProblem}
-            onClose={handleCloseRenderDrawer}
-          />
-
-          <section className="schematic-main" aria-live="polite">
-            <header className="schematic-main-header">
-              <div>
-                <h2>{selectedProblem.title}</h2>
-                <div className="schematic-meta">
-                  <span className="difficulty-pill">{DIFFICULTY_LABEL[selectedProblem.difficulty]}</span>
-                  <span className="schematic-chip">{TOPOLOGY_LABEL[selectedProblem.topology]}</span>
-                  {selectedProblem.conceptTags.map((tag) => (
-                    <span key={tag} className="tag">
-                      {tag}
-                    </span>
+      <div className="schematic-body">
+        <aside className="schematic-sidebar" aria-label="Practice preset selection">
+          <h2>Practice Presets</h2>
+          {TOPOLOGY_ORDER.map((topology) => {
+            const bucket = grouped[topology];
+            if (!bucket.length) {
+              return null;
+            }
+            return (
+              <section key={topology} className="schematic-problem-group">
+                <h3>{TOPOLOGY_LABEL[topology]}</h3>
+                <div className="problem-list">
+                  {bucket.map((problem) => (
+                    <button
+                      key={problem.id}
+                      type="button"
+                      className="problem-button"
+                      data-active={problem.id === selectedProblem.id ? "true" : undefined}
+                      onClick={() => onSelectProblem(problem.id)}
+                    >
+                      <strong>{problem.title}</strong>
+                      <small>
+                        {TOPOLOGY_LABEL[problem.topology]} · {DIFFICULTY_LABEL[problem.difficulty]}
+                      </small>
+                    </button>
                   ))}
                 </div>
               </div>
@@ -801,12 +997,11 @@ function PracticeModeView({ onShowCatalog }: { onShowCatalog: CatalogOpener }) {
 }
 
 type BuilderModeViewProps = {
-  catalogSelectionRequest: string | null;
-  onCatalogSelectionHandled: () => void;
+  selectedCatalogId: string;
+  onSelectCatalog: (entry: CatalogEntry) => void;
 };
 
-function BuilderModeView({ catalogSelectionRequest, onCatalogSelectionHandled }: BuilderModeViewProps) {
-  const [selectedCatalogId, setSelectedCatalogId] = useState<string>(COMPONENT_CATALOG[0]?.id ?? "");
+function BuilderModeView({ selectedCatalogId, onSelectCatalog }: BuilderModeViewProps) {
   const [elements, setElements] = useState<SchematicElement[]>([]);
   const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
   const [draft, setDraft] = useState<PlacementDraft | null>(null);
@@ -849,29 +1044,15 @@ function BuilderModeView({ catalogSelectionRequest, onCatalogSelectionHandled }:
     return () => window.clearTimeout(timeout);
   }, [feedbackMessage]);
 
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-    window.localStorage.setItem("schematic.symbolStandard", symbolStandard);
-  }, [symbolStandard]);
-
-  const handleStandardChange = useCallback(
-    (event: ChangeEvent<HTMLSelectElement>) => {
-      const next = event.target.value;
-      if (isSymbolStandard(next)) {
-        setSymbolStandard(next);
-      }
+  const handleCatalogSelect = useCallback(
+    (entry: CatalogEntry) => {
+      onSelectCatalog(entry);
+      setDraft(null);
+      setSelectedElementId(null);
+      setFeedbackMessage(`${entry.name} ready for placement.`);
     },
-    []
+    [onSelectCatalog]
   );
-
-  const handleCatalogSelect = useCallback((entry: CatalogEntry) => {
-    setSelectedCatalogId(entry.id);
-    setDraft(null);
-    setSelectedElementId(null);
-    setFeedbackMessage(`${entry.name} ready for placement.`);
-  }, []);
 
   useEffect(() => {
     if (!catalogSelectionRequest) {
