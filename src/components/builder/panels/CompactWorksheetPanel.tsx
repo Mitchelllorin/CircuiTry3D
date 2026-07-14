@@ -4,9 +4,7 @@ import type { WireMetricKey } from "../../../utils/electrical";
 import { formatMetricValue, formatNumber } from "../../../utils/electrical";
 import { trySolvePracticeProblem } from "../../../utils/practiceSolver";
 import { METRIC_ORDER, METRIC_PRECISION, type WorksheetEntry, type WorksheetEntryStatus } from "../../../components/practice/WireTable";
-import CircuitDiagram from "../../../components/practice/CircuitDiagram";
-import { Component3DViewer } from "../../arena/Component3DViewer";
-import WordMark from "../../WordMark";
+import PracticeReferenceCards from "../../../components/practice/PracticeReferenceCards";
 import "../../../styles/compact-worksheet.css";
 
 type CompactWorksheetPanelProps = {
@@ -609,24 +607,11 @@ export function CompactWorksheetPanel({
             )}
           </div>
 
-          {/* Dismissable hint */}
-          {!tipDismissed && (
-            <div className="compact-worksheet-hint">
-              <button
-                type="button"
-                className="hint-dismiss-btn"
-                onClick={() => setTipDismissed(true)}
-                aria-label="Dismiss tip"
-              >
-                ×
-              </button>
-              <p>
-                <strong>Tip:</strong> Zoom and pan the 3D circuit above to inspect components while solving.
-                Green cells are correct. Complete all cells to unlock editing.
-              </p>
-            </div>
-          )}
-        </>
+          <div className="compact-worksheet-reference-section">
+            <h4 className="compact-worksheet-reference-title">Reference Materials</h4>
+            <PracticeReferenceCards />
+          </div>
+        </div>
       )}
     </div>
   )}

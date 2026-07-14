@@ -2146,995 +2146,197 @@
   grid-template-columns: 1fr;
 }
 
-/* Kirchhoff's Laws Styles */
-.kirchhoff-laws {
-  background: rgba(12, 32, 58, 0.74);
-  border: 1px solid rgba(116, 186, 255, 0.32);
-  border-radius: 18px;
-  padding: 24px 28px;
-}
-
-.kirchhoff-laws h3 {
-  margin: 0 0 8px;
-  font-size: 1.1rem;
-  color: #9fdcff;
-}
-
-.kirchhoff-intro {
-  margin: 0 0 20px;
-  font-size: 0.9rem;
-  color: rgba(212, 236, 255, 0.78);
-}
-
-.kirchhoff-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+.practice-reference-section {
+  display: flex;
+  flex-direction: column;
   gap: 20px;
 }
 
-.kirchhoff-card {
-  background: rgba(10, 24, 48, 0.72);
-  border: 1px solid rgba(96, 168, 255, 0.28);
-  border-radius: 14px;
-  padding: 20px;
-}
-
-.kirchhoff-card[data-law="kcl"] {
-  border-left: 3px solid #ffaa33;
-}
-
-.kirchhoff-card[data-law="kvl"] {
-  border-left: 3px solid #ff4444;
-}
-
-.kirchhoff-header {
-  display: flex;
-  gap: 12px;
-  align-items: flex-start;
-  margin-bottom: 14px;
-}
-
-.kirchhoff-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 42px;
-  height: 42px;
-  border-radius: 10px;
-  background: rgba(80, 160, 255, 0.18);
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  color: #a8dcff;
-}
-
-.kirchhoff-header h4 {
-  margin: 0;
-  font-size: 0.95rem;
-  color: #e2f4ff;
-}
-
-.kirchhoff-subtitle {
-  display: block;
-  font-size: 0.75rem;
-  color: rgba(180, 214, 255, 0.7);
-  margin-top: 2px;
-}
-
-.kirchhoff-statement {
-  margin: 0 0 14px;
-  font-size: 0.92rem;
-  line-height: 1.5;
-  color: #d6ecff;
-}
-
-.kirchhoff-formula {
-  display: inline-block;
-  background: rgba(22, 52, 96, 0.8);
-  border-radius: 8px;
-  padding: 8px 16px;
-  font-size: 1rem;
-  font-weight: 600;
-  color: #bce9ff;
-  margin-bottom: 14px;
-  font-family: "Fira Code", "Monaco", monospace;
-}
-
-.kirchhoff-examples {
-  margin: 0 0 14px;
-  padding-left: 20px;
-  font-size: 0.85rem;
-  color: rgba(208, 232, 255, 0.85);
-  line-height: 1.6;
-}
-
-.kirchhoff-examples li {
-  margin-bottom: 6px;
-}
-
-.kirchhoff-tip {
-  margin: 0;
-  padding: 12px 14px;
-  background: rgba(16, 40, 80, 0.6);
-  border-radius: 10px;
-  font-size: 0.82rem;
-  color: rgba(200, 228, 255, 0.85);
-  line-height: 1.5;
-}
-
-.kirchhoff-tip strong {
-  color: #9fd8ff;
-}
-
-/* Enhanced Triangle Deck Styles */
-.triangle-deck {
-  background: rgba(12, 34, 60, 0.72);
-  border: 1px solid rgba(108, 180, 255, 0.28);
-  border-radius: 18px;
-  padding: 24px 28px;
-  display: grid;
-  gap: 20px;
-}
-
-.triangle-deck-title {
-  margin: 0;
-  font-size: 1.1rem;
-  color: #9fdcff;
-}
-
-.triangle-deck-intro {
-  margin: 0;
-  font-size: 0.88rem;
-  color: rgba(212, 236, 255, 0.78);
-}
-
-.triangle-card {
-  background: rgba(10, 24, 48, 0.72);
-  border: 1px solid rgba(96, 168, 255, 0.24);
-  border-radius: 14px;
-  padding: 20px;
-}
-
-.triangle-card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  margin-bottom: 8px;
-}
-
-.triangle-card-header h4 {
-  margin: 0;
-  font-size: 0.95rem;
-  color: #e2f4ff;
-}
-
-.triangle-description {
-  margin: 0 0 12px;
-  font-size: 0.82rem;
-  color: rgba(200, 228, 255, 0.72);
-}
-
-.triangle-divider {
-  stroke: rgba(120, 188, 255, 0.35);
-  stroke-width: 1.5;
-  stroke-dasharray: 4, 4;
-}
-
-.triangle-formulae {
-  list-style: none;
-  margin: 12px 0 0;
-  padding: 0;
-  display: grid;
-  gap: 8px;
-}
-
-.triangle-formulae li {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  font-size: 0.85rem;
-}
-
-.formula-solve {
-  font-size: 0.72rem;
-  color: rgba(180, 214, 255, 0.7);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  min-width: 60px;
-}
-
-.formula-expr {
-  font-family: "Fira Code", "Monaco", monospace;
-  color: #d8f0ff;
-  font-weight: 500;
-}
-
-/* Enhanced Ohm's Law Wheel Styles */
-.ohms-wheel-intro {
-  margin: 0 0 16px;
-  font-size: 0.88rem;
-  color: rgba(212, 236, 255, 0.78);
-  line-height: 1.5;
-}
-
-.ohms-wheel-legend {
-  margin-top: 20px;
-  padding-top: 16px;
-  border-top: 1px solid rgba(100, 168, 255, 0.2);
-}
-
-.ohms-wheel-legend h4 {
-  margin: 0 0 12px;
-  font-size: 0.82rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: rgba(160, 214, 255, 0.72);
-}
-
-.legend-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
-}
-
-.legend-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.legend-variable {
+.practice-reference-title {
   font-size: 1.1rem;
   font-weight: 700;
-  font-family: "Fira Code", "Monaco", monospace;
-}
-
-.legend-label {
-  font-size: 0.78rem;
-  color: rgba(200, 228, 255, 0.72);
-}
-
-.ohms-wheel-breakdown {
-  margin-top: 20px;
-  padding-top: 16px;
-  border-top: 1px solid rgba(100, 168, 255, 0.2);
-}
-
-.ohms-wheel-breakdown h4 {
-  margin: 0 0 12px;
-  font-size: 0.82rem;
+  color: rgba(136, 204, 255, 0.95);
+  margin: 0;
+  text-transform: uppercase;
   letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: rgba(160, 214, 255, 0.72);
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(136, 204, 255, 0.2);
 }
 
-.breakdown-grid {
+/* Practice Reference Cards in Practice Page */
+.practice-page .practice-reference-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 16px;
+  grid-template-columns: 1fr;
 }
 
-.breakdown-item {
-  background: rgba(10, 24, 48, 0.6);
-  border-radius: 10px;
-  padding: 12px;
-}
-
-.breakdown-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding-bottom: 8px;
-  margin-bottom: 8px;
-  border-bottom: 1px solid;
-}
-
-.breakdown-var {
-  font-size: 1rem;
-  font-weight: 700;
-  font-family: "Fira Code", "Monaco", monospace;
-}
-
-.breakdown-label {
-  font-size: 0.72rem;
-  color: rgba(200, 228, 255, 0.65);
-}
-
-.breakdown-formulas {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  gap: 4px;
-  font-size: 0.82rem;
-  color: #d4ebff;
-  font-family: "Fira Code", "Monaco", monospace;
-}
-
-/* W.I.R.E. Overall Metrics Section */
-.practice-wire-metrics {
-  background: rgba(9, 20, 38, 0.85);
-  border: 1px solid rgba(90, 148, 230, 0.35);
-  border-radius: 18px;
-  padding: 20px 24px 24px;
-  margin-top: 8px;
-}
-
-.practice-wire-metrics-header {
-  margin-bottom: 16px;
-}
-
-.practice-wire-metrics-header h3 {
-  margin: 0 0 4px;
-  font-size: 1rem;
-  letter-spacing: 0.05em;
-  color: #a8dcff;
-}
-
-.practice-wire-metrics-header p {
-  margin: 0;
-  font-size: 0.82rem;
-  color: rgba(168, 212, 255, 0.72);
-}
-
-.practice-wire-metrics-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
-}
-
-.practice-wire-metric {
-  border-radius: 14px;
-  padding: 14px 16px;
-  background: rgba(10, 15, 30, 0.9);
-  border: 1px solid rgba(148, 163, 184, 0.3);
-  display: grid;
-  grid-template-rows: auto auto auto;
-  gap: 6px;
-  text-align: center;
-}
-
-.practice-wire-metric .wire-metric-letter {
-  font-size: 0.75rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
-  color: rgba(226, 232, 240, 0.7);
-}
-
-.practice-wire-metric .wire-metric-value {
-  font-size: 1.05rem;
-  font-weight: 600;
-  color: #e8f6ff;
-}
-
-.practice-wire-metric .wire-metric-label {
-  font-size: 0.8rem;
-  color: #94a3b8;
-}
-
-.practice-wire-metric.metric-w {
-  border-color: rgba(74, 144, 255, 0.45);
-  background: linear-gradient(135deg, rgba(30, 64, 175, 0.35) 0%, rgba(30, 64, 175, 0.05) 100%);
-}
-
-.practice-wire-metric.metric-w .wire-metric-letter {
-  color: #4a90ff;
-}
-
-.practice-wire-metric.metric-i {
-  border-color: rgba(255, 170, 51, 0.45);
-  background: linear-gradient(135deg, rgba(194, 100, 12, 0.33) 0%, rgba(194, 100, 12, 0.05) 100%);
-}
-
-.practice-wire-metric.metric-i .wire-metric-letter {
-  color: #ffaa33;
-}
-
-.practice-wire-metric.metric-r {
-  border-color: rgba(0, 204, 102, 0.45);
-  background: linear-gradient(135deg, rgba(5, 122, 85, 0.38) 0%, rgba(5, 122, 85, 0.06) 100%);
-}
-
-.practice-wire-metric.metric-r .wire-metric-letter {
-  color: #00cc66;
-}
-
-.practice-wire-metric.metric-e {
-  border-color: rgba(255, 68, 68, 0.45);
-  background: linear-gradient(135deg, rgba(185, 28, 28, 0.4) 0%, rgba(185, 28, 28, 0.06) 100%);
-}
-
-.practice-wire-metric.metric-e .wire-metric-letter {
-  color: #ff4444;
-}
-
-@media (max-width: 720px) {
-  .practice-wire-metrics-grid {
+@media (min-width: 768px) {
+  .practice-page .practice-reference-cards {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 
-/* W.I.R.E. Formula Reference */
-.practice-formula-reference {
-  background: rgba(9, 20, 38, 0.85);
-  border: 1px solid rgba(90, 148, 230, 0.35);
-  border-radius: 18px;
-  padding: 20px 24px 24px;
-  margin-top: 24px;
-}
-
-.practice-formula-reference-header {
-  margin-bottom: 16px;
-}
-
-.practice-formula-reference-header h3 {
-  margin: 0 0 4px;
-  font-size: 1rem;
-  letter-spacing: 0.05em;
-  color: #a8dcff;
-}
-
-.practice-formula-reference-header p {
-  margin: 0;
-  font-size: 0.82rem;
-  color: rgba(168, 212, 255, 0.72);
-}
-
-.practice-formula-reference-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 16px;
-}
-
-.practice-formula-card {
-  padding: 16px;
-  border: 1px solid rgba(148, 163, 184, 0.2);
-  border-radius: 8px;
-  background: rgba(15, 23, 42, 0.4);
-}
-
-.practice-formula-card .formula-expression {
-  font-family: monospace;
-  font-size: 1.1rem;
-  font-weight: 600;
-  margin-bottom: 8px;
-  color: rgba(136, 204, 255, 0.95);
-}
-
-.practice-formula-card .formula-description {
-  font-size: 0.85rem;
-  color: rgba(148, 163, 184, 0.9);
-  margin-bottom: 12px;
-}
-
-.practice-formula-card .formula-variables {
-  font-size: 0.75rem;
-  color: rgba(148, 163, 184, 0.7);
-}
-
-.practice-formula-card .formula-variable {
-  margin-bottom: 4px;
-}
-
-.practice-formula-card .formula-variable-last {
-  margin-bottom: 0;
-}
-
-.practice-formula-card .variable-symbol {
-  font-weight: 600;
-  color: rgba(136, 204, 255, 0.85);
-}
-
-/* Wire Library Reference */
-.practice-wire-library {
-  background: rgba(6, 14, 28, 0.92);
-  border: 1px solid rgba(79, 140, 220, 0.35);
-  border-radius: 18px;
-  padding: 24px;
-  margin-top: 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.wire-library-header {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 24px;
-}
-
-.wire-library-quickstart {
-  border: 1px solid rgba(136, 204, 255, 0.22);
-  border-radius: 14px;
-  background: rgba(10, 24, 48, 0.62);
-  padding: 12px 14px;
-  display: grid;
-  gap: 8px;
-}
-
-.wire-library-quickstart h4 {
-  margin: 0;
-  font-size: 0.8rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: #9fdcff;
-}
-
-.wire-library-quickstart ol {
-  margin: 0;
-  padding-left: 18px;
-  display: grid;
-  gap: 4px;
-  color: rgba(214, 236, 255, 0.9);
-  font-size: 0.85rem;
-}
-
-.wire-library-quickstart-status {
-  margin: 0;
-  color: rgba(184, 255, 220, 0.92);
-  font-size: 0.81rem;
-}
-
-.wire-library-integration {
-  display: grid;
-  gap: 14px;
-  padding: 14px 16px;
-  border-radius: 14px;
-  border: 1px solid rgba(136, 204, 255, 0.28);
-  background: rgba(10, 24, 48, 0.68);
-}
-
-.wire-library-integration-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 12px;
-}
-
-.wire-library-integration-header strong {
-  display: block;
-  font-size: 0.82rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: #9fdcff;
-}
-
-.wire-library-integration-header p {
-  margin: 6px 0 0;
-  font-size: 0.83rem;
-  line-height: 1.45;
-  color: rgba(210, 233, 255, 0.78);
-  max-width: 660px;
-}
-
-.wire-library-profile-chip {
-  border: 1px solid rgba(148, 163, 184, 0.35);
-  border-radius: 999px;
-  padding: 5px 10px;
-  font-size: 0.68rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: rgba(206, 224, 245, 0.78);
-  background: rgba(15, 23, 42, 0.65);
-  white-space: nowrap;
-}
-
-.wire-library-profile-chip.active {
-  border-color: rgba(120, 255, 188, 0.48);
-  color: rgba(184, 255, 220, 0.95);
-  background: rgba(20, 72, 46, 0.42);
-}
-
-.wire-library-integration-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-  gap: 12px;
-}
-
-.wire-library-integration-grid > div {
-  border: 1px solid rgba(136, 204, 255, 0.18);
-  border-radius: 10px;
-  background: rgba(7, 17, 34, 0.6);
-  padding: 10px 12px;
-  display: grid;
-  gap: 4px;
-}
-
-.wire-library-integration-meta {
-  margin: 0;
-  font-size: 0.76rem;
-  color: rgba(178, 204, 232, 0.8);
-}
-
-.wire-library-preview-card {
-  border: 1px solid rgba(120, 255, 188, 0.4);
-  border-radius: 10px;
-  background: rgba(20, 72, 46, 0.25);
-  padding: 10px 12px;
-  display: grid;
-  gap: 8px;
-}
-
-.wire-library-preview-card strong {
-  font-size: 0.78rem;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
-  color: rgba(184, 255, 220, 0.92);
-}
-
-.wire-library-preview-grid {
-  display: grid;
-  gap: 5px;
-  font-size: 0.82rem;
-  color: rgba(214, 244, 255, 0.86);
-}
-
-.wire-library-apply-btn,
-.wire-library-default-btn {
-  border-radius: 10px;
-  border: 1px solid rgba(136, 204, 255, 0.35);
-  background: rgba(12, 34, 62, 0.8);
-  color: rgba(228, 244, 255, 0.95);
-  font-size: 0.82rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  padding: 10px 14px;
-  cursor: pointer;
-  width: 100%;
-  text-align: center;
-  transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
-}
-
-.wire-library-apply-btn {
-  border-color: rgba(120, 255, 188, 0.55);
-  background: rgba(24, 84, 56, 0.88);
-  color: rgba(184, 255, 220, 0.98);
-  font-size: 0.88rem;
-  padding: 12px 16px;
-  box-shadow: 0 0 12px rgba(52, 211, 153, 0.15);
-}
-
-.wire-library-apply-btn:hover:not(:disabled),
-.wire-library-default-btn:hover:not(:disabled),
-.wire-library-apply-btn:focus-visible,
-.wire-library-default-btn:focus-visible {
-  border-color: rgba(160, 220, 255, 0.75);
-  background: rgba(30, 64, 108, 0.9);
-  transform: translateY(-1px);
-  outline: none;
-}
-
-.wire-library-apply-btn:disabled,
-.wire-library-default-btn:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-  transform: none;
-}
-
-/* Wire Resource Branding */
-.wire-library-brand-section {
-  flex: 0 0 auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 12px;
-  background: linear-gradient(135deg, rgba(10, 20, 40, 0.9), rgba(6, 14, 28, 0.95));
-  border: 1px solid rgba(136, 204, 255, 0.25);
-  border-radius: 16px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
-}
-
-.wire-resource-brand {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.wire-resource-logo {
-  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.4));
-  transition: filter 0.3s ease;
-}
-
-.wire-library-brand-section:hover .wire-resource-logo {
-  filter: drop-shadow(0 4px 12px rgba(136, 204, 255, 0.3));
-}
-
-.wire-resource-name {
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: #88ccff;
-  text-shadow: 0 0 10px rgba(136, 204, 255, 0.4);
-}
-
-.wire-library-header h3 {
-  margin: 0 0 8px;
-  font-size: 1.1rem;
-  letter-spacing: 0.04em;
-  color: #a8dcff;
-}
-
-.wire-library-header p {
-  margin: 0;
-  max-width: 640px;
-  font-size: 0.9rem;
-  color: rgba(199, 226, 255, 0.78);
-}
-
-.wire-library-summary {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 12px;
-  padding: 12px 16px;
-  border-radius: 14px;
-  background: rgba(12, 23, 46, 0.8);
-  border: 1px solid rgba(148, 163, 184, 0.25);
-}
-
-.wire-library-summary .summary-label {
-  display: block;
-  font-size: 0.74rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: rgba(148, 163, 184, 0.8);
-}
-
-.wire-library-summary .summary-value {
-  font-size: 1rem;
-  color: #e0f2ff;
-}
-
-.wire-library-controls {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 16px;
-  align-items: end;
-}
-
-.wire-library-controls label {
-  display: flex;
-  flex-direction: column;
-  font-size: 0.82rem;
-  color: rgba(203, 213, 225, 0.85);
-  gap: 6px;
-}
-
-.wire-library-controls select,
-.wire-library-controls input[type="search"] {
-  background: rgba(15, 23, 42, 0.9);
-  border: 1px solid rgba(148, 163, 184, 0.3);
-  color: #e2e8f0;
-  border-radius: 10px;
-  padding: 8px 10px;
-  font-size: 0.9rem;
-}
-
-.ampacity-filter input[type="range"] {
-  width: 100%;
-}
-
-.ampacity-filter .ampacity-value {
-  font-size: 0.8rem;
-  color: rgba(148, 226, 255, 0.85);
-  text-align: right;
-}
-
-.wire-library-search input {
-  width: 100%;
-}
-
-.wire-library-reset {
-  height: 40px;
-  border-radius: 10px;
-  border: 1px solid rgba(148, 163, 184, 0.4);
-  background: transparent;
-  color: #cbd5f5;
-  font-weight: 600;
-  transition: background 0.2s ease, color 0.2s ease;
-}
-
-.wire-library-reset:not(:disabled):hover {
-  background: rgba(77, 124, 255, 0.2);
-  color: #ffffff;
-}
-
-.wire-library-reset:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-.wire-library-empty {
-  padding: 32px;
-  border: 1px dashed rgba(148, 163, 184, 0.4);
+.practice-page .reference-card {
+  background: rgba(12, 34, 60, 0.72);
+  border: 1px solid rgba(108, 180, 255, 0.28);
   border-radius: 12px;
+  padding: 16px;
+}
+
+.practice-page .reference-card h3 {
+  font-size: 15px;
+  font-weight: 700;
+  color: rgba(136, 204, 255, 0.95);
+  margin: 0 0 4px 0;
+}
+
+.practice-page .reference-subtitle {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.6);
+  margin: 0 0 12px 0;
+}
+
+.practice-page .reference-formula-primary {
+  font-size: 22px;
+  font-weight: 700;
   text-align: center;
-  color: rgba(203, 213, 225, 0.85);
-  font-size: 0.95rem;
+  color: #88CCFF;
+  padding: 12px;
+  background: rgba(20, 50, 90, 0.5);
+  border-radius: 8px;
+  margin-bottom: 12px;
+  font-family: 'Courier New', monospace;
 }
 
-.wire-library-table-wrapper {
-  overflow-x: auto;
-}
-
-.wire-library-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.9rem;
-}
-
-.wire-library-table-caption {
-  position: absolute;
-  width: 1px;
-  height: 1px;
+.practice-page .reference-formula-list {
+  list-style: none;
   padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
+  margin: 0;
+  display: grid;
+  gap: 8px;
 }
 
-.wire-library-table th,
-.wire-library-table td {
-  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
-  padding: 12px 10px;
-  text-align: left;
-  vertical-align: top;
+.practice-page .reference-formula-list li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  background: rgba(14, 30, 50, 0.6);
+  border-radius: 6px;
+  border-left: 3px solid rgba(136, 204, 255, 0.4);
 }
 
-.wire-library-table th {
-  font-size: 0.78rem;
+.practice-page .formula-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: #d4ebff;
+  font-family: 'Courier New', monospace;
+}
+
+.practice-page .formula-desc {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* Kirchhoff's Laws Card in Practice Page */
+.practice-page .kirchhoffs-laws-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.practice-page .kirchhoffs-law-item {
+  padding: 12px;
+  background: rgba(14, 30, 50, 0.6);
+  border-radius: 8px;
+  border-left: 3px solid rgba(255, 179, 71, 0.5);
+}
+
+.practice-page .kirchhoffs-law-item h4 {
+  font-size: 13px;
+  font-weight: 700;
+  color: #FFB347;
+  margin: 0 0 2px 0;
+}
+
+.practice-page .law-subtitle {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.5);
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: rgba(148, 163, 184, 0.9);
-}
-
-.wire-library-table tr[data-selected="true"] {
-  background: rgba(16, 185, 129, 0.12);
-}
-
-.wire-library-table tr[data-selected="true"] .wire-gauge-label {
-  color: #bbf7d0;
-}
-
-.wire-library-table tbody th {
-  font-size: 0.95rem;
-  color: #e2e8f0;
-}
-
-.wire-library-table tbody tr[data-selected="true"] {
-  background: rgba(20, 42, 78, 0.52);
-}
-
-.wire-library-table tbody tr[data-active-profile="true"] {
-  background: rgba(20, 74, 50, 0.42);
-}
-
-.wire-gauge-label {
-  font-weight: 600;
-}
-
-.wire-row-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  display: block;
   margin-bottom: 8px;
 }
 
-.wire-row-select-btn {
-  border: 1px solid rgba(136, 204, 255, 0.36);
-  border-radius: 999px;
-  background: rgba(10, 24, 48, 0.85);
-  color: rgba(212, 236, 255, 0.94);
-  font-size: 0.68rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  padding: 4px 10px;
-  cursor: pointer;
-  transition: border-color 0.2s ease, background 0.2s ease;
+.practice-page .law-principle {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.8);
+  margin: 0 0 8px 0;
+  line-height: 1.5;
 }
 
-.wire-row-select-btn:hover,
-.wire-row-select-btn:focus-visible {
-  border-color: rgba(160, 220, 255, 0.7);
-  background: rgba(28, 56, 96, 0.95);
-  outline: none;
+.practice-page .law-formula {
+  font-size: 16px;
+  font-weight: 700;
+  color: #FFB347;
+  text-align: center;
+  padding: 8px;
+  background: rgba(255, 179, 71, 0.1);
+  border-radius: 6px;
+  margin-bottom: 8px;
+  font-family: 'Courier New', monospace;
 }
 
-.wire-row-select-btn.selected {
-  border-color: rgba(120, 255, 188, 0.58);
-  background: rgba(20, 72, 46, 0.68);
-  color: rgba(184, 255, 220, 0.95);
-}
-
-.wire-row-active-chip {
-  border: 1px solid rgba(120, 255, 188, 0.52);
-  border-radius: 999px;
-  padding: 3px 8px;
-  font-size: 0.62rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: rgba(184, 255, 220, 0.95);
-  background: rgba(20, 72, 46, 0.42);
-}
-
-.wire-gauge-meta,
-.wire-material-meta,
-.wire-notes {
-  font-size: 0.78rem;
-  color: rgba(148, 163, 184, 0.8);
-  margin-top: 4px;
-}
-
-.wire-material-label {
-  font-weight: 600;
-  color: #e0f2ff;
-}
-
-.wire-uses {
-  display: flex;
-  flex-wrap: wrap;
-  list-style: none;
+.practice-page .law-example {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.6);
   margin: 0;
+  font-style: italic;
+}
+
+/* Compact Triangle Deck in Practice Page */
+.practice-page .compact-triangle-deck .triangle-deck {
+  gap: 12px;
+}
+
+.practice-page .compact-triangle-deck .triangle-card {
+  padding: 12px;
+  background: transparent;
+  border: none;
+}
+
+.practice-page .compact-triangle-deck .triangle-card h3 {
+  font-size: 13px;
+  margin: 0;
+}
+
+.practice-page .compact-triangle-deck .triangle-card svg {
+  height: 120px;
+  margin: 8px 0;
+}
+
+.practice-page .compact-triangle-deck .triangle-card ul {
+  font-size: 12px;
+  gap: 4px;
+}
+
+/* Compact Ohm's Wheel in Practice Page */
+.practice-page .compact-ohms-wheel {
+  padding: 12px !important;
+}
+
+.practice-page .compact-ohms-wheel .ohms-wheel {
+  background: transparent;
+  border: none;
   padding: 0;
-  gap: 6px;
 }
 
-.wire-uses li {
-  background: rgba(59, 130, 246, 0.12);
-  color: rgba(255, 255, 255, 0.85);
-  border-radius: 999px;
-  padding: 4px 10px;
-  font-size: 0.74rem;
+.practice-page .compact-ohms-wheel .ohms-wheel h3 {
+  font-size: 13px;
+  margin: 0 0 8px 0;
 }
 
-.wire-library-select {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 70px;
-  padding: 6px 12px;
-  border-radius: 999px;
-  border: 1px solid rgba(59, 130, 246, 0.5);
-  background: rgba(59, 130, 246, 0.12);
-  color: rgba(219, 234, 254, 0.95);
-  font-size: 0.75rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
-}
-
-.wire-library-select:disabled {
-  cursor: default;
-  border-color: rgba(16, 185, 129, 0.6);
-  background: rgba(16, 185, 129, 0.2);
-  color: #bbf7d0;
-}
-
-.wire-library-select:not(:disabled):hover {
-  background: rgba(59, 130, 246, 0.24);
-  border-color: rgba(147, 197, 253, 0.9);
-  color: #ffffff;
-}
-
-@media (max-width: 960px) {
-  .wire-library-summary {
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  }
-
-  .wire-library-table th,
-  .wire-library-table td {
-    padding: 10px 8px;
-  }
-}
-
-@media (max-width: 720px) {
-  .practice-formula-reference-grid {
-    grid-template-columns: 1fr;
-  }
+.practice-page .compact-ohms-wheel .ohms-wheel svg {
+  max-height: 240px;
 }
 
 @media (max-width: 1180px) {
