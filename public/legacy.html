@@ -11262,7 +11262,7 @@ body.android-optimized .zoom-btn {
             'serpentine': 'scurve'
         });
 
-        function normalizeRouterMode(rawMode, fallback = 'freeform') {
+        function normalizeRouterMode(rawMode, fallback = 'manhattan') {
             if (typeof rawMode !== 'string') {
                 return fallback;
             }
@@ -11299,7 +11299,7 @@ body.android-optimized .zoom-btn {
             }
 
             if (!resolved) {
-                resolved = normalizeRouterMode(window.ROUTER_MODE, 'freeform');
+                resolved = normalizeRouterMode(window.ROUTER_MODE, 'manhattan');
             }
 
             window.ROUTER_MODE = resolved;
@@ -18152,9 +18152,7 @@ Made with ? for visual learners everywhere!
 
             const adjacency = buildFlowGraph(components, wires, junctions);
             console.log('[CT3D Flow] adjacency has ' + adjacency.size + ' nodes');
-            adjacency.forEach((edges, key) => {
-                edges.forEach(e => console.log('[CT3D Flow]   ' + key + ' -> ' + e.to + ' type=' + e.type));
-            });
+            // Edge-level logging removed for performance
             const path = findLowestResistancePath(adjacency, startKey, endKey);
             console.log('[CT3D Flow] computeFlowState: path ' + (path ? 'FOUND (' + path.segments.length + ' segments)' : 'NOT FOUND'));
 
