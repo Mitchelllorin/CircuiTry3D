@@ -596,42 +596,8 @@ export const COMPONENT_ACTIONS: ComponentAction[] = [
     },
   },
   {
-    id: "relay",
-    icon: "─[⌁]─",
-    label: "Relay",
-    action: "component",
-    builderType: "relay",
-    description: "Electromagnetic switch — coil energizes to open or close contacts",
-    metadata: {
-      schematicSymbol: SCHEMATIC_SYMBOLS.RELAY,
-      symbolText: "─[⌁]─",
-      symbolDesc: "SPDT",
-      symbolUnit: "V",
-      symbolRef: "K1",
-      category: "electromechanical",
-      educationalTags: ["switch", "coil", "isolation", "electromagnetic"],
-    },
-  },
-  {
-    id: "voltage-regulator",
-    icon: "─[REG]─",
-    label: "Voltage Reg.",
-    action: "component",
-    builderType: "voltage-regulator",
-    description: "Three-terminal IC regulator — fixed output voltage from varying input",
-    metadata: {
-      schematicSymbol: SCHEMATIC_SYMBOLS.VOLTAGE_REGULATOR,
-      symbolText: "─[REG]─",
-      symbolDesc: "Vout",
-      symbolUnit: "V",
-      symbolRef: "U1",
-      category: "integrated",
-      educationalTags: ["regulation", "power-supply", "ldo", "linear"],
-    },
-  },
-  {
     id: "junction",
-    icon: "─●─",
+    icon: "J",
     label: "Junction",
     action: "junction",
     description: "Junction ─●─ — Drop anywhere on a wire to branch it. Essential for parallel circuits. Press J to add. (KCL: ΣI_in = ΣI_out)",
@@ -935,25 +901,11 @@ export const WIRE_LEGEND: HelpLegendItem[] = [
 
 export const HELP_ENTRIES: HelpEntry[] = [
   {
-    id: "getting-started",
-    label: "Getting Started",
-    description:
-      "Learn the basics of building circuits in CircuiTry3D.",
-    view: "getting-started",
-  },
-  {
     id: "wire-guide",
     label: "W.I.R.E. Guide",
     description:
       "Understand Watts, Current, Resistance, and Voltage fundamentals.",
     view: "wire-guide",
-  },
-  {
-    id: "schematic",
-    label: "Schematic Layout Guide",
-    description:
-      "Review symbol standards and clean schematic wiring habits.",
-    view: "schematic",
   },
   {
     id: "shortcuts",

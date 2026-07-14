@@ -1589,13 +1589,30 @@ export default function Builder() {
       if (!nextProblem) {
         return;
       }
-
-      assignPracticeProblem(nextProblem, presetOverride);
-      setWorkspaceMode("practice");
-      setPracticeWorkspaceMode(true);
-      setCompactWorksheetOpen(true);
-      setCircuitLocked(true);
-      setArenaPanelOpen(false);
+      if (action.action === "practice-help") {
+        openHelpCenter("overview");
+        return;
+      }
+      if (action.action === "generate-practice") {
+        triggerBuilderAction(action.action, action.data);
+        const randomProblem = getRandomPracticeProblem();
+        if (randomProblem) {
+          practiceProblemRef.current = randomProblem.id;
+          setActivePracticeProblemId(randomProblem.id);
+          setPracticeWorksheetState({
+            problemId: randomProblem.id,
+            complete: false,
+          });
+          if (randomProblem.presetHint) {
+            triggerBuilderAction("load-preset", {
+              preset: randomProblem.presetHint,
+            });
+          }
+          setPracticePanelOpen(true);
+        }
+        return;
+      }
+      triggerBuilderAction(action.action, action.data);
     },
     [
       activePracticeProblemId,
@@ -2417,10 +2434,13 @@ export default function Builder() {
         <button
           type="button"
           className="mode-tab"
-          data-active={tutorialState.isActive ? "true" : undefined}
-          onClick={startTutorial}
-          aria-label="Start tutorial"
-          title="Interactive tutorial - learn the basics step by step"
+          data-active={workspaceMode === "learn" ? "true" : undefined}
+          onClick={() => {
+            setWorkspaceMode("learn");
+            openHelpCenter("overview");
+          }}
+          aria-label="Learn mode"
+          title="Tutorials, guides, and help resources"
         >
           <span className="mode-icon" aria-hidden="true">🎓</span>
           <span className="mode-label">Tutorial</span>
@@ -3642,116 +3662,41 @@ export default function Builder() {
               </div>
             </div>
             <div className="slider-section">
-              <span className="slider-heading">Practice</span>
-              <div className="menu-track menu-track-chips">
-                <div
-                  role="status"
-                  style={{
-                    fontSize: "11px",
-                    color: "rgba(136, 204, 255, 0.78)",
-                    textAlign: "center",
-                    padding: "8px 12px",
-                    borderRadius: "10px",
-                    border: "1px solid rgba(136, 204, 255, 0.22)",
-                    background: "rgba(14, 30, 58, 0.48)",
-                  }}
-                >
-                  {practiceWorksheetMessage}
-                </div>
-                {PRACTICE_ACTIONS.map((action) => (
-                  <button
-                    key={action.id}
-                    type="button"
-                    className="slider-chip"
-                    onClick={() => handlePracticeAction(action)}
-                    disabled={
-                      controlsDisabled ||
-                      (action.action === "open-arena" && isArenaSyncing)
-                    }
-                    aria-disabled={
-                      controlsDisabled ||
-                      (action.action === "open-arena" && isArenaSyncing)
-                    }
-                    title={
-                      controlsDisabled
-                        ? controlDisabledTitle
-                        : action.action === "open-arena" && isArenaSyncing
-                          ? "Preparing Component Arena export?"
-                          : action.description
-                    }
-                  >
-                    <span className="slider-chip-label">{action.label}</span>
-                  </button>
-                ))}
-                <button
-                  type="button"
-                  className="slider-chip"
-                  onClick={() => setPracticePanelOpen(true)}
-                  title={practiceWorksheetMessage}
-                  data-complete={
-                    practiceWorksheetState &&
-                    activePracticeProblemId &&
-                    practiceWorksheetState.problemId ===
-                      activePracticeProblemId &&
-                    practiceWorksheetState.complete
-                      ? "true"
-                      : undefined
-                  }
-                >
-                  <span className="slider-chip-label">Practice Worksheets</span>
-                </button>
-                {PRACTICE_SCENARIOS.map((scenario) => (
-                  <button
-                    key={scenario.id}
-                    type="button"
-                    className="slider-chip"
-                    onClick={() => {
-                      const problem = scenario.problemId
-                        ? findPracticeProblemById(scenario.problemId)
-                        : findPracticeProblemByPreset(scenario.preset);
-
-                      if (isPracticeWorkspaceMode && problem) {
-                        handlePracticeWorkspaceProblemChange(problem.id);
-                      } else {
-                        triggerBuilderAction("load-preset", {
-                          preset: scenario.preset,
-                        });
-                        if (problem) {
-                          practiceProblemRef.current = problem.id;
-                          setActivePracticeProblemId(problem.id);
-                          setPracticeWorksheetState({
-                            problemId: problem.id,
-                            complete: false,
-                          });
+              <span className="slider-heading">Settings</span>
+              <div className="slider-stack">
+                {SETTINGS_ITEMS.map((setting) => {
+                  const description = setting.getDescription(modeState, {
+                    currentFlowLabel,
+                  });
+                  const isActive = setting.isActive?.(modeState) ?? false;
+                  return (
+                    <button
+                      key={setting.id}
+                      type="button"
+                      className="slider-btn slider-btn-stacked"
+                      onClick={() => {
+                        if (setting.action === "open-logo-settings") {
+                          setLogoSettingsOpen(!isLogoSettingsOpen);
+                        } else {
+                          triggerBuilderAction(setting.action, setting.data);
                         }
-                        setPracticePanelOpen(true);
+                      }}
+                      disabled={controlsDisabled}
+                      aria-disabled={controlsDisabled}
+                      aria-pressed={setting.isActive ? isActive : undefined}
+                      data-active={
+                        setting.isActive && isActive ? "true" : undefined
                       }
-                    }}
-                    disabled={controlsDisabled}
-                    aria-disabled={controlsDisabled}
-                    title={
-                      controlsDisabled
-                        ? controlDisabledTitle
-                        : scenario.question
-                    }
-                  >
-                    <span className="slider-chip-label">{scenario.label}</span>
-                  </button>
-                ))}
-                <button
-                  type="button"
-                  className="slider-chip"
-                  onClick={openLastArenaSession}
-                  disabled={!canOpenLastArena}
-                  aria-disabled={!canOpenLastArena}
-                  title={
-                    canOpenLastArena
-                      ? "Open the most recent Component Arena export"
-                      : "Run a Component Arena export first"
-                  }
-                >
-                  <span className="slider-chip-label">Open Last Arena Run</span>
-                </button>
+                      title={
+                        controlsDisabled ? controlDisabledTitle : description
+                      }
+                      data-intent="settings"
+                    >
+                      <span className="slider-label">{setting.label}</span>
+                      <span className="slider-description">{description}</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
             <div className="slider-section">
