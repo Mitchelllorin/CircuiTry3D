@@ -23,19 +23,9 @@ import { useDraggablePanel } from "../hooks/builder/useDraggablePanel";
 import { useWorkspaceMode } from "../context/WorkspaceModeContext";
 import "../styles/builder-ui.css";
 import "../styles/schematic.css";
-import "../styles/interactive-tutorial.css";
-import "../styles/draggable-panels.css";
-import { getSchematicSymbol, type ComponentSymbol } from "../components/circuit/SchematicSymbols";
-import BrandMark from "../components/BrandMark";
-import WordMark from "../components/WordMark";
-import { CompactWorksheetPanel } from "../components/builder/panels/CompactWorksheetPanel";
-import { CompactTroubleshootPanel } from "../components/builder/panels/CompactTroubleshootPanel";
-import { CompactGuidesPanel } from "../components/builder/panels/CompactGuidesPanel";
-import { WorkspaceModePanel } from "../components/builder/panels/WorkspaceModePanel";
-import { EnvironmentalPanel } from "../components/builder/panels/EnvironmentalPanel";
-import { MeasurementToolsPanel } from "../components/builder/panels/MeasurementToolsPanel";
-import { WireLibraryPanel } from "../components/builder/panels/WireLibraryPanel";
-import { TroubleshootPanel } from "../components/builder/panels/TroubleshootPanel";
+import ArenaView from "../components/arena/ArenaView";
+import Practice from "./Practice";
+import BuilderWorkspace from "../components/schematic/BuilderWorkspace";
 import {
   type EnvironmentalScenario,
   getDefaultScenario,
@@ -1314,11 +1304,51 @@ export default function Builder() {
   const [isRightOpen, setRightOpen] = useState(false);
   const [isBottomOpen, setBottomOpen] = useState(false);
   const [isHelpOpen, setHelpOpen] = useState(false);
-  const [requestedHelpSection, setRequestedHelpSection] = useState<string | null>(null);
-  const hasShownInitialRailPeek = useRef(false);
-  useEffect(() => {
-    if (typeof window === "undefined" || isComponentRailPinned || hasShownInitialRailPeek.current) {
-      return;
+  const [requestedHelpSection, setRequestedHelpSection] = useState<
+    string | null
+  >(null);
+  const [helpView, setHelpView] = useState<HelpModalView>("overview");
+  const [isLeftMenuOpen, setLeftMenuOpen] = useState<boolean>(() => {
+    if (typeof window === "undefined") {
+      return false;
+    }
+    return window.innerWidth >= 1024;
+  });
+  const [isRightMenuOpen, setRightMenuOpen] = useState(false);
+  const [isBottomMenuOpen, setBottomMenuOpen] = useState(false);
+  const [activeQuickTool, setActiveQuickTool] =
+    useState<BuilderToolId>("select");
+  const [modeState, setModeState] = useState<LegacyModeState>({
+    isWireMode: false,
+    isRotateMode: false,
+    isMeasureMode: false,
+    currentFlowStyle: "misty",
+    showPolarityIndicators: true,
+    layoutMode: "free",
+    wireRoutingMode: "freeform",
+    showGrid: true,
+    showLabels: true,
+  });
+  const [isSimulatePulsing, setSimulatePulsing] = useState(false);
+  const [arenaExportStatus, setArenaExportStatus] =
+    useState<ArenaExportStatus>("idle");
+  const [arenaExportError, setArenaExportError] = useState<string | null>(null);
+  const [lastArenaExport, setLastArenaExport] =
+    useState<ArenaExportSummary | null>(null);
+  const [isArenaPanelOpen, setArenaPanelOpen] = useState(false);
+  const [isPracticePanelOpen, setPracticePanelOpen] = useState(false);
+  const [isSchematicPanelOpen, setSchematicPanelOpen] = useState(false);
+  const [schematicStandard, setSchematicStandard] = useState<SymbolStandard>(
+    DEFAULT_SYMBOL_STANDARD,
+  );
+  const [activePracticeProblemId, setActivePracticeProblemId] = useState<
+    string | null
+  >(DEFAULT_PRACTICE_PROBLEM?.id ?? null);
+  const [practiceWorksheetState, setPracticeWorksheetState] =
+    useState<PracticeWorksheetStatus | null>(null);
+  const [logoSettings, setLogoSettings] = useState<BuilderLogoSettings>(() => {
+    if (typeof window === "undefined") {
+      return DEFAULT_LOGO_SETTINGS;
     }
 
     hasShownInitialRailPeek.current = true;
@@ -1722,7 +1752,7 @@ export default function Builder() {
         }, 1200);
       }
     },
-    [triggerBuilderAction, setActiveQuickTool, setSimulatePulsing]
+    [handleArenaSync, openHelpCenter, triggerBuilderAction, openPracticePanel],
   );
 
   const toggleLeftMenu = useCallback(() => {
@@ -3491,31 +3521,42 @@ export default function Builder() {
             X
           </button>
           <div className="builder-panel-body builder-panel-body--schematic">
-            <div
-              className="schematic-standard-control"
-              role="group"
-              aria-label="Schematic symbol standard"
-            >
-              <span className="schematic-standard-label">Symbol Standard</span>
-              <div className="schematic-standard-buttons">
-                {SYMBOL_STANDARD_OPTIONS.map((option) => (
-                  <button
-                    key={option.key}
-                    type="button"
-                    className={
-                      schematicSymbolStandard === option.key
-                        ? "schematic-standard-button is-active"
-                        : "schematic-standard-button"
-                    }
-                    onClick={() => setSchematicSymbolStandard(option.key)}
-                    title={option.description}
-                  >
-                    {option.label}
-                  </button>
-                ))}
+            <div className="schematic-overlay-header">
+              <div>
+                <h2>3D Schematic Builder</h2>
+                <p>
+                  Using {schematicStandardLabel} symbol profiles. Toggle
+                  standards to match your textbook layout.
+                </p>
+              </div>
+              <div
+                className="schematic-standard-control"
+                role="group"
+                aria-label="Schematic symbol standard"
+              >
+                <span className="schematic-standard-label">
+                  Symbol Standard
+                </span>
+                <div className="schematic-standard-buttons">
+                  {SYMBOL_STANDARD_OPTIONS.map((option) => (
+                    <button
+                      key={option.key}
+                      type="button"
+                      className={
+                        schematicStandard === option.key
+                          ? "schematic-standard-button is-active"
+                          : "schematic-standard-button"
+                      }
+                      onClick={() => setSchematicStandard(option.key)}
+                      title={option.description}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
-            <BuilderWorkspace symbolStandard={schematicSymbolStandard} />
+            <BuilderWorkspace symbolStandard={schematicStandard} />
           </div>
         </div>
       </div>

@@ -322,143 +322,6 @@ body.builder-body::before {
 .builder-panel-shell--schematic {
   width: min(96vw, 1380px);
   max-height: 92vh;
-  max-height: 92dvh;
-}
-
-.builder-panel-shell--environment {
-  width: min(94vw, 720px);
-  max-height: 90vh;
-  max-height: 90dvh;
-}
-
-.builder-panel .panel-header {
-  padding: 14px 16px 12px;
-  border-bottom: 1px solid rgba(0, 255, 136, 0.18);
-}
-
-.builder-panel-body--measurement {
-  overflow: auto;
-  padding: 0;
-  background: rgba(8, 20, 44, 0.92);
-  flex: 1 1 auto;
-  min-height: 0;
-}
-
-.measurement-panel-float {
-  position: fixed;
-  background: var(--builder-overlay-soft);
-  border: 1px solid var(--builder-border);
-  border-radius: 18px;
-  box-shadow: 0 18px 36px var(--builder-shadow);
-  backdrop-filter: blur(16px);
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  padding: 14px 12px;
-  color: inherit;
-  z-index: 840;
-  transition: transform 0.32s ease;
-}
-
-.measurement-panel-float.open {
-  opacity: 1;
-  transform: translateY(0);
-  pointer-events: auto;
-}
-
-.builder-panel-shell--measurement {
-  width: min(92vw, 420px);
-  max-height: min(80vh, 720px);
-}
-
-@media (max-width: 720px) {
-  .measurement-panel-float {
-    right: 10px;
-    left: 10px;
-    bottom: calc(10px + var(--builder-safe-area-bottom));
-  }
-
-  .builder-panel-shell--measurement {
-    width: 100%;
-  }
-}
-
-/* Wire Library Panel */
-.builder-panel-shell--wire-library {
-  width: min(96vw, 1280px);
-  max-height: 92vh;
-  max-height: 92dvh;
-}
-
-.builder-panel-body--wire-library {
-  overflow: auto;
-  padding: 24px 28px;
-  background: linear-gradient(
-    160deg,
-    rgba(6, 16, 34, 0.96),
-    rgba(2, 8, 18, 0.94)
-  );
-  flex: 1 1 auto;
-  min-height: 0;
-}
-
-.builder-panel-body--wire-library .practice-wire-library {
-  margin-top: 0;
-  background: transparent;
-  border: none;
-  padding: 0;
-}
-
-.builder-panel-body--wire-library .wire-library-header {
-  padding-bottom: 16px;
-  border-bottom: 1px solid rgba(168, 216, 255, 0.2);
-  margin-bottom: 20px;
-}
-
-.builder-panel-body--wire-library .wire-library-header h3 {
-  font-size: 1.4rem;
-  color: #a8dcff;
-}
-
-.builder-panel-overlay--wire-library .wire-library-table-wrapper {
-  max-height: 50vh;
-  overflow: auto;
-}
-
-.builder-panel-shell--workspace-section {
-  width: min(96vw, 1440px);
-  max-height: 92vh;
-  max-height: 92dvh;
-}
-
-.builder-panel-body--workspace-section {
-  overflow: auto;
-  padding: 0;
-  background: linear-gradient(
-    160deg,
-    rgba(6, 16, 34, 0.98),
-    rgba(2, 8, 18, 0.95)
-  );
-}
-
-.builder-panel-body--workspace-section .account-page {
-  max-width: none;
-}
-
-.builder-panel-body--workspace-section .pricing-section,
-.builder-panel-body--workspace-section .subscription-section {
-  min-height: auto;
-}
-
-.mode-action-btn--wire-library:hover {
-  background: rgba(45, 212, 191, 0.15);
-  color: #6ee7b7;
-  border-color: rgba(45, 212, 191, 0.3);
-}
-
-.builder-panel-shell--schematic {
-  width: min(98vw, 1340px);
-  max-height: 92vh;
 }
 
 .builder-panel-close {
@@ -490,7 +353,40 @@ body.builder-body::before {
   opacity: 1;
 }
 
-.builder-menu-scroll-bottom {
+.builder-panel-body--practice {
+  overflow: auto;
+  padding: 16px;
+  background: rgba(8, 20, 44, 0.9);
+}
+
+.builder-panel-body--arena {
+  overflow: hidden;
+  background: rgba(8, 20, 44, 0.95);
+}
+
+.builder-panel-body--schematic {
+  overflow: hidden;
+  padding: 24px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  background: linear-gradient(
+    160deg,
+    rgba(6, 16, 34, 0.96),
+    rgba(2, 8, 18, 0.94)
+  );
+}
+
+.builder-panel-body--schematic .schematic-workspace {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.schematic-overlay-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
   gap: 18px;
 }
 
@@ -524,21 +420,9 @@ body.builder-body::before {
   outline: none;
 }
 
-.app-icon-button:focus-visible {
-  outline: 2px solid var(--brand-green);
-  outline-offset: 3px;
-}
-
-.builder-menu-handle-right {
-  top: 50%;
-  left: 0;
-  transform: translate(-50%, -50%);
-}
-
-.builder-menu-handle-bottom {
-  top: 0;
-  left: 50%;
-  transform: translate(-50%, -50%);
+.schematic-overlay-header .schematic-standard-control {
+  align-items: flex-end;
+  gap: 8px;
 }
 
 .builder-panel-overlay--arena .arena-page {
