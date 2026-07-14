@@ -3842,9 +3842,9 @@ export default function Builder() {
                     lineHeight: 1.4,
                   }}
                 >
-                  🔒 More components unlocked in the full version
+                  🚀 Get the full native experience
                   <br />
-                  <span style={{ opacity: 0.7 }}>Get it on Play Store →</span>
+                  <span style={{ opacity: 0.7 }}>Download on Play Store →</span>
                 </a>
               )}
             </div>

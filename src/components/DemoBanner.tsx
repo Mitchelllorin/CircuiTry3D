@@ -130,8 +130,7 @@ export default function DemoBanner() {
           ⚡ Demo Version
         </span>
         <span style={{ opacity: 0.85 }}>
-          Limited component library &mdash; Battery, Resistor, LED, Switch, Ground &amp; Junction
-          only.
+          Web demo &mdash; full component library available. For the best experience, get the native app.
         </span>
         <a
           href={PLAY_STORE_URL}
