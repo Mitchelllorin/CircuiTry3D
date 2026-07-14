@@ -17,21 +17,608 @@
   block-size: 100%;
   min-block-size: 100%;
   overflow: hidden;
-  border-radius: 24px;
-  background:
-    radial-gradient(circle at 20% 20%, rgba(96, 165, 250, 0.16), transparent 32%),
-    radial-gradient(circle at 80% 18%, rgba(249, 115, 22, 0.14), transparent 28%),
-    linear-gradient(180deg, #020617 0%, #0f172a 100%);
-  color: var(--arena-text);
+  background: radial-gradient(circle at 20% 20%, var(--brand-primary-dim), transparent 55%),
+    radial-gradient(circle at 80% 10%, transparent, transparent 50%),
+    linear-gradient(180deg, var(--bg-dark) 0%, var(--bg-darker) 45%, var(--bg-dark) 100%);
+  color: var(--text-secondary);
+  font-family: var(--font-family);
 }
 
-.arena-view--page,
-.arena-view--workspace,
-.arena-view--embedded {
-  min-block-size: 100%;
+.arena-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+  padding: 20px 32px;
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--bg-surface);
+  backdrop-filter: blur(18px);
+  position: sticky;
+  top: 0;
+  z-index: 5;
 }
 
-.arena-workspace-shell {
+.arena-header-left {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.arena-title-group h1 {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.arena-title-group p {
+  margin: 4px 0 0;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.arena-header-right {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.arena-sync-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 180px;
+}
+
+.arena-sync-status {
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--brand-accent);
+}
+
+.arena-sync-timestamp {
+  font-size: 0.85rem;
+  color: #cbd5f5;
+}
+
+.arena-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 24px 32px 40px;
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.arena-wire-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.arena-import-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.arena-selectors-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.arena-metrics-selector-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.arena-metric-toggles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.arena-metric-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border-radius: 12px;
+  border: 2px solid rgba(148, 163, 184, 0.3);
+  background: rgba(15, 23, 42, 0.6);
+  color: rgba(203, 213, 225, 0.9);
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+}
+
+.arena-metric-toggle:hover:not(:disabled) {
+  transform: translateY(-2px);
+  border-color: var(--brand-accent-glow);
+  background: var(--brand-accent-dim);
+  box-shadow: 0 4px 12px var(--brand-accent-glow);
+}
+
+.arena-metric-toggle.active {
+  border-color: var(--brand-accent);
+  background: linear-gradient(135deg, var(--brand-accent-dim), var(--brand-accent));
+  color: var(--bg-dark);
+  box-shadow: 0 4px 16px var(--brand-accent-glow);
+}
+
+.arena-metric-toggle:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.arena-metric-toggle .toggle-icon {
+  font-size: 1.2rem;
+}
+
+.arena-metric-toggle .toggle-label {
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+}
+
+/* Environmental Scenario Selector */
+.arena-scenario-selector-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.arena-scenario-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.arena-scenario-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 20px 16px;
+  border-radius: 12px;
+  border: 2px solid rgba(148, 163, 184, 0.25);
+  background: rgba(15, 23, 42, 0.5);
+  cursor: pointer;
+  transition: all 0.25s ease;
+  text-align: center;
+}
+
+.arena-scenario-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--brand-accent-glow);
+  background: var(--brand-accent-dim);
+  box-shadow: 0 6px 20px var(--brand-accent-glow);
+}
+
+.arena-scenario-card.active {
+  border-color: var(--brand-accent);
+  background: linear-gradient(135deg, var(--brand-accent-dim), var(--bg-surface));
+  box-shadow: 0 8px 24px var(--brand-accent-glow);
+}
+
+.arena-scenario-card.active::before {
+  content: "✓";
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--brand-accent);
+  color: var(--bg-dark);
+  border-radius: 50%;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.scenario-icon {
+  font-size: 2.5rem;
+  margin-bottom: 4px;
+}
+
+.scenario-name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: rgba(226, 232, 240, 0.95);
+  margin-bottom: 4px;
+}
+
+.scenario-description {
+  font-size: 0.8rem;
+  color: rgba(148, 163, 184, 0.85);
+  line-height: 1.4;
+  margin-bottom: 8px;
+  min-height: 2.8em;
+}
+
+.scenario-conditions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+  margin-top: 8px;
+}
+
+.condition-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(71, 85, 105, 0.4);
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: rgba(203, 213, 225, 0.9);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.arena-scenario-active-notice {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 20px;
+  padding: 16px 20px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(15, 23, 42, 0.6));
+  border: 1px solid var(--brand-primary-dim);
+  animation: scenarioNoticePulse 2s ease-in-out infinite;
+}
+
+@keyframes scenarioNoticePulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(16, 185, 129, 0);
+  }
+}
+
+.notice-icon {
+  font-size: 2rem;
+  flex-shrink: 0;
+}
+
+.notice-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.notice-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--brand-primary);
+  letter-spacing: 0.02em;
+}
+
+.notice-description {
+  font-size: 0.85rem;
+  color: rgba(203, 213, 225, 0.85);
+  line-height: 1.4;
+}
+
+.arena-metrics-section {
+  width: 100%;
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(8, 14, 28, 0.85);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.arena-metrics-section.arena-metrics-before {
+  border-color: rgba(251, 146, 60, 0.4);
+  background: linear-gradient(135deg, rgba(251, 146, 60, 0.15), rgba(8, 14, 28, 0.85));
+}
+
+.arena-metrics-section.arena-metrics-after {
+  border-color: var(--brand-primary-dim);
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(8, 14, 28, 0.85));
+}
+
+.arena-metrics-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: rgba(203, 213, 225, 0.8);
+  margin-bottom: 8px;
+  text-align: center;
+}
+
+.arena-metrics-compact {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+
+.arena-metric-compact {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  font-size: 0.8rem;
+}
+
+.arena-metric-compact .metric-compact-icon {
+  font-size: 1rem;
+}
+
+.arena-metric-compact .metric-compact-value {
+  font-weight: 600;
+  color: rgba(226, 232, 240, 0.95);
+}
+
+
+.arena-battle-section {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  flex: 1;
+}
+
+.arena-card {
+  background: rgba(15, 23, 42, 0.88);
+  border: 1px solid rgba(51, 65, 85, 0.65);
+  border-radius: 18px;
+  padding: 20px 22px 22px;
+  box-shadow: 0 22px 60px rgba(2, 6, 23, 0.55);
+}
+
+.arena-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.arena-card-header h2 {
+  margin: 0;
+  font-size: 1.05rem;
+  letter-spacing: 0.03em;
+}
+
+.arena-metric-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.arena-metric {
+  border-radius: 14px;
+  padding: 14px 16px;
+  background: rgba(10, 15, 30, 0.9);
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  display: grid;
+  grid-template-rows: auto auto auto;
+  gap: 6px;
+  position: relative;
+}
+
+.arena-metric .metric-letter {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: rgba(226, 232, 240, 0.7);
+}
+
+.arena-metric .metric-value {
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.arena-metric .metric-label {
+  font-size: 0.8rem;
+  color: #94a3b8;
+}
+
+.metric-w {
+  border-color: rgba(59, 130, 246, 0.45);
+  background: linear-gradient(135deg, rgba(30, 64, 175, 0.35) 0%, rgba(30, 64, 175, 0.05) 100%);
+}
+
+.metric-i {
+  border-color: rgba(251, 146, 60, 0.45);
+  background: linear-gradient(135deg, rgba(194, 65, 12, 0.33) 0%, rgba(194, 65, 12, 0.05) 100%);
+}
+
+.metric-r {
+  border-color: var(--brand-primary-dim);
+  background: linear-gradient(135deg, rgba(5, 122, 85, 0.38) 0%, rgba(5, 122, 85, 0.06) 100%);
+}
+
+.metric-e {
+  border-color: rgba(248, 113, 113, 0.45);
+  background: linear-gradient(135deg, rgba(185, 28, 28, 0.4) 0%, rgba(185, 28, 28, 0.06) 100%);
+}
+
+.arena-status-text {
+  color: #cbd5f5;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  margin: 0 0 18px;
+}
+
+.arena-status-text + .arena-status-error {
+  margin-top: -8px;
+}
+
+.arena-status-error {
+  color: #fda4af;
+  font-size: 0.88rem;
+}
+
+.arena-sync-source {
+  font-size: 0.78rem;
+  color: rgba(148, 163, 184, 0.9);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.arena-import-card {
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.arena-import-card.drag-active {
+  border-color: rgba(0, 255, 136, 0.7);
+  box-shadow: 0 18px 42px var(--brand-primary-dim);
+}
+
+.arena-import-intro {
+  margin: 4px 0 0;
+  font-size: 0.85rem;
+  color: rgba(148, 163, 184, 0.82);
+}
+
+.arena-import-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.arena-import-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(30, 64, 175, 0.22);
+  border: 1px solid rgba(59, 130, 246, 0.4);
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(191, 219, 254, 0.92);
+}
+
+.arena-import-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 18px;
+}
+
+.arena-import-column {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.arena-import-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.arena-import-actions .arena-btn {
+  width: 100%;
+}
+
+.arena-import-samples {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: rgba(8, 14, 28, 0.72);
+  border: 1px solid rgba(59, 130, 246, 0.28);
+  border-radius: 14px;
+  padding: 12px 14px;
+}
+
+.arena-import-subheading {
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: rgba(148, 163, 184, 0.85);
+}
+
+.arena-import-sample-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.arena-sample-btn {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-start;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(94, 234, 212, 0.35);
+  background: rgba(12, 26, 45, 0.6);
+  color: #e2e8f0;
+  cursor: pointer;
+  transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+}
+
+.arena-sample-btn:hover {
+  transform: translateY(-1px);
+  border-color: rgba(94, 234, 212, 0.6);
+  background: rgba(13, 148, 136, 0.3);
+}
+
+.arena-sample-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.arena-sample-btn .sample-title {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.arena-sample-btn .sample-desc {
+  font-size: 0.78rem;
+  color: rgba(148, 163, 184, 0.88);
+}
+
+.arena-import-dropzone {
+  position: relative;
+  border: 2px dashed rgba(148, 163, 184, 0.35);
+  border-radius: 16px;
+  padding: 18px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  background: rgba(8, 12, 24, 0.72);
+  transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.arena-import-dropzone.is-active {
+  border-color: rgba(59, 130, 246, 0.65);
+  background: rgba(30, 64, 175, 0.32);
+  box-shadow: 0 12px 32px rgba(59, 130, 246, 0.25);
+}
+
+.arena-import-file-input {
   position: absolute;
   inset: 0;
   display: flex;

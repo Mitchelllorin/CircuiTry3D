@@ -1,4 +1,5 @@
 :root {
+  /* Brand Logo Colors - from splash page */
   --brand-blue: #88ccff;
   --brand-orange: #ff9966;
   --brand-green: #00ff88;
@@ -27,217 +28,58 @@
   --brand-green-dim: rgba(0, 255, 136, 0.18);
   --brand-green-glow: rgba(0, 255, 136, 0.38);
 
-  --brand-primary: #a8d8ff;
-  --brand-secondary: #ff9966;
+  /* Semantic Brand Aliases */
+  --brand-primary: #88ccff;
+  --brand-secondary: #ff8844;
   --brand-accent: #00ff88;
-  --brand-primary-dim: rgba(168, 216, 255, 0.18);
-  --brand-primary-glow: rgba(168, 216, 255, 0.42);
-  --brand-secondary-dim: rgba(255, 153, 102, 0.18);
-  --brand-secondary-glow: rgba(255, 153, 102, 0.42);
+  --brand-primary-dim: rgba(136, 204, 255, 0.18);
+  --brand-primary-glow: rgba(136, 204, 255, 0.42);
+  --brand-secondary-dim: rgba(255, 136, 68, 0.18);
+  --brand-secondary-glow: rgba(255, 136, 68, 0.42);
+  --brand-accent-dim: rgba(0, 255, 136, 0.18);
+  --brand-accent-glow: rgba(0, 255, 136, 0.38);
 
-  --bg-dark: #07071a;
-  --bg-darker: #0c0d1e;
-  --bg-surface: rgba(14, 12, 40, 0.78);
-  --bg-overlay: rgba(12, 10, 36, 0.76);
-  
+  /* Circuit Diagram Colors - from splash page */
+  --circuit-wire: #41ffc0;
+  --circuit-wire-glow: rgba(65, 255, 192, 0.6);
+  --circuit-node: #39ffb7;
+  --circuit-node-glow: rgba(57, 255, 183, 0.95);
+  --circuit-component: #39ffb7;
+  --circuit-component-glow: rgba(57, 255, 183, 0.75);
+  --circuit-panel-border: rgba(36, 255, 170, 0.95);
+  --circuit-panel-bg: rgba(6, 16, 38, 0.9);
+
+  /* Background Colors - from splash page */
+  --bg-dark: #050b1f;
+  --bg-darker: #0b1120;
+  --bg-deepest: #04091a;
+  --bg-surface: rgba(14, 30, 58, 0.78);
+  --bg-overlay: rgba(12, 26, 48, 0.76);
+  --bg-panel: rgba(6, 16, 38, 0.9);
+  --bg-gradient-primary: radial-gradient(125% 125% at 50% 10%, rgba(47, 84, 235, 0.25) 0%, rgba(9, 17, 43, 0.85) 45%, #050b1f 100%);
+
+  /* Text Colors */
   --text-primary: #f3f8ff;
   --text-secondary: #e2e8f0;
-  --text-muted: rgba(226, 232, 240, 0.82);
-  
-  --border-subtle: rgba(136, 204, 255, 0.28);
-  --border-emphasis: rgba(136, 204, 255, 0.65);
+  --text-muted: rgba(226, 232, 240, 0.7);
+  --text-label: #dce9ff;
+  --text-subtitle: #9db8ff;
+  --text-highlight: #9fffdc;
 
-  /* Safe-area insets (iOS notch/status bar, etc.) */
-  --app-safe-area-top: env(safe-area-inset-top, 0px);
-  --app-safe-area-bottom: env(safe-area-inset-bottom, 0px);
-  --app-mode-bar-gap: 12px;
+  /* Border Colors */
+  --border-subtle: rgba(136, 204, 255, 0.22);
+  --border-emphasis: rgba(136, 204, 255, 0.56);
+  --border-glow: rgba(136, 204, 255, 0.75);
 
-  /* ── Z-index layer tokens ────────────────────────────────────────────────
-   * Single source of truth for all stacking context values.
-   * Use these variables instead of raw numbers so that layering changes
-   * propagate everywhere from one place.
-   *
-   * Rough bands:
-   *   1–20    base / header shell
-   *   90      global ticker
-   *   100–120 dropdowns / small overlays
-   *   650–940 builder workspace panels & toolbars
-   *   980     interactive tutorial
-   *   860–1300 compact panels, mode bar, builder top panel
-   *   1900–2200 modal overlays
-   *   9999–10000 critical always-on-top (storage modal)
-   * ────────────────────────────────────────────────────────────────────── */
-  /* Shell */
-  --z-base: 1;
-  --z-raised: 10;
-  --z-tooltip: 15;
-  --z-header: 20;
-  /* Global ticker */
-  --z-ticker: 90;
-  /* Dropdowns / floating menus */
-  --z-dropdown: 100;
-  --z-dropdown-overlay: 120;
-  /* Builder workspace */
-  --z-builder-canvas: 650;
-  --z-builder-tool-menu: 700;
-  --z-builder-scene: 800;
-  --z-builder-side-panel: 810;
-  --z-builder-side-menu: 820;
-  --z-builder-logo: 900;
-  --z-builder-toolbar: 920;
-  --z-builder-floats: 930;
-  --z-builder-toolbar-top: 940;
-  /* Menu-stage toggle tabs (Library / Controls / Insights) — above action bar &
-     zoom so the small toggle buttons are never hidden behind floating elements */
-  --z-builder-menu-stage: 945;
-  /* Tutorial overlay — must clear collapsed compact panel headers (z 1190–1250) */
-  --z-tutorial: 1260;
-  /* Compact / mobile panels */
-  --z-compact-worksheet: 860;
-  --z-builder-widget: 1185;
-  --z-compact-settings: 1190;
-  --z-compact-troubleshoot: 1191;
-  --z-compact-guides: 1192;
-  --z-compact-worksheet-open: 1200;
-  --z-mode-bar: 1210;
-  --z-mode-panel: 1240;
-  --z-compact-overlay: 1250;
-  --z-builder-top: 1300;
-  /* AI helper FAB + panel — above compact panels, below modals */
-  --z-ai-helper: 1350;
-  /* Modal layers */
-  --z-modal-bg: 1900;
-  --z-demo-banner: 2100;
-  --z-demo-banner-top: 2101;
-  --z-full-overlay: 2200;
-  /* Critical always-on-top */
-  --z-storage-backdrop: 9999;
-  --z-storage-modal: 10000;
-}
-
-/* ── Light mode overrides ────────────────────────────────────────────────── */
-html[data-theme="light"] {
-  --bg-dark: #eef2f7;
-  --bg-darker: #e4eaf3;
-  --bg-surface: rgba(255, 255, 255, 0.92);
-  --bg-overlay: rgba(236, 241, 248, 0.94);
-
-  --text-primary: #0f172a;
-  --text-secondary: #1e293b;
-  --text-muted: rgba(30, 41, 59, 0.65);
-
-  --border-subtle: rgba(80, 130, 190, 0.22);
-  --border-emphasis: rgba(60, 110, 170, 0.5);
-
-  /* Slightly deeper brand colours for contrast on light backgrounds */
-  --brand-blue: #1a6fc4;
-  --brand-orange: #c4560e;
-  --brand-green: #097a45;
-
-  --brand-primary: #1a6fc4;
-  --brand-secondary: #c4560e;
-  --brand-accent: #097a45;
-
-  --brand-blue-dim: rgba(26, 111, 196, 0.12);
-  --brand-blue-glow: rgba(26, 111, 196, 0.3);
-  --brand-orange-dim: rgba(196, 86, 14, 0.12);
-  --brand-orange-glow: rgba(196, 86, 14, 0.3);
-  --brand-green-dim: rgba(9, 122, 69, 0.12);
-  --brand-green-glow: rgba(9, 122, 69, 0.28);
-
-  --brand-primary-dim: rgba(26, 111, 196, 0.12);
-  --brand-primary-glow: rgba(26, 111, 196, 0.3);
-  --brand-secondary-dim: rgba(196, 86, 14, 0.12);
-  --brand-secondary-glow: rgba(196, 86, 14, 0.3);
+  /* Font Stack - unified across app */
+  --font-family: "Inter", "Poppins", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
 body {
   margin: 0;
   background: var(--bg-darker);
   color: var(--text-secondary);
-  font-family: "DM Sans", "Inter", "Helvetica Neue", Arial, sans-serif;
-}
-
-.circuitry-brandmark {
-  display: inline-flex;
-  align-items: center;
-  gap: 12px;
-  user-select: none;
-}
-
-.circuitry-brand-signature {
-  display: inline-flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-  user-select: none;
-}
-
-.circuitry-brand-signature[data-layout="stacked"] {
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 6px;
-}
-
-.circuitry-brand-signature[data-size="xs"] {
-  gap: 8px;
-}
-
-.circuitry-brand-signature[data-size="lg"] {
-  gap: 14px;
-}
-
-.circuitry-brandmark__img {
-  display: block;
-  height: auto;
-  filter: drop-shadow(0 8px 22px var(--brand-primary-glow));
-  opacity: 0.98;
-  -webkit-user-drag: none;
-}
-
-.circuitry-brandmark__label {
-  font-size: 1.1rem;
-  font-weight: 800;
-  letter-spacing: 0.02em;
-  color: #f8fafc;
-  text-transform: none;
-  line-height: 1;
-}
-
-.circuitry-wordmark {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 0.18em;
-  font-weight: 900;
-  letter-spacing: 0.14em;
-  line-height: 1;
-  user-select: none;
-  -webkit-user-drag: none;
-  filter: drop-shadow(0 10px 22px rgba(2, 6, 23, 0.22));
-  white-space: nowrap;
-}
-
-.circuitry-wordmark__circui {
-  color: var(--brand-blue);
-  text-shadow:
-    0 0 12px rgba(136, 204, 255, 0.3),
-    0 0 24px rgba(136, 204, 255, 0.22);
-}
-
-.circuitry-wordmark__try {
-  color: var(--brand-orange);
-  font-style: italic;
-  text-shadow:
-    0 0 12px rgba(255, 136, 68, 0.3),
-    0 0 24px rgba(255, 136, 68, 0.22);
-}
-
-.circuitry-wordmark__3d {
-  color: var(--brand-green);
-  letter-spacing: 0.18em;
-  text-shadow:
-    0 0 12px rgba(0, 255, 136, 0.26),
-    0 0 24px rgba(0, 255, 136, 0.18);
+  font-family: var(--font-family);
 }
 
 .app-shell {

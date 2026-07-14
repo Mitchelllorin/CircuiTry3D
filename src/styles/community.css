@@ -11,11 +11,7 @@
   display: flex;
   flex-direction: column;
   gap: 32px;
-  background:
-    radial-gradient(circle at 12% -10%, var(--brand-primary-dim), transparent 60%),
-    radial-gradient(circle at 90% 0%, var(--brand-secondary-dim), transparent 55%),
-    var(--community-bg);
-  color: var(--community-text);
+  background: var(--bg-darker);
 }
 
 .community-page > *:not(.unified-nav) {
@@ -29,8 +25,8 @@
   gap: 24px;
   padding: 32px;
   border-radius: 20px;
-  background: linear-gradient(135deg, var(--brand-primary-dim), var(--brand-secondary-dim));
-  border: 1px solid var(--community-border);
+  background: linear-gradient(135deg, var(--brand-accent-dim), var(--brand-primary-dim));
+  border: 1px solid var(--border-subtle);
   margin: 0 32px;
 }
 
@@ -38,7 +34,7 @@
   text-transform: uppercase;
   letter-spacing: 0.18em;
   font-size: 0.75rem;
-  color: var(--community-accent);
+  color: var(--brand-accent);
   display: block;
   margin-bottom: 10px;
 }
@@ -64,8 +60,8 @@
 }
 
 .stat-card {
-  background: var(--community-panel);
-  border: 1px solid var(--community-border);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
   border-radius: 16px;
   padding: 18px;
   display: flex;
@@ -77,12 +73,12 @@
 .stat-value {
   font-size: 1.5rem;
   font-weight: 700;
-  color: var(--community-text);
+  color: var(--text-primary);
 }
 
 .stat-label {
   font-size: 0.85rem;
-  color: var(--community-muted);
+  color: var(--text-muted);
 }
 
 .community-grid {
@@ -97,8 +93,8 @@
   gap: 20px;
   padding: 28px;
   border-radius: 20px;
-  background: var(--community-panel);
-  border: 1px solid var(--community-border);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
   box-shadow: 0 30px 60px -45px var(--brand-primary-glow);
 }
 
@@ -122,7 +118,7 @@
 .panel-cta {
   margin: 0;
   font-size: 0.85rem;
-  color: var(--community-highlight);
+  color: var(--brand-secondary);
 }
 
 .community-feed {
@@ -137,8 +133,8 @@
   gap: 16px;
   border-radius: 16px;
   padding: 16px;
-  background: color-mix(in srgb, var(--community-panel) 90%, var(--bg-dark));
-  border: 1px solid var(--community-border);
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
 }
 
 .feed-avatar {
@@ -149,7 +145,7 @@
   align-items: center;
   justify-content: center;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--bg-dark);
   letter-spacing: 0.05em;
 }
 
@@ -165,11 +161,11 @@
   gap: 12px;
   align-items: center;
   font-size: 0.9rem;
-  color: var(--community-muted);
+  color: var(--text-muted);
 }
 
 .feed-meta strong {
-  color: var(--community-text);
+  color: var(--text-primary);
 }
 
 .reaction-button {
@@ -221,8 +217,8 @@
 .community-form input:focus,
 .community-form textarea:focus {
   outline: none;
-  border-color: var(--community-accent);
-  box-shadow: 0 0 0 4px var(--brand-primary-dim);
+  border-color: var(--brand-accent-glow);
+  box-shadow: 0 0 0 4px var(--brand-accent-dim);
 }
 
 .form-actions {
@@ -235,14 +231,14 @@
 
 .form-status {
   font-size: 0.85rem;
-  color: var(--community-muted);
+  color: var(--text-muted);
 }
 
 .form-primary {
   border: none;
   border-radius: 999px;
   padding: 10px 20px;
-  background: linear-gradient(135deg, var(--brand-secondary), var(--brand-accent));
+  background: linear-gradient(135deg, var(--brand-accent), var(--brand-primary));
   color: var(--bg-dark);
   font-weight: 600;
   cursor: pointer;
@@ -256,7 +252,7 @@
 
 .form-primary:not(:disabled):hover {
   transform: translateY(-1px);
-  box-shadow: 0 12px 24px -14px var(--brand-secondary-glow);
+  box-shadow: 0 12px 24px -14px var(--brand-accent-glow);
 }
 
 .community-cards {
@@ -351,7 +347,7 @@
 .review-score {
   font-size: 1.6rem;
   font-weight: 700;
-  color: var(--community-highlight);
+  color: var(--brand-secondary);
 }
 
 .review-header {
@@ -370,7 +366,7 @@
 
 .review-stars {
   font-size: 1.2rem;
-  color: var(--community-highlight);
+  color: var(--brand-secondary);
 }
 
 .rating-label {
@@ -416,13 +412,13 @@
 }
 
 .color-swatch:focus-visible {
-  outline: 2px solid var(--community-accent);
+  outline: 2px solid var(--brand-accent);
   outline-offset: 2px;
 }
 
 .color-swatch.is-active {
-  border-color: var(--community-text);
-  box-shadow: 0 0 0 4px var(--brand-primary-dim);
+  border-color: var(--text-primary);
+  box-shadow: 0 0 0 4px var(--border-subtle);
 }
 
 .profile-cta-card {
@@ -442,7 +438,7 @@
   text-decoration: none;
   border-radius: 999px;
   padding: 10px 20px;
-  background: linear-gradient(135deg, var(--brand-secondary), var(--brand-accent));
+  background: linear-gradient(135deg, var(--brand-accent), var(--brand-primary));
   color: var(--bg-dark);
   font-weight: 600;
   display: inline-flex;

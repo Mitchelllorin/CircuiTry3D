@@ -1,20 +1,18 @@
 :root {
-  --builder-navy: #171d3e;
-  --builder-navy-alt: #1c2348;
-  --builder-navy-deep: #111631;
-  --builder-overlay: rgba(18, 24, 56, 0.74);
-  --builder-overlay-soft: rgba(20, 28, 64, 0.68);
-  --builder-border: rgba(168, 216, 255, 0.38);
-  --builder-border-strong: rgba(168, 216, 255, 0.58);
-  --builder-border-cyan: rgba(168, 216, 255, 0.28);
-  /* Alias global brand colors — single source of truth lives in layout.css */
+  --builder-navy: var(--bg-dark);
+  --builder-navy-alt: var(--bg-darker);
+  --builder-navy-deep: var(--bg-deepest);
+  --builder-overlay: var(--bg-overlay);
+  --builder-overlay-soft: var(--bg-surface);
+  --builder-border: var(--border-subtle);
+  --builder-border-strong: var(--border-emphasis);
+  --builder-border-cyan: var(--border-subtle);
   --builder-blue: var(--brand-blue);
   --builder-orange: var(--brand-orange);
   --builder-green: var(--brand-green);
   --builder-cyan: var(--brand-blue);
-  /* --wire-w/i/r/e intentionally omitted: defined once in layout.css */
-  --builder-text: #e8f6ff;
-  --builder-muted: rgba(200, 220, 255, 0.72);
+  --builder-text: var(--text-primary);
+  --builder-muted: var(--text-muted);
   --builder-shadow: rgba(3, 12, 32, 0.55);
   /* Toggle tabs — slim vertical strips at each edge */
   --builder-menu-toggle-width: 28px;
@@ -59,20 +57,9 @@
 
 body.builder-body {
   margin: 0;
-  background: linear-gradient(
-    135deg,
-    var(--builder-navy),
-    var(--builder-navy-alt) 48%,
-    var(--builder-navy-deep)
-  );
+  background: var(--bg-gradient-primary);
   color: var(--builder-text);
-  font-family:
-    "DM Sans",
-    "Inter",
-    "Segoe UI",
-    system-ui,
-    -apple-system,
-    sans-serif;
+  font-family: var(--font-family);
   overflow: hidden;
 }
 
