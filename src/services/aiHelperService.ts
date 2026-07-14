@@ -444,6 +444,11 @@ export function buildGreeting(circuitState: LegacyCircuitState | null): string {
     return `Almost there! Your circuit has ${counts.components} component(s) but is not yet complete (${reason}). Connect all terminals to complete the circuit.`;
   }
 
+  // Wire warning takes priority in the greeting
+  if (metrics.wireWarning) {
+    return `⚠️ Wire alert: ${metrics.wireWarning} Check the wire profile in Settings and consider upgrading the gauge or insulation.`;
+  }
+
   if (Number.isFinite(metrics.voltage) && Number.isFinite(metrics.current)) {
     const ampPct =
       metrics.wireAmpacityUtilization != null && Number.isFinite(metrics.wireAmpacityUtilization)
@@ -559,11 +564,6 @@ function buildComponentTypeHint(circuitState: LegacyCircuitState | null, q: stri
   // Relay advice
   if ((byType.relay ?? 0) > 0 && (q.includes("relay") || q.includes("coil") || q.includes("contact"))) {
     return "Your circuit includes a Relay. The coil draws continuous current when energised — connect it via a transistor driver and add a flyback diode to suppress the back-EMF when the coil switches off.";
-  }
-
-  // Voltage regulator advice
-  if ((byType["voltage-regulator"] ?? 0) > 0 && (q.includes("regulator") || q.includes("regulate") || q.includes("stable voltage") || q.includes("ldo") || q.includes("7805"))) {
-    return "Your circuit includes a Voltage Regulator. Ensure the input voltage is higher than the output by at least the dropout voltage. Heat dissipation = (V_in − V_out) × I_out — monitor the FUSE™ engine for thermal warnings if current is high.";
   }
 
   // Capacitor charging question
