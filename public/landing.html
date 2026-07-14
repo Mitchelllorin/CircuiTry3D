@@ -803,6 +803,11 @@
       gap: 12px;
       align-items: center;
       width: min(380px, 100%);
+      /* Start invisible so the browser never paints the static fallback
+         text before the animation script has set the correct first-phase
+         message. The script sets opacity to 1 before the first RAF tick. */
+      opacity: 0;
+      transition: opacity 0.3s ease;
     }
     .status-bar {
       width: 100%;
@@ -1136,8 +1141,8 @@
       </div>
 
       <!-- Loading / ready status -->
-      <div class="status-wrapper">
-        <div class="status-text" id="status-text">Initializing…</div>
+      <div class="status-wrapper" id="status-wrapper">
+        <div class="status-text" id="status-text"></div>
         <div class="status-bar" id="status-bar">
           <div class="status-bar-track">
             <div class="status-fill" id="status-fill"></div>
@@ -1859,6 +1864,10 @@
 
       statusText.textContent = phases[0].msg;
       statusBar.style.setProperty("--photon-opacity", "1");
+      // Reveal the wrapper now that the correct text is set — prevents the
+      // browser from ever painting the empty/static fallback state.
+      var statusWrapper = document.getElementById("status-wrapper");
+      if (statusWrapper) statusWrapper.style.opacity = "1";
       requestAnimationFrame(tick);
     })();
   </script>
