@@ -8851,34 +8851,16 @@ body.android-optimized .zoom-btn {
                 
                 // Diagnostic overlay stays visible until manual dismiss
                 
-                // Cap pixel ratio on mobile to reduce render-buffer size on high-DPR devices.
-                // Android is capped at 1.5× because System WebView devices (e.g. Pixel, Galaxy)
-                // report DPR 2.6–3.0, exhausting GPU VRAM and causing WebGL context loss.
-                // Other mobile is capped at 2× to retain retina sharpness.
-                // Cap desktop DPR at 2 too: above 2× (4K/Retina) the extra fill-rate
-                // is a large GPU cost for no perceptible sharpness gain.
-                renderer.setPixelRatio(isAndroid
-                    ? Math.min(window.devicePixelRatio, 1.5)
-                    : Math.min(window.devicePixelRatio, 2));
+                renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobile ? 1.5 : 2));
                 renderer.setSize(_vw, _vh);
-                renderer.setClearColor(0x0e1322, 1);
-                // Android System WebView (Capacitor) may have older GLSL compiler that
-                // misprecises or fails to compile the ACES tone-mapping fragment shader,
-                // resulting in invisible / black materials (including current-flow particles).
-                // LinearToneMapping is trivially simple (color *= exposure) and compiles
-                // correctly on every GPU/driver combination — use it on Android to guarantee
-                // current-flow particles are always visible.
-                renderer.toneMapping = isAndroid ? THREE.LinearToneMapping : THREE.ACESFilmicToneMapping;
-                renderer.toneMappingExposure = isAndroid ? 1.05 : 1.15;
-                // Soft shadows on capable (non-mobile) GPUs to ground the components and
-                // sell the PBR look. Mobile skips them to protect the frame/VRAM budget.
-                renderShadows = !isMobile;
-                renderer.shadowMap.enabled = renderShadows;
-                renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-                // sRGB encoding removed: Three.js r128 does not support
-                // renderer.outputColorSpace.  Setting it was a no-op but caused
-                // confusion across multiple fix cycles.  If upgrading to r152+,
-                // re-enable: renderer.outputColorSpace = THREE.SRGBColorSpace
+                renderer.setClearColor(0x0a0a1a, 1);
+                renderer.toneMapping = THREE.ACESFilmicToneMapping;
+                renderer.toneMappingExposure = 1.1;
+                // Enable proper sRGB output encoding for vivid, accurate colors.
+                // Previously reverted due to "dim grid on Android" — root cause was
+                // actually the TDZ crash + missing androidScheme:https, not sRGB.
+                renderer.outputEncoding = THREE.sRGBEncoding;
+
                 // Handle WebGL context loss / restoration (common on Android when
                 // the app is backgrounded or the OS reclaims GPU memory).
                 // preventDefault() on contextlost tells the browser to attempt
@@ -21858,10 +21840,6 @@ Made with ? for visual learners everywhere!
             fuseOnsetStartTime = 0;
             clearTimeout(fuseOnsetTimer);
             fuseOnsetTimer = null;
-
-            // Reset payoff-showcase degradation state (set again by loadPayoffCircuit).
-            isPayoffCircuit   = false;
-            payoffFlowDegrade = 1;
             
             currentFlowParticles.forEach(particle => {
                 if (particle) {
