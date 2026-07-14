@@ -183,7 +183,8 @@ body.builder-body::before {
 .builder-menu-stage-left {
   left: calc(clamp(12px, 3vw, 32px) + env(safe-area-inset-left, 0px));
   flex-direction: row;
-  width: 48px;
+  width: var(--builder-menu-toggle-side-width);
+  align-items: flex-start;
 }
 
 .builder-menu-stage-left.open {
@@ -193,7 +194,8 @@ body.builder-body::before {
 .builder-menu-stage-right {
   right: calc(clamp(12px, 3vw, 32px) + env(safe-area-inset-right, 0px));
   flex-direction: row;
-  width: 48px;
+  width: var(--builder-menu-toggle-side-width);
+  align-items: flex-start;
 }
 
 .builder-menu-stage-right.open {
@@ -491,15 +493,29 @@ body.builder-body::before {
   background: rgba(18, 34, 64, 0.88);
 }
 
-.builder-menu-toggle-left,
-.builder-menu-toggle-right {
-  width: 48px;
+
+.builder-menu-stage-left .builder-menu-toggle-left,
+.builder-menu-stage-right .builder-menu-toggle-right {
+  width: 44px;
   height: auto;
+  min-height: 128px;
   flex-shrink: 0;
   flex-direction: column;
-  border-radius: 12px;
-  padding: 10px 6px;
+  border-radius: 14px;
+  padding: 12px 6px;
   gap: 4px;
+  align-self: flex-start;
+  box-shadow: 0 10px 26px var(--builder-shadow);
+}
+
+.builder-menu-stage-left .builder-menu-toggle-left {
+  margin-top: clamp(16px, 6vh, 48px);
+  border-radius: 0 14px 14px 0;
+}
+
+.builder-menu-stage-right .builder-menu-toggle-right {
+  margin-top: clamp(16px, 6vh, 48px);
+  border-radius: 14px 0 0 14px;
 }
 
 .builder-menu-toggle-right {
@@ -1741,8 +1757,8 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
 
 .builder-floating-action {
   position: fixed;
-  bottom: calc(36px + var(--builder-safe-area-bottom));
   top: auto;
+  bottom: calc(112px + var(--builder-safe-area-bottom));
   z-index: 880;
   pointer-events: none;
   display: flex;
@@ -1758,18 +1774,20 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
 
 .builder-floating-button {
   pointer-events: auto;
-  border-radius: 50%;
-  border: 1px solid rgba(136, 204, 255, 0.35);
-  background: rgba(14, 32, 64, 0.88);
+  border-radius: 999px;
+  border: 1px solid rgba(136, 204, 255, 0.38);
+  background: rgba(14, 32, 64, 0.9);
   color: var(--builder-text);
-  width: 54px;
-  height: 54px;
+  font: inherit;
+  font-size: 0;
   padding: 0;
+  width: 52px;
+  height: 52px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  box-shadow: 0 14px 32px rgba(2, 12, 34, 0.55);
+  box-shadow: 0 12px 28px var(--builder-shadow);
   transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
 }
 
@@ -1808,8 +1826,8 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
 }
 
 .builder-floating-icon {
-  width: 22px;
-  height: 22px;
+  width: 26px;
+  height: 26px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1818,17 +1836,17 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
 .builder-floating-icon svg {
   width: 100%;
   height: 100%;
-  fill: currentColor;
+  display: block;
 }
 
 @media (max-width: 720px) {
   .builder-floating-action {
-    bottom: calc(24px + var(--builder-safe-area-bottom));
+    bottom: calc(96px + var(--builder-safe-area-bottom));
   }
 
   .builder-floating-button {
-    width: 48px;
-    height: 48px;
+    width: 46px;
+    height: 46px;
   }
 }
 
