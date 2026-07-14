@@ -10212,9 +10212,10 @@ body.android-optimized .zoom-btn {
                 if (!overviewKf) { if (typeof fitToScreen === 'function') fitToScreen(); return; }
                 const flowKf = Object.assign({}, overviewKf, {
                     distance: overviewKf.distance * 0.48,
-                    // Drop the look-at point a little so the flowing circuit rides UP
-                    // into the available space (above the tour card), not behind it.
-                    targetY: overviewKf.targetY - 2,
+                    // Lift the current flow into the same front-and-centre viewing
+                    // window as the other guided-tour highlights without pushing it
+                    // too far toward the top edge.
+                    targetY: overviewKf.targetY - 1,
                     duration: 1300, easing: 'smooth',
                 });
                 _cinematicCtrl.start(null, [cur, flowKf]);
