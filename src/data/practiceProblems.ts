@@ -9,12 +9,12 @@ const SERIES_IDS_4 = ["R1", "R2", "R3", "R4"] as const;
 const practiceProblemSeeds: PracticeProblem[] = [
   {
     id: "series-square-01",
-    title: "Series Circuit · Circuit Current",
+    title: "Series Circuit · Total Current",
     topology: "series",
     difficulty: "intro",
       prompt:
-        "A series circuit consists of three resistors (R1 = 150 Ω, R2 = 200 Ω, R3 = 250 Ω) connected to a 24 V battery. Complete the W.I.R.E. table including all component values and circuit totals.",
-    targetQuestion: "What is the total current flowing through this series circuit?",
+        "A series circuit holds four resistors connected end to end and powered by a 24 V battery. Complete the W.I.R.E. table, including the circuit totals, and determine the total current.",
+    targetQuestion: "What is the total current flowing through the series circuit?",
     targetMetric: { componentId: "totals", key: "current" },
     conceptTags: ["series", "ohms-law", "wire-table"],
     diagram: "seriesRect",
@@ -81,7 +81,7 @@ const practiceProblemSeeds: PracticeProblem[] = [
         };
       },
       ({ totals }) => ({
-        title: "Solve for circuit current",
+        title: "Solve for total current",
         detail: `I_T = E / R_T = ${formatMetricValue(totals.voltage, "voltage")} ÷ ${formatMetricValue(totals.resistance, "resistance")} = ${formatMetricValue(totals.current, "current")}`,
         formula: "I = E / R",
       }),
