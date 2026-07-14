@@ -136,7 +136,7 @@ export const ENTERPRISE_TIERS: EnterpriseTier[] = [
       "Analytics for manufacturers",
     ],
     contactMailto:
-      "mailto:info@circuitry3d.net?subject=Component%20Arena%20Inquiry",
+      "mailto:hello@circuitry3d.net?subject=Component%20Arena%20Inquiry",
   },
   {
     id: "education-arena",
@@ -151,7 +151,7 @@ export const ENTERPRISE_TIERS: EnterpriseTier[] = [
       "Multi-seat licensing",
     ],
     contactMailto:
-      "mailto:info@circuitry3d.net?subject=Education%20Arena%20Inquiry",
+      "mailto:hello@circuitry3d.net?subject=Education%20Arena%20Inquiry",
   },
   {
     id: "manufacturing-arena",
@@ -165,7 +165,7 @@ export const ENTERPRISE_TIERS: EnterpriseTier[] = [
       "White-label builds",
     ],
     contactMailto:
-      "mailto:info@circuitry3d.net?subject=Manufacturing%20Arena%20Inquiry",
+      "mailto:hello@circuitry3d.net?subject=Manufacturing%20Arena%20Inquiry",
   },
 ];
 

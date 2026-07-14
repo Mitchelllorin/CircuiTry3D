@@ -221,7 +221,8 @@ export default function PricingSection() {
     }
     const launched = await purchasePremiumUnlock();
     if (!launched) {
-      console.warn("[Pricing] purchasePremiumUnlock: billing unavailable");
+      window.location.href =
+        "mailto:hello@circuitry3d.net?subject=Premium%20Unlock%20Purchase";
     }
   }, [handleWebPurchase]);
 
@@ -235,7 +236,8 @@ export default function PricingSection() {
     }
     const launched = await purchaseProSubscription(proCycle);
     if (!launched) {
-      console.warn("[Pricing] purchaseProSubscription: billing unavailable");
+      window.location.href =
+        "mailto:hello@circuitry3d.net?subject=Pro%20Subscription%20Purchase";
     }
   }, [handleWebPurchase, proCycle]);
 
@@ -625,7 +627,7 @@ export default function PricingSection() {
         <p className="pricing-contact-help">
           Need a custom package? <a href="mailto:info@circuitry3d.net">Contact our team</a> for tailored pricing.
           Have questions?{" "}
-          <a href="mailto:info@circuitry3d.net">Contact our team</a> for
+          <a href="mailto:hello@circuitry3d.net">Contact our team</a> for
           tailored pricing or enterprise onboarding.
         </p>
       </footer>

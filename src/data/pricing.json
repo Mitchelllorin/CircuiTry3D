@@ -57,7 +57,7 @@
       "cta": {
         "label": "Subscribe",
         "type": "link",
-        "href": "mailto:info@circuitry3d.net?subject=Student%20Plan%20Subscription"
+        "href": "mailto:hello@circuitry3d.net?subject=Student%20Plan%20Subscription"
       }
     },
     {
@@ -82,7 +82,7 @@
       "cta": {
         "label": "Subscribe",
         "type": "link",
-        "href": "mailto:info@circuitry3d.net?subject=Educator%20License%20Subscription"
+        "href": "mailto:hello@circuitry3d.net?subject=Educator%20License%20Subscription"
       }
     },
     {
@@ -107,7 +107,7 @@
       "cta": {
         "label": "Contact Us",
         "type": "link",
-        "href": "mailto:info@circuitry3d.net?subject=Institutional%20Pricing"
+        "href": "mailto:hello@circuitry3d.net?subject=Institutional%20Pricing"
       },
       "bulk": {
         "minimumSeats": 10,
@@ -134,7 +134,7 @@
       "cta": {
         "label": "Learn More",
         "type": "link",
-        "href": "mailto:info@circuitry3d.net?subject=Certification%20Bundle%20Interest"
+        "href": "mailto:hello@circuitry3d.net?subject=Certification%20Bundle%20Interest"
       }
     }
   ]
