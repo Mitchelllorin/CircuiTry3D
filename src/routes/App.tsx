@@ -2,15 +2,16 @@ import { lazy, Suspense, useLayoutEffect, useRef } from "react";
 import { Routes, Route, Link, Outlet, useLocation, Navigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import Home from "../pages/Home";
-import BrandSignature from "../components/BrandSignature";
-import GlobalModeBar from "../components/GlobalModeBar";
-import TipsTicker from "../components/TipsTicker";
-import ErrorBoundary from "../components/ErrorBoundary";
-import DemoBanner from "../components/DemoBanner";
-import { WorkspaceModeProvider } from "../context/WorkspaceModeContext";
-import { ThemeProvider } from "../context/ThemeContext";
-import { AppSettingsProvider } from "../context/AppSettingsContext";
-import { IS_DEMO_MODE } from "../utils/demoMode";
+import Builder from "../pages/Builder";
+import Arena from "../pages/Arena";
+import WireDemo from "../pages/WireDemo";
+import Pricing from "../pages/Pricing";
+import Community from "../pages/Community";
+import Account from "../pages/Account";
+import SchematicMode from "../pages/SchematicMode";
+import Classroom from "../pages/Classroom";
+import About from "../pages/About";
+import UnifiedNav from "../components/UnifiedNav";
 import "../styles/layout.css";
 
 // Lazy-load heavy pages so they are code-split into separate chunks.
@@ -41,73 +42,18 @@ const Settings = lazy(() => import("../pages/Settings"));
 function PageFallback() {
   const { t } = useTranslation();
   return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "40vh", color: "rgba(200,220,255,0.7)" }}>
-      <span>{t("common.loading")}</span>
-    </div>
-  );
-}
-
-export default function App() {
-  // Dispatch ctapp:ready after the first render so the initial-loader in
-  // index.html is removed precisely when React has painted its first frame.
-  // The event is also dispatched earlier in main.tsx (when the module script
-  // runs) as an additional safety net.
-  useEffect(() => {
-    document.dispatchEvent(new CustomEvent('ctapp:ready'));
-  }, []);
-
-  return (
-    <ThemeProvider>
-    <AppSettingsProvider>
-    <WorkspaceModeProvider>
-      <ErrorBoundary>
-      {/* Fixed demo-version banner – rendered above the entire app shell */}
-      <DemoBanner />
-      <Suspense fallback={<PageFallback />}>
-        <Routes>
-          <Route element={<AppLayout />}>
-            <Route path="/" element={<Home />} />
-            <Route path="/app" element={<Builder />} />
-            <Route path="/practice" element={<Navigate to="/app?mode=practice" replace />} />
-            <Route path="/troubleshoot" element={<Navigate to="/app?mode=troubleshoot" replace />} />
-            <Route path="/pricing" element={<Navigate to="/app?mode=pricing" replace />} />
-            <Route path="/community" element={<Navigate to="/app?mode=community" replace />} />
-            <Route path="/account" element={<Navigate to="/app?mode=account" replace />} />
-            <Route path="/classroom" element={<Navigate to="/app?mode=classroom" replace />} />
-            <Route path="/arcade" element={<Navigate to="/app?mode=arcade" replace />} />
-            <Route path="/wire-guide" element={<Navigate to="/app?mode=wire-guide" replace />} />
-            <Route path="/textbook" element={<Navigate to="/app?mode=textbook" replace />} />
-            <Route path="/gallery" element={<Navigate to="/app?mode=gallery" replace />} />
-            <Route path="/home-circuit" element={<Navigate to="/app?mode=home-circuit" replace />} />
-            <Route path="/car-circuit" element={<Navigate to="/app?mode=car-circuit" replace />} />
-            <Route path="/privacy" element={<PrivacyPolicy />} />
-            <Route path="/data-safety" element={<DataSafety />} />
-            <Route path="/app-access" element={<AppAccess />} />
-            <Route path="/play-store" element={<PlayStoreCompliance />} />
-            <Route path="/delete-account" element={<DeleteAccount />} />
-            <Route path="/screenshots" element={<Screenshots />} />
-            <Route path="/partnerships" element={<Partnerships />} />
-            <Route path="/promo" element={<Promo />} />
-            <Route path="/promo2" element={<Promo2 />} />
-            <Route path="/promo3" element={<Promo3 />} />
-            <Route path="/promo4" element={<Promo4 />} />
-            <Route path="/promo5" element={<Promo5 />} />
-            <Route path="/promo7" element={<Promo7 />} />
-            <Route path="/promo9" element={<Promo9 />} />
-            <Route path="/upgrade" element={<Upgrade />} />
-            <Route path="/contact-sales" element={<ContactSales />} />
-            <Route path="/educator-pilot" element={<EducatorPilot />} />
-            <Route path="/terms" element={<TermsOfService />} />
-            <Route path="/settings" element={<Settings />} />
-          </Route>
-          <Route path="/owner" element={<OwnerAccess />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </Suspense>
-      </ErrorBoundary>
-    </WorkspaceModeProvider>
-    </AppSettingsProvider>
-    </ThemeProvider>
+    <Routes>
+      <Route element={<AppLayout />}>
+        <Route path="/" element={<Home />} />
+        <Route path="/app" element={<Builder />} />
+        <Route path="/pricing" element={<Pricing />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/community" element={<Community />} />
+        <Route path="/account" element={<Account />} />
+        <Route path="/classroom" element={<Classroom />} />
+      </Route>
+      <Route path="*" element={<NotFound />} />
+    </Routes>
   );
 }
 
