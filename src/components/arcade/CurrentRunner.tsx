@@ -520,7 +520,7 @@ export default function CurrentRunner() {
                   ? `Run complete${runXp ? ` · +${runXp} XP` : ""}`
                   : "Press Start to run"}
               </strong>
-              <span>Use ←/→ or A/D to switch lanes.</span>
+              <span>Use left/right or A/D to switch lanes.</span>
             </div>
           )}
         </div>
@@ -532,10 +532,10 @@ export default function CurrentRunner() {
             </button>
             <div className="runner-button-row">
               <button type="button" onClick={() => moveLane(-1)} aria-label="Move left">
-                ⬅
+                &#9664;
               </button>
               <button type="button" onClick={() => moveLane(1)} aria-label="Move right">
-                ➡
+                &#9654;
               </button>
             </div>
           </div>
