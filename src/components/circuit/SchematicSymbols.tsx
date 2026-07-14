@@ -127,6 +127,98 @@ const arrowTrianglePoints = (
 const BJT_ARROW_LENGTH = 7.5;
 const BJT_ARROW_WIDTH = 6.2;
 
+type SymbolPoint = {
+  x: number;
+  y: number;
+};
+
+type ArrowDirection = "towardStart" | "towardEnd";
+
+const formatPoint = ({ x, y }: SymbolPoint): string => `${x.toFixed(1)},${y.toFixed(1)}`;
+
+const buildArrowPoints = (
+  lineStart: SymbolPoint,
+  lineEnd: SymbolPoint,
+  {
+    tipPosition,
+    direction,
+    length,
+    width,
+  }: {
+    tipPosition: number;
+    direction: ArrowDirection;
+    length: number;
+    width: number;
+  }
+): string => {
+  const clampedTipPosition = Math.max(0, Math.min(1, tipPosition));
+  const dx = lineEnd.x - lineStart.x;
+  const dy = lineEnd.y - lineStart.y;
+  const magnitude = Math.hypot(dx, dy) || 1;
+
+  let tangentX = dx / magnitude;
+  let tangentY = dy / magnitude;
+  if (direction === "towardStart") {
+    tangentX *= -1;
+    tangentY *= -1;
+  }
+
+  const tipX = lineStart.x + dx * clampedTipPosition;
+  const tipY = lineStart.y + dy * clampedTipPosition;
+  const baseX = tipX - tangentX * length;
+  const baseY = tipY - tangentY * length;
+  const normalX = -tangentY;
+  const normalY = tangentX;
+  const halfWidth = width / 2;
+
+  const leftBase: SymbolPoint = {
+    x: baseX + normalX * halfWidth,
+    y: baseY + normalY * halfWidth,
+  };
+  const rightBase: SymbolPoint = {
+    x: baseX - normalX * halfWidth,
+    y: baseY - normalY * halfWidth,
+  };
+
+  return [
+    formatPoint({ x: tipX, y: tipY }),
+    formatPoint(leftBase),
+    formatPoint(rightBase),
+  ].join(" ");
+};
+
+const BJT_GEOMETRY = {
+  bodyRadius: 20,
+  baseLeadStart: { x: -30, y: 0 },
+  baseLeadEnd: { x: -8, y: 0 },
+  baseBarTop: { x: -8, y: -12 },
+  baseBarBottom: { x: -8, y: 12 },
+  collectorBranchStart: { x: -8, y: -8 },
+  collectorBranchJoint: { x: 10, y: -20 },
+  collectorLeadEnd: { x: 10, y: -30 },
+  emitterBranchStart: { x: -8, y: 8 },
+  emitterBranchJoint: { x: 10, y: 20 },
+  emitterLeadEnd: { x: 10, y: 30 },
+} as const;
+
+const DARLINGTON_GEOMETRY = {
+  bodyRadius: 26,
+  baseLeadStart: { x: -38, y: 0 },
+  baseLeadEnd: { x: -14, y: 0 },
+  firstBaseBarTop: { x: -14, y: -8 },
+  firstBaseBarBottom: { x: -14, y: 8 },
+  firstCollector: { x1: -14, y1: -4, x2: 0, y2: -12 },
+  firstEmitter: { x1: -14, y1: 4, x2: 0, y2: 12 },
+  interstageVerticalTop: { x: 0, y: 12 },
+  interstageVerticalBottom: { x: 0, y: 6 },
+  secondBaseBarTop: { x: 0, y: 0 },
+  secondBaseBarBottom: { x: 0, y: 12 },
+  secondCollector: { x1: 0, y1: 3, x2: 14, y2: -10 },
+  secondEmitter: { x1: 0, y1: 9, x2: 14, y2: 22 },
+  collectorLeadTop: { x: 14, y: -32 },
+  emitterLeadBottom: { x: 14, y: 32 },
+} as const;
+
 export const ResistorSymbol: FC<SchematicSymbolProps> = ({
   x,
   y,
@@ -608,47 +700,34 @@ export const TransistorNPNSymbol: FC<SchematicSymbolProps> = ({
   strokeWidth = DEFAULT_STROKE_WIDTH,
 }) => {
   const transform = `translate(${x}, ${y}) rotate(${rotation}) scale(${scale})`;
-  const emitterStart: SymbolPoint = { x: -8, y: 8 };
-  const emitterEnd: SymbolPoint = { x: 10, y: 20 };
-  const emitterDirection: SymbolPoint = {
-    x: emitterEnd.x - emitterStart.x,
-    y: emitterEnd.y - emitterStart.y,
-  };
-  const npnArrowTip = pointOnSegment(emitterStart, emitterEnd, 0.8);
-  const npnArrowPoints = arrowTrianglePoints(
-    npnArrowTip,
-    emitterDirection,
-    BJT_ARROW_LENGTH,
-    BJT_ARROW_WIDTH,
+  const arrowPoints = buildArrowPoints(
+    BJT_GEOMETRY.emitterBranchStart,
+    BJT_GEOMETRY.emitterBranchJoint,
+    {
+      tipPosition: 0.78,
+      direction: "towardEnd",
+      length: 7.2,
+      width: 5.2,
+    }
   );
 
   return (
     <g transform={transform}>
-      <circle cx="0" cy="0" r="20" stroke={color} strokeWidth={strokeWidth * 0.7} fill="none" />
+      <circle cx="0" cy="0" r={BJT_GEOMETRY.bodyRadius} stroke={color} strokeWidth={strokeWidth * 0.7} fill="none" />
 
-      <line x1="-30" y1="0" x2="-8" y2="0" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
-      <line x1="-8" y1="-12" x2="-8" y2="12" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      <line x1={BJT_GEOMETRY.baseLeadStart.x} y1={BJT_GEOMETRY.baseLeadStart.y} x2={BJT_GEOMETRY.baseLeadEnd.x} y2={BJT_GEOMETRY.baseLeadEnd.y} stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      <line x1={BJT_GEOMETRY.baseBarTop.x} y1={BJT_GEOMETRY.baseBarTop.y} x2={BJT_GEOMETRY.baseBarBottom.x} y2={BJT_GEOMETRY.baseBarBottom.y} stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
 
-      <line x1="-8" y1="-8" x2="12" y2="-20" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
-      <line x1="12" y1="-20" x2="30" y2="-30" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      <line x1={BJT_GEOMETRY.collectorBranchStart.x} y1={BJT_GEOMETRY.collectorBranchStart.y} x2={BJT_GEOMETRY.collectorBranchJoint.x} y2={BJT_GEOMETRY.collectorBranchJoint.y} stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      <line x1={BJT_GEOMETRY.collectorBranchJoint.x} y1={BJT_GEOMETRY.collectorBranchJoint.y} x2={BJT_GEOMETRY.collectorLeadEnd.x} y2={BJT_GEOMETRY.collectorLeadEnd.y} stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
 
-      <line
-        x1={emitterBranchStart.x}
-        y1={emitterBranchStart.y}
-        x2={emitterBranchEnd.x}
-        y2={emitterBranchEnd.y}
-        stroke={color}
-        strokeWidth={strokeWidth}
-        strokeLinecap="round"
-      />
-      <line x1="12" y1="20" x2="30" y2="30" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      <line x1={BJT_GEOMETRY.emitterBranchStart.x} y1={BJT_GEOMETRY.emitterBranchStart.y} x2={BJT_GEOMETRY.emitterBranchJoint.x} y2={BJT_GEOMETRY.emitterBranchJoint.y} stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      <line x1={BJT_GEOMETRY.emitterBranchJoint.x} y1={BJT_GEOMETRY.emitterBranchJoint.y} x2={BJT_GEOMETRY.emitterLeadEnd.x} y2={BJT_GEOMETRY.emitterLeadEnd.y} stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
 
       <polygon
-        points={npnArrowPoints}
+        points={arrowPoints}
         fill={color}
-        stroke={color}
-        strokeWidth={strokeWidth * 0.45}
-        strokeLinejoin="round"
+        stroke="none"
       />
 
       {showLabel && label && (
@@ -679,52 +758,39 @@ export const TransistorPNPSymbol: FC<SchematicSymbolProps> = ({
   strokeWidth = DEFAULT_STROKE_WIDTH,
 }) => {
   const transform = `translate(${x}, ${y}) rotate(${rotation}) scale(${scale})`;
-  const emitterStart: SymbolPoint = { x: -8, y: 8 };
-  const emitterEnd: SymbolPoint = { x: 10, y: 20 };
-  const emitterDirection: SymbolPoint = {
-    x: emitterEnd.x - emitterStart.x,
-    y: emitterEnd.y - emitterStart.y,
-  };
-  const pnpArrowTip = pointOnSegment(emitterStart, emitterEnd, 0.42);
-  const pnpArrowPoints = arrowTrianglePoints(
-    pnpArrowTip,
-    { x: -emitterDirection.x, y: -emitterDirection.y },
-    BJT_ARROW_LENGTH,
-    BJT_ARROW_WIDTH,
+  const arrowPoints = buildArrowPoints(
+    BJT_GEOMETRY.emitterBranchStart,
+    BJT_GEOMETRY.emitterBranchJoint,
+    {
+      tipPosition: 0.42,
+      direction: "towardStart",
+      length: 7.2,
+      width: 5.2,
+    }
   );
 
   return (
     <g transform={transform}>
       {/* Outer circle */}
-      <circle cx="0" cy="0" r="20" stroke={color} strokeWidth={strokeWidth * 0.7} fill="none" />
+      <circle cx="0" cy="0" r={BJT_GEOMETRY.bodyRadius} stroke={color} strokeWidth={strokeWidth * 0.7} fill="none" />
 
       {/* Base lead and vertical bar */}
-      <line x1="-30" y1="0" x2="-8" y2="0" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
-      <line x1="-8" y1="-12" x2="-8" y2="12" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      <line x1={BJT_GEOMETRY.baseLeadStart.x} y1={BJT_GEOMETRY.baseLeadStart.y} x2={BJT_GEOMETRY.baseLeadEnd.x} y2={BJT_GEOMETRY.baseLeadEnd.y} stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      <line x1={BJT_GEOMETRY.baseBarTop.x} y1={BJT_GEOMETRY.baseBarTop.y} x2={BJT_GEOMETRY.baseBarBottom.x} y2={BJT_GEOMETRY.baseBarBottom.y} stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
 
       {/* Collector (top) - no arrow */}
-      <line x1="-8" y1="-8" x2="12" y2="-20" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
-      <line x1="12" y1="-20" x2="30" y2="-30" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      <line x1={BJT_GEOMETRY.collectorBranchStart.x} y1={BJT_GEOMETRY.collectorBranchStart.y} x2={BJT_GEOMETRY.collectorBranchJoint.x} y2={BJT_GEOMETRY.collectorBranchJoint.y} stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      <line x1={BJT_GEOMETRY.collectorBranchJoint.x} y1={BJT_GEOMETRY.collectorBranchJoint.y} x2={BJT_GEOMETRY.collectorLeadEnd.x} y2={BJT_GEOMETRY.collectorLeadEnd.y} stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
 
       {/* Emitter (bottom) - arrow points INWARD for PNP */}
-      <line
-        x1={emitterBranchStart.x}
-        y1={emitterBranchStart.y}
-        x2={emitterBranchEnd.x}
-        y2={emitterBranchEnd.y}
-        stroke={color}
-        strokeWidth={strokeWidth}
-        strokeLinecap="round"
-      />
-      <line x1="12" y1="20" x2="30" y2="30" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      <line x1={BJT_GEOMETRY.emitterBranchStart.x} y1={BJT_GEOMETRY.emitterBranchStart.y} x2={BJT_GEOMETRY.emitterBranchJoint.x} y2={BJT_GEOMETRY.emitterBranchJoint.y} stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      <line x1={BJT_GEOMETRY.emitterBranchJoint.x} y1={BJT_GEOMETRY.emitterBranchJoint.y} x2={BJT_GEOMETRY.emitterLeadEnd.x} y2={BJT_GEOMETRY.emitterLeadEnd.y} stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
 
       {/* PNP arrow points inward (toward base/emitter junction) */}
       <polygon
-        points={pnpArrowPoints}
+        points={arrowPoints}
         fill={color}
-        stroke={color}
-        strokeWidth={strokeWidth * 0.45}
-        strokeLinejoin="round"
+        stroke="none"
       />
 
       {showLabel && label && (
@@ -755,88 +821,66 @@ export const DarlingtonPairSymbol: FC<SchematicSymbolProps> = ({
   strokeWidth = DEFAULT_STROKE_WIDTH,
 }) => {
   const transform = `translate(${x}, ${y}) rotate(${rotation}) scale(${scale})`;
-  const firstEmitterStart: SymbolPoint = { x: -14, y: 4 };
-  const firstEmitterEnd: SymbolPoint = { x: 0, y: 12 };
-  const secondEmitterStart: SymbolPoint = { x: 0, y: 9 };
-  const secondEmitterEnd: SymbolPoint = { x: 14, y: 22 };
-  const firstEmitterArrow = arrowTrianglePoints(
-    pointOnSegment(firstEmitterStart, firstEmitterEnd, 0.78),
+  const firstEmitterArrowPoints = buildArrowPoints(
+    { x: DARLINGTON_GEOMETRY.firstEmitter.x1, y: DARLINGTON_GEOMETRY.firstEmitter.y1 },
+    { x: DARLINGTON_GEOMETRY.firstEmitter.x2, y: DARLINGTON_GEOMETRY.firstEmitter.y2 },
     {
-      x: firstEmitterEnd.x - firstEmitterStart.x,
-      y: firstEmitterEnd.y - firstEmitterStart.y,
-    },
-    6.3,
-    5.4,
+      tipPosition: 0.76,
+      direction: "towardEnd",
+      length: 6.6,
+      width: 4.8,
+    }
   );
-  const secondEmitterArrow = arrowTrianglePoints(
-    pointOnSegment(secondEmitterStart, secondEmitterEnd, 0.8),
+  const secondEmitterArrowPoints = buildArrowPoints(
+    { x: DARLINGTON_GEOMETRY.secondEmitter.x1, y: DARLINGTON_GEOMETRY.secondEmitter.y1 },
+    { x: DARLINGTON_GEOMETRY.secondEmitter.x2, y: DARLINGTON_GEOMETRY.secondEmitter.y2 },
     {
-      x: secondEmitterEnd.x - secondEmitterStart.x,
-      y: secondEmitterEnd.y - secondEmitterStart.y,
-    },
-    6.3,
-    5.4,
+      tipPosition: 0.76,
+      direction: "towardEnd",
+      length: 6.6,
+      width: 4.8,
+    }
   );
 
   return (
     <g transform={transform}>
       {/* Outer circle - larger for Darlington */}
-      <circle cx="0" cy="0" r="26" stroke={color} strokeWidth={strokeWidth * 0.7} fill="none" />
+      <circle cx="0" cy="0" r={DARLINGTON_GEOMETRY.bodyRadius} stroke={color} strokeWidth={strokeWidth * 0.7} fill="none" />
 
       {/* Base lead */}
-      <line x1="-38" y1="0" x2="-14" y2="0" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      <line x1={DARLINGTON_GEOMETRY.baseLeadStart.x} y1={DARLINGTON_GEOMETRY.baseLeadStart.y} x2={DARLINGTON_GEOMETRY.baseLeadEnd.x} y2={DARLINGTON_GEOMETRY.baseLeadEnd.y} stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
 
       {/* First transistor (input stage) - smaller */}
-      <line x1="-14" y1="-8" x2="-14" y2="8" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
-      <line x1="-14" y1="-4" x2="0" y2="-12" stroke={color} strokeWidth={strokeWidth * 0.9} strokeLinecap="round" />
-      <line
-        x1={firstEmitterStart.x}
-        y1={firstEmitterStart.y}
-        x2={firstEmitterEnd.x}
-        y2={firstEmitterEnd.y}
-        stroke={color}
-        strokeWidth={strokeWidth * 0.9}
-        strokeLinecap="round"
-      />
+      <line x1={DARLINGTON_GEOMETRY.firstBaseBarTop.x} y1={DARLINGTON_GEOMETRY.firstBaseBarTop.y} x2={DARLINGTON_GEOMETRY.firstBaseBarBottom.x} y2={DARLINGTON_GEOMETRY.firstBaseBarBottom.y} stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      <line x1={DARLINGTON_GEOMETRY.firstCollector.x1} y1={DARLINGTON_GEOMETRY.firstCollector.y1} x2={DARLINGTON_GEOMETRY.firstCollector.x2} y2={DARLINGTON_GEOMETRY.firstCollector.y2} stroke={color} strokeWidth={strokeWidth * 0.9} strokeLinecap="round" />
+      <line x1={DARLINGTON_GEOMETRY.firstEmitter.x1} y1={DARLINGTON_GEOMETRY.firstEmitter.y1} x2={DARLINGTON_GEOMETRY.firstEmitter.x2} y2={DARLINGTON_GEOMETRY.firstEmitter.y2} stroke={color} strokeWidth={strokeWidth * 0.9} strokeLinecap="round" />
 
       {/* Arrow on first emitter (pointing outward - NPN) */}
       <polygon
-        points={firstEmitterArrow}
+        points={firstEmitterArrowPoints}
         fill={color}
-        stroke={color}
-        strokeWidth={strokeWidth * 0.4}
-        strokeLinejoin="round"
+        stroke="none"
       />
 
       {/* Second transistor (output stage) - base connects to first emitter */}
-      <line x1="0" y1="12" x2="0" y2="6" stroke={color} strokeWidth={strokeWidth * 0.9} strokeLinecap="round" />
-      <line x1="0" y1="0" x2="0" y2="12" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
-      <line x1="0" y1="3" x2="14" y2="-10" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
-      <line
-        x1={secondEmitterStart.x}
-        y1={secondEmitterStart.y}
-        x2={secondEmitterEnd.x}
-        y2={secondEmitterEnd.y}
-        stroke={color}
-        strokeWidth={strokeWidth}
-        strokeLinecap="round"
-      />
+      <line x1={DARLINGTON_GEOMETRY.interstageVerticalTop.x} y1={DARLINGTON_GEOMETRY.interstageVerticalTop.y} x2={DARLINGTON_GEOMETRY.interstageVerticalBottom.x} y2={DARLINGTON_GEOMETRY.interstageVerticalBottom.y} stroke={color} strokeWidth={strokeWidth * 0.9} strokeLinecap="round" />
+      <line x1={DARLINGTON_GEOMETRY.secondBaseBarTop.x} y1={DARLINGTON_GEOMETRY.secondBaseBarTop.y} x2={DARLINGTON_GEOMETRY.secondBaseBarBottom.x} y2={DARLINGTON_GEOMETRY.secondBaseBarBottom.y} stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      <line x1={DARLINGTON_GEOMETRY.secondCollector.x1} y1={DARLINGTON_GEOMETRY.secondCollector.y1} x2={DARLINGTON_GEOMETRY.secondCollector.x2} y2={DARLINGTON_GEOMETRY.secondCollector.y2} stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      <line x1={DARLINGTON_GEOMETRY.secondEmitter.x1} y1={DARLINGTON_GEOMETRY.secondEmitter.y1} x2={DARLINGTON_GEOMETRY.secondEmitter.x2} y2={DARLINGTON_GEOMETRY.secondEmitter.y2} stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
 
       {/* Arrow on second emitter (pointing outward - NPN) */}
       <polygon
-        points={secondEmitterArrow}
+        points={secondEmitterArrowPoints}
         fill={color}
-        stroke={color}
-        strokeWidth={strokeWidth * 0.4}
-        strokeLinejoin="round"
+        stroke="none"
       />
 
       {/* Collector lead (from first transistor collector, joined) */}
-      <line x1="0" y1="-12" x2="14" y2="-10" stroke={color} strokeWidth={strokeWidth * 0.7} strokeLinecap="round" strokeDasharray="2,2" />
-      <line x1="14" y1="-10" x2="14" y2="-32" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      <line x1={DARLINGTON_GEOMETRY.firstCollector.x2} y1={DARLINGTON_GEOMETRY.firstCollector.y2} x2={DARLINGTON_GEOMETRY.secondCollector.x2} y2={DARLINGTON_GEOMETRY.secondCollector.y2} stroke={color} strokeWidth={strokeWidth * 0.7} strokeLinecap="round" strokeDasharray="2,2" />
+      <line x1={DARLINGTON_GEOMETRY.secondCollector.x2} y1={DARLINGTON_GEOMETRY.secondCollector.y2} x2={DARLINGTON_GEOMETRY.collectorLeadTop.x} y2={DARLINGTON_GEOMETRY.collectorLeadTop.y} stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
 
       {/* Emitter lead (from second transistor) */}
-      <line x1="14" y1="22" x2="14" y2="32" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      <line x1={DARLINGTON_GEOMETRY.secondEmitter.x2} y1={DARLINGTON_GEOMETRY.secondEmitter.y2} x2={DARLINGTON_GEOMETRY.emitterLeadBottom.x} y2={DARLINGTON_GEOMETRY.emitterLeadBottom.y} stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
 
       {showLabel && label && (
         <text
