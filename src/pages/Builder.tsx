@@ -3301,11 +3301,13 @@ export default function Builder() {
   const workspacePanelContent = useMemo(() => {
     switch (activeWorkspacePanelMode) {
       case "arena":
-        // The arena renders full-bleed in the workspace (its own 3D scene behind
-        // a translucent control panel — see the arena workspace layer below), so
-        // the generic panel renders nothing for this mode. The mode stays flagged
-        // as "arena" elsewhere so zoom controls hide and Escape exits.
-        return null;
+        return (
+          <ArenaView
+            variant="embedded"
+            onNavigateBack={closeArenaWorkspace}
+            sessionId={lastArenaExport?.sessionId ?? null}
+          />
+        );
       case "wire-guide":
         return (
           <WireLibrary
@@ -3361,8 +3363,10 @@ export default function Builder() {
   }, [
     activeWireProfile,
     activeWorkspacePanelMode,
+    closeArenaWorkspace,
     handleApplyWireProfile,
     handleClearWireProfile,
+    lastArenaExport?.sessionId,
     liveWireMetricsSnapshot.current,
     liveWireMetricsSnapshot.isOpenCircuit,
     liveWireMetricsSnapshot.power,

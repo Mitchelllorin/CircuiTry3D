@@ -27,6 +27,7 @@ describe("Arena routing guard", () => {
     expect(builder).toContain("const openArenaWorkspace = useCallback(");
     expect(builder).toContain("setWorkspaceModeWithGlobalSync(\"arena\")");
     expect(builder).toContain("openArenaWorkspace({ forceSync: true });");
+    expect(builder).toContain("sessionId={lastArenaExport?.sessionId ?? null}");
     expect(builder).not.toMatch(/navigateTo\(["']\/arena["']\)/);
   });
 });
