@@ -194,7 +194,13 @@ const cylinderBetween = (three: any, startVec: any, endVec: any, radius: number,
   return mesh;
 };
 
-const createLabelSprite = (three: any, text: string, color: string = LABEL_COLOR, options: BuildOptions = {}, componentKind?: string) => {
+const createLabelSprite = (
+  three: any,
+  text: string,
+  color: string = LABEL_COLOR,
+  options: BuildOptions = {},
+  componentKind?: string
+) => {
   const canvas = document.createElement("canvas");
   // Use larger canvas for longer text to maintain quality
   const isLongText = text.length > 4;
@@ -993,16 +999,12 @@ const buildDiodeElement = (three: any, element: TwoTerminalElement, options: Bui
 
   const bodyLength = Math.min(metrics.length * 0.6, 0.8);
   const leadLength = (metrics.length - bodyLength) / 2;
-  // @ts-expect-error TS6133
-  const bodyRadius = wireRadius * 1.1;
 
   const bodyStart = metrics.offsetPoint(leadLength);
   const bodyEnd = metrics.offsetPoint(metrics.length - leadLength);
 
   const triangleHeight = bodyLength * 0.7;
   const triangleWidth = bodyLength * 0.5;
-  // @ts-expect-error TS6133
-  const cathodeBarWidth = triangleWidth;
 
   const triangleCenter = metrics.offsetPoint(leadLength + bodyLength * 0.4);
   const cathodeCenter = metrics.offsetPoint(leadLength + bodyLength * 0.75);
@@ -1810,7 +1812,7 @@ const buildOpampElement = (three: any, element: any, options: BuildOptions): Bui
   const wireRadius = 0.035;
 
   // Connect all terminals to center
-  terminals.forEach((terminal, _index) => {
+  terminals.forEach((terminal) => {
     const lead = cylinderBetween(
       three,
       toVec3(three, terminal, WIRE_HEIGHT),

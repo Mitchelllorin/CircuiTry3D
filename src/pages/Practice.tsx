@@ -210,6 +210,11 @@ type PracticeProps = {
   }) => void;
 };
 
+const FALLBACK_PRACTICE_PROBLEM = DEFAULT_PRACTICE_PROBLEM ?? practiceProblems[0];
+if (!FALLBACK_PRACTICE_PROBLEM) {
+  throw new Error("No practice problems configured.");
+}
+
 const groupProblems = (problems: PracticeProblem[]): GroupedProblems =>
   problems.reduce<GroupedProblems>(
     (acc, problem) => {
@@ -284,18 +289,10 @@ const buildStepPresentations = (
   solution: SolveResult,
 ) => problem.steps.map((step) => step(solution.stepContext));
 
-const ensureProblem = (problem: PracticeProblem | null): PracticeProblem | null => {
-  const fallback = DEFAULT_PRACTICE_PROBLEM;
-  if (problem) {
-    return problem;
-  }
-  if (!fallback) {
-    return null;
-  }
-  return fallback;
-};
+const ensureProblem = (problem: PracticeProblem | null): PracticeProblem =>
+  problem ?? FALLBACK_PRACTICE_PROBLEM;
 
-const findProblem = (id: string | null): PracticeProblem | null =>
+const findProblem = (id: string | null): PracticeProblem =>
   ensureProblem(findPracticeProblemById(id));
 
 const parseMetricInput = (raw: string): number | null => {
@@ -420,7 +417,7 @@ export default function Practice({
   onProblemChange,
   onWorksheetStatusChange,
 }: PracticeProps = {}) {
-  const fallbackProblemId = DEFAULT_PRACTICE_PROBLEM?.id ?? null;
+  const fallbackProblemId = FALLBACK_PRACTICE_PROBLEM.id;
   const [internalProblemId, setInternalProblemId] = useState<string | null>(
     () => {
       if (selectedProblemId !== undefined && selectedProblemId !== null) {
@@ -503,19 +500,17 @@ export default function Practice({
     [internalProblemId],
   );
 
-  const solutionResult = useMemo((): SolveAttempt => {
-    if (!selectedProblem) {
-      return { ok: false, error: "No practice problems available" };
-    }
-    return trySolvePracticeProblem(selectedProblem);
-  }, [selectedProblem]);
+  const solutionResult = useMemo(
+    (): SolveAttempt => trySolvePracticeProblem(selectedProblem),
+    [selectedProblem]
+  );
   const solution = solutionResult.ok ? solutionResult.data : null;
   const tableRows = useMemo(
-    () => (selectedProblem && solution ? buildTableRows(selectedProblem, solution) : []),
+    () => (solution ? buildTableRows(selectedProblem, solution) : []),
     [selectedProblem, solution],
   );
   const stepPresentations = useMemo(
-    () => (selectedProblem && solution ? buildStepPresentations(selectedProblem, solution) : []),
+    () => (solution ? buildStepPresentations(selectedProblem, solution) : []),
     [selectedProblem, solution],
   );
 

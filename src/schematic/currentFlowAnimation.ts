@@ -345,7 +345,9 @@ export class CurrentFlowAnimationSystem {
 
   private applyResistanceToSpeed(baseSpeed: number, resistanceOhms?: number): number {
     if (baseSpeed <= 0) return 0;
-    if (resistanceOhms === undefined || !Number.isFinite(resistanceOhms) || resistanceOhms <= 0) return baseSpeed;
+    if (typeof resistanceOhms !== "number" || !Number.isFinite(resistanceOhms) || resistanceOhms <= 0) {
+      return baseSpeed;
+    }
 
     const multiplier = this.calculateResistanceMultiplier(resistanceOhms);
     const minSpeed = CURRENT_FLOW_PHYSICS.MIN_VISIBLE_SPEED * CURRENT_FLOW_PHYSICS.RESISTANCE_SPEED_FLOOR;

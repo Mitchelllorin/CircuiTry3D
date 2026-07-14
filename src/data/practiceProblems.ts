@@ -5,8 +5,6 @@ import { XP_REWARD_BY_DIFFICULTY } from "./gamification";
 const SERIES_IDS = ["R1", "R2", "R3"] as const;
 const SERIES_IDS_2 = ["R1", "R2"] as const;
 const SERIES_IDS_4 = ["R1", "R2", "R3", "R4"] as const;
-// @ts-expect-error TS6133
-const _SERIES_IDS_5 = ["R1", "R2", "R3", "R4", "R5"] as const;
 
 const practiceProblemSeeds: PracticeProblem[] = [
   {

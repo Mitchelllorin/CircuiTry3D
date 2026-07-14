@@ -931,19 +931,6 @@ export const WireDrawer: React.FC<WireDrawerProps> = ({
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = 'high';
 
-    // @ts-expect-error TS6133
-    const tracePolyline = (points: Vec2[]) => {
-      if (points.length < 2) {
-        return false;
-      }
-      ctx.beginPath();
-      ctx.moveTo(points[0].x, points[0].y);
-      for (let i = 1; i < points.length; i += 1) {
-        ctx.lineTo(points[i].x, points[i].y);
-      }
-      return true;
-    };
-
     const getWirePath = (wireId: string, points: Vec2[]) => {
       const key = points.map((p) => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join('|');
       const existing = pathCacheRef.current.get(wireId);

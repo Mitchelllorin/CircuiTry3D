@@ -79,7 +79,6 @@ import type {
   QuickAction,
   HelpSection,
   HelpModalView,
-  PanelAction,
   PracticeWorksheetStatus,
   PanelAction,
 } from "../components/builder/types";
@@ -1015,7 +1014,7 @@ export default function Builder() {
   const [activePracticeProblemId, setActivePracticeProblemId] = useState<
     string | null
   >(DEFAULT_PRACTICE_PROBLEM?.id ?? null);
-  const [practiceWorksheetState, setPracticeWorksheetState] =
+  const [, setPracticeWorksheetState] =
     useState<PracticeWorksheetStatus | null>(null);
   const [isCompactWorksheetOpen, setCompactWorksheetOpen] = useState(false);
   const [isPracticeWorkspaceMode, setPracticeWorkspaceMode] = useState(false);
@@ -1036,7 +1035,7 @@ export default function Builder() {
   const [isEnvironmentalPanelOpen, setEnvironmentalPanelOpen] = useState(false);
   const [isMeasurementPanelOpen, setMeasurementPanelOpen] = useState(false);
   const [isWireLibraryPanelOpen, setWireLibraryPanelOpen] = useState(false);
-  const [_modeBarScrollState, setModeBarScrollState] = useState<{
+  const [, setModeBarScrollState] = useState<{
     canScrollLeft: boolean;
     canScrollRight: boolean;
   }>({ canScrollLeft: false, canScrollRight: false });
@@ -1231,8 +1230,6 @@ export default function Builder() {
     iframeRef,
     isFrameReady,
     arenaExportStatus,
-    arenaExportError,
-    lastArenaExport,
     circuitState,
     lastSimulationAt,
     lastSimulation,
@@ -2085,44 +2082,6 @@ export default function Builder() {
     triggerSimulationPulse();
   }, [triggerBuilderAction, triggerSimulationPulse]);
 
-  // @ts-expect-error TS6133: declared but value is never read
-  const _arenaStatusMessage = useMemo(() => {
-    switch (arenaExportStatus) {
-      case "exporting":
-        return "Loading current build into Component Arena...";
-      case "ready": {
-        if (!lastArenaExport) {
-          return "Component Arena is ready.";
-        }
-        const exportedTime = lastArenaExport.exportedAt
-          ? new Date(lastArenaExport.exportedAt)
-          : null;
-        const formattedTime =
-          exportedTime && !Number.isNaN(exportedTime.getTime())
-            ? exportedTime.toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit",
-              })
-            : null;
-        const componentLabel =
-          typeof lastArenaExport.componentCount === "number"
-            ? `${lastArenaExport.componentCount} component${lastArenaExport.componentCount === 1 ? "" : "s"}`
-            : null;
-        if (componentLabel && formattedTime) {
-          return `Last loaded: ${componentLabel} - ${formattedTime}`;
-        }
-        if (componentLabel) {
-          return `Last loaded: ${componentLabel}`;
-        }
-        return "Component Arena is ready.";
-      }
-      case "error":
-        return arenaExportError ?? "Component Arena failed to load.";
-      default:
-        return "Send this build to the Component Arena for advanced testing.";
-    }
-  }, [arenaExportStatus, arenaExportError, lastArenaExport]);
-
   const isWorksheetVisible = isPracticeWorkspaceMode && isCompactWorksheetOpen;
   const isTroubleshootVisible =
     isTroubleshootWorkspaceMode && isTroubleshootPanelOpen;
@@ -2315,21 +2274,6 @@ export default function Builder() {
     "Unknown";
   const currentFlowLabel =
     modeState.currentFlowStyle === "solid" ? "Current Flow" : "Electron Flow";
-  const labelVisibilityLevel = resolveLabelVisibilityLevel(modeState);
-  const labelVisibilityDescription =
-    getLabelVisibilityDescription(labelVisibilityLevel);
-  const labelToggleTitle = getNextLabelToggleTitle(labelVisibilityLevel);
-  const isWireToolActive = modeState.isWireMode;
-  const isCurrentFlowSolid = modeState.currentFlowStyle === "solid";
-  // @ts-expect-error TS6133: declared but value is never read
-  const _wireRoutingTitle = isWireToolActive
-    ? `Wire tool active - routing style set to ${wireRoutingLabel}.`
-    : `Wire tool inactive - routing preset is ${wireRoutingLabel}.`;
-  // @ts-expect-error TS6133: declared but value is never read
-  const _currentFlowTitle = isCurrentFlowSolid
-    ? "Current flow visualisation active."
-    : "Electron flow visualisation active.";
-
   const wireMetrics = useMemo(() => {
     const volts = liveWireMetricsSnapshot.voltage;
     const amps = liveWireMetricsSnapshot.current;

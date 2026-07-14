@@ -1396,6 +1396,7 @@ function BuilderViewport({
     multiTouchStateRef.current.lastMidpoint = { x: 0, y: 0 };
     updateCamera(true);
   }, [CAMERA_DEFAULT_POSITION, CAMERA_DEFAULT_TARGET, normalizeAzimuth, updateCamera]);
+  void resetCameraControl;
 
   useEffect(() => {
     validationIssuesRef.current = validationIssues;

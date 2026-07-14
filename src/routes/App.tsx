@@ -21,26 +21,11 @@ import "../styles/demo-mode.css";
 // This drastically reduces the initial JS bundle size — the Builder page
 // alone pulls in Three.js, the schematic engine, wire routing, etc.
 const Builder = lazy(() => import("../pages/Builder"));
-const PrivacyPolicy = lazy(() => import("../pages/PrivacyPolicy"));
-const DataSafety = lazy(() => import("../pages/DataSafety"));
-const AppAccess = lazy(() => import("../pages/AppAccess"));
-const PlayStoreCompliance = lazy(() => import("../pages/PlayStoreCompliance"));
-const DeleteAccount = lazy(() => import("../pages/DeleteAccount"));
-const Screenshots = lazy(() => import("../pages/Screenshots"));
-const Partnerships = lazy(() => import("../pages/Partnerships"));
-const Promo = lazy(() => import("../pages/Promo"));
-const Promo2 = lazy(() => import("../pages/Promo2"));
-const Promo3 = lazy(() => import("../pages/Promo3"));
-const Promo4 = lazy(() => import("../pages/Promo4"));
-const Promo5 = lazy(() => import("../pages/Promo5"));
-const Promo7 = lazy(() => import("../pages/Promo7"));
-const Promo9 = lazy(() => import("../pages/Promo9"));
-const Upgrade = lazy(() => import("../pages/Upgrade"));
-const ContactSales = lazy(() => import("../pages/ContactSales"));
-const EducatorPilot = lazy(() => import("../pages/EducatorPilot"));
-const OwnerAccess = lazy(() => import("../pages/OwnerAccess"));
-const TermsOfService = lazy(() => import("../pages/TermsOfService"));
-const Settings = lazy(() => import("../pages/Settings"));
+const Pricing = lazy(() => import("../pages/Pricing"));
+const Community = lazy(() => import("../pages/Community"));
+const Account = lazy(() => import("../pages/Account"));
+const Classroom = lazy(() => import("../pages/Classroom"));
+const Arcade = lazy(() => import("../pages/Arcade"));
 
 function PageFallback() {
   const { t } = useTranslation();
