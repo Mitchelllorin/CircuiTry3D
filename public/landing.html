@@ -877,8 +877,100 @@
     }
     .status-text.status-ready { animation: status-ready-pulse 2.8s ease-in-out infinite; }
     @keyframes status-ready-pulse {
-      0%, 100% { opacity: 0.9; }
-      50% { opacity: 1; color: rgba(180,230,255,1); }
+      0%, 100% { opacity: 0.92; }
+      50% { opacity: 1; color: rgba(180, 230, 255, 1); }
+    }
+    .launch-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 14px 48px;
+      border-radius: 999px;
+      border: 2px solid rgba(136, 204, 255, 0.42);
+      background: rgba(136, 204, 255, 0.15);
+      color: #f8fafc;
+      text-decoration: none;
+      text-transform: uppercase;
+      letter-spacing: 0.24em;
+      font-size: 0.85rem;
+      font-weight: 700;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 8px 24px rgba(136, 204, 255, 0.2), 0 0 40px rgba(136, 204, 255, 0.1);
+      margin-top: 8px;
+    }
+    .launch-button:hover {
+      border-color: rgba(136, 204, 255, 0.75);
+      background: rgba(136, 204, 255, 0.25);
+      color: #ffffff;
+      transform: translateY(-2px);
+      box-shadow: 0 12px 32px rgba(136, 204, 255, 0.3), 0 0 60px rgba(136, 204, 255, 0.2);
+    }
+    @media (max-height: 640px) {
+      body {
+        justify-content: flex-start;
+        align-items: center;
+        padding-top: max(48px, env(safe-area-inset-top, 0px));
+      }
+      .landing-page { gap: 22px; }
+    }
+    @media (orientation: landscape) and (max-height: 600px) {
+      body {
+        justify-content: flex-start;
+        align-items: center;
+        padding-top: max(12px, env(safe-area-inset-top, 0px));
+        padding-left: max(16px, env(safe-area-inset-left, 0px));
+        padding-right: max(16px, env(safe-area-inset-right, 0px));
+        padding-bottom: max(8px, env(safe-area-inset-bottom, 0px));
+      }
+      .landing-page {
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 12px 24px;
+        align-items: center;
+        justify-content: center;
+        padding: 8px;
+      }
+      .logo-mark {
+        width: clamp(72px, 18vw, 110px);
+      }
+      .wordmark {
+        font-size: clamp(24px, 6vw, 40px);
+      }
+      .subtitle {
+        display: none;
+      }
+      .status-wrapper {
+        gap: 8px;
+      }
+    }
+    .landing-footer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 8px 16px;
+      padding-bottom: max(8px, env(safe-area-inset-bottom, 0px));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 0.25rem 0.5rem;
+      font-size: 0.72rem;
+      z-index: 10;
+    }
+    .landing-footer-link {
+      color: rgba(147, 197, 253, 0.55);
+      text-decoration: none;
+      padding: 2px 4px;
+      border-radius: 4px;
+      transition: color 0.15s ease;
+    }
+    .landing-footer-link:hover {
+      color: rgba(147, 197, 253, 0.9);
+    }
+    .landing-footer-sep {
+      color: rgba(147, 197, 253, 0.25);
     }
 
     /* ── Divider ──────────────────────────────────────────────────── */

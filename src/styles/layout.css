@@ -502,13 +502,9 @@ body {
   padding-top: 0;
 }
 
-/* In workspace, the ticker must clear all builder chrome (--z-builder-top: 1300)
-   and compact panels (max --z-builder-top: 1300), so 1310 places it just above.
-   Bottom: 56px gives 20px clearance above the zoom-controls cluster whose base is
-   at 36px (see .circuit-zoom-controls bottom: 36px in builder-ui.css). */
+/* Builder has its own ticker feed — hide the global one to avoid overlap in landscape */
 .app-shell.is-workspace .tips-ticker {
-  z-index: 1310;
-  bottom: calc(var(--app-safe-area-bottom) + 56px);
+  display: none;
 }
 
 /* ── Tips & Facts ticker ─────────────────────────────────────────────────── */
@@ -931,47 +927,4 @@ body {
   .app-content > * {
     padding: 12px 16px;
   }
-}
-
-/* ── Theme toggle button in the global mode bar ──────────────────────────── */
-.mode-tab--theme-toggle {
-  margin-left: auto;
-  border-left: 1px solid var(--border-subtle);
-  border-radius: 0 12px 12px 0;
-  padding-left: 14px;
-}
-
-/* ── Light-mode overrides for mode-bar & surfaces ────────────────────────── */
-html[data-theme="light"] .workspace-mode-bar {
-  background: rgba(255, 255, 255, 0.92);
-  border-color: rgba(80, 130, 190, 0.3);
-  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.1);
-}
-
-html[data-theme="light"] .mode-tab {
-  color: #334155;
-}
-
-html[data-theme="light"] .mode-tab:hover {
-  background: rgba(26, 111, 196, 0.1);
-  color: var(--brand-blue);
-  border-color: rgba(26, 111, 196, 0.28);
-}
-
-html[data-theme="light"] .mode-tab[data-active="true"] {
-  background: rgba(26, 111, 196, 0.15);
-  color: var(--brand-blue);
-  border-color: rgba(26, 111, 196, 0.45);
-  box-shadow: 0 0 10px rgba(26, 111, 196, 0.22);
-}
-
-html[data-theme="light"] .app-shell {
-  background: radial-gradient(circle at top, var(--brand-primary-dim), transparent 55%), var(--bg-darker);
-}
-
-html[data-theme="light"] .tips-ticker {
-  background: rgba(255, 255, 255, 0.92);
-  border-color: rgba(80, 130, 190, 0.25);
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
-  color: var(--text-secondary);
 }

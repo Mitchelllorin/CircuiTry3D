@@ -802,16 +802,10 @@ body.builder-body::before {
   }
 }
 
-/* Zoom controls — bottom-right perimeter corner, stacked vertically.
-   No container box — just the three bare symbol buttons.
-   Offset by the toggle tab width so the Controls panel toggle (32px wide at right:0)
-   never obscures the zoom buttons. */
-/* During the guided tour the workspace is a clean stage — hide the quick-action
-   buttons and the zoom controls so nothing blocks the circuit. They return for
-   the build-along / normal use. */
-.builder-shell[data-tour-active="true"] .unified-action-bar,
-.builder-shell[data-tour-active="true"] .circuit-zoom-controls {
-  display: none !important;
+@media (pointer: coarse) and (orientation: landscape) and (max-height: 600px) {
+  .current-flow-payoff-banner {
+    display: none;
+  }
 }
 
 /* Zoom controls overlay
@@ -5209,11 +5203,12 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
     gap: 8px;
   }
 
+  /* Tighten quick-add bar to sit just below the reduced 44px header. */
   .quick-add-bar {
     top: calc(52px + var(--builder-safe-area-top));
   }
 
-  /* Prevent panel modals from filling the entire landscape viewport */
+  /* Prevent panel modals from filling the entire landscape viewport. */
   .builder-panel-shell,
   .builder-panel {
     max-height: 75vh;
