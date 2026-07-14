@@ -1,0 +1,3654 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CircuiTry3D - Component Arena</title>
+  <style>
+    .arena-header {
+      position: fixed;
+      top: calc(8px + var(--safe-top));
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 10px;
+      pointer-events: none;
+    }
+
+    .arena-brand {
+      font-size: clamp(14px, 2.5vw, 20px);
+      font-weight: 900;
+      letter-spacing: -0.015em;
+      display: inline-flex;
+      gap: 2px;
+      filter: drop-shadow(0 0 8px rgba(40,255,190,0.35));
+      pointer-events: auto;
+    }
+
+    .arena-brand span {
+      display: inline-block;
+    }
+
+    .arena-brand-green {
+      color: #39ffb7;
+      text-shadow: 0 0 8px rgba(57,255,183,0.6), 0 0 14px rgba(5,214,172,0.4);
+    }
+
+    .arena-brand-orange {
+      color: #ff8b2b;
+      text-shadow: 0 0 6px rgba(255,167,65,0.55), 0 0 12px rgba(255,120,28,0.4);
+    }
+
+    .arena-for-everyone {
+      font-size: clamp(0.58rem, 1.2vw, 0.68rem);
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(110, 230, 130, 0.9);
+      text-shadow: 0 0 10px rgba(80, 200, 100, 0.5);
+      padding: 4px 12px;
+      border-radius: 100px;
+      border: 1px solid rgba(100, 220, 120, 0.3);
+      background: rgba(100, 220, 120, 0.07);
+      white-space: nowrap;
+      pointer-events: auto;
+    }
+
+    .arena-nav {
+      display: flex;
+      gap: 4px;
+      flex-wrap: nowrap;
+      justify-content: center;
+      pointer-events: auto;
+    }
+
+    .arena-nav-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(57,255,183,0.28);
+      background: rgba(8,26,36,0.55);
+      color: #dbeafe;
+      text-decoration: none;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      font-size: 0.6rem;
+      font-weight: 700;
+      transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+      backdrop-filter: blur(6px);
+      box-shadow: 0 4px 12px rgba(1, 19, 30, 0.4);
+      cursor: pointer;
+    }
+
+    .arena-nav-btn:hover {
+      border-color: rgba(57,255,183,0.65);
+      background: rgba(14,48,60,0.68);
+      color: #f8fafc;
+    }
+
+    :root {
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-left: env(safe-area-inset-left, 0px);
+      --safe-right: env(safe-area-inset-right, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+      --panel-bg: rgba(4, 8, 20, 0.82);
+      --panel-border: rgba(136, 204, 255, 0.28);
+      --panel-border-strong: rgba(0, 255, 136, 0.45);
+      --metric-bg: rgba(12, 22, 42, 0.8);
+      --metric-border: rgba(136, 204, 255, 0.22);
+      --metric-accent-a: rgba(0, 255, 136, 0.45);
+      --metric-accent-b: rgba(136, 204, 255, 0.45);
+      --metric-accent-delta: rgba(255, 160, 0, 0.5);
+      --text-muted: #94a3b8;
+      --text-strong: #e2e8f0;
+      --accent-green: #39ffb7;
+      --accent-orange: #ff8b2b;
+      --accent-cyan: #38bdf8;
+      --accent-purple: rgba(168, 85, 247, 0.7);
+      --panel-radius: 18px;
+      --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+      --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+      --shadow-panel: 0 8px 40px rgba(0,0,0,0.7), 0 0 0 1px rgba(136,204,255,0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      height: 100%;
+      background: radial-gradient(ellipse at top, #1e1b4b 0%, #020617 55%, #010413 100%);
+      color: var(--text-strong);
+      font-family: "Inter", "DM Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+      padding: var(--safe-top) var(--safe-right) var(--safe-bottom) var(--safe-left);
+      overflow: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(circle at 50% -10%, rgba(14, 165, 233, 0.28), transparent 55%),
+        radial-gradient(circle at 80% 20%, rgba(168, 85, 247, 0.25), transparent 52%),
+        radial-gradient(circle at 20% 80%, rgba(244, 63, 94, 0.2), transparent 60%);
+      pointer-events: none;
+      opacity: 0.9;
+      z-index: 0;
+    }
+
+    #arena {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      z-index: 1;
+    }
+
+    .hud {
+      position: fixed;
+      top: calc(12px + var(--safe-top));
+      left: calc(12px + var(--safe-left));
+      right: calc(12px + var(--safe-right));
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+      z-index: 3;
+    }
+
+    .btn {
+      padding: 11px 18px;
+      border-radius: 12px;
+      border: 1px solid rgba(94, 234, 212, 0.35);
+      background: rgba(10, 15, 32, 0.92);
+      color: var(--text-strong);
+      font-weight: 600;
+      cursor: pointer;
+      touch-action: manipulation;
+      letter-spacing: 0.01em;
+      font-size: 14px;
+      transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+      box-shadow: 0 0 0 rgba(34, 211, 238, 0);
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      border-color: var(--panel-border-strong);
+      box-shadow: 0 12px 28px rgba(34, 211, 238, 0.25);
+    }
+
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .file-btn {
+      position: relative;
+      overflow: hidden;
+    }
+
+    .file-btn input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+    }
+
+    .panel {
+      position: fixed;
+      top: calc(72px + var(--safe-top));
+      left: calc(12px + var(--safe-left));
+      width: 340px;
+      max-width: calc(100vw - 24px - var(--safe-left) - var(--safe-right));
+      max-height: calc(100vh - 96px - var(--safe-top) - var(--safe-bottom));
+      background: var(--panel-bg);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--panel-border);
+      border-radius: 16px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      overflow: hidden;
+      z-index: 3;
+      box-shadow: 0 25px 60px -18px rgba(59, 130, 246, 0.45);
+    }
+
+    .panel-scroll {
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      padding-right: 4px;
+    }
+
+    .panel-scroll::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .panel-scroll::-webkit-scrollbar-thumb {
+      background: rgba(136, 204, 255, 0.3);
+      border-radius: 999px;
+    }
+
+    .panel-section {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 0 0 14px;
+      border-bottom: 1px solid rgba(136,204,255,0.07);
+      margin-bottom: 2px;
+    }
+
+    .section-heading {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(148, 163, 184, 0.82);
+    }
+
+    .import-status {
+      font-size: 12px;
+      color: rgba(148, 163, 184, 0.85);
+      padding: 8px 10px;
+      border-radius: 10px;
+      border: 1px solid rgba(136, 204, 255, 0.18);
+      background: rgba(12, 22, 42, 0.65);
+    }
+
+    .row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .row label {
+      width: 130px;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .row input,
+    .row select {
+      flex: 1;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(71, 85, 105, 0.6);
+      background: rgba(8, 15, 28, 0.92);
+      color: var(--text-strong);
+      font-size: 13px;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .row input:focus,
+    .row select:focus {
+      outline: none;
+      border-color: rgba(59, 130, 246, 0.9);
+      box-shadow: inset 0 0 0 1px rgba(59, 130, 246, 0.5);
+    }
+
+    .metric-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 10px;
+    }
+
+    .panel-header .section-heading {
+      margin: 0;
+    }
+
+    .panel-subtext {
+      margin: 0;
+      font-size: 12px;
+      line-height: 1.5;
+      color: rgba(148, 163, 184, 0.85);
+    }
+
+    .chip-btn {
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(136, 204, 255, 0.35);
+      background: rgba(12, 22, 42, 0.4);
+      color: var(--text-strong);
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+    }
+
+    .chip-btn:hover {
+      background: rgba(24, 32, 48, 0.6);
+      border-color: rgba(136, 204, 255, 0.5);
+    }
+
+    .chip-btn:active {
+      transform: scale(0.95);
+    }
+
+    .import-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .import-tag {
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: rgba(12, 22, 42, 0.65);
+      border: 1px solid rgba(136, 204, 255, 0.18);
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(148, 163, 184, 0.85);
+    }
+
+    .summary-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-height: 180px;
+      overflow-y: auto;
+    }
+
+    .summary-list li {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      color: rgba(148, 163, 184, 0.85);
+      border-bottom: 1px solid rgba(136, 204, 255, 0.12);
+      padding-bottom: 4px;
+    }
+
+    .metric-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 8px;
+    }
+
+    .metric-card {
+      position: relative;
+      background: rgba(8, 14, 34, 0.82);
+      border: 1px solid var(--metric-border);
+      border-radius: 14px;
+      padding: 12px 11px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      overflow: hidden;
+      transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.2s var(--spring);
+      cursor: default;
+    }
+
+    .metric-card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: 14px;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      pointer-events: none;
+      background: linear-gradient(135deg, rgba(56, 189, 248, 0.06) 0%, transparent 60%);
+    }
+
+    .metric-card:hover {
+      transform: translateY(-1px);
+      border-color: rgba(136, 204, 255, 0.36);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    }
+
+    .metric-card:hover::before {
+      opacity: 1;
+    }
+
+    .metric-card.metric-accent-a {
+      border-color: rgba(57, 255, 183, 0.28);
+    }
+    .metric-card.metric-accent-a:hover {
+      border-color: rgba(57, 255, 183, 0.50);
+      box-shadow: 0 4px 20px rgba(57, 255, 183, 0.08);
+    }
+
+    .metric-card.metric-accent-b {
+      border-color: rgba(56, 189, 248, 0.28);
+    }
+    .metric-card.metric-accent-b:hover {
+      border-color: rgba(56, 189, 248, 0.50);
+      box-shadow: 0 4px 20px rgba(56, 189, 248, 0.08);
+    }
+
+    .metric-card.metric-accent-delta {
+      border-color: rgba(251, 146, 60, 0.28);
+    }
+    .metric-card.metric-accent-delta:hover {
+      border-color: rgba(251, 146, 60, 0.50);
+      box-shadow: 0 4px 20px rgba(251, 146, 60, 0.08);
+    }
+
+    .metric-card.health-warn {
+      border-color: rgba(251, 191, 36, 0.45) !important;
+      background: rgba(20, 15, 4, 0.88);
+    }
+    .metric-card.health-critical {
+      border-color: rgba(239, 68, 68, 0.55) !important;
+      background: rgba(22, 6, 6, 0.9);
+      animation: metric-critical-pulse 2.5s ease-in-out infinite;
+    }
+
+    @keyframes metric-critical-pulse {
+      0%, 100% { box-shadow: 0 0 0 rgba(239,68,68,0); }
+      50%       { box-shadow: 0 0 16px rgba(239,68,68,0.22); }
+    }
+
+
+    .metric-icon {
+      font-size: 14px;
+      line-height: 1;
+      margin-bottom: 1px;
+      opacity: 0.7;
+    }
+
+    .metric-label {
+      font-size: 10px;
+      color: rgba(148, 163, 184, 0.75);
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      font-weight: 600;
+      line-height: 1.2;
+    }
+
+    .metric-value {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--text-strong);
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .metric-value.health-safe   { color: #34d399; }
+    .metric-value.health-warn   { color: #fbbf24; }
+    .metric-value.health-critical { color: #f87171; }
+
+    .metric-detail {
+      font-size: 10.5px;
+      color: rgba(148, 163, 184, 0.7);
+      line-height: 1.3;
+    }
+
+    .metric-util-bar {
+      height: 3px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.06);
+      margin-top: 4px;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    .metric-util-fill {
+      height: 100%;
+      border-radius: 999px;
+      transition: width 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+      background: rgba(56, 189, 248, 0.7);
+    }
+    .metric-util-fill.util-safe     { background: linear-gradient(90deg, #10b981, #34d399); }
+    .metric-util-fill.util-warn     { background: linear-gradient(90deg, #d97706, #fbbf24); }
+    .metric-util-fill.util-critical { background: linear-gradient(90deg, #dc2626, #f87171); box-shadow: 0 0 6px rgba(239,68,68,0.6); }
+
+    .metric-empty {
+      font-size: 12px;
+      color: rgba(148, 163, 184, 0.7);
+      padding: 8px 6px;
+    }
+
+    .stat {
+      font-size: 12px;
+      color: rgba(148, 163, 184, 0.92);
+      background: rgba(12, 22, 42, 0.55);
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(136, 204, 255, 0.18);
+      min-height: 40px;
+      letter-spacing: 0.03em;
+    }
+
+    canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+    }
+
+    .compare-only {
+      display: none;
+    }
+
+    @media (pointer: coarse) {
+      .btn {
+        min-height: 48px;
+        font-size: 15px;
+        padding: 12px 20px;
+      }
+
+      .row label {
+        font-size: 13px;
+      }
+
+      .row input,
+      .row select {
+        min-height: 46px;
+      }
+
+      .panel {
+        width: calc(100vw - 32px - var(--safe-left) - var(--safe-right));
+        max-width: none;
+      }
+    }
+    /* ── Featured Components (Manufacturer Placement Framework) ── */
+    .featured-component-card {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      padding: 10px;
+      border-radius: 12px;
+      background: rgba(8, 15, 28, 0.7);
+      border: 1px solid rgba(136, 204, 255, 0.16);
+      cursor: pointer;
+      transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s var(--spring), box-shadow 0.2s ease;
+    }
+
+    .featured-component-card:hover {
+      border-color: rgba(136, 204, 255, 0.38);
+      background: rgba(12, 22, 42, 0.85);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+    }
+
+    .featured-component-card.selected {
+      border-color: rgba(57, 255, 183, 0.55);
+      background: rgba(5, 30, 22, 0.7);
+    }
+
+    .featured-component-name {
+      font-size: 12px;
+      font-weight: 700;
+      color: rgba(224, 242, 254, 0.92);
+      letter-spacing: 0.02em;
+    }
+
+    .featured-component-mfr {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: rgba(148, 163, 184, 0.65);
+    }
+
+    .featured-component-spec {
+      font-size: 11px;
+      color: rgba(148, 163, 184, 0.8);
+      line-height: 1.5;
+    }
+
+    .featured-component-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .partner-cta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 9px 12px;
+      border-radius: 10px;
+      background: rgba(15, 25, 50, 0.6);
+      border: 1px dashed rgba(136, 204, 255, 0.22);
+    }
+
+    .partner-cta-text {
+      font-size: 11px;
+      color: rgba(148, 163, 184, 0.75);
+      line-height: 1.5;
+    }
+
+    .partner-cta-link {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: #39ffb7;
+      text-decoration: none;
+      white-space: nowrap;
+      text-shadow: 0 0 8px rgba(57, 255, 183, 0.4);
+      transition: color 0.15s ease;
+    }
+
+    .partner-cta-link:hover {
+      color: #7fffd4;
+    }
+
+    /* ── FUSE™ Tier Gating UI ──────────────────────────────────────────────── */
+    .fuse-tier-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 0.58rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      pointer-events: auto;
+      cursor: pointer;
+      border: 1px solid;
+      transition: opacity 0.18s ease, box-shadow 0.18s ease;
+      user-select: none;
+      background: none;
+      font-family: inherit;
+      line-height: 1.6;
+    }
+
+    .fuse-tier-badge:hover {
+      box-shadow: 0 0 10px currentColor;
+      opacity: 0.9;
+    }
+
+    .fuse-tier-free         { border-color: rgba(148,163,184,0.4); color: #94a3b8; background: rgba(148,163,184,0.08); }
+    .fuse-tier-student      { border-color: rgba(57,255,183,0.5);  color: #39ffb7; background: rgba(57,255,183,0.10); }
+    .fuse-tier-educator     { border-color: rgba(96,165,250,0.55); color: #93c5fd; background: rgba(96,165,250,0.10); }
+    .fuse-tier-institutional{ border-color: rgba(168,85,247,0.6);  color: #c4b5fd; background: rgba(168,85,247,0.10); }
+
+    .fuse-locked {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 11px;
+      color: rgba(148, 163, 184, 0.6);
+      padding: 7px 9px;
+      border-radius: 8px;
+      border: 1px dashed rgba(136, 204, 255, 0.2);
+      background: rgba(8, 15, 28, 0.4);
+    }
+
+    .fuse-locked-icon {
+      opacity: 0.55;
+    }
+
+    .fuse-upgrade-btn {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 150, 50, 0.6);
+      color: #fb923c;
+      background: rgba(255, 150, 50, 0.1);
+      cursor: pointer;
+      text-decoration: none;
+      white-space: nowrap;
+      pointer-events: auto;
+      transition: background 0.15s ease;
+      flex-shrink: 0;
+    }
+
+    .fuse-upgrade-btn:hover {
+      background: rgba(255, 150, 50, 0.2);
+    }
+
+    /* Plan Preview selector inside the panel */
+    .plan-preview-row {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .plan-chip {
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      cursor: pointer;
+      border: 1px solid rgba(136, 204, 255, 0.25);
+      color: rgba(148, 163, 184, 0.7);
+      background: rgba(12, 22, 42, 0.4);
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
+    }
+
+    .plan-chip:hover {
+      border-color: rgba(136, 204, 255, 0.5);
+      color: #e2e8f0;
+    }
+
+    .plan-chip.active {
+      background: rgba(57, 255, 183, 0.12);
+      border-color: rgba(57, 255, 183, 0.5);
+      color: #39ffb7;
+    }
+
+    .plan-preview-note {
+      font-size: 10px;
+      color: rgba(100, 116, 139, 0.75);
+      line-height: 1.5;
+      margin-top: 2px;
+    }
+
+    /* "Powered by FUSE™" footer */
+    .fuse-footer {
+      text-align: center;
+      font-size: 10px;
+      color: rgba(100, 116, 139, 0.72);
+      letter-spacing: 0.06em;
+      padding: 10px 8px 4px;
+      border-top: 1px solid rgba(136, 204, 255, 0.1);
+    }
+
+    .fuse-footer-brand {
+      color: #ff9944;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+    }
+
+    .fuse-footer a {
+      color: #39ffb7;
+      text-decoration: none;
+    }
+
+    .fuse-footer a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="hud">
+    <button class="btn" id="btn-reset">Reset</button>
+    <button class="btn" id="btn-run">Run Test</button>
+    <button class="btn" id="btn-export">Export Results</button>
+    <button class="btn" id="btn-import-builder">Load Builder Export</button>
+    <label class="btn file-btn">
+      Import JSON
+      <input type="file" id="input-import-json" accept="application/json" />
+    </label>
+  </div>
+  <div class="panel">
+    <div class="panel-scroll">
+      <section class="panel-section">
+        <div class="section-heading">Import Sources</div>
+        <div id="import-status" class="import-status">Using reference component library. Load a builder export to sync live components.</div>
+        <div class="row">
+          <label for="mode">Mode</label>
+          <select id="mode">
+            <option value="single">Single Component</option>
+            <option value="compare">Compare (A vs B)</option>
+          </select>
+        </div>
+      </section>
+      <section class="panel-section">
+        <div class="section-heading">Component Selection</div>
+        <div class="row">
+          <label for="component-a">Component A</label>
+          <select id="component-a"></select>
+        </div>
+        <div class="row compare-only">
+          <label for="component-b">Component B</label>
+          <select id="component-b"></select>
+        </div>
+      </section>
+      <section class="panel-section">
+        <div class="section-heading">Test Variables</div>
+        <div class="row">
+          <label for="input-voltage">Voltage (V)</label>
+          <input id="input-voltage" type="number" value="5" step="0.1" />
+        </div>
+        <div class="row">
+          <label for="input-frequency">Frequency (Hz)</label>
+          <input id="input-frequency" type="number" value="1000" step="1" />
+        </div>
+        <div class="row">
+          <label for="input-temperature">Ambient Temp (C)</label>
+          <input id="input-temperature" type="number" value="25" step="1" />
+        </div>
+        <div class="row">
+          <label for="input-humidity">Humidity (%)</label>
+          <input id="input-humidity" type="number" value="45" step="1" />
+        </div>
+        <div class="row">
+          <label for="input-duty">Duty Cycle (%)</label>
+          <input id="input-duty" type="number" value="100" step="1" />
+        </div>
+        <div class="row">
+          <label for="input-duration">Duration (s)</label>
+          <input id="input-duration" type="number" value="60" step="1" />
+        </div>
+        <div class="row">
+          <label for="input-load">Load Impedance (Ohm)</label>
+          <input id="input-load" type="number" value="100" step="1" />
+        </div>
+      </section>
+      <section class="panel-section">
+        <div class="section-heading">Metrics — Component A</div>
+        <div id="metrics-a" class="metric-grid"></div>
+      </section>
+      <section class="panel-section compare-only">
+        <div class="section-heading">Metrics — Component B</div>
+        <div id="metrics-b" class="metric-grid"></div>
+      </section>
+      <section class="panel-section compare-only">
+        <div class="section-heading">Relative Delta</div>
+        <div id="metrics-delta" class="metric-grid"></div>
+      </section>
+      <section class="panel-section">
+        <div class="section-heading">Status</div>
+        <div class="stat" id="stat-out">Ready.</div>
+      </section>
+    </div>
+    <div class="arena-for-everyone" aria-label="For Everyone">👥 For Everyone — to facilitate and enhance the learning</div>
+    <nav class="arena-nav" aria-label="Main navigation">
+      <a class="arena-nav-btn" href="/" target="_top">Home</a>
+      <a class="arena-nav-btn" href="/app" target="_top">Builder</a>
+      <a class="arena-nav-btn" href="/app" target="_top">Workspace</a>
+      <a class="arena-nav-btn" href="/pricing" target="_top">Pricing</a>
+      <a class="arena-nav-btn" href="/community" target="_top">Community</a>
+      <a class="arena-nav-btn" href="/account" target="_top">Account</a>
+    </nav>
+  </header>
+  <!-- Component library panel toggle button -->
+  <button class="lib-toggle panel-closed" id="lib-toggle"
+          aria-label="Open component library" aria-expanded="false" aria-controls="arena-panel">
+    <span id="lib-toggle-icon" aria-hidden="true">☰</span>
+    <span class="lib-toggle-tip">Components</span>
+  </button>
+  <button class="battle-fab" id="btn-battle-fab" aria-label="Run simulation test">▶ RUN TEST</button>
+  <div class="hud" role="toolbar" aria-label="Arena controls">
+  <button class="btn" id="btn-reset" aria-label="Reset arena (will ask for confirmation)">Reset</button>
+  <button class="btn" id="btn-run" data-command="run-test" aria-label="Run simulation test">▶ Run Test</button>
+  <button class="btn" id="btn-export" aria-label="Save results as JSON" title="Run a test first to enable" disabled>⬇ Save Results</button>
+  <button class="btn" id="btn-import-builder" aria-label="Load latest builder export" title="Loads your latest circuit from the Builder">↓ Load from Builder</button>
+  <button class="btn" id="btn-show-timeline" aria-label="Show stress timeline" title="Stress timeline — run a test first" style="display:none">Timeline</button>
+  </div>
+  <canvas id="arena"></canvas>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script>
+    (() => {
+      "use strict";
+
+    let scene, camera, renderer, meshA, meshB;
+    const canvas = document.getElementById('arena');
+    let manufacturerRoster = [];
+    const activeComponentIds = { a: null, b: null };
+    const manufacturerNames = { a: null, b: null };
+
+    const ALLOWED_TYPES = ['resistor', 'capacitor', 'inductor', 'led'];
+
+      const STORAGE_KEYS = {
+        prefix: "circuitry:arena-session:",
+        last: "circuitry:arena-session:last",
+      };
+
+      const COMPONENT_PROFILES = {
+        battery: {
+          defaultProperties: {
+            voltage: 9,
+            internalResistance: 0.2,
+            capacityMah: 1500,
+            tempCoeff: 0.0004,
+            thermalResistance: 35,
+            maxDischargeCurrent: 2,
+          },
+        },
+        resistor: {
+          defaultProperties: {
+            resistance: 100,
+            tempCoeff: 0.0005,
+            tolerance: 0.05,
+            thermalResistance: 75,
+          },
+        },
+        led: {
+          defaultProperties: {
+            forwardVoltage: 2,
+            seriesResistance: 120,
+            efficiency: 0.35,
+            thermalResistance: 120,
+          },
+        },
+        switch: {
+          defaultProperties: {
+            onResistance: 0.05,
+            offResistance: 1000000,
+            transitionTimeMs: 2,
+          },
+        },
+        capacitor: {
+          defaultProperties: {
+            capacitance: 1e-6,
+            esr: 0.1,
+            tempCoeff: 0.0002,
+            thermalResistance: 40,
+          },
+        },
+        inductor: {
+          defaultProperties: {
+            inductance: 1e-3,
+            resistance: 5,
+            thermalResistance: 55,
+          },
+        },
+      };
+
+      const DEFAULT_COMPONENT_CATALOG = [
+        {
+          id: "resistor-100",
+          name: "Resistor 100 Ohm",
+          type: "resistor",
+          properties: { resistance: 100, tempCoeff: 0.0005, tolerance: 0.05, thermalResistance: 70 },
+          metadata: { displayName: "R100", source: "Reference Library" },
+        },
+        {
+          id: "resistor-330",
+          name: "Resistor 330 Ohm",
+          type: "resistor",
+          properties: { resistance: 330, tempCoeff: 0.0005, tolerance: 0.05, thermalResistance: 80 },
+          metadata: { displayName: "R330", source: "Reference Library" },
+        },
+        {
+          id: "led-red",
+          name: "LED Red 2V",
+          type: "led",
+          properties: { forwardVoltage: 2, seriesResistance: 120, efficiency: 0.32, thermalResistance: 110 },
+          metadata: { displayName: "LED-R", source: "Reference Library" },
+        },
+        {
+          id: "battery-9v",
+          name: "Battery 9V",
+          type: "battery",
+          properties: { voltage: 9, internalResistance: 0.18, capacityMah: 1200, thermalResistance: 35 },
+          metadata: { displayName: "B9", source: "Reference Library" },
+        },
+        {
+          id: "capacitor-1u",
+          name: "Capacitor 1 uF",
+          type: "capacitor",
+          properties: { capacitance: 1e-6, esr: 0.12, tempCoeff: 0.0002, thermalResistance: 45 },
+          metadata: { displayName: "C1u", source: "Reference Library" },
+        },
+        {
+          id: "switch-basic",
+          name: "Toggle Switch",
+          type: "switch",
+          properties: { onResistance: 0.05, offResistance: 1000000, transitionTimeMs: 1.5 },
+          metadata: { displayName: "SW1", source: "Reference Library" },
+        },
+      ];
+
+      const componentPalettes = {
+        resistor: { base: 0xf97316, glow: 0xffedd5, orbit: 0xfb923c, band: 0xfacc15 },
+        capacitor: { base: 0x38bdf8, glow: 0x22d3ee, orbit: 0x0ea5e9, accent: 0xffffff },
+        inductor: { base: 0xa855f7, glow: 0xc4b5fd, orbit: 0x8b5cf6 },
+        led: { base: 0xf43f5e, glow: 0xfda4af, orbit: 0xf472b6 },
+        battery: { base: 0xffd166, glow: 0xfff3bf, orbit: 0xffc06b },
+        switch: { base: 0x2dd4bf, glow: 0x5eead4, orbit: 0x14b8a6 },
+        default: { base: 0x38bdf8, glow: 0x1d4ed8, orbit: 0x38bdf8, band: 0x22d3ee },
+      };
+
+      const particleSpeeds = [];
+
+      let scene;
+      let camera;
+      let renderer;
+      let clock;
+      let componentAGroup;
+      let componentBGroup;
+      let energyRing;
+      let pulseRing;
+      let particles;
+
+      function initThree() {
+        const canvas = document.getElementById("arena");
+        if (!canvas) {
+          return;
+        }
+
+        scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x050716);
+        scene.fog = new THREE.Fog(0x050716, 14, 36);
+
+        camera = new THREE.PerspectiveCamera(62, window.innerWidth / window.innerHeight, 0.1, 100);
+        camera.position.set(0, 2.8, 7.2);
+
+        renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+        renderer.setSize(window.innerWidth, window.innerHeight);
+
+        clock = new THREE.Clock();
+
+        addLights();
+        addStageElements();
+        addParticles();
+
+        componentAGroup = buildComponent("resistor", 100, true);
+        componentAGroup.position.x = -1.65;
+        scene.add(componentAGroup);
+
+        componentBGroup = buildComponent("capacitor", 1, false);
+        componentBGroup.position.x = 1.65;
+        componentBGroup.visible = false;
+        scene.add(componentBGroup);
+
+          if (pointerInteraction.pointers.size === 1) {
+            const remaining = pointerInteraction.pointers.values().next().value;
+            pointerInteraction.mode = "single";
+            pointerInteraction.rotateReady = false;
+            pointerInteraction.lastAveragePosition = null;
+            pointerInteraction.lastDistance = null;
+            pointerInteraction.lastSinglePosition = { x: remaining.clientX, y: remaining.clientY };
+            scheduleRotateReady(remaining.pointerType);
+          } else {
+            pointerInteraction.mode = "multi";
+            pointerInteraction.rotateReady = false;
+            clearRotateTimer();
+            pointerInteraction.lastAveragePosition = getAveragePointerPosition();
+            pointerInteraction.lastDistance = getPointersDistance();
+          }
+        }
+
+        function scheduleRotateReady(pointerType) {
+          clearRotateTimer();
+          const delay = pointerType === "mouse" ? 0 : HOLD_DELAY_TOUCH_MS;
+          if (delay === 0) {
+            pointerInteraction.rotateReady = true;
+            return;
+          }
+          pointerInteraction.rotateTimer = window.setTimeout(() => {
+            pointerInteraction.rotateReady = true;
+          }, delay);
+        }
+
+        function clearRotateTimer() {
+          if (pointerInteraction.rotateTimer !== null) {
+            window.clearTimeout(pointerInteraction.rotateTimer);
+            pointerInteraction.rotateTimer = null;
+          }
+        }
+
+        function resetInteractionState() {
+          clearRotateTimer();
+          pointerInteraction.rotateReady = false;
+          pointerInteraction.mode = "idle";
+          pointerInteraction.lastSinglePosition = null;
+          pointerInteraction.lastAveragePosition = null;
+          pointerInteraction.lastDistance = null;
+          pointerInteraction.pointers.clear();
+        }
+
+        function storePointer(event) {
+          pointerInteraction.pointers.set(event.pointerId, {
+            id: event.pointerId,
+            clientX: event.clientX,
+            clientY: event.clientY,
+            startX: event.clientX,
+            startY: event.clientY,
+            pointerType: event.pointerType || "mouse",
+          });
+        }
+
+        function updatePointer(event) {
+          const pointer = pointerInteraction.pointers.get(event.pointerId);
+          if (!pointer) {
+            return;
+          }
+          pointer.clientX = event.clientX;
+          pointer.clientY = event.clientY;
+        }
+
+        function getAveragePointerPosition() {
+          let sumX = 0;
+          let sumY = 0;
+          let count = 0;
+          pointerInteraction.pointers.forEach((pointer) => {
+            sumX += pointer.clientX;
+            sumY += pointer.clientY;
+            count += 1;
+          });
+          if (count === 0) {
+            return { x: 0, y: 0 };
+          }
+          return { x: sumX / count, y: sumY / count };
+        }
+
+        function getPointersDistance() {
+          const values = Array.from(pointerInteraction.pointers.values());
+          if (values.length < 2) {
+            return 0;
+          }
+          const a = values[0];
+          const b = values[1];
+          return Math.hypot(b.clientX - a.clientX, b.clientY - a.clientY);
+        }
+
+        function applyRotation(deltaX) {
+          cameraRig.azimuth = THREE.MathUtils.euclideanModulo(
+            cameraRig.azimuth - deltaX * ROTATION_SPEED,
+            Math.PI * 2
+          );
+          updateCameraRigPosition();
+        }
+
+        function applyPan(deltaX, deltaY) {
+          if (!camera) {
+            return;
+          }
+          camera.getWorldDirection(tempForward);
+          tempForward.y = 0;
+          if (tempForward.lengthSq() < 1e-6) {
+            tempForward.set(0, 0, -1);
+          } else {
+            tempForward.normalize();
+          }
+          tempRight.crossVectors(tempForward, camera.up);
+          tempRight.y = 0;
+          if (tempRight.lengthSq() < 1e-6) {
+            tempRight.set(1, 0, 0);
+          } else {
+            tempRight.normalize();
+          }
+          const panFactor = cameraRig.radius * PAN_SPEED;
+          cameraRig.target.addScaledVector(tempRight, -deltaX * panFactor);
+          cameraRig.target.addScaledVector(tempForward, deltaY * panFactor);
+          updateCameraRigPosition();
+        }
+
+        function applyZoomDelta(deltaDistance) {
+          if (!Number.isFinite(deltaDistance) || deltaDistance === 0) {
+            return;
+          }
+          const factor = THREE.MathUtils.clamp(1 - deltaDistance * ZOOM_FACTOR_PER_PIXEL, 0.5, 1.5);
+          cameraRig.radius = THREE.MathUtils.clamp(
+            cameraRig.radius * factor,
+            cameraRig.minRadius,
+            cameraRig.maxRadius
+          );
+          updateCameraRigPosition();
+        }
+
+        function initThree() {
+          const canvas = document.getElementById("arena");
+          scene = new THREE.Scene();
+          scene.background = new THREE.Color(0x050716);
+          scene.fog = new THREE.Fog(0x050716, 14, 36);
+
+          camera = new THREE.PerspectiveCamera(62, window.innerWidth / window.innerHeight, 0.1, 100);
+          camera.position.copy(CAMERA_DEFAULT_POSITION);
+          camera.lookAt(CAMERA_DEFAULT_TARGET);
+
+          renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+          renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+          renderer.setSize(window.innerWidth, window.innerHeight);
+          renderer.domElement.style.touchAction = "none";
+          renderer.domElement.style.cursor = "grab";
+
+          setupOrbitControls();
+
+        cameraTarget = new THREE.Vector3(0, 0.25, 0);
+        camera.lookAt(cameraTarget);
+        tmpVecA.copy(camera.position).sub(cameraTarget);
+        cameraControls.radius = tmpVecA.length();
+        cameraControls.azimuth = Math.atan2(tmpVecA.x, tmpVecA.z);
+        cameraControls.height = tmpVecA.y;
+        cameraControls.minRadius = Math.max(2.8, cameraControls.radius * 0.45);
+        cameraControls.maxRadius = Math.max(14, cameraControls.radius * 2);
+        if (cameraControls.maxRadius <= cameraControls.minRadius) {
+          cameraControls.maxRadius = cameraControls.minRadius + 0.5;
+        }
+        interactionCanvas = canvas;
+        setupInteractionControls(canvas);
+        updateCameraPosition();
+
+        initialiseCameraRig();
+        setupPointerInteractions(canvas);
+
+        addLights();
+        addStageElements();
+        addParticles();
+
+          addLights();
+          addStageElements();
+          addParticles();
+
+          componentGroupA = buildComponent("resistor", 100, true);
+          componentGroupA.position.x = COMPONENT_POSITIONS.A;
+          energizeComponent(componentGroupA, 0.24);
+          scene.add(componentGroupA);
+
+          componentGroupB = buildComponent("resistor", 100, false);
+          componentGroupB.position.x = COMPONENT_POSITIONS.B;
+          componentGroupB.visible = false;
+          energizeComponent(componentGroupB, 0.24);
+          scene.add(componentGroupB);
+
+          window.addEventListener("resize", handleResize);
+
+          animate();
+        }
+
+        function handleResize() {
+          if (!camera || !renderer) {
+            return;
+          }
+          camera.aspect = window.innerWidth / window.innerHeight;
+          camera.updateProjectionMatrix();
+          renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        animate();
+      }
+
+      function addLights() {
+        const hemi = new THREE.HemisphereLight(0x4c86ff, 0x050716, 0.7);
+        scene.add(hemi);
+
+        const key = new THREE.SpotLight(0x8b5cf6, 2.1, 40, Math.PI / 5, 0.7, 1.3);
+        key.position.set(-6, 9, 6);
+        scene.add(key);
+        scene.add(key.target);
+        key.target.position.set(0, 0, 0);
+
+        const fill = new THREE.SpotLight(0x38bdf8, 1.8, 40, Math.PI / 5, 0.7, 1.1);
+        fill.position.set(7, 7, 2);
+        scene.add(fill);
+        scene.add(fill.target);
+        fill.target.position.set(0, 0, 0);
+
+        const rim = new THREE.DirectionalLight(0x22d3ee, 0.7);
+        rim.position.set(0, 6, -6);
+        scene.add(rim);
+
+        const uplight = new THREE.PointLight(0xfacc15, 0.8, 12, 2);
+        uplight.position.set(0, -0.2, 0);
+        scene.add(uplight);
+      }
+
+      function addStageElements() {
+        const grid = new THREE.GridHelper(28, 56, 0x1d4ed8, 0x14b8a6);
+        grid.position.y = -1.6;
+        grid.material.transparent = true;
+        grid.material.opacity = 0.2;
+        grid.material.depthWrite = false;
+        scene.add(grid);
+
+        const platform = new THREE.Mesh(
+          new THREE.CylinderGeometry(3.8, 3.8, 0.45, 72),
+          new THREE.MeshStandardMaterial({
+            color: 0x0b1220,
+            metalness: 0.45,
+            roughness: 0.35,
+            emissive: 0x0ea5e9,
+            emissiveIntensity: 0.24,
+          })
+        );
+        platform.position.y = -0.6;
+        scene.add(platform);
+
+        const innerGlow = new THREE.Mesh(
+          new THREE.CircleGeometry(2.6, 72),
+          new THREE.MeshBasicMaterial({
+            color: 0x1d4ed8,
+            transparent: true,
+            opacity: 0.45,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false,
+          })
+        );
+        innerGlow.rotation.x = -Math.PI / 2;
+        innerGlow.position.y = -0.37;
+        scene.add(innerGlow);
+
+        energyRing = new THREE.Mesh(
+          new THREE.TorusGeometry(3.2, 0.08, 24, 220),
+          new THREE.MeshBasicMaterial({
+            color: 0x38bdf8,
+            transparent: true,
+            opacity: 0.55,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false,
+          })
+        );
+        energyRing.rotation.x = Math.PI / 2;
+        energyRing.position.y = -0.28;
+        scene.add(energyRing);
+
+        pulseRing = new THREE.Mesh(
+          new THREE.RingGeometry(2.2, 2.45, 72),
+          new THREE.MeshBasicMaterial({
+            color: 0xfacc15,
+            transparent: true,
+            opacity: 0,
+            side: THREE.DoubleSide,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false,
+          })
+        );
+        pulseRing.rotation.x = Math.PI / 2;
+        pulseRing.position.y = -0.32;
+        pulseRing.userData = { life: 0, strength: 0 };
+        scene.add(pulseRing);
+      }
+
+      function addParticles() {
+        const particleCount = 420;
+        const positions = new Float32Array(particleCount * 3);
+        for (let i = 0; i < particleCount; i++) {
+          positions[i * 3] = (Math.random() - 0.5) * 16;
+          positions[i * 3 + 1] = Math.random() * 5.5 + 0.3;
+          positions[i * 3 + 2] = (Math.random() - 0.5) * 16;
+          particleSpeeds.push(Math.random() * 0.7 + 0.25);
+        }
+
+        const geometry = new THREE.BufferGeometry();
+        geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+
+        const material = new THREE.PointsMaterial({
+          color: 0x60a5fa,
+          size: 0.07,
+          transparent: true,
+          opacity: 0.85,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false,
+        });
+
+        particles = new THREE.Points(geometry, material);
+        particles.frustumCulled = false;
+        scene.add(particles);
+      }
+
+      function buildComponent(type, value, isPrimary) {
+        const palette = componentPalettes[type] || componentPalettes.default;
+        const group = new THREE.Group();
+        group.userData = {
+          palette,
+          energy: 0.3,
+          bobOffset: Math.random() * Math.PI * 2,
+          baseScale: computeScale(value),
+        };
+
+        const material = new THREE.MeshStandardMaterial({
+          color: palette.base,
+          metalness: 0.35,
+          roughness: 0.28,
+          emissive: palette.glow,
+          emissiveIntensity: 0.35,
+        });
+
+        let core;
+        switch (type) {
+          case "resistor": {
+            core = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.5, 0.5), material);
+            const leadGeometry = new THREE.CylinderGeometry(0.07, 0.07, 0.9, 20);
+            const leadMaterial = new THREE.MeshStandardMaterial({
+              color: 0xbcd0ff,
+              metalness: 0.85,
+              roughness: 0.25,
+              emissive: 0x1e293b,
+              emissiveIntensity: 0.1,
+            });
+            const leadL = new THREE.Mesh(leadGeometry, leadMaterial);
+            leadL.position.x = -1.05;
+            leadL.rotation.z = Math.PI / 2;
+            const leadR = leadL.clone();
+            leadR.position.x = 1.05;
+            group.add(leadL, leadR);
+
+            const bandMaterial = new THREE.MeshStandardMaterial({
+              color: palette.band,
+              metalness: 0.45,
+              roughness: 0.35,
+              emissive: palette.band,
+              emissiveIntensity: 0.22,
+            });
+            [-0.35, 0, 0.35].forEach((offset) => {
+              const band = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.6, 0.58), bandMaterial);
+              band.position.x = offset;
+              group.add(band);
+            });
+            break;
+          }
+          case "capacitor": {
+            core = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.55, 1.2, 48), material);
+            const capTopMat = new THREE.MeshStandardMaterial({
+              color: palette.accent || 0xffffff,
+              metalness: 0.9,
+              roughness: 0.18,
+              emissive: palette.glow,
+              emissiveIntensity: 0.12,
+            });
+            const top = new THREE.Mesh(new THREE.CircleGeometry(0.55, 48), capTopMat);
+            top.rotation.x = Math.PI / 2;
+            top.position.y = 0.6;
+            const bottom = top.clone();
+            bottom.position.y = -0.6;
+            bottom.rotation.x = -Math.PI / 2;
+            group.add(top, bottom);
+
+            const leadMaterial = new THREE.MeshStandardMaterial({
+              color: 0x86efac,
+              metalness: 0.6,
+              roughness: 0.45,
+            });
+            const leadGeometry = new THREE.CylinderGeometry(0.045, 0.045, 1.4, 16);
+            const lead1 = new THREE.Mesh(leadGeometry, leadMaterial);
+            lead1.position.set(-0.2, -1.1, 0);
+            const lead2 = lead1.clone();
+            lead2.position.x = 0.2;
+            group.add(lead1, lead2);
+            break;
+          }
+          case "inductor": {
+            core = new THREE.Mesh(new THREE.TorusKnotGeometry(0.55, 0.16, 100, 18, 2, 3), material);
+            break;
+          }
+          case "led": {
+            core = new THREE.Mesh(new THREE.ConeGeometry(0.45, 1.2, 36, 1, true), material);
+            core.position.y = 0.35;
+            const bulb = new THREE.Mesh(
+              new THREE.SphereGeometry(0.38, 36, 36),
+              new THREE.MeshStandardMaterial({
+                color: 0xffffff,
+                emissive: palette.glow,
+                emissiveIntensity: 0.85,
+                metalness: 0.1,
+                roughness: 0.08,
+                transparent: true,
+                opacity: 0.75,
+              })
+            );
+            bulb.position.y = 0.65;
+            group.add(bulb);
+
+            const base = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.32, 0.28, 32), new THREE.MeshStandardMaterial({
+              color: 0x1f2937,
+              metalness: 0.75,
+              roughness: 0.42,
+            }));
+            base.position.y = -0.35;
+            group.add(base);
+
+            const legGeometry = new THREE.CylinderGeometry(0.045, 0.045, 1.35, 16);
+            const legMaterial = new THREE.MeshStandardMaterial({
+              color: 0xdbeafe,
+              metalness: 0.9,
+              roughness: 0.25,
+            });
+            const leg1 = new THREE.Mesh(legGeometry, legMaterial);
+            leg1.position.set(-0.14, -1.05, 0);
+            const leg2 = leg1.clone();
+            leg2.position.x = 0.14;
+            group.add(leg1, leg2);
+            break;
+          }
+          case "battery": {
+            core = new THREE.Mesh(new THREE.BoxGeometry(1, 1.6, 0.6), material);
+            const strapMaterial = new THREE.MeshStandardMaterial({
+              color: 0x1f2937,
+              metalness: 0.6,
+              roughness: 0.3,
+              emissive: 0x0f172a,
+              emissiveIntensity: 0.2,
+            });
+            const strap = new THREE.Mesh(new THREE.BoxGeometry(1.02, 0.18, 0.62), strapMaterial);
+            strap.position.y = 0.65;
+            group.add(strap);
+            break;
+          }
+          case "switch": {
+            core = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.5, 0.5), material);
+            const lever = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.04, 1.1, 24), new THREE.MeshStandardMaterial({
+              color: 0xdbeafe,
+              metalness: 0.8,
+              roughness: 0.3,
+            }));
+            lever.position.set(0, 0.65, 0);
+            lever.rotation.z = -Math.PI / 6;
+            group.add(lever);
+            break;
+          }
+          default: {
+            core = new THREE.Mesh(new THREE.OctahedronGeometry(0.75, 0), material);
+            break;
+          }
+        }
+
+        group.add(core);
+        group.userData.core = core;
+
+        const halo = new THREE.Mesh(
+          new THREE.SphereGeometry(0.95, 32, 32),
+          new THREE.MeshBasicMaterial({
+            color: palette.glow,
+            transparent: true,
+            opacity: 0.3,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false,
+          })
+        );
+        group.add(halo);
+        group.userData.halo = halo;
+
+        const orbiters = [];
+        for (let i = 0; i < 3; i++) {
+          const orb = new THREE.Mesh(
+            new THREE.SphereGeometry(0.12 + i * 0.03, 18, 18),
+            new THREE.MeshBasicMaterial({
+              color: palette.orbit,
+              transparent: true,
+              opacity: 0.78 - i * 0.2,
+              depthWrite: false,
+              blending: THREE.AdditiveBlending,
+            })
+          );
+          orb.userData = {
+            radius: 0.95 + i * 0.22,
+            height: 0.28 + i * 0.16,
+            speed: 0.7 + i * 0.42,
+          };
+          orbiters.push(orb);
+          group.add(orb);
+        }
+        group.userData.orbiters = orbiters;
+
+        group.scale.setScalar(group.userData.baseScale);
+        group.position.y = 0.25;
+
+        if (isPrimary) {
+          const badge = new THREE.Mesh(
+            new THREE.CircleGeometry(0.44, 32),
+            new THREE.MeshBasicMaterial({
+              color: 0x22d3ee,
+              transparent: true,
+              opacity: 0.4,
+              depthWrite: false,
+            })
+          );
+          badge.rotation.x = -Math.PI / 2;
+          badge.position.set(0, -0.68, 0);
+          group.add(badge);
+        }
+
+        group.userData.componentType = type;
+        group.userData.value = value;
+
+        return group;
+      }
+
+      function computeScale(value) {
+        if (!Number.isFinite(value) || value <= 0) {
+          return 1;
+        }
+        const scaled = Math.log10(value + 10) / 3;
+        return THREE.MathUtils.clamp(0.75 + scaled, 0.7, 2.3);
+      }
+
+      function disposeGroup(group) {
+        if (!group) {
+          return;
+        }
+        scene.remove(group);
+        group.traverse((child) => {
+          if (child.geometry) {
+            child.geometry.dispose();
+          }
+          if (child.material) {
+            if (Array.isArray(child.material)) {
+              child.material.forEach((mat) => mat.dispose());
+            } else {
+              child.material.dispose();
+            }
+          }
+        });
+      }
+
+      function resetVisualGroup(group) {
+        if (!group) {
+          return;
+        }
+        group.rotation.set(0, 0, 0);
+        group.position.y = 0.25;
+        energizeComponent(group, 0.25);
+      }
+
+      function energizeComponent(group, energy) {
+        if (!group) {
+          return;
+        }
+        group.userData.energy = energy;
+        const core = group.userData.core;
+        if (core && core.material) {
+          core.material.emissiveIntensity = 0.3 + energy * 1.2;
+        }
+        group.scale.setScalar(group.userData.baseScale * (0.9 + energy * 0.45));
+        if (group.userData.halo) {
+          group.userData.halo.material.opacity = 0.22 + energy * 0.5;
+          group.userData.halo.scale.setScalar(1 + energy * 0.8);
+        }
+      }
+
+      function updateComponentAnimation(group, elapsed, delta) {
+        if (!group || !group.visible) {
+          return;
+        }
+        const energy = group.userData.energy || 0.25;
+        group.rotation.y += delta * (0.8 + energy * 2.8);
+        group.rotation.x = Math.sin(elapsed * 0.8 + group.userData.bobOffset) * 0.2;
+        group.position.y = 0.25 + Math.sin(elapsed * 1.6 + group.userData.bobOffset) * (0.12 + energy * 0.12);
+        (group.userData.orbiters || []).forEach((orb, idx) => {
+          const data = orb.userData;
+          const angle = elapsed * (data.speed + energy) + idx * Math.PI * 0.75;
+          orb.position.set(
+            Math.cos(angle) * data.radius,
+            data.height + Math.sin(angle * 1.8) * 0.12,
+            Math.sin(angle) * data.radius
+          );
+        });
+      }
+
+      function animateParticles(delta) {
+        if (!particles) {
+          return;
+        }
+        const positions = particles.geometry.getAttribute("position");
+        for (let i = 0; i < particleSpeeds.length; i++) {
+          positions.array[i * 3 + 1] += particleSpeeds[i] * delta;
+          if (positions.array[i * 3 + 1] > 7) {
+            positions.array[i * 3] = (Math.random() - 0.5) * 16;
+            positions.array[i * 3 + 1] = Math.random() * 2;
+            positions.array[i * 3 + 2] = (Math.random() - 0.5) * 16;
+          }
+        }
+        positions.needsUpdate = true;
+      }
+
+      function triggerPulse(intensity) {
+        if (!pulseRing) {
+          return;
+        }
+        const clamped = THREE.MathUtils.clamp(intensity, 0.2, 1.1);
+        pulseRing.userData.life = 1;
+        pulseRing.userData.strength = clamped;
+        pulseRing.scale.setScalar(1);
+      }
+
+      function deriveVisualValue(component) {
+        if (!component || typeof component !== "object") {
+          return 1;
+        }
+        const props = component.properties || {};
+        const type = (component.type || "default").toLowerCase();
+        if (type === "resistor") {
+          return Math.abs(props.resistance ?? props.seriesResistance ?? 100) || 1;
+        }
+        if (type === "capacitor") {
+          const capacitance = Math.abs(props.capacitance ?? 1e-6);
+          return Math.max(capacitance * 1e6, 0.001);
+        }
+        if (type === "inductor") {
+          const inductance = Math.abs(props.inductance ?? 1e-3);
+          return Math.max(inductance * 1e3, 0.001);
+        }
+        if (type === "led") {
+          return Math.abs(props.seriesResistance ?? props.forwardVoltage ?? 120) || 1;
+        }
+        if (type === "battery") {
+          return Math.abs(props.voltage ?? 9) || 1;
+        }
+        if (type === "switch") {
+          return Math.abs(props.onResistance ?? 0.05) * 1000 || 1;
+        }
+        if (typeof props.value === "number" && Number.isFinite(props.value)) {
+          return Math.abs(props.value) || 1;
+        }
+        const numeric = Object.values(props).find((value) => typeof value === "number" && Number.isFinite(value));
+        if (typeof numeric === "number") {
+          return Math.abs(numeric) || 1;
+        }
+        return 1;
+      }
+
+      function syncComponentGroup(slot, component) {
+        if (!scene) {
+          return;
+        }
+        const type = (component?.type || "default").toLowerCase();
+        const value = deriveVisualValue(component);
+        const current = slot === "A" ? componentAGroup : componentBGroup;
+        let group = current;
+        const shouldReplace = !current || current.userData.componentType !== type;
+
+        if (shouldReplace) {
+          group = buildComponent(type, value, slot === "A");
+          group.position.x = slot === "A" ? -1.65 : 1.65;
+          if (current) {
+            disposeGroup(current);
+          }
+          scene.add(group);
+        } else {
+          const baseScale = computeScale(value);
+          group.userData.baseScale = baseScale;
+          group.userData.value = value;
+          group.scale.setScalar(baseScale);
+        }
+
+        group.userData.componentType = type;
+        const shouldShow = Boolean(component) && (slot === "A" || state.mode === "compare");
+        group.visible = shouldShow;
+        if (shouldShow) {
+          resetVisualGroup(group);
+        } else {
+          energizeComponent(group, 0.2);
+        }
+
+        if (slot === "A") {
+          componentAGroup = group;
+        } else {
+          componentBGroup = group;
+        }
+      }
+
+      function updateMeshesForSelection() {
+        if (!scene) {
+          return;
+        }
+        syncComponentGroup("A", state.selectedA);
+        syncComponentGroup("B", state.selectedB);
+        updateCompareVisibility();
+      }
+
+      function computeVisualEnergy(metrics) {
+        if (!metrics) {
+          return 0.3;
+        }
+        const values = [
+          Math.abs(Number(metrics.powerDissipation) || 0),
+          Math.abs(Number(metrics.currentRms) || 0),
+          Math.abs(Number(metrics.energyDelivered) || 0),
+        ];
+        const magnitude = values.reduce((max, value) => (Number.isFinite(value) ? Math.max(max, value) : max), 0.1);
+        const normalized = Math.log10(magnitude + 1.5) / 2.5;
+        return THREE.MathUtils.clamp(0.2 + normalized, 0.2, 1.35);
+      }
+
+      function applyMetricsToGroup(group, metrics) {
+        if (!group) {
+          return 0;
+        }
+        const energy = computeVisualEnergy(metrics);
+        energizeComponent(group, energy);
+        return energy;
+      }
+
+      function updateMeshesForMetrics(metricsA, metricsB) {
+        if (!scene) {
+          return;
+        }
+        const energyA = applyMetricsToGroup(componentAGroup, metricsA);
+        const energyB = applyMetricsToGroup(componentBGroup, metricsB);
+        const intensity = Math.max(energyA || 0, energyB || 0);
+        if (intensity > 0.35) {
+          triggerPulse(intensity);
+        }
+      }
+
+      function normalizeComponent(raw, sourceLabel) {
+        if (!raw || typeof raw !== "object") {
+          return null;
+        }
+        const type = typeof raw.type === "string" ? raw.type.toLowerCase() : "generic";
+        const properties = Object.assign({}, COMPONENT_PROFILES[type]?.defaultProperties || {}, raw.properties || {});
+        const metadata = Object.assign({}, raw.metadata || {});
+        const id = typeof raw.id === "string" && raw.id.length > 0 ? raw.id : `${type}-${Math.random().toString(36).slice(2, 9)}`;
+        const name = raw.name || metadata.displayName || raw.identifier || id;
+        return {
+          id,
+          name,
+          type,
+          properties,
+          metadata,
+          source: sourceLabel || metadata.source || "library",
+        };
+      }
+
+      function initializeCatalog() {
+        state.components = DEFAULT_COMPONENT_CATALOG.map((entry) => normalizeComponent(entry, "reference"))
+          .filter(Boolean);
+        state.selectedA = state.components[0] || null;
+        state.selectedB = state.components.length > 1 ? state.components[1] : state.components[0] || null;
+        renderImportSummary(buildSummaryFromComponents(state.components));
+      }
+
+      function registerEvents() {
+        const resetBtn = document.getElementById("btn-reset");
+        if (resetBtn) {
+          resetBtn.addEventListener("click", resetArena);
+        }
+
+        const runBtn = document.getElementById("btn-run");
+        if (runBtn) {
+          runBtn.addEventListener("click", runTest);
+        }
+
+        const exportBtn = document.getElementById("btn-export");
+        if (exportBtn) {
+          exportBtn.addEventListener("click", exportResults);
+        }
+
+        const importBuilderBtn = document.getElementById("btn-import-builder");
+        if (importBuilderBtn) {
+          importBuilderBtn.addEventListener("click", () => {
+            const loaded = loadLatestBuilderExport();
+            if (!loaded) {
+              setStatus("No builder export found. Sync from the builder to populate real components.");
+            }
+          });
+        }
+
+        const jsonInput = document.getElementById("input-import-json");
+        if (jsonInput) {
+          jsonInput.addEventListener("change", handleFileImport, false);
+        }
+
+        const modeSelect = document.getElementById("mode");
+        if (modeSelect) {
+          modeSelect.value = state.mode;
+          modeSelect.addEventListener("change", (event) => {
+            state.mode = event.target.value === "compare" ? "compare" : "single";
+            updateCompareVisibility();
+            updateMeshesForSelection();
+          });
+        }
+
+        const selectA = document.getElementById("component-a");
+        if (selectA) {
+          selectA.addEventListener("change", (event) => {
+            state.selectedA = state.components.find((component) => component.id === event.target.value) || null;
+            updateMeshesForSelection();
+          });
+        }
+
+        const selectB = document.getElementById("component-b");
+        if (selectB) {
+          selectB.addEventListener("change", (event) => {
+            state.selectedB = state.components.find((component) => component.id === event.target.value) || null;
+            updateMeshesForSelection();
+          });
+        }
+
+        [
+          "input-voltage",
+          "input-frequency",
+          "input-temperature",
+          "input-humidity",
+          "input-duty",
+          "input-duration",
+          "input-load",
+        ].forEach((id) => {
+          const input = document.getElementById(id);
+          if (input) {
+            input.addEventListener("change", readTestVariables);
+            input.addEventListener("blur", readTestVariables);
+          }
+        });
+
+        const reloadBtn = document.getElementById("reload-import");
+        if (reloadBtn) {
+          reloadBtn.addEventListener("click", () => {
+            const payload = loadArenaPayloadFromStorage({ announce: true });
+            if (!payload) {
+              setStatus("No builder snapshot found. Sync from the builder to populate real components.");
+            }
+          });
+        }
+
+        document.querySelectorAll("[data-command]").forEach((button) => {
+          button.addEventListener("click", () => {
+            const command = button.getAttribute("data-command");
+            if (command) {
+              handleCommand(command);
+            }
+          });
+        });
+      }
+
+      function populateComponentSelectors() {
+        const selectA = document.getElementById("component-a");
+        const selectB = document.getElementById("component-b");
+        if (!selectA || !selectB) {
+          return;
+        }
+
+        const options = state.components.map((component) => ({
+          value: component.id,
+          label: `${component.name} (${component.type})`,
+        }));
+
+        const populateSelect = (select, selectedId, placeholder) => {
+          select.innerHTML = "";
+          const placeholderOption = document.createElement("option");
+          placeholderOption.value = "";
+          placeholderOption.textContent = placeholder;
+          select.appendChild(placeholderOption);
+          options.forEach((option) => {
+            const opt = document.createElement("option");
+            opt.value = option.value;
+            opt.textContent = option.label;
+            select.appendChild(opt);
+          });
+
+          if (selectedId && options.some((option) => option.value === selectedId)) {
+            select.value = selectedId;
+          } else if (options.length > 0) {
+            select.value = options[0].value;
+          } else {
+            select.value = "";
+          }
+        };
+
+        populateSelect(selectA, state.selectedA?.id || "", "Select component A");
+        populateSelect(selectB, state.selectedB?.id || "", "Select component B");
+
+        state.selectedA = state.components.find((component) => component.id === selectA.value) || null;
+        state.selectedB = state.components.find((component) => component.id === selectB.value) || null;
+        const modeSelect = document.getElementById("mode");
+        const hasOpponents = state.components.length > 1 && Boolean(state.selectedA) && Boolean(state.selectedB);
+        state.mode = hasOpponents ? "compare" : "single";
+        if (modeSelect) {
+          modeSelect.value = state.mode;
+        }
+        updateMeshesForSelection();
+      }
+
+      function updateCompareVisibility() {
+        const compare = state.mode === "compare";
+        document.querySelectorAll(".compare-only").forEach((element) => {
+          element.style.display = compare ? "" : "none";
+        });
+        if (componentBGroup) {
+          const visible = compare && Boolean(state.selectedB);
+          componentBGroup.visible = visible;
+          if (!visible) {
+            energizeComponent(componentBGroup, 0.2);
+          }
+        }
+        updateCompareVisibility();
+      }
+
+      function readTestVariables() {
+        const readNumber = (id, fallback) => {
+          const input = document.getElementById(id);
+          if (!input) {
+            return fallback;
+          }
+          const value = Number.parseFloat(input.value);
+          if (Number.isFinite(value)) {
+            return value;
+          }
+          return fallback;
+        };
+
+        state.testVariables = {
+          voltage: readNumber("input-voltage", state.testVariables.voltage),
+          frequencyHz: readNumber("input-frequency", state.testVariables.frequencyHz),
+          temperatureC: readNumber("input-temperature", state.testVariables.temperatureC),
+          ambientHumidityPercent: readNumber("input-humidity", state.testVariables.ambientHumidityPercent),
+          dutyCyclePercent: readNumber("input-duty", state.testVariables.dutyCyclePercent),
+          durationSeconds: readNumber("input-duration", state.testVariables.durationSeconds),
+          loadImpedanceOhms: readNumber("input-load", state.testVariables.loadImpedanceOhms),
+        };
+
+        return state.testVariables;
+      }
+
+      function setImportStatus(message) {
+        const element = document.getElementById("import-status");
+        if (!element) {
+          return;
+        }
+        element.textContent = message;
+      }
+
+      function buildSummaryFromComponents(components) {
+        if (!Array.isArray(components) || !components.length) {
+          return null;
+        }
+        const byType = components.reduce((acc, component) => {
+          const key = component.type || "unknown";
+          acc[key] = (acc[key] || 0) + 1;
+          return acc;
+        }, {});
+        return {
+          totalComponents: components.length,
+          totalWires: 0,
+          totalJunctions: 0,
+          byType,
+        };
+      }
+
+      function renderImportSummary(summary) {
+        if (importTagsElement) {
+          importTagsElement.innerHTML = "";
+        }
+        if (componentSummaryElement) {
+          componentSummaryElement.innerHTML = "";
+        }
+
+        const resolved = summary || buildSummaryFromComponents(state.components);
+        if (!resolved) {
+          return;
+        }
+
+        const chips = [
+          ["Components", resolved.totalComponents ?? resolved.componentCount],
+          ["Wires", resolved.totalWires ?? resolved.wireCount],
+          ["Junctions", resolved.totalJunctions ?? resolved.junctionCount],
+        ];
+
+        if (importTagsElement) {
+          chips.forEach(([label, value]) => {
+            if (typeof value === "number" && Number.isFinite(value)) {
+              const tag = document.createElement("span");
+              tag.className = "import-tag";
+              tag.textContent = `${label}: ${value}`;
+              importTagsElement.appendChild(tag);
+            }
+          });
+        }
+
+        const byType = resolved.byType || resolved.componentsByType;
+        if (componentSummaryElement && byType && typeof byType === "object") {
+          Object.entries(byType)
+            .filter((entry) => typeof entry[1] === "number" && Number.isFinite(entry[1]))
+            .sort((a, b) => (b[1] ?? 0) - (a[1] ?? 0))
+            .forEach(([type, count]) => {
+              const li = document.createElement("li");
+              const label = document.createElement("span");
+              label.textContent = String(type);
+              const value = document.createElement("span");
+              value.textContent = String(count);
+              li.appendChild(label);
+              li.appendChild(value);
+              componentSummaryElement.appendChild(li);
+            });
+        }
+      }
+
+      function updateImportStatus() {
+        if (state.importManifest) {
+          const manifest = state.importManifest;
+          const exportedTime = manifest.exportedAt ? new Date(manifest.exportedAt) : null;
+          const exportedLabel = exportedTime && !Number.isNaN(exportedTime.getTime())
+            ? exportedTime.toLocaleString()
+            : "unknown time";
+          setImportStatus(
+            `${manifest.label} - ${manifest.componentCount} component${manifest.componentCount === 1 ? "" : "s"} - ${manifest.sourceName || "unknown source"} - ${exportedLabel}`
+          );
+          renderImportSummary(manifest.summary || null);
+        } else {
+          setImportStatus("Using reference component library. Load a builder export to sync live components.");
+          renderImportSummary(null);
+        }
+      }
+
+      function readPersistedSession(sessionId) {
+        if (!sessionId) {
+          return null;
+        }
+        const key = `${STORAGE_KEYS.prefix}${sessionId}`;
+        const stores = [window.localStorage, window.sessionStorage];
+        for (const store of stores) {
+          try {
+            if (!store) {
+              continue;
+            }
+            const raw = store.getItem(key);
+            if (raw) {
+              return JSON.parse(raw);
+            }
+          } catch (error) {
+            console.warn("Arena storage read failed", error);
+          }
+        }
+        return null;
+      }
+
+      function loadLatestBuilderExport() {
+        let sessionId = null;
+        try {
+          sessionId = window.localStorage?.getItem(STORAGE_KEYS.last) || window.sessionStorage?.getItem(STORAGE_KEYS.last) || null;
+        } catch (error) {
+          console.warn("Unable to access storage for builder export", error);
+        }
+
+        if (!sessionId) {
+          return false;
+        }
+
+        const envelope = readPersistedSession(sessionId);
+        if (!envelope) {
+          return false;
+        }
+
+        return applyImportEnvelope(envelope, {
+          sessionId,
+          label: envelope.payload?.sessionName || "Builder Export",
+          source: "builder",
+        });
+      }
+
+      function loadArenaPayloadFromStorage({ announce = false } = {}) {
+        if (typeof window === "undefined" || typeof window.localStorage === "undefined") {
+          return null;
+        }
+        let payload = null;
+        try {
+          payload = parseArenaPayload(window.localStorage.getItem(ARENA_STORAGE_KEY));
+        } catch (error) {
+          console.warn("Arena: unable to read quick import payload", error);
+          payload = null;
+        }
+
+        if (!payload) {
+          return null;
+        }
+
+        const applied = applyArenaPayload(payload, { source: payload.source || "builder", label: payload.label || "Builder Snapshot" });
+        if (applied && announce) {
+          setStatus("Reloaded builder snapshot.");
+        } else if (!applied && announce) {
+          setStatus("Unable to load builder snapshot.");
+        }
+        return applied ? payload : null;
+      }
+
+      function loadSessionFromUrl() {
+        const url = new URL(window.location.href);
+        const sessionId = url.searchParams.get("session");
+        if (!sessionId) {
+          return false;
+        }
+        const envelope = readPersistedSession(sessionId);
+        if (!envelope) {
+          setStatus("Unable to load requested session. Using current library instead.");
+          return false;
+        }
+        return applyImportEnvelope(envelope, { sessionId, label: envelope.payload?.sessionName || "Builder Export", source: "builder" });
+      }
+
+      function parseArenaPayload(value) {
+        if (!value) {
+          return null;
+        }
+        try {
+          const payload = JSON.parse(value);
+          if (payload && typeof payload === "object") {
+            return payload;
+          }
+        } catch (error) {
+          console.warn("Arena: failed to parse import payload", error);
+        }
+        return null;
+      }
+
+      function applyImportEnvelope(envelope, options) {
+        if (!envelope) {
+          return false;
+        }
+        const payload = envelope.payload || envelope;
+        const componentsRaw = Array.isArray(payload.components) ? payload.components : [];
+        const normalized = componentsRaw
+          .map((item) => normalizeComponent(item, payload.source?.name || options?.source || "import"))
+          .filter(Boolean);
+
+        if (!normalized.length) {
+          setStatus("Import did not include any components. Retaining current library.");
+          return false;
+        }
+
+        state.components = normalized;
+        state.selectedA = normalized[0] || null;
+        state.selectedB = normalized.length > 1 ? normalized[1] : normalized[0] || null;
+
+        state.importManifest = {
+          sessionId: envelope.sessionId || options?.sessionId || null,
+          label: payload.sessionName || options?.label || "Imported Components",
+          exportedAt: envelope.exportedAt || payload.exportedAt || new Date().toISOString(),
+          sourceName: (payload.source && (payload.source.name || payload.source.type)) || options?.source || "import",
+          componentCount: normalized.length,
+          wireCount: Array.isArray(payload.wires) ? payload.wires.length : 0,
+          metrics: payload.analysis || payload.metrics || null,
+          summary: payload.summary || null,
+        };
+
+        populateComponentSelectors();
+        updateCompareVisibility();
+        updateImportStatus();
+        setStatus("Loaded component set from import.");
+        updateMeshesForSelection();
+        return true;
+      }
+
+      function applyArenaPayload(payload, options = {}) {
+        if (!payload || typeof payload !== "object") {
+          return false;
+        }
+
+        const fromPayload = (candidate, fallback) => {
+          if (Array.isArray(candidate)) {
+            return candidate;
+          }
+          if (fallback && Array.isArray(fallback)) {
+            return fallback;
+          }
+          return [];
+        };
+
+        const components = fromPayload(payload.components, payload.state?.components);
+        const wires = fromPayload(payload.wires, payload.state?.wires);
+        const junctions = fromPayload(payload.junctions, payload.state?.junctions);
+
+        const envelope = {
+          sessionId: options.sessionId || payload.sessionId || null,
+          exportedAt: payload.generatedAt ? new Date(payload.generatedAt).toISOString() : payload.exportedAt || null,
+          payload: {
+            components,
+            wires,
+            junctions,
+            analysis: payload.metrics || payload.analysis || null,
+            metrics: payload.metrics || null,
+            summary: payload.summary || null,
+            sessionName: payload.label || payload.sessionName || options.label || "Builder Snapshot",
+            source: typeof payload.source === "object" && payload.source !== null
+              ? payload.source
+              : { name: String(payload.source || options.source || "builder") },
+            testVariables: payload.testVariables || null,
+            state: payload.state || { components },
+          },
+        };
+
+        const applied = applyImportEnvelope(envelope, options);
+        if (applied && payload.metrics && state.importManifest) {
+          state.importManifest.metrics = payload.metrics;
+        }
+        if (applied && payload.summary && state.importManifest) {
+          state.importManifest.summary = payload.summary;
+        }
+        if (applied && payload.generatedAt && state.importManifest) {
+          state.importManifest.exportedAt = new Date(payload.generatedAt).toISOString();
+        }
+        return applied;
+      }
+
+      function handleFileImport(event) {
+        const input = event.target;
+        const file = input.files?.[0];
+        if (!file) {
+          return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = () => {
+          try {
+            const data = JSON.parse(reader.result);
+            const applied = applyImportEnvelope(data, {
+              sessionId: data.sessionId || null,
+              label: data.sessionName || "Uploaded Dataset",
+              source: "upload",
+            });
+            if (applied) {
+              setStatus("Imported components from JSON file.");
+            } else {
+              setStatus("Unable to import data from JSON file. Check format.");
+            }
+          } catch (error) {
+            console.error("JSON import error", error);
+            setStatus("Invalid JSON file. Unable to import components.");
+          }
+        };
+
+        reader.readAsText(file);
+        input.value = "";
+      }
+
+      function runTest() {
+        if (!state.components.length) {
+          setStatus("No components available. Import a component library first.");
+          return;
+        }
+
+        readTestVariables();
+
+        if (!state.selectedA) {
+          state.selectedA = state.components[0];
+        }
+
+        const componentA = state.selectedA;
+        const metricsA = computeComponentMetrics(componentA, state.testVariables);
+        let componentB = null;
+        let metricsB = null;
+
+        if (state.mode === "compare") {
+          componentB = state.selectedB || state.components[1] || componentA;
+          state.selectedB = componentB;
+          metricsB = componentB ? computeComponentMetrics(componentB, state.testVariables) : null;
+        }
+
+        renderMetricGrid("metrics-a", metricsA, { accent: "A" });
+        renderMetricGrid("metrics-b", metricsB, { accent: "B" });
+
+        const deltaMetrics = metricsB ? computeDeltaMetrics(metricsA, metricsB) : null;
+        renderMetricGrid("metrics-delta", deltaMetrics, { accent: "delta", isDelta: true });
+
+        state.lastRun = {
+          timestamp: new Date().toISOString(),
+          mode: state.mode,
+          components: {
+            A: summarizeComponent(componentA),
+            B: metricsB ? summarizeComponent(componentB) : null,
+          },
+          testVariables: Object.assign({}, state.testVariables),
+          metrics: {
+            A: metricsA,
+            B: metricsB,
+            delta: deltaMetrics,
+          },
+          importManifest: state.importManifest,
+        };
+
+        updateMeshesForSelection();
+        updateMeshesForMetrics(metricsA, metricsB);
+
+        const summaryParts = [`A: ${formatWithUnit(metricsA.currentRms, "A")} - ${formatWithUnit(metricsA.powerDissipation, "W")}`];
+        if (metricsB) {
+          summaryParts.push(`B: ${formatWithUnit(metricsB.currentRms, "A")} - ${formatWithUnit(metricsB.powerDissipation, "W")}`);
+        }
+        setStatus(`Test complete. ${summaryParts.join(" | ")}`);
+      }
+
+      function summarizeComponent(component) {
+        if (!component) {
+          return null;
+        }
+        return {
+          id: component.id,
+          name: component.name,
+          type: component.type,
+          properties: component.properties,
+          metadata: component.metadata,
+          source: component.source,
+        };
+      }
+
+      function computeComponentMetrics(component, variables) {
+        const profile = COMPONENT_PROFILES[component.type] || { defaultProperties: {} };
+        const props = Object.assign({}, profile.defaultProperties || {}, component.properties || {});
+
+        const voltage = Number.isFinite(variables.voltage) ? variables.voltage : 0;
+        const frequency = Math.max(Number.isFinite(variables.frequencyHz) ? variables.frequencyHz : 0, 0);
+        const omega = 2 * Math.PI * frequency;
+        const temperatureOffset = (variables.temperatureC ?? 25) - 25;
+
+        let resistance = props.resistance;
+        if (typeof props.tempCoeff === "number" && Number.isFinite(resistance)) {
+          resistance = resistance * (1 + props.tempCoeff * temperatureOffset);
+        }
+
+        if (typeof props.seriesResistance === "number" && Number.isFinite(props.seriesResistance)) {
+          resistance = Number.isFinite(resistance)
+            ? resistance + props.seriesResistance
+            : props.seriesResistance;
+        }
+
+        if (component.type === "switch") {
+          const onResistance = props.onResistance ?? resistance ?? 0.05;
+          const offResistance = props.offResistance ?? 1000000;
+          resistance = props.isOn === false ? offResistance : onResistance;
+        }
+
+        if (component.type === "battery") {
+          resistance = Math.max(variables.loadImpedanceOhms || resistance || props.internalResistance || 1, 0.0001);
+        }
+
+        let reactanceC = 0;
+        if (typeof props.capacitance === "number" && props.capacitance > 0 && omega > 0) {
+          reactanceC = -1 / (omega * props.capacitance);
+        }
+
+        let reactanceL = 0;
+        if (typeof props.inductance === "number" && props.inductance > 0 && omega > 0) {
+          reactanceL = omega * props.inductance;
+        }
+
+        const netReactance = reactanceL + reactanceC;
+
+        let effectiveResistance = Number.isFinite(resistance) ? resistance : 0;
+        if (!Number.isFinite(effectiveResistance) || effectiveResistance < 0.0001) {
+          effectiveResistance = 0.0001;
+        }
+
+        let impedance = Math.sqrt(Math.pow(effectiveResistance, 2) + Math.pow(netReactance, 2));
+        if (!Number.isFinite(impedance) || impedance < 0.0001) {
+          impedance = effectiveResistance;
+        }
+
+        let current = impedance > 0 ? voltage / impedance : 0;
+        let voltageAcross = voltage;
+
+        if (component.type === "led") {
+          const forward = props.forwardVoltage ?? 2;
+          const seriesR = Math.max(props.seriesResistance ?? effectiveResistance ?? 100, 0.1);
+          voltageAcross = Math.max(voltage - forward, 0);
+          current = voltageAcross / seriesR;
+          impedance = seriesR;
+          effectiveResistance = seriesR;
+        }
+
+        if (component.type === "battery") {
+          const internalR = Math.max(props.internalResistance ?? 0.2, 0.0001);
+          const loadR = Math.max(variables.loadImpedanceOhms || 0, 0.0001);
+          const totalR = internalR + loadR;
+          current = voltage / totalR;
+          impedance = totalR;
+          effectiveResistance = loadR;
+        }
+
+        const dutyCycle = Math.max(Math.min(variables.dutyCyclePercent ?? 100, 100), 0) / 100;
+        const rmsCurrent = current * Math.sqrt(dutyCycle || 1);
+        const power = voltageAcross * current * dutyCycle;
+        const energyDelivered = power * (variables.durationSeconds ?? 0);
+        const storedEnergyCap = typeof props.capacitance === "number" ? 0.5 * props.capacitance * voltage * voltage : 0;
+        const storedEnergyInd = typeof props.inductance === "number" ? 0.5 * props.inductance * current * current : 0;
+        const storedEnergy = storedEnergyCap + storedEnergyInd;
+        const phaseAngle = Math.atan2(netReactance, effectiveResistance);
+        const thermalResistance = props.thermalResistance ?? profile.defaultProperties?.thermalResistance ?? 60;
+        const thermalRise = thermalResistance ? (power * thermalResistance) / 1000 : 0;
+
+        let efficiency = props.efficiency;
+        if (!Number.isFinite(efficiency)) {
+          if (component.type === "battery" && impedance > 0) {
+            efficiency = effectiveResistance / impedance;
+          } else if (component.type === "led") {
+            efficiency = props.efficiency ?? 0.35;
+          } else if (component.type === "resistor") {
+            efficiency = 0;
+          } else {
+            efficiency = null;
+          }
+        }
+
+        return {
+          componentId: component.id,
+          name: component.name,
+          type: component.type,
+          operatingVoltage: voltage,
+          currentRms: rmsCurrent,
+          currentPeak: current * Math.sqrt(2),
+          powerDissipation: power,
+          impedance,
+          reactance: netReactance,
+          resistance: effectiveResistance,
+          phaseAngleDegrees: phaseAngle * (180 / Math.PI),
+          storedEnergy,
+          energyDelivered,
+          thermalRise,
+          efficiency,
+          ambientTemperature: variables.temperatureC,
+          humidity: variables.ambientHumidityPercent,
+          dutyCyclePercent: variables.dutyCyclePercent,
+        };
+      }
+
+      function computeDeltaMetrics(metricsA, metricsB) {
+        if (!metricsA || !metricsB) {
+          return null;
+        }
+        const percentDifference = (a, b) => {
+          if (!Number.isFinite(a) || !Number.isFinite(b) || b === 0) {
+            return null;
+          }
+
+          const id = typeof component.id === 'string' ? component.id : String(component.id ?? '');
+          const type = typeof component.type === 'string' && ALLOWED_TYPES.includes(component.type) ? component.type : undefined;
+
+          if (!id || !type) {
+            return null;
+          }
+
+          const manufacturer = typeof component.manufacturer === 'string' ? component.manufacturer : 'Manufacturer';
+          const name = typeof component.name === 'string' ? component.name : 'Component';
+          const family = typeof component.family === 'string' ? component.family : '';
+          const highlight = typeof component.highlight === 'string' ? component.highlight : '';
+          const rating = typeof component.rating === 'number' ? component.rating : null;
+
+          const metrics = Array.isArray(component.metrics)
+            ? component.metrics.slice(0, 3).map((metric) => {
+                if (!metric || typeof metric !== 'object') {
+                  return null;
+                }
+                const label = typeof metric.label === 'string' ? metric.label : 'Metric';
+                const value = typeof metric.value === 'string' ? metric.value : String(metric.value ?? '');
+                const unit = typeof metric.unit === 'string' ? metric.unit : undefined;
+                return { label, value, unit };
+              }).filter(Boolean)
+            : [];
+
+          return { id, type, manufacturer, name, family, highlight, rating, metrics };
+        })
+        .filter(Boolean);
+    }
+
+    function lookupComponent(componentId, fallbackType) {
+      if (!manufacturerRoster.length) {
+        return undefined;
+      }
+
+      if (componentId) {
+        const matchById = manufacturerRoster.find((component) => component.id === componentId);
+        if (matchById) {
+          return matchById;
+        }
+      }
+
+      if (fallbackType) {
+        return manufacturerRoster.find((component) => component.type === fallbackType);
+      }
+
+      return undefined;
+    }
+
+    function formatDescriptor(component, fallbackType, fallbackManufacturer) {
+      if (component) {
+        return `${component.manufacturer} - ${component.name}`;
+      }
+      if (fallbackManufacturer && fallbackType) {
+        return `${fallbackManufacturer} - ${fallbackType}`;
+      }
+      if (fallbackType) {
+        return fallbackType;
+      }
+      return 'Component';
+    }
+
+    function reportStatus(message) {
+      if (typeof window !== 'undefined' && window.parent && typeof window.parent.postMessage === 'function') {
+        window.parent.postMessage({ type: 'arena:status', payload: { message } }, '*');
+      }
+    }
+
+    function notifyReady() {
+      if (typeof window !== 'undefined' && window.parent && typeof window.parent.postMessage === 'function') {
+        window.parent.postMessage({ type: 'arena:ready' }, '*');
+      }
+      reportStatus('Arena ready. Select a preset or tweak values to begin.');
+    }
+
+    function syncMeshVisibility(modeValue) {
+      if (meshB) {
+        meshB.visible = modeValue === 'compare';
+      }
+    }
+
+    function applyConfig(config) {
+      if (!config || typeof config !== 'object') {
+        return;
+      }
+
+      const modeSelect = document.getElementById(MODE_ID);
+      const compASelect = document.getElementById(COMP_TYPE_A_ID);
+      const compBSelect = document.getElementById(COMP_TYPE_B_ID);
+      const valueAInput = document.getElementById(VALUE_A_ID);
+      const valueBInput = document.getElementById(VALUE_B_ID);
+      const voltageInput = document.getElementById(VOLTAGE_ID);
+      const frequencyInput = document.getElementById(FREQUENCY_ID);
+
+      activeComponentIds.a = typeof config.componentIdA === 'string' ? config.componentIdA : null;
+      activeComponentIds.b = typeof config.componentIdB === 'string' ? config.componentIdB : null;
+      manufacturerNames.a = typeof config.manufacturerNameA === 'string' ? config.manufacturerNameA : null;
+      manufacturerNames.b = typeof config.manufacturerNameB === 'string' ? config.manufacturerNameB : null;
+
+      if (modeSelect && config.mode) {
+        modeSelect.value = config.mode;
+        modeSelect.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+
+      if (compASelect && config.compA) {
+        compASelect.value = config.compA;
+      }
+
+      if (compBSelect && config.compB) {
+        compBSelect.value = config.compB;
+      }
+
+      if (valueAInput && typeof config.valueA === 'number' && !Number.isNaN(config.valueA)) {
+        valueAInput.value = String(config.valueA);
+      }
+
+      if (valueBInput && typeof config.valueB === 'number' && !Number.isNaN(config.valueB)) {
+        valueBInput.value = String(config.valueB);
+      }
+
+      if (voltageInput && typeof config.voltage === 'number' && !Number.isNaN(config.voltage)) {
+        voltageInput.value = String(config.voltage);
+      }
+
+      if (frequencyInput && typeof config.frequency === 'number' && !Number.isNaN(config.frequency)) {
+        frequencyInput.value = String(config.frequency);
+      }
+
+      const currentMode = (modeSelect && modeSelect.value) || 'single';
+      syncMeshVisibility(currentMode);
+
+      const stat = document.getElementById(STAT_ID);
+      const descriptorA = lookupComponent(activeComponentIds.a, compASelect ? compASelect.value : config.compA);
+      const descriptorB = currentMode === 'compare'
+        ? lookupComponent(activeComponentIds.b, compBSelect ? compBSelect.value : config.compB)
+        : undefined;
+      const descriptorLabelA = formatDescriptor(descriptorA, config.compA, manufacturerNames.a);
+      const descriptorLabelB = currentMode === 'compare'
+        ? formatDescriptor(descriptorB, config.compB, manufacturerNames.b)
+        : null;
+
+      if (stat) {
+        if (currentMode === 'compare' && descriptorLabelB) {
+          stat.textContent = `Preset staged: ${descriptorLabelA} vs ${descriptorLabelB}`;
+        } else {
+          entries.push({ label: "Voltage", value: formatWithUnit(metrics.operatingVoltage, "V") });
+          entries.push({ label: "Current", value: formatWithUnit(metrics.currentRms, "A"), detail: `Peak ${formatWithUnit(metrics.currentPeak, "A")}` });
+          entries.push({ label: "Power", value: formatWithUnit(metrics.powerDissipation, "W") });
+          entries.push({ label: "Impedance", value: formatWithUnit(metrics.impedance, "Ohm"), detail: `Reactance ${formatWithUnit(metrics.reactance, "Ohm")}` });
+          entries.push({ label: "Phase", value: formatAngle(metrics.phaseAngleDegrees) });
+          entries.push({ label: "Stored Energy", value: formatWithUnit(metrics.storedEnergy, "J") });
+          entries.push({ label: "Delivered Energy", value: formatWithUnit(metrics.energyDelivered, "J") });
+          entries.push({ label: "Thermal Rise", value: formatWithUnit(metrics.thermalRise, "C") });
+          entries.push({ label: "Efficiency", value: formatPercent(metrics.efficiency) });
+        }
+
+        entries
+          .filter((entry) => entry.value !== null && entry.value !== undefined)
+          .forEach((entry) => {
+            const card = document.createElement("div");
+            card.className = "metric-card";
+            if (options?.accent === "A") {
+              card.classList.add("metric-accent-a");
+            } else if (options?.accent === "B") {
+              card.classList.add("metric-accent-b");
+            } else if (options?.accent === "delta") {
+              card.classList.add("metric-accent-delta");
+            }
+
+            const label = document.createElement("div");
+            label.className = "metric-label";
+            label.textContent = entry.label;
+
+            const value = document.createElement("div");
+            value.className = "metric-value";
+            value.textContent = entry.value;
+
+            card.appendChild(label);
+            card.appendChild(value);
+
+            if (entry.detail) {
+              const detail = document.createElement("div");
+              detail.className = "metric-detail";
+              detail.textContent = entry.detail;
+              card.appendChild(detail);
+            }
+
+            container.appendChild(card);
+          });
+      }
+
+      function resetArena() {
+        resetVisualGroup(componentAGroup);
+        resetVisualGroup(componentBGroup);
+        state.lastRun = null;
+        renderMetricGrid("metrics-a", null);
+        renderMetricGrid("metrics-b", null);
+        renderMetricGrid("metrics-delta", null);
+        setStatus("Arena reset. Metrics cleared.");
+        triggerPulse(0.35);
+      }
+
+      function exportResults() {
+        if (!state.lastRun) {
+          setStatus("Run a test before exporting results.");
+          return;
+        }
+
+        const blob = new Blob([JSON.stringify(state.lastRun, null, 2)], { type: "application/json" });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = "component-arena-results.json";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        setStatus("Exported latest results as JSON.");
+      }
+
+      function formatWithUnit(value, unit) {
+        if (!Number.isFinite(value)) {
+          return "—";
+        }
+        const abs = Math.abs(value);
+        let scaled = value;
+        let prefix = "";
+        if (abs >= 1e6) {
+          scaled = value / 1e6;
+          prefix = "M";
+        } else if (abs >= 1e3) {
+          scaled = value / 1e3;
+          prefix = "k";
+        } else if (abs > 0 && abs < 1e-3) {
+          scaled = value * 1e6;
+          prefix = "u";
+        } else if (abs > 0 && abs < 1) {
+          scaled = value * 1e3;
+          prefix = "m";
+        }
+
+        const decimals = Math.abs(scaled) < 10 ? 2 : 1;
+        return `${scaled.toFixed(decimals)} ${prefix}${unit}`;
+      }
+
+      function formatPercent(value) {
+        if (!Number.isFinite(value)) {
+          return "—";
+        }
+        const rounded = value.toFixed(1);
+        const sign = value > 0 ? "+" : "";
+        return `${sign}${rounded} %`;
+      }
+
+      function formatAngle(value) {
+        if (!Number.isFinite(value)) {
+          return "—";
+        }
+        return `${value.toFixed(1)} deg`;
+      }
+
+      function setStatus(message) {
+        const element = document.getElementById("stat-out");
+        if (element) {
+          element.textContent = message;
+        }
+      }
+      if (currentMode === 'compare' && descriptorLabelB) {
+        reportStatus(`Preset staged inside the arena: ${descriptorLabelA} vs ${descriptorLabelB}.`);
+      } else {
+        reportStatus(`Preset staged inside the arena: ${descriptorLabelA}.`);
+      }
+    }
+
+      function animate() {
+        if (!clock) {
+          return;
+        }
+        const delta = clock.getDelta();
+        const elapsed = clock.elapsedTime;
+
+        updateComponentAnimation(componentAGroup, elapsed, delta);
+        updateComponentAnimation(componentBGroup, elapsed + 0.6, delta);
+
+        if (energyRing) {
+          const energyLevel = Math.max(
+            componentAGroup?.userData?.energy || 0,
+            componentBGroup && componentBGroup.visible ? componentBGroup.userData?.energy || 0 : 0
+          );
+          energyRing.material.opacity = 0.35 + energyLevel * 0.35;
+          energyRing.rotation.z += delta * 0.55;
+          const pulse = 1 + Math.sin(elapsed * 1.4) * 0.04 + energyLevel * 0.12;
+          energyRing.scale.setScalar(pulse);
+        }
+
+        if (pulseRing && pulseRing.userData.life > 0) {
+          pulseRing.userData.life -= delta * 0.9;
+          const life = Math.max(pulseRing.userData.life, 0);
+          pulseRing.material.opacity = life * pulseRing.userData.strength;
+          const scale = 1 + (1 - life) * (1.4 + pulseRing.userData.strength * 1.2);
+          pulseRing.scale.setScalar(scale);
+        }
+
+        animateParticles(delta);
+
+        renderer.render(scene, camera);
+        requestAnimationFrame(animate);
+      }
+
+      function bootstrap() {
+        initThree();
+        registerEvents();
+        initializeCatalog();
+        populateComponentSelectors();
+        readTestVariables();
+        updateCompareVisibility();
+        updateImportStatus();
+        renderInitialMetrics();
+
+          <!-- Import collapsible -->
+          <button class="import-toggle-btn" id="btn-toggle-import" aria-expanded="false" aria-controls="import-methods-container">
+            ➕ Import component
+          </button>
+          <div class="import-methods" id="import-methods-container">
+            <!-- Drop zone -->
+            <div class="import-dropzone" id="import-dropzone" role="button" aria-label="Drop JSON file here or click to browse">
+              <input type="file" id="input-import-json" accept="application/json" aria-label="Import JSON file" />
+              <div class="import-dropzone-label">
+                <strong>Drop JSON</strong> here or click to browse<br>
+                <span style="font-size:10px;opacity:0.7">ManufacturerCatalog or Builder export</span>
+              </div>
+            </div>
+
+      const geo = new THREE.BoxGeometry(1, 1, 1);
+      meshA = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: 0x88ccff }));
+      meshB = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: 0xffa500 }));
+      meshA.position.set(-1.2, 0, 0);
+      meshB.position.set(1.2, 0, 0);
+      scene.add(meshA);
+      scene.add(meshB);
+
+      const modeSelect = document.getElementById(MODE_ID);
+      syncMeshVisibility((modeSelect && modeSelect.value) || 'single');
+
+      window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      });
+
+      animate();
+    }
+
+    function animate() {
+      requestAnimationFrame(animate);
+      if (meshA) {
+        meshA.rotation.y += 0.01;
+      }
+
+      bootstrap();
+    })();
+  </script>
+  <script>
+    // ── Featured Components — real manufacturer component data ──────────────
+    // This section powers the "Featured Components" product-placement framework.
+    // Each entry maps directly to a valid FailureEngine component type so
+    // clicking any card immediately pre-populates Component A with real specs.
+    (function () {
+      "use strict";
+
+      const FEATURED_COMPONENTS = [
+        // ── Batteries ─────────────────────────────────────────────────────────
+        {
+          id: "energizer-522-9v",
+          mfr: "Energizer",
+          name: "522 9V Alkaline",
+          spec: "PP3 · 9V · 565mAh · alkaline",
+          type: "battery",
+          props: { voltage: 9, internalResistance: 0.5, capacityMah: 565 },
+        },
+        {
+          id: "duracell-mn1604-9v",
+          mfr: "Duracell",
+          name: "MN1604 9V",
+          spec: "PP3 · 9V · 550mAh · alkaline",
+          type: "battery",
+          props: { voltage: 9, internalResistance: 0.5, capacityMah: 550 },
+        },
+        {
+          id: "panasonic-lr6-aa",
+          mfr: "Panasonic",
+          name: "LR6 AA Alkaline",
+          spec: "AA · 1.5V · 2850mAh · alkaline",
+          type: "battery",
+          props: { voltage: 1.5, internalResistance: 0.15, capacityMah: 2850 },
+        },
+        // ── Resistors ──────────────────────────────────────────────────────────
+        {
+          id: "vishay-crcw0402-100r",
+          mfr: "Vishay",
+          name: "CRCW0402 100Ω",
+          spec: "0402 · 100Ω · 1% · 63mW",
+          type: "resistor",
+          props: { resistance: 100, powerRating: 0.063, tolerance: 0.01, thermalResistance: 300 },
+        },
+        {
+          id: "vishay-crcw0603-330r",
+          mfr: "Vishay",
+          name: "CRCW0603 330Ω",
+          spec: "0603 · 330Ω · 1% · 100mW",
+          type: "resistor",
+          props: { resistance: 330, powerRating: 0.1, tolerance: 0.01, thermalResistance: 200 },
+        },
+        {
+          id: "vishay-crcw0603-1k",
+          mfr: "Vishay",
+          name: "CRCW0603 1kΩ",
+          spec: "0603 · 1kΩ · 1% · 100mW",
+          type: "resistor",
+          props: { resistance: 1000, powerRating: 0.1, tolerance: 0.01, thermalResistance: 200 },
+        },
+        {
+          id: "vishay-crcw0603-10k",
+          mfr: "Vishay",
+          name: "CRCW0603 10kΩ",
+          spec: "0603 · 10kΩ · 1% · 100mW",
+          type: "resistor",
+          props: { resistance: 10000, powerRating: 0.1, tolerance: 0.01, thermalResistance: 200 },
+        },
+        {
+          id: "yageo-cfr-1k",
+          mfr: "Yageo",
+          name: "CFR-25JB-52-1K",
+          spec: "axial · 1kΩ · 5% · 250mW",
+          type: "resistor",
+          props: { resistance: 1000, powerRating: 0.25, tolerance: 0.05, thermalResistance: 80 },
+        },
+        {
+          id: "yageo-cfr-10k",
+          mfr: "Yageo",
+          name: "CFR-25JB-52-10K",
+          spec: "axial · 10kΩ · 5% · 250mW",
+          type: "resistor",
+          props: { resistance: 10000, powerRating: 0.25, tolerance: 0.05, thermalResistance: 80 },
+        },
+        {
+          id: "bourns-cr0603-100k",
+          mfr: "Bourns",
+          name: "CR0603-FX-1003ELF",
+          spec: "0603 · 100kΩ · 1% · 100mW",
+          type: "resistor",
+          props: { resistance: 100000, powerRating: 0.1, tolerance: 0.01, thermalResistance: 200 },
+        },
+        // ── Capacitors ────────────────────────────────────────────────────────
+        {
+          id: "murata-gcj-1uf",
+          mfr: "Murata",
+          name: "GCJ316R71H105KA12D",
+          spec: "0805 · 1µF · 50V · X7R",
+          type: "capacitor",
+          props: { capacitance: 1e-6, maxVoltage: 50, esr: 0.05, thermalResistance: 45 },
+        },
+        {
+          id: "tdk-c3225x5r-10uf",
+          mfr: "TDK",
+          name: "C3225X5R1C106K",
+          spec: "1210 · 10µF · 16V · X5R",
+          type: "capacitor",
+          props: { capacitance: 10e-6, maxVoltage: 16, esr: 0.02, thermalResistance: 40 },
+        },
+        {
+          id: "panasonic-eeufm-100uf",
+          mfr: "Panasonic",
+          name: "EEU-FM1E101",
+          spec: "radial · 100µF · 25V · 105°C",
+          type: "capacitor",
+          props: { capacitance: 100e-6, maxVoltage: 25, esr: 0.3, thermalResistance: 35 },
+        },
+        {
+          id: "nichicon-ufw-470uf",
+          mfr: "Nichicon",
+          name: "UFW1C471MED",
+          spec: "radial · 470µF · 16V · 105°C",
+          type: "capacitor",
+          props: { capacitance: 470e-6, maxVoltage: 16, esr: 0.12, thermalResistance: 28 },
+        },
+        // ── LEDs ──────────────────────────────────────────────────────────────
+        {
+          id: "vishay-tlhr5400-red",
+          mfr: "Vishay",
+          name: "TLHR5400",
+          spec: "T-1 3/4 · red · 2.0V · 20mA · 630nm",
+          type: "led",
+          props: { forwardVoltage: 2.0, maxCurrent: 0.02, seriesResistance: 0, efficiency: 0.30, thermalResistance: 120 },
+        },
+        {
+          id: "wurth-led-green",
+          mfr: "Würth Elektronik",
+          name: "151031VS06000",
+          spec: "SMD · green · 2.1V · 20mA · 525nm",
+          type: "led",
+          props: { forwardVoltage: 2.1, maxCurrent: 0.02, seriesResistance: 0, efficiency: 0.35, thermalResistance: 110 },
+        },
+        {
+          id: "osram-lb-d47b-blue",
+          mfr: "Osram",
+          name: "LB D47B-R2T1-35",
+          spec: "SMD · blue · 3.0V · 20mA · 470nm",
+          type: "led",
+          props: { forwardVoltage: 3.0, maxCurrent: 0.02, seriesResistance: 0, efficiency: 0.33, thermalResistance: 110 },
+        },
+        {
+          id: "cree-c503b-wan-white",
+          mfr: "Cree",
+          name: "C503B-WAN-CB0F0251",
+          spec: "T-1 3/4 · white · 3.2V · 20mA · 6000K",
+          type: "led",
+          props: { forwardVoltage: 3.2, maxCurrent: 0.02, seriesResistance: 0, efficiency: 0.40, thermalResistance: 100 },
+        },
+        {
+          id: "lumileds-lxhl-mw1d-yellow",
+          mfr: "Lumileds",
+          name: "LXHL-MM01 Yellow",
+          spec: "T-1 3/4 · yellow · 2.1V · 20mA · 585nm",
+          type: "led",
+          props: { forwardVoltage: 2.1, maxCurrent: 0.02, seriesResistance: 0, efficiency: 0.28, thermalResistance: 115 },
+        },
+        // ── Diodes ────────────────────────────────────────────────────────────
+        {
+          id: "on-semi-1n4148",
+          mfr: "ON Semiconductor",
+          name: "1N4148",
+          spec: "DO-35 · 100V · 300mA · signal",
+          type: "diode",
+          props: { forwardVoltage: 0.72, maxCurrent: 0.3, reverseVoltage: 100, thermalResistance: 250, powerRating: 0.5 },
+        },
+        {
+          id: "on-semi-1n4007",
+          mfr: "ON Semiconductor",
+          name: "1N4007",
+          spec: "DO-41 · 1000V · 1A · rectifier",
+          type: "diode",
+          props: { forwardVoltage: 0.7, maxCurrent: 1, reverseVoltage: 1000, thermalResistance: 60, powerRating: 3 },
+        },
+        {
+          id: "nxp-bat43",
+          mfr: "NXP",
+          name: "BAT43",
+          spec: "DO-35 · 30V · 200mA · Schottky",
+          type: "diode",
+          props: { forwardVoltage: 0.25, maxCurrent: 0.2, reverseVoltage: 30, thermalResistance: 300, powerRating: 0.25 },
+        },
+        {
+          id: "vishay-1n5819",
+          mfr: "Vishay",
+          name: "1N5819",
+          spec: "DO-41 · 40V · 1A · Schottky",
+          type: "diode",
+          props: { forwardVoltage: 0.34, maxCurrent: 1, reverseVoltage: 40, thermalResistance: 50, powerRating: 2.5 },
+        },
+        // ── Zener Diodes ──────────────────────────────────────────────────────
+        {
+          id: "vishay-bzx84c-5v1",
+          mfr: "Vishay",
+          name: "BZX84C5V1",
+          spec: "SOT-23 · 5.1V · 300mW",
+          type: "zener_diode",
+          props: { zenerVoltage: 5.1, maxCurrent: 0.059, powerRating: 0.3, thermalResistance: 500 },
+        },
+        {
+          id: "on-semi-bzx55c3v3",
+          mfr: "ON Semiconductor",
+          name: "BZX55C3V3",
+          spec: "DO-35 · 3.3V · 500mW",
+          type: "zener_diode",
+          props: { zenerVoltage: 3.3, maxCurrent: 0.075, powerRating: 0.5, thermalResistance: 250 },
+        },
+        // ── BJTs ──────────────────────────────────────────────────────────────
+        {
+          id: "on-semi-2n2222a",
+          mfr: "ON Semiconductor",
+          name: "2N2222A",
+          spec: "TO-18 · NPN · 40V · 600mA · 625mW",
+          type: "bjt",
+          props: { vce_max: 40, ic_max: 0.6, hfe: 100, vbe: 0.7, powerRating: 0.625, thermalResistance: 200 },
+        },
+        {
+          id: "on-semi-2n3904",
+          mfr: "ON Semiconductor",
+          name: "2N3904",
+          spec: "TO-92 · NPN · 40V · 200mA",
+          type: "bjt",
+          props: { vce_max: 40, ic_max: 0.2, hfe: 100, vbe: 0.65, powerRating: 0.625, thermalResistance: 200 },
+        },
+        {
+          id: "on-semi-2n3906",
+          mfr: "ON Semiconductor",
+          name: "2N3906",
+          spec: "TO-92 · PNP · 40V · 200mA",
+          type: "bjt-pnp",
+          props: { vce_max: 40, ic_max: 0.2, hfe: 100, vbe: 0.65, powerRating: 0.625, thermalResistance: 200 },
+        },
+        {
+          id: "stmicro-bc547",
+          mfr: "STMicroelectronics",
+          name: "BC547",
+          spec: "TO-92 · NPN · 45V · 100mA · 500mW",
+          type: "bjt",
+          props: { vce_max: 45, ic_max: 0.1, hfe: 110, vbe: 0.7, powerRating: 0.5, thermalResistance: 250 },
+        },
+        {
+          id: "on-semi-tip31c",
+          mfr: "ON Semiconductor",
+          name: "TIP31C",
+          spec: "TO-220 · NPN · 100V · 3A · 40W",
+          type: "bjt",
+          props: { vce_max: 100, ic_max: 3, hfe: 25, vbe: 0.7, powerRating: 40, thermalResistance: 3.125, maxTempC: 150 },
+        },
+        {
+          id: "on-semi-tip32c",
+          mfr: "ON Semiconductor",
+          name: "TIP32C",
+          spec: "TO-220 · PNP · 100V · 3A · 40W",
+          type: "bjt-pnp",
+          props: { vce_max: 100, ic_max: 3, hfe: 25, vbe: 0.7, powerRating: 40, thermalResistance: 3.125, maxTempC: 150 },
+        },
+        // ── MOSFETs ───────────────────────────────────────────────────────────
+        {
+          id: "infineon-irf540n",
+          mfr: "Infineon",
+          name: "IRF540N",
+          spec: "TO-220 · N-MOSFET · 100V · 33A",
+          type: "mosfet",
+          props: { vth: 4, rds_on: 0.044, id_max: 33, vds_max: 100, vgs_max: 20, powerRating: 130, thermalResistance: 0.92, maxTempC: 175 },
+        },
+        {
+          id: "vishay-si2302ads",
+          mfr: "Vishay",
+          name: "SI2302ADS",
+          spec: "SOT-23 · N-MOSFET · 20V · 2.3A",
+          type: "mosfet",
+          props: { vth: 1.0, rds_on: 0.08, id_max: 2.3, vds_max: 20, vgs_max: 12, powerRating: 0.9, thermalResistance: 138, maxTempC: 150 },
+        },
+        {
+          id: "on-semi-2n7000",
+          mfr: "ON Semiconductor",
+          name: "2N7000",
+          spec: "TO-92 · N-MOSFET · 60V · 200mA",
+          type: "mosfet",
+          props: { vth: 2.1, rds_on: 5, id_max: 0.2, vds_max: 60, vgs_max: 20, powerRating: 0.4, thermalResistance: 62.5 },
+        },
+        // ── Voltage Regulators ────────────────────────────────────────────────
+        {
+          id: "ti-lm7805",
+          mfr: "Texas Instruments",
+          name: "LM7805",
+          spec: "TO-220 · 5V · 1.5A",
+          type: "voltage_regulator",
+          props: { outputVoltage: 5, dropoutVoltage: 2, maxCurrent: 1.5, powerRating: 15, thermalResistance: 5, maxTempC: 125 },
+        },
+        {
+          id: "ti-lm7812",
+          mfr: "Texas Instruments",
+          name: "LM7812",
+          spec: "TO-220 · 12V · 1.5A",
+          type: "voltage_regulator",
+          props: { outputVoltage: 12, dropoutVoltage: 2, maxCurrent: 1.5, powerRating: 15, thermalResistance: 5, maxTempC: 125 },
+        },
+        {
+          id: "ti-lm317",
+          mfr: "Texas Instruments",
+          name: "LM317T",
+          spec: "TO-220 · adj 1.2–37V · 1.5A",
+          type: "voltage_regulator",
+          props: { outputVoltage: 5, dropoutVoltage: 3, maxCurrent: 1.5, powerRating: 15, thermalResistance: 5, maxTempC: 125 },
+        },
+        {
+          id: "microchip-mcp1700-3v3",
+          mfr: "Microchip",
+          name: "MCP1700-3302E/TO",
+          spec: "TO-92 · 3.3V · 250mA · LDO",
+          type: "voltage_regulator",
+          props: { outputVoltage: 3.3, dropoutVoltage: 0.178, maxCurrent: 0.25, powerRating: 1, thermalResistance: 250, maxTempC: 125 },
+        },
+        // ── Op-Amps ───────────────────────────────────────────────────────────
+        {
+          id: "ti-lm358",
+          mfr: "Texas Instruments",
+          name: "LM358N",
+          spec: "DIP-8 · dual op-amp · 32V supply",
+          type: "opamp",
+          props: { supplyVoltage: 32, slewRate: 0.6, gainBandwidth: 1e6, powerRating: 0.68, thermalResistance: 100 },
+        },
+        {
+          id: "ti-lm741",
+          mfr: "Texas Instruments",
+          name: "LM741CN",
+          spec: "DIP-8 · single op-amp · 18V supply",
+          type: "opamp",
+          props: { supplyVoltage: 18, slewRate: 0.5, gainBandwidth: 1e6, powerRating: 0.5, thermalResistance: 100 },
+        },
+        {
+          id: "analog-devices-op07",
+          mfr: "Analog Devices",
+          name: "OP07CP",
+          spec: "DIP-8 · ultra-low offset · 22V supply",
+          type: "opamp",
+          props: { supplyVoltage: 22, slewRate: 0.3, gainBandwidth: 0.6e6, powerRating: 0.5, thermalResistance: 100 },
+        },
+        // ── ICs ───────────────────────────────────────────────────────────────
+        {
+          id: "ti-ne555",
+          mfr: "Texas Instruments",
+          name: "NE555P",
+          spec: "DIP-8 · timer · 4.5–16V",
+          type: "ic",
+          props: { supplyVoltage: 16, maxCurrent: 0.2, powerRating: 0.6, thermalResistance: 70 },
+        },
+        {
+          id: "ti-74hc595",
+          mfr: "Texas Instruments",
+          name: "SN74HC595N",
+          spec: "DIP-16 · 8-bit shift register",
+          type: "ic",
+          props: { supplyVoltage: 6, maxCurrent: 0.07, powerRating: 0.5, thermalResistance: 75 },
+        },
+        {
+          id: "ti-cd4011be",
+          mfr: "Texas Instruments",
+          name: "CD4011BE",
+          spec: "DIP-14 · quad 2-input NAND · 3–18V",
+          type: "ic",
+          props: { supplyVoltage: 18, maxCurrent: 0.01, powerRating: 0.5, thermalResistance: 100 },
+        },
+        {
+          id: "microchip-pic12f675",
+          mfr: "Microchip",
+          name: "PIC12F675-I/P",
+          spec: "DIP-8 · 8-bit MCU · 4MHz · 3.5–5.5V",
+          type: "ic",
+          props: { supplyVoltage: 5.5, maxCurrent: 0.025, powerRating: 0.3, thermalResistance: 125 },
+        },
+        // ── Inductors ─────────────────────────────────────────────────────────
+        {
+          id: "sumida-cdrh4d28-470",
+          mfr: "Sumida",
+          name: "CDRH4D28-470",
+          spec: "SMD shielded · 47µH · 700mA sat · 0.22Ω DCR",
+          type: "inductor",
+          props: { inductance: 47e-6, dcResistance: 0.22, saturationCurrentA: 0.7, powerRating: 0.5, thermalResistance: 55 },
+        },
+        {
+          id: "bourns-srr1260-101y",
+          mfr: "Bourns",
+          name: "SRR1260-101Y",
+          spec: "SMD shielded · 100µH · 2.1A sat · 0.061Ω DCR",
+          type: "inductor",
+          props: { inductance: 100e-6, dcResistance: 0.061, saturationCurrentA: 2.1, powerRating: 1, thermalResistance: 35 },
+        },
+        {
+          id: "vishay-ihlp2020-10uh",
+          mfr: "Vishay",
+          name: "IHLP2020BZER100M5A",
+          spec: "SMD shielded · 10µH · 4.6A sat · 0.023Ω DCR",
+          type: "inductor",
+          props: { inductance: 10e-6, dcResistance: 0.023, saturationCurrentA: 4.6, powerRating: 1.5, thermalResistance: 25 },
+        },
+        // ── Crystals ──────────────────────────────────────────────────────────
+        {
+          id: "abracon-abls-16mhz",
+          mfr: "Abracon",
+          name: "ABLS-16.000MHZ-B4H-T",
+          spec: "HC-49/US · 16MHz · 18pF · ±20ppm",
+          type: "crystal",
+          props: { frequencyHz: 16e6, seriesResistance: 25, loadCapacitancePf: 18, thermalResistance: 200 },
+        },
+        {
+          id: "ecs-8mhz",
+          mfr: "ECS",
+          name: "ECS-80-20-4X",
+          spec: "HC-49/US · 8MHz · 20pF · ±30ppm",
+          type: "crystal",
+          props: { frequencyHz: 8e6, seriesResistance: 30, loadCapacitancePf: 20, thermalResistance: 200 },
+        },
+        {
+          id: "txc-32768hz",
+          mfr: "TXC",
+          name: "7V-32.768KDZB-T",
+          spec: "tuning fork · 32.768kHz · 12.5pF · ±20ppm",
+          type: "crystal",
+          props: { frequencyHz: 32768, seriesResistance: 70000, loadCapacitancePf: 12.5, thermalResistance: 300 },
+        },
+        // ── Thermistors ───────────────────────────────────────────────────────
+        {
+          id: "vishay-ntcle100-10k",
+          mfr: "Vishay",
+          name: "NTCLE100E3103JB0",
+          spec: "radial · 10kΩ @ 25°C · B=3950K · 5%",
+          type: "thermistor",
+          props: { resistance: 10000, beta: 3950, tempCoeff: -0.04, thermalResistance: 120 },
+        },
+        {
+          id: "murata-ncp15wb473-47k",
+          mfr: "Murata",
+          name: "NCP15WB473J03RC",
+          spec: "0402 · 47kΩ @ 25°C · B=4050K",
+          type: "thermistor",
+          props: { resistance: 47000, beta: 4050, tempCoeff: -0.04, thermalResistance: 300 },
+        },
+        // ── Fuses ─────────────────────────────────────────────────────────────
+        {
+          id: "littelfuse-251001",
+          mfr: "Littelfuse",
+          name: "251001",
+          spec: "axial · 1A · 250V · fast blow · glass",
+          type: "fuse",
+          props: { ratedCurrentA: 1, meltingI2t: 1, resistance: 0.02, thermalResistance: 40 },
+        },
+        {
+          id: "littelfuse-251-500ma",
+          mfr: "Littelfuse",
+          name: "250500",
+          spec: "axial · 500mA · 250V · fast blow · glass",
+          type: "fuse",
+          props: { ratedCurrentA: 0.5, meltingI2t: 0.25, resistance: 0.04, thermalResistance: 40 },
+        },
+        {
+          id: "schurter-ato-5a",
+          mfr: "Schurter",
+          name: "0034.3512",
+          spec: "ATO blade · 5A · 32V · automotive",
+          type: "fuse",
+          props: { ratedCurrentA: 5, meltingI2t: 25, resistance: 0.006, thermalResistance: 30 },
+        },
+      ];
+
+      const grid = document.getElementById("featured-component-grid");
+      const selectA = document.getElementById("component-a");
+      if (!grid || !selectA) {
+        return;
+      }
+
+      let activeId = null;
+      let catalogTarget = "A"; // which slot (A or B) catalog cards load into
+
+      function loadFeaturedComponent(fc, slotTarget) {
+        // Use the explicitly-passed slot or fall back to the current default.
+        const target = slotTarget || catalogTarget;
+
+        // 1. Register the component with the main arena state via the public bridge.
+        //    This fixes the bug where components added to the DOM <select> were never
+        //    added to state.components, causing state.selectedA to end up null.
+        if (window.ArenaAPI && typeof window.ArenaAPI.registerComponent === "function") {
+          window.ArenaAPI.registerComponent({
+            id: fc.id,
+            name: `${fc.mfr} ${fc.name}`,
+            type: fc.type,
+            properties: fc.props,
+            metadata: {
+              displayName: fc.name,
+              partNumber: fc.name,
+              vendor: fc.mfr,
+              source: "Reference Library",
+            },
+          });
+        } else {
+          // Fallback for environments where ArenaAPI isn't yet available
+          if (typeof FailureEngine !== "undefined" && FailureEngine.registerComponentType) {
+            FailureEngine.registerComponentType(fc.id, {
+              family: fc.type,
+              defaultProperties: Object.assign({}, fc.props),
+            });
+          }
+          if (!Array.from(selectA.options).some((o) => o.value === fc.id)) {
+            const opt = document.createElement("option");
+            opt.value = fc.id;
+            opt.text = `${fc.mfr} ${fc.name}`;
+            selectA.appendChild(opt);
+          }
+          selectA.value = fc.id;
+          selectA.dispatchEvent(new Event("change", { bubbles: true }));
+        }
+
+        // 2. Load into the correct slot (A or B) via the bridge.
+        if (window.ArenaAPI && typeof window.ArenaAPI.loadComponent === "function") {
+          window.ArenaAPI.loadComponent(fc.id, target);
+        }
+
+        // 3. Persist so the component survives a page reload.
+        try {
+          const saved = JSON.parse(localStorage.getItem("arena.v1.featured") || "[]");
+          if (!saved.find((s) => s.id === fc.id)) {
+            saved.push({ id: fc.id, mfr: fc.mfr, name: fc.name, spec: fc.spec, type: fc.type, props: fc.props });
+            if (saved.length > 30) saved.shift();
+            localStorage.setItem("arena.v1.featured", JSON.stringify(saved));
+          }
+        } catch (e) { /* storage unavailable */ }
+
+        activeId = fc.id;
+        renderPage();
+      }
+
+      // ── Type metadata for pills and icons ─────────────────────────────────
+      const TYPE_META = {
+        battery:           { label: "Batteries",    icon: "🔋" },
+        resistor:          { label: "Resistors",    icon: "🟫" },
+        capacitor:         { label: "Capacitors",   icon: "⚡" },
+        led:               { label: "LEDs",          icon: "💡" },
+        diode:             { label: "Diodes",        icon: "🔺" },
+        zener_diode:       { label: "Zener",         icon: "⚡" },
+        bjt:               { label: "BJTs",          icon: "🔌" },
+        "bjt-npn":         { label: "BJTs",          icon: "🔌" },
+        "bjt-pnp":         { label: "BJTs",          icon: "🔌" },
+        mosfet:            { label: "MOSFETs",       icon: "🔋" },
+        voltage_regulator: { label: "Regulators",   icon: "🔧" },
+        opamp:             { label: "Op-Amps",       icon: "📡" },
+        ic:                { label: "ICs",           icon: "💡" },
+        inductor:          { label: "Inductors",     icon: "〰️" },
+        crystal:           { label: "Crystals",      icon: "🔷" },
+        thermistor:        { label: "Thermistors",   icon: "🌡️" },
+        fuse:              { label: "Fuses",          icon: "🔗" },
+      };
+
+      // Derive ordered unique category labels from the component list.
+      function resolveCategory(type) {
+        // Merge bjt / bjt-npn / bjt-pnp into same bucket
+        const t = (type === "bjt-pnp" || type === "bjt-npn") ? "bjt" : type;
+        return TYPE_META[t] ? TYPE_META[t].label : type.replace(/_/g, " ");
+      }
+
+      const ALL_CATEGORIES = (() => {
+        const seen = new Set();
+        const ordered = [];
+        FEATURED_COMPONENTS.forEach((fc) => {
+          const cat = resolveCategory(fc.type);
+          if (!seen.has(cat)) { seen.add(cat); ordered.push(cat); }
+        });
+        return ordered;
+      })();
+
+      let activeTypeFilter = null; // null = All
+      let searchQuery = "";
+
+      function filteredComponents() {
+        const q = searchQuery.trim().toLowerCase();
+        return FEATURED_COMPONENTS.filter((fc) => {
+          const matchesType = !activeTypeFilter || resolveCategory(fc.type) === activeTypeFilter;
+          const matchesSearch = !q ||
+            fc.mfr.toLowerCase().includes(q) ||
+            fc.name.toLowerCase().includes(q) ||
+            fc.spec.toLowerCase().includes(q) ||
+            fc.type.toLowerCase().includes(q);
+          return matchesType && matchesSearch;
+        });
+      }
+
+      // ── Render the scrollable component list ──────────────────────────────
+      function renderPage() {
+        grid.innerHTML = "";
+        const items = filteredComponents();
+
+        if (!items.length) {
+          const empty = document.createElement("div");
+          empty.style.cssText = "padding:12px;text-align:center;color:rgba(148,163,184,0.5);font-size:11px;";
+          empty.textContent = "No components match your search.";
+          grid.appendChild(empty);
+          return;
+        }
+
+        // Group by category for section headers
+        const grouped = new Map();
+        items.forEach((fc) => {
+          const cat = resolveCategory(fc.type);
+          if (!grouped.has(cat)) grouped.set(cat, []);
+          grouped.get(cat).push(fc);
+        });
+
+        grouped.forEach((fcs, cat) => {
+          // Only show category header when not filtered to one type
+          if (!activeTypeFilter) {
+            const catHeader = document.createElement("div");
+            catHeader.className = "catalog-category-label";
+            catHeader.textContent = cat;
+            grid.appendChild(catHeader);
+          }
+
+          fcs.forEach((fc) => {
+            const meta = TYPE_META[fc.type] || { icon: "🔩" };
+            const row = document.createElement("div");
+            row.className = "featured-component-row" + (fc.id === activeId ? " selected" : "");
+            row.setAttribute("role", "listitem");
+            row.setAttribute("tabindex", "0");
+
+            const badge = document.createElement("div");
+            badge.className = "fcrw-type-badge";
+            badge.textContent = meta.icon;
+            badge.setAttribute("aria-hidden", "true");
+
+            const info = document.createElement("div");
+            info.className = "fcrw-info";
+
+            const nameEl = document.createElement("div");
+            nameEl.className = "fcrw-name";
+            nameEl.textContent = fc.name;
+
+            const mfrEl = document.createElement("div");
+            mfrEl.className = "fcrw-mfr";
+            mfrEl.textContent = fc.mfr;
+
+            const specEl = document.createElement("div");
+            specEl.className = "fcrw-spec";
+            specEl.textContent = fc.spec;
+
+            info.appendChild(nameEl);
+            info.appendChild(mfrEl);
+            info.appendChild(specEl);
+
+            // Slot A / B quick-load buttons
+            const btnWrap = document.createElement("div");
+            btnWrap.className = "fcrw-load-btns";
+
+            const btnA = document.createElement("button");
+            btnA.className = "fcrw-slot-btn";
+            btnA.textContent = "A";
+            btnA.title = `Load ${fc.mfr} ${fc.name} into Component A`;
+            btnA.addEventListener("click", (e) => { e.stopPropagation(); loadFeaturedComponent(fc, "A"); });
+
+            const btnB = document.createElement("button");
+            btnB.className = "fcrw-slot-btn slot-b";
+            btnB.textContent = "B";
+            btnB.title = `Load ${fc.mfr} ${fc.name} into Component B`;
+            btnB.addEventListener("click", (e) => { e.stopPropagation(); loadFeaturedComponent(fc, "B"); });
+
+            btnWrap.appendChild(btnA);
+            btnWrap.appendChild(btnB);
+
+            row.appendChild(badge);
+            row.appendChild(info);
+            row.appendChild(btnWrap);
+
+            // Clicking the row itself loads into the current default slot
+            row.addEventListener("click", () => loadFeaturedComponent(fc, catalogTarget));
+            row.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); loadFeaturedComponent(fc, catalogTarget); } });
+            grid.appendChild(row);
+          });
+        });
+      }
+
+      // ── Build type-filter pills ────────────────────────────────────────────
+      const filtersContainer = document.getElementById("catalog-type-filters");
+      function renderTypePills() {
+        if (!filtersContainer) return;
+        filtersContainer.innerHTML = "";
+
+        const allPill = document.createElement("button");
+        allPill.className = "catalog-type-pill" + (!activeTypeFilter ? " active" : "");
+        allPill.textContent = "All";
+        allPill.addEventListener("click", () => { activeTypeFilter = null; renderTypePills(); renderPage(); });
+        filtersContainer.appendChild(allPill);
+
+        ALL_CATEGORIES.forEach((cat) => {
+          const pill = document.createElement("button");
+          pill.className = "catalog-type-pill" + (activeTypeFilter === cat ? " active" : "");
+          pill.textContent = cat;
+          pill.addEventListener("click", () => { activeTypeFilter = activeTypeFilter === cat ? null : cat; renderTypePills(); renderPage(); });
+          filtersContainer.appendChild(pill);
+        });
+      }
+
+      // ── Wire up search ─────────────────────────────────────────────────────
+      const searchInput = document.getElementById("catalog-search");
+      if (searchInput) {
+        searchInput.addEventListener("input", () => {
+          searchQuery = searchInput.value;
+          renderPage();
+        });
+      }
+
+      renderTypePills();
+      renderPage();
+
+      // ── Restore featured components saved in previous sessions ─────────────
+      // Re-register them with FailureEngine and ArenaAPI so they appear in the
+      // component selectors without the user needing to click them again.
+      try {
+        const saved = JSON.parse(localStorage.getItem("arena.v1.featured") || "[]");
+        saved.forEach((fc) => {
+          if (typeof FailureEngine !== "undefined" && FailureEngine.registerComponentType) {
+            FailureEngine.registerComponentType(fc.id, {
+              family: fc.type,
+              defaultProperties: Object.assign({}, fc.props),
+            });
+          }
+          if (window.ArenaAPI && typeof window.ArenaAPI.registerComponent === "function") {
+            window.ArenaAPI.registerComponent({
+              id: fc.id,
+              name: `${fc.mfr} ${fc.name}`,
+              type: fc.type,
+              properties: fc.props,
+              metadata: { displayName: fc.name, partNumber: fc.name, vendor: fc.mfr, source: "Reference Library" },
+            });
+          }
+        });
+      } catch (e) { /* storage unavailable */ }
+    })();
+  </script>
+  <!-- Stress Timeline Strip -->
+  <div class="stress-timeline" id="stress-timeline" role="region" aria-label="Stress timeline" style="display:none;">
+    <div class="stress-timeline-header">
+      <span class="stress-timeline-label">Stress Timeline</span>
+      <div class="stress-timeline-controls">
+        <button class="stress-ctrl-btn" id="tl-play" aria-label="Play timeline">▶ Play</button>
+        <button class="stress-ctrl-btn" id="tl-step" aria-label="Step forward">Step ▸</button>
+        <button class="stress-ctrl-btn" id="tl-close" aria-label="Close timeline">✕</button>
+      </div>
+    </div>
+    <canvas class="stress-timeline-canvas" id="stress-timeline-canvas" aria-label="Stress timeline graph" role="img"></canvas>
+  </div>
+</body>
+</html>

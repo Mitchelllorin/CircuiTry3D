@@ -1,0 +1,1 @@
+import"./index-4nAdznqj.js";import{r as o}from"./router-D8oBoy7I.js";const i=o.createContext(void 0),n=()=>{const t=o.useContext(i);if(!t)throw new Error("useGamification must be used within a GamificationProvider");return t};export{n as u};

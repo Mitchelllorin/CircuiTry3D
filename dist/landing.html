@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CircuiTry3D</title>
+  <style>
+    :root { color-scheme: dark; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(125% 125% at 50% 10%, rgba(47,84,235,0.25) 0%, rgba(9,17,43,0.85) 45%, #050b1f 100%);
+      color: #f9fafc;
+      font-family: "Inter", "Poppins", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      overflow: hidden;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(80% 80% at 50% 20%, rgba(15,54,120,0.35) 0%, rgba(4,9,26,0.8) 60%, rgba(4,9,26,0.95) 100%);
+      pointer-events: none;
+      mix-blend-mode: screen;
+      opacity: 0.9;
+    }
+    .landing-page {
+      position: relative;
+      z-index: 1;
+      width: min(560px, calc(100vw - 32px));
+      padding: clamp(32px, 6vw, 56px) 12px clamp(40px, 8vw, 72px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: clamp(18px, 5vw, 44px);
+      text-align: center;
+    }
+    .wordmark {
+      font-size: clamp(48px, 12vw, 108px);
+      font-weight: 900;
+      letter-spacing: -0.015em;
+      display: inline-flex;
+      gap: 6px;
+      filter: drop-shadow(0 0 22px rgba(40,255,190,0.4));
+    }
+    .wordmark span { display: inline-block; }
+    .wordmark .brand-green {
+      color: #39ffb7;
+      text-shadow: 0 0 18px rgba(57,255,183,0.7), 0 0 34px rgba(5,214,172,0.55);
+    }
+    .wordmark .brand-orange {
+      color: #ff8b2b;
+      text-shadow: 0 0 16px rgba(255,167,65,0.65), 0 0 30px rgba(255,120,28,0.55);
+    }
+    .subtitle {
+      color: #9db8ff;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.42em;
+      font-size: clamp(0.72rem, 2.4vw, 0.95rem);
+      margin-top: -6px;
+      text-align: center;
+      opacity: 0.92;
+    }
+    .circuit-wrapper {
+      width: min(540px, 96vw);
+      filter: drop-shadow(0 28px 80px rgba(54,255,196,0.3));
+    }
+    svg { width: 100%; height: auto; display: block; }
+    .panel-bg {
+      fill: rgba(6,16,38,0.9);
+      stroke: rgba(36,255,170,0.95);
+      stroke-width: 6;
+      filter: drop-shadow(0 0 28px rgba(42,255,189,0.45));
+    }
+    .trace-path {
+      fill: none;
+      stroke: transparent;
+      stroke-width: 6;
+    }
+    .wire {
+      stroke: #41ffc0;
+      stroke-width: 5;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      filter: drop-shadow(0 0 18px rgba(65,255,192,0.6));
+    }
+    .node {
+      fill: #39ffb7;
+      stroke: rgba(5,20,28,0.65);
+      stroke-width: 2.6;
+      filter: drop-shadow(0 0 12px rgba(57,255,183,0.95));
+    }
+    .component-label {
+      fill: #dce9ff;
+      font-family: "Inter", "Poppins", "Segoe UI", sans-serif;
+      font-weight: 700;
+      font-size: 16px;
+      letter-spacing: 0.08em;
+    }
+    .battery-line {
+      stroke: #39ffb7;
+      stroke-width: 4;
+      stroke-linecap: round;
+      filter: drop-shadow(0 0 12px rgba(57,255,183,0.75));
+    }
+    .battery-line.battery-negative {
+      stroke-width: 3;
+    }
+    .resistor-body {
+      stroke: #39ffb7;
+      stroke-width: 4;
+      fill: none;
+      stroke-linejoin: round;
+      filter: drop-shadow(0 0 12px rgba(57,255,183,0.75));
+    }
+    .switch-line {
+      stroke: #39ffb7;
+      stroke-width: 4.2;
+      stroke-linecap: round;
+      filter: drop-shadow(0 0 12px rgba(57,255,183,0.75));
+    }
+    .switch-contact {
+      fill: rgba(6,16,38,0.92);
+      stroke: #39ffb7;
+      stroke-width: 2.2;
+      filter: drop-shadow(0 0 8px rgba(57,255,183,0.65));
+    }
+    .led-poly {
+      stroke: #39ffb7;
+      stroke-width: 4;
+      fill: none;
+      stroke-linejoin: round;
+      filter: drop-shadow(0 0 12px rgba(57,255,183,0.75));
+    }
+    .led-bar {
+      stroke: #39ffb7;
+      stroke-width: 4;
+      stroke-linecap: round;
+      filter: drop-shadow(0 0 10px rgba(57,255,183,0.75));
+    }
+    .led-arrow {
+      stroke: #39ffb7;
+      stroke-width: 3;
+      fill: none;
+      marker-end: url(#arrowhead);
+    }
+    .photons circle {
+      fill: #d7f7ff;
+      stroke: rgba(110,198,255,0.5);
+      stroke-width: 1;
+      filter: drop-shadow(0 0 12px rgba(221,244,255,0.9));
+    }
+    .status-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      align-items: center;
+      width: min(420px, 90vw);
+    }
+    .status-bar {
+      width: 100%;
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.08);
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 4px 18px rgba(0,0,0,0.35);
+    }
+    .status-bar::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, rgba(57,255,183,0.2) 0%, rgba(57,255,183,0.9) 45%, rgba(57,255,183,0.2) 100%);
+      transform: translateX(-100%);
+      animation: sweep 3.2s ease-in-out infinite;
+    }
+    .status-text {
+      font-size: 0.95rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: rgba(157,184,255,0.95);
+    }
+    @keyframes sweep {
+      0% { transform: translateX(-100%); }
+      50% { transform: translateX(0%); }
+      100% { transform: translateX(100%); }
+    }
+    @media (max-height: 640px) {
+      body { align-items: flex-start; padding-top: 48px; }
+      .landing-page { gap: 22px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="landing-page">
+    <div class="wordmark">
+      <span class="brand-green">Circui</span>
+      <span class="brand-orange">Try</span>
+      <span class="brand-green">3D</span>
+    </div>
+    <div class="subtitle">Professional Circuit Design</div>
+    <div class="circuit-wrapper">
+      <svg viewBox="0 0 480 320" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="landing-circuit-title">
+        <title id="landing-circuit-title">Neon green rectangular series circuit with labeled components</title>
+        <defs>
+          <marker id="arrowhead" markerWidth="8" markerHeight="8" refX="4" refY="3" orient="auto" markerUnits="strokeWidth">
+            <path d="M1 1 L7 3 L1 5 Z" fill="#39ffb7" />
+          </marker>
+        </defs>
+        <rect class="panel-bg" x="32" y="36" width="416" height="248" rx="36" />
+
+        <path id="series-path" class="trace-path" d="M150 120 H360 V220 H150 Z" />
+        <g class="wires" aria-hidden="true">
+          <line class="wire" x1="150" y1="120" x2="200" y2="120" />
+          <line class="wire" x1="320" y1="120" x2="360" y2="120" />
+          <line class="wire" x1="150" y1="220" x2="200" y2="220" />
+          <line class="wire" x1="320" y1="220" x2="360" y2="220" />
+        </g>
+
+        <g class="battery" transform="translate(150,120)">
+          <line class="wire" x1="0" y1="0" x2="0" y2="38" />
+          <line class="battery-line" x1="-22" y1="38" x2="22" y2="38" />
+          <line class="wire" x1="0" y1="62" x2="0" y2="100" />
+          <line class="battery-line battery-negative" x1="-16" y1="62" x2="16" y2="62" />
+          <circle class="node" cx="0" cy="0" r="5" />
+          <circle class="node" cx="0" cy="100" r="5" />
+          <text class="component-label" x="-36" y="60" text-anchor="end">B1</text>
+        </g>
+
+        <g class="resistor" transform="translate(200,120)">
+          <polyline class="resistor-body" points="0,0 10,-16 20,16 30,-16 40,16 50,-16 60,16 70,-16 80,16 90,-16 100,16 110,-16 120,0" />
+          <circle class="node" cx="0" cy="0" r="5" />
+          <circle class="node" cx="120" cy="0" r="5" />
+          <text class="component-label" x="60" y="-30" text-anchor="middle">R1</text>
+        </g>
+
+        <g class="switch" transform="translate(200,220)">
+          <line class="wire" x1="0" y1="0" x2="36" y2="0" />
+          <line class="switch-line" x1="36" y1="0" x2="78" y2="-24" />
+          <line class="wire" x1="84" y1="0" x2="120" y2="0" />
+          <circle class="node" cx="0" cy="0" r="5" />
+          <circle class="node" cx="120" cy="0" r="5" />
+          <circle class="switch-contact" cx="36" cy="0" r="4" />
+          <circle class="switch-contact" cx="84" cy="0" r="4" />
+          <text class="component-label" x="60" y="48" text-anchor="middle">SW1</text>
+        </g>
+
+        <g class="led" transform="translate(360,170) rotate(90)">
+          <line class="wire" x1="-50" y1="0" x2="-24" y2="0" />
+          <polygon class="led-poly" points="-24,-20 -24,20 6,0" />
+          <line class="led-bar" x1="12" y1="-22" x2="12" y2="22" />
+          <line class="wire" x1="12" y1="0" x2="50" y2="0" />
+          <line class="led-arrow" x1="24" y1="-12" x2="42" y2="-28" />
+          <line class="led-arrow" x1="32" y1="-4" x2="50" y2="-20" />
+          <circle class="node" cx="-50" cy="0" r="5" />
+          <circle class="node" cx="50" cy="0" r="5" />
+        </g>
+        <text class="component-label" x="402" y="176">L1</text>
+
+        <g class="photons" id="photons"></g>
+      </svg>
+    </div>
+    <div class="status-wrapper">
+      <div class="status-text">Loading CircuiTry3D...</div>
+      <div class="status-bar"></div>
+    </div>
+  </div>
+  <script>
+    (function () {
+      var normalisePath = function (href) {
+        if (!href || typeof href !== "string") return "/";
+        try {
+          var url = new URL(href, window.location.origin);
+          // For HashRouter hrefs like /#/app, extract the hash content as the
+          // React Router path (e.g. /#/app → /app) so navigate() works correctly.
+          if (url.hash && url.hash.startsWith("#/")) {
+            return url.hash.slice(1);
+          }
+          return (url.pathname + url.search + url.hash) || "/";
+        } catch (_) {
+          return href.charAt(0) === "/" ? href : "/" + href;
+        }
+      };
+
+      var sendNavigationMessage = function (pathTarget) {
+        if (!pathTarget) return false;
+        var handled = false;
+        // Primary: postMessage to the parent app. Home.tsx handles this reliably
+        // (it accepts the "null" origin some mobile browsers report for sandboxed
+        // iframes), whereas directly setting window.top.location.hash can silently
+        // no-op on mobile while still succeeding — which swallowed the tap and made
+        // Launch need several presses.
+        try {
+          if (window.parent && window.parent !== window) {
+            window.parent.postMessage({ type: "landing:navigate", path: pathTarget }, "*");
+            handled = true;
+          }
+        } catch (_) {
+          // Ignore bridge failures — try direct nav below.
+        }
+        // Belt-and-suspenders: also set the top hash directly.
+        try {
+          if (window.top && window.top !== window) {
+            window.top.location.hash = pathTarget;
+            handled = true;
+          }
+        } catch (_) {
+          // Direct access blocked — the postMessage above (or native nav) covers it.
+        }
+        return handled;
+      };
+
+      const wireNavigationBridge = (anchor) => {
+        if (!anchor) {
+          return;
+        }
+
+        anchor.addEventListener('click', (event) => {
+          const href = anchor.getAttribute('href');
+          if (!href) {
+            return;
+          }
+
+      // Intercept all internal nav links
+      document.querySelectorAll(
+        "#launch-btn, #cta-launch-btn, .landing-footer-link, #pricing-free-btn, #pricing-premium-btn, #pricing-pro-btn"
+      ).forEach(interceptLink);
+    })();
+  </script>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       HERO LOADING ANIMATION
+  ═══════════════════════════════════════════════════════════════ -->
+  <script>
+    (function () {
+      var phases = [
+        { target: 16,  msg: 'Firing up the time circuits\u2026' },
+        { target: 34,  msg: 'Circumventing circuits\u2026' },
+        { target: 54,  msg: 'Reining in photons\u2026' },
+        { target: 72,  msg: 'Fighting the resistance\u2026' },
+        { target: 88,  msg: 'Bending the space-time continuum\u2026' },
+        { target: 100, msg: 'Almost there\u2026' },
+      ];
+
+      var statusText = document.getElementById("status-text");
+      var statusFill = document.getElementById("status-fill");
+      var statusBar  = document.getElementById("status-bar");
+
+      if (!statusText || !statusFill || !statusBar) return;
+
+      var lastPhaseIdx = -1;
+      var startTime    = null;
+      var DURATION     = 9000;
+
+      function easeInOut(t) {
+        return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+      }
+
+      const upgradeLink = document.getElementById('upgrade-link');
+      if (upgradeLink) {
+        upgradeLink.addEventListener('click', (event) => {
+          const href = upgradeLink.getAttribute('href');
+          if (!href) {
+            return;
+          }
+
+          const pathTarget = normalisePath(href);
+          const handled = sendNavigationMessage(pathTarget);
+          if (handled) {
+            event.preventDefault();
+          }
+        });
+      }
+  })();
+
+  (function(){
+    const launchBtn = document.getElementById('launch-btn');
+    const loadingProgress = document.getElementById('loading-progress');
+    const loadingBar = document.getElementById('loading-bar');
+    const loadingStatus = document.getElementById('loading-status');
+
+    if (!launchBtn || !loadingProgress || !loadingBar || !loadingStatus) return;
+
+    function updateStatus(progress) {
+      if (progress >= 100) {
+        loadingStatus.textContent = 'Launching workspace...';
+      } else {
+        loadingStatus.textContent = `Preparing workspace... ${Math.round(progress)}%`;
+      }
+    }
+
+    function redirectToApp() {
+      setTimeout(() => {
+        window.location.href = '/app';
+      }, 260);
+    }
+
+    launchBtn.addEventListener('click', () => {
+      if (launchBtn.disabled) return;
+
+      launchBtn.disabled = true;
+      launchBtn.textContent = 'Launching...';
+      loadingProgress.classList.add('visible');
+      loadingStatus.classList.add('visible');
+      updateStatus(0);
+
+      let progress = 0;
+
+      const tick = () => {
+        progress = Math.min(progress + 6 + Math.random() * 18, 100);
+        loadingBar.style.width = `${progress}%`;
+        updateStatus(progress);
+
+        if (progress >= 100) {
+          redirectToApp();
+        } else {
+          setTimeout(tick, 150 + Math.random() * 120);
+        }
+      };
+
+      setTimeout(tick, 160);
+    });
+
+    if (typeof launchBtn.focus === 'function') {
+      try {
+        launchBtn.focus({ preventScroll: true });
+      } catch (err) {
+        launchBtn.focus();
+      }
+    }
+  })();
+</script>
+</html>

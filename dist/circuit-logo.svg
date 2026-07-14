@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+     width="512" height="512" viewBox="0 0 512 512"
+     role="img" aria-label="CircuiTry3D Logo - Series Circuit">
+  <defs>
+    <linearGradient id="bg-grad" x1="96" y1="32" x2="416" y2="480" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#071535" />
+      <stop offset="0.52" stop-color="#0D1F46" />
+      <stop offset="1" stop-color="#030A1E" />
+    </linearGradient>
+    <linearGradient id="title-grad" x1="152" y1="92" x2="360" y2="132" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#00FFAD" />
+      <stop offset="1" stop-color="#00C6FF" />
+    </linearGradient>
+    <filter id="title-glow" x="-50%" y="-50%" width="200%" height="200%" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="10" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <style>
+      .brand-text { font-family: 'Poppins','Segoe UI','Roboto',sans-serif; font-weight: 700; }
+      .circuit-text { font-family: 'Poppins','Segoe UI','Roboto',sans-serif; font-weight: 600; letter-spacing: 0.18em; }
+    </style>
+  </defs>
+
+  <rect width="512" height="512" rx="64" fill="url(#bg-grad)" />
+  <rect x="24" y="24" width="464" height="464" rx="56" stroke="#102349" stroke-width="4" opacity="0.45" />
+
+  <g id="logo-wordmark">
+    <text x="256" y="132" text-anchor="middle" font-size="92" class="brand-text" letter-spacing="1" filter="url(#title-glow)">
+      <tspan fill="url(#title-grad)">Circui</tspan>
+      <tspan fill="#FF8A3C">Try</tspan>
+      <tspan fill="url(#title-grad)">3D</tspan>
+    </text>
+
+    <text x="256" y="180" text-anchor="middle" font-size="18" class="circuit-text" fill="#9CB9FF" fill-opacity="0.8">PROFESSIONAL CIRCUIT DESIGN</text>
+  </g>
+
+  <g id="circuit-panel">
+    <rect x="88" y="180" width="336" height="248" rx="38" fill="#07132B" fill-opacity="0.82" stroke="#00FFAA" stroke-width="6" />
+
+    <g stroke="#00FFAA" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none">
+      <!-- Top wire and resistor -->
+      <line x1="144" y1="192" x2="192" y2="192" />
+      <rect x="192" y="176" width="88" height="32" rx="6" ry="6" fill="#0A1F3F" fill-opacity="0.6" stroke="#00FFAA" />
+      <line x1="280" y1="192" x2="368" y2="192" />
+
+      <!-- Right vertical wire with LED -->
+      <line x1="368" y1="192" x2="368" y2="244" />
+      <g transform="translate(368 304) rotate(90)">
+        <line x1="-60" y1="0" x2="-28" y2="0" />
+        <path d="M-28 -26 L 6 0 L -28 26 Z" />
+        <line x1="6" y1="-24" x2="6" y2="24" />
+        <line x1="6" y1="0" x2="46" y2="0" />
+        <path d="M20 -12 L38 -30" />
+        <path d="M28 -4 L46 -22" />
+        <path d="M20 12 L38 30" />
+        <path d="M28 4 L46 22" />
+      </g>
+      <line x1="368" y1="350" x2="368" y2="416" />
+
+      <!-- Bottom wire and switch -->
+      <line x1="368" y1="416" x2="320" y2="416" />
+      <circle cx="312" cy="416" r="8" />
+      <line x1="304" y1="410" x2="268" y2="388" />
+      <circle cx="260" cy="416" r="8" />
+      <line x1="252" y1="416" x2="144" y2="416" />
+
+      <!-- Left wire and battery -->
+      <line x1="144" y1="416" x2="144" y2="372" />
+      <line x1="136" y1="372" x2="152" y2="372" />
+      <line x1="144" y1="340" x2="144" y2="192" />
+      <line x1="128" y1="340" x2="160" y2="340" />
+    </g>
+
+    <g fill="#00FFAA">
+      <circle cx="144" cy="192" r="6" />
+      <circle cx="368" cy="192" r="6" />
+      <circle cx="368" cy="416" r="6" />
+      <circle cx="144" cy="416" r="6" />
+    </g>
+
+    <text x="236" y="195" text-anchor="middle" font-size="18" class="brand-text" fill="#00FFAA">R1</text>
+    <text x="368" y="296" text-anchor="middle" font-size="16" class="brand-text" fill="#00FFAA">LED</text>
+    <text x="256" y="432" text-anchor="middle" font-size="16" class="brand-text" fill="#00FFAA">SW</text>
+    <text x="120" y="320" text-anchor="end" font-size="16" class="brand-text" fill="#00FFAA">BAT</text>
+    <text x="166" y="336" font-size="16" class="brand-text" fill="#00FFAA">+</text>
+    <text x="166" y="376" font-size="16" class="brand-text" fill="#00FFAA">−</text>
+  </g>
+</svg>
