@@ -1141,7 +1141,7 @@ body.builder-body::before {
 }
 .unified-action-bar .quick-add-btn-label {
   display: block;
-  font-size: 7px;
+  font-size: 8px;
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -1188,19 +1188,16 @@ body.builder-body::before {
 }
 
 .unified-action-bar .quick-add-btn {
-  min-width: 48px;
-  min-height: 46px;
-  padding: 5px 3px 4px;
+  padding: 3px 2px;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  /* No container — bare icon/thumbnail only */
-  background: transparent;
-  border: none;
-  border-radius: 0;
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
+  background: rgba(12, 10, 36, 0.78);
+  border: 1px solid rgba(168, 216, 255, 0.22);
+  border-radius: 12px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   transition:
     filter 0.16s ease,
     transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -1240,12 +1237,9 @@ body.builder-body::before {
   min-height: 52px;
 }
 
-/* Component quick-add buttons are sized a touch larger so the enlarged 3D
-   thumbnail inside reads clearly. Width auto-grows when descriptors are on. */
 .unified-action-bar .quick-add-btn {
-  width: auto;
-  min-width: 64px;
-  min-height: 64px;
+  width: 46px;
+  height: 46px;
 }
 
 /* On narrow phones: tighten gap so 2 rows fit neatly */
@@ -1256,29 +1250,20 @@ body.builder-body::before {
   }
   .unified-action-bar .edge-action-btn {
     width: 42px;
-    min-height: 42px;
     min-width: 42px;
+    min-height: 42px;
     padding: 4px 2px 3px;
     border-radius: 9px;
   }
   .unified-action-bar .quick-add-btn {
-    width: auto;
-    min-height: 56px;
-    min-width: 54px;
-    padding: 4px 3px 3px;
-    border-radius: 0;
-  }
-  .quick-add-btn-symbol {
-    width: 42px;
-    height: 42px;
-  }
-  .quick-add-btn-descriptor {
-    font-size: 6px;
-    max-width: 58px;
+    width: 38px;
+    height: 38px;
+    padding: 2px 1px;
+    border-radius: 8px;
   }
   .unified-action-bar .edge-action-label,
   .unified-action-bar .quick-add-btn-label {
-    font-size: 6px;
+    font-size: 7px;
   }
 }
 
@@ -1350,6 +1335,7 @@ body.builder-body::before {
   border-color: rgba(255, 200, 0, 0.65);
   background: rgba(255, 170, 0, 0.14);
   color: #ffe566;
+  animation: junction-btn-glow 2.8s ease-in-out infinite;
 }
 
 .quick-add-btn--junction .quick-add-btn-label {
@@ -1565,15 +1551,17 @@ body.builder-body::before {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 48px;
-  height: 48px;
+  width: 24px;
+  height: 24px;
   flex-shrink: 0;
   overflow: hidden;
+  background: transparent;
+  border: none;
 }
 
 .quick-add-btn-symbol-svg {
-  width: 46px;
-  height: 46px;
+  width: 24px;
+  height: 24px;
   overflow: visible;
 }
 
