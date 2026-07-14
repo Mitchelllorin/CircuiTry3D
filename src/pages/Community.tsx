@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
-import BrandMark from "../components/BrandMark";
-import WordMark from "../components/WordMark";
+import { Link, useLocation } from "react-router-dom";
+import BrandSignature from "../components/BrandSignature";
 import { useAuth } from "../context/AuthContext";
 import { useEngagement } from "../context/EngagementContext";
 import type { FormEvent } from "react";
@@ -50,6 +49,7 @@ const formatRelativeTime = (timestamp: number) => {
 };
 
 export default function Community() {
+  const location = useLocation();
   const { currentUser, users, getUserById, updateProfile } = useAuth();
   const {
     messages,
@@ -109,6 +109,8 @@ export default function Community() {
     }
     return `${stats.averageRating.toFixed(1)} / 5`;
   }, [stats.averageRating]);
+  const accountLinkTarget =
+    location.pathname === "/app" ? "/app?section=account" : "/account";
 
   const memberDirectory = useMemo(() => {
     if (users.length === 0) {
@@ -664,7 +666,7 @@ export default function Community() {
           ) : (
             <div className="profile-cta-card">
               <p>Create a profile to post in chat, share circuits, and collect feedback.</p>
-              <Link className="profile-link" to="/account">
+              <Link className="profile-link" to={accountLinkTarget}>
                 Create profile
               </Link>
             </div>

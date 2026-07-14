@@ -4,7 +4,10 @@ import { useWorkspaceMode } from "../context/WorkspaceModeContext";
 import { useDemoMode, DEMO_WORKSPACE_MODES } from "../context/DemoModeContext";
 import type { GatedFeature } from "../context/DemoModeContext";
 import type { WorkspaceMode } from "./builder/types";
-import BrandMark from "./BrandMark";
+import {
+  isWorkspaceSectionId,
+  type WorkspaceSectionId,
+} from "./workspaceSections";
 import "../styles/builder-ui.css";
 import wireResourceLogo from "../assets/wire-resource-logo.svg";
 
@@ -31,14 +34,22 @@ export function GlobalModeBar() {
   const navigate = useNavigate();
   const location = useLocation();
   const { workspaceMode, setWorkspaceMode, isWireLibraryPanelOpen, setWireLibraryPanelOpen } = useWorkspaceMode();
-  const { isDemoMode, isFeatureLocked, showUpgradePrompt } = useDemoMode();
+  const activeWorkspaceSectionParam = new URLSearchParams(location.search).get(
+    "section",
+  );
+  const activeWorkspaceSection = isWorkspaceSectionId(
+    activeWorkspaceSectionParam,
+  )
+    ? activeWorkspaceSectionParam
+    : null;
   const modeBarRef = useRef<HTMLDivElement>(null);
   const [modeBarScrollState, setModeBarScrollState] = useState<ModeBarScrollState>({
     canScrollLeft: false,
     canScrollRight: false,
   });
 
-  const isWorkspacePage = location.pathname === "/app";
+  const isWorkspaceRoute = location.pathname === "/app";
+  const isWorkspacePage = isWorkspaceRoute && !activeWorkspaceSection;
   const isLandingPage = location.pathname === "/";
 
   const checkModeBarScroll = useCallback(() => {
@@ -73,11 +84,16 @@ export function GlobalModeBar() {
       return;
     }
     setWorkspaceMode(mode);
-    // Navigate to workspace if not already there
-    if (!isWorkspacePage) {
+    // Navigate to workspace if not already there or clear section overlays.
+    if (!isWorkspaceRoute || activeWorkspaceSection) {
       navigate("/app");
     }
-  }, [setWorkspaceMode, navigate, isWorkspacePage, isDemoMode, showUpgradePrompt]);
+  }, [
+    activeWorkspaceSection,
+    isWorkspaceRoute,
+    navigate,
+    setWorkspaceMode,
+  ]);
 
   const handleNavigateTo = useCallback((path: string) => {
     // Check if this path is gated in Demo Mode
@@ -90,6 +106,16 @@ export function GlobalModeBar() {
     setWireLibraryPanelOpen(false);
     navigate(path);
   }, [navigate, setWireLibraryPanelOpen, isFeatureLocked, showUpgradePrompt]);
+
+  const handleWorkspaceSectionClick = useCallback(
+    (section: WorkspaceSectionId) => {
+      // Keep a single, unified workflow: open all major sections inside /app.
+      setWireLibraryPanelOpen(false);
+      setWorkspaceMode("build");
+      navigate(`/app?section=${section}`);
+    },
+    [navigate, setWireLibraryPanelOpen, setWorkspaceMode],
+  );
 
   const handleBuildClick = useCallback(() => {
     handleModeClick("build");
@@ -109,11 +135,16 @@ export function GlobalModeBar() {
 
   const handleWireLibraryClick = useCallback(() => {
     setWireLibraryPanelOpen(true);
-    // Navigate to workspace if not already there
-    if (!isWorkspacePage) {
+    // Navigate to workspace if not already there or clear section overlays.
+    if (!isWorkspaceRoute || activeWorkspaceSection) {
       navigate("/app");
     }
-  }, [setWireLibraryPanelOpen, navigate, isWorkspacePage]);
+  }, [
+    activeWorkspaceSection,
+    isWorkspaceRoute,
+    navigate,
+    setWireLibraryPanelOpen,
+  ]);
 
   const isTroubleshootLocked = isDemoMode && !DEMO_WORKSPACE_MODES.has("troubleshoot");
   const isArcadeLocked = isDemoMode;
@@ -146,7 +177,13 @@ export function GlobalModeBar() {
         <button
           type="button"
           className="mode-tab"
-          data-active={workspaceMode === "build" ? "true" : undefined}
+          data-active={
+            isWorkspaceRoute &&
+            !activeWorkspaceSection &&
+            workspaceMode === "build"
+              ? "true"
+              : undefined
+          }
           onClick={handleBuildClick}
           aria-label="Build mode"
           title="Component builder and circuit designer"
@@ -157,7 +194,13 @@ export function GlobalModeBar() {
         <button
           type="button"
           className="mode-tab"
-          data-active={workspaceMode === "practice" ? "true" : undefined}
+          data-active={
+            isWorkspaceRoute &&
+            !activeWorkspaceSection &&
+            workspaceMode === "practice"
+              ? "true"
+              : undefined
+          }
           onClick={handlePracticeClick}
           aria-label="Practice mode"
           title="Guided worksheets and W.I.R.E. problems"
@@ -167,8 +210,14 @@ export function GlobalModeBar() {
         </button>
         <button
           type="button"
-          className={`mode-tab${isTroubleshootLocked ? " mode-tab--locked" : ""}`}
-          data-active={workspaceMode === "troubleshoot" ? "true" : undefined}
+          className="mode-tab"
+          data-active={
+            isWorkspaceRoute &&
+            !activeWorkspaceSection &&
+            workspaceMode === "troubleshoot"
+              ? "true"
+              : undefined
+          }
           onClick={handleTroubleshootClick}
           aria-label="Troubleshoot mode"
           title={isTroubleshootLocked ? "Troubleshoot — Full Version" : "Fix broken circuits and restore current flow"}
@@ -180,7 +229,13 @@ export function GlobalModeBar() {
         <button
           type="button"
           className="mode-tab"
-          data-active={workspaceMode === "arena" ? "true" : undefined}
+          data-active={
+            isWorkspaceRoute &&
+            !activeWorkspaceSection &&
+            workspaceMode === "arena"
+              ? "true"
+              : undefined
+          }
           onClick={handleArenaClick}
           aria-label="Arena mode"
           title="Component testing and advanced simulation"
@@ -191,19 +246,29 @@ export function GlobalModeBar() {
         <button
           type="button"
           className="mode-tab"
-          data-active={workspaceMode === "help" ? "true" : undefined}
-          onClick={handleHelpClick}
-          aria-label="Help center"
-          title="Support resources, guides, and documentation"
+          data-active={
+            isWorkspaceRoute &&
+            !activeWorkspaceSection &&
+            workspaceMode === "learn"
+              ? "true"
+              : undefined
+          }
+          onClick={handleLearnClick}
+          aria-label="Learn mode"
+          title="Tutorials, guides, and help resources"
         >
           <span className="mode-icon" aria-hidden="true">❓</span>
           <span className="mode-label">Help</span>
         </button>
         <button
           type="button"
-          className={`mode-tab${isArcadeLocked ? " mode-tab--locked" : ""}`}
-          data-active={isArcadePage ? "true" : undefined}
-          onClick={() => handleNavigateTo("/arcade")}
+          className="mode-tab"
+          data-active={
+            isArcadePage || activeWorkspaceSection === "arcade"
+              ? "true"
+              : undefined
+          }
+          onClick={() => handleWorkspaceSectionClick("arcade")}
           aria-label="Arcade"
           title={isArcadeLocked ? "Arcade — Full Version" : "Circuit Arcade"}
         >
@@ -213,9 +278,13 @@ export function GlobalModeBar() {
         </button>
         <button
           type="button"
-          className={`mode-tab${isClassroomLocked ? " mode-tab--locked" : ""}`}
-          data-active={isClassroomPage ? "true" : undefined}
-          onClick={() => handleNavigateTo("/classroom")}
+          className="mode-tab"
+          data-active={
+            isClassroomPage || activeWorkspaceSection === "classroom"
+              ? "true"
+              : undefined
+          }
+          onClick={() => handleWorkspaceSectionClick("classroom")}
           aria-label="Classroom"
           title={isClassroomLocked ? "Classroom — Full Version" : "Classroom"}
         >
@@ -225,9 +294,13 @@ export function GlobalModeBar() {
         </button>
         <button
           type="button"
-          className={`mode-tab${isCommunityLocked ? " mode-tab--locked" : ""}`}
-          data-active={isCommunityPage ? "true" : undefined}
-          onClick={() => handleNavigateTo("/community")}
+          className="mode-tab"
+          data-active={
+            isCommunityPage || activeWorkspaceSection === "community"
+              ? "true"
+              : undefined
+          }
+          onClick={() => handleWorkspaceSectionClick("community")}
           aria-label="Community"
           title={isCommunityLocked ? "Community — Full Version" : "Community"}
         >
@@ -238,8 +311,12 @@ export function GlobalModeBar() {
         <button
           type="button"
           className="mode-tab"
-          data-active={workspaceMode === "account" ? "true" : undefined}
-          onClick={() => handleModeClick("account")}
+          data-active={
+            isAccountPage || activeWorkspaceSection === "account"
+              ? "true"
+              : undefined
+          }
+          onClick={() => handleWorkspaceSectionClick("account")}
           aria-label="Account"
           title="Account"
         >
@@ -249,8 +326,12 @@ export function GlobalModeBar() {
         <button
           type="button"
           className="mode-tab"
-          data-active={workspaceMode === "pricing" ? "true" : undefined}
-          onClick={() => handleModeClick("pricing")}
+          data-active={
+            isPricingPage || activeWorkspaceSection === "pricing"
+              ? "true"
+              : undefined
+          }
+          onClick={() => handleWorkspaceSectionClick("pricing")}
           aria-label="Pricing"
           title="Pricing"
         >

@@ -6,7 +6,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useBuilderFrame } from "../hooks/builder/useBuilderFrame";
 import { useLogoAnimation } from "../hooks/builder/useLogoAnimation";
 import { useHelpModal } from "../hooks/builder/useHelpModal";
@@ -34,10 +34,11 @@ import {
   getDefaultScenario,
 } from "../data/environmentalScenarios";
 import ArenaView from "../components/arena/ArenaView";
-import PricingSection from "../components/PricingSection";
+import ArcadePage from "./Arcade";
 import ClassroomPage from "./Classroom";
 import CommunityPage from "./Community";
-import { LogoSettingsModal } from "../components/builder/modals/LogoSettingsModal";
+import AccountPage from "./Account";
+import PricingPage from "./Pricing";
 import { CircuitSaveModal } from "../components/builder/modals/CircuitSaveModal";
 import { CircuitLoadModal } from "../components/builder/modals/CircuitLoadModal";
 import { CircuitRecoveryBanner } from "../components/builder/modals/CircuitRecoveryBanner";
@@ -107,7 +108,11 @@ import {
 import { IS_DEMO_MODE, DEMO_COMPONENT_IDS } from "../utils/demoMode";
 import { isAndroidApp } from "../utils/playStoreBilling";
 import { useComponent3DThumbnail } from "../components/builder/toolbars/useComponent3DThumbnail";
-import { useDemoMode } from "../context/DemoModeContext";
+import {
+  isWorkspaceSectionId,
+  type WorkspaceSectionId,
+} from "../components/workspaceSections";
+import wireStrippersIcon from "../assets/wire-strippers-icon.svg";
 
 const HELP_SECTIONS: HelpSection[] = [
   {
@@ -193,7 +198,16 @@ const getNextPracticeProblem = (currentId: string | null) => {
 
   return pool[(index + 1) % pool.length] ?? null;
 };
-const GETTING_STARTED_SECTIONS: HelpSection[] = [
+
+const WORKSPACE_SECTION_TITLE: Record<WorkspaceSectionId, string> = {
+  arcade: "Arcade",
+  classroom: "Classroom",
+  community: "Community",
+  account: "Account",
+  pricing: "Pricing",
+};
+
+const TUTORIAL_SECTIONS: HelpSection[] = [
   {
     title: "Your First Circuit",
     paragraphs: [
@@ -928,6 +942,7 @@ const IconChevronDown = ({ className }: IconProps) => (
 
 export default function Builder() {
   const navigate = useNavigate();
+  const location = useLocation();
   const practiceProblemRef = useRef<string | null>(
     DEFAULT_PRACTICE_PROBLEM?.id ?? null,
   );
@@ -937,6 +952,10 @@ export default function Builder() {
     const baseUrl = import.meta.env.BASE_URL ?? "/";
     return baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
   }, []);
+  const activeWorkspaceSection = useMemo<WorkspaceSectionId | null>(() => {
+    const sectionParam = new URLSearchParams(location.search).get("section");
+    return isWorkspaceSectionId(sectionParam) ? sectionParam : null;
+  }, [location.search]);
 
   const [modeState, setModeState] = useState<LegacyModeState>({
     isWireMode: false,
@@ -1798,48 +1817,58 @@ export default function Builder() {
     globalModeContext,
   ]);
 
-  const handlePracticeAction = useCallback(
-    (action: PanelAction) => {
-      if (action.action === "open-arena") {
-        setArenaPanelOpen(true);
-        handleArenaSync({ openWindow: false, sessionName: "Builder Hand-off" });
-        return;
-      }
-      if (action.action === "practice-help") {
-        openHelpCenter("practice");
-        return;
-      }
-      if (action.action === "generate-practice") {
-        if (isDemoMode) {
-          showUpgradePrompt("advanced-practice");
-          return;
-        }
-        triggerBuilderAction(action.action, action.data);
-        const randomProblem = getRandomPracticeProblem();
-        if (randomProblem) {
-          openPracticeWorkspace(randomProblem);
-        }
-        return;
-      }
-      triggerBuilderAction(action.action, action.data);
-    },
-    [
-      handleArenaSync,
-      openHelpCenter,
-      openPracticeWorkspace,
-      setArenaPanelOpen,
-      triggerBuilderAction,
-      isDemoMode,
-      showUpgradePrompt,
-    ],
-  );
+  const closeWorkspaceSectionOverlay = useCallback(() => {
+    navigate("/app");
+  }, [navigate]);
 
-  const openLastArenaSession = useCallback(() => {
-    if (!lastArenaExport?.sessionId) {
+  useEffect(() => {
+    if (!activeWorkspaceSection) {
       return;
     }
-    setArenaPanelOpen(true);
-  }, [lastArenaExport, setArenaPanelOpen]);
+
+    if (workspaceMode !== "build") {
+      setWorkspaceModeWithGlobalSync("build");
+    }
+
+    setPracticeWorkspaceMode(false);
+    setCompactWorksheetOpen(false);
+    setTroubleshootWorkspaceMode(false);
+    setTroubleshootPanelOpen(false);
+    setGuidesWorkspaceMode(false);
+    setGuidesPanelOpen(false);
+    setArenaPanelOpen(false);
+    setEnvironmentalPanelOpen(false);
+    setWireLibraryPanelOpen(false);
+    setTroubleshootStatus(null);
+    setTroubleshootCheckPending(false);
+    setTroubleshootPendingCheckProblemId(null);
+    setCircuitLocked(false);
+    setHelpOpen(false);
+  }, [
+    activeWorkspaceSection,
+    setWorkspaceModeWithGlobalSync,
+    workspaceMode,
+  ]);
+
+  const activeWorkspaceSectionTitle = activeWorkspaceSection
+    ? WORKSPACE_SECTION_TITLE[activeWorkspaceSection]
+    : null;
+  const activeWorkspaceSectionContent = useMemo(() => {
+    switch (activeWorkspaceSection) {
+      case "arcade":
+        return <ArcadePage />;
+      case "classroom":
+        return <ClassroomPage />;
+      case "community":
+        return <CommunityPage />;
+      case "account":
+        return <AccountPage />;
+      case "pricing":
+        return <PricingPage />;
+      default:
+        return null;
+    }
+  }, [activeWorkspaceSection]);
 
   const handleEnvironmentChange = useCallback((scenario: EnvironmentalScenario) => {
     setActiveEnvironment(scenario);
@@ -2101,7 +2130,8 @@ export default function Builder() {
   const isWorkspacePanelVisible =
     activeWorkspacePanelMode !== null && isWorkspacePanelOpen;
   const isOverlayActive =
-    isWorkspacePanelVisible ||
+    activeWorkspaceSection !== null ||
+    isArenaPanelOpen ||
     isEnvironmentalPanelOpen ||
     isHelpOpen ||
     isSaveModalOpen ||
@@ -4342,6 +4372,35 @@ export default function Builder() {
           {workspacePanelContent}
         </WorkspaceModePanel>
       )}
+
+      <div
+        className={`builder-panel-overlay builder-panel-overlay--workspace-section${activeWorkspaceSection ? " open" : ""}`}
+        role="dialog"
+        aria-modal="true"
+        aria-hidden={!activeWorkspaceSection}
+        onClick={closeWorkspaceSectionOverlay}
+      >
+        <div
+          className="builder-panel-shell builder-panel-shell--workspace-section"
+          onClick={(event) => event.stopPropagation()}
+        >
+          <button
+            type="button"
+            className="builder-panel-close"
+            onClick={closeWorkspaceSectionOverlay}
+            aria-label={
+              activeWorkspaceSectionTitle
+                ? `Close ${activeWorkspaceSectionTitle}`
+                : "Close workspace section"
+            }
+          >
+            X
+          </button>
+          <div className="builder-panel-body builder-panel-body--workspace-section">
+            {activeWorkspaceSectionContent}
+          </div>
+        </div>
+      </div>
 
       <div
         className={`builder-help-modal ${isHelpOpen ? "open" : ""}`}
