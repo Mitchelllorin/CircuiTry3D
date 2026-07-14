@@ -1218,7 +1218,7 @@ function QuickAddButton({
   return (
     <button
       type="button"
-      className={`quick-add-btn${component.id === "junction" ? " quick-add-btn--junction" : ""}${isActive ? " quick-add-btn--active" : ""}`}
+      className="quick-add-btn"
       onClick={onClick}
       disabled={disabled}
       aria-disabled={disabled}
@@ -3471,7 +3471,7 @@ export default function Builder() {
             {/* History / file actions (formerly right edge) */}
             <button
               type="button"
-              className="edge-action-btn edge-action-btn--simulate"
+              className="edge-action-btn"
               onClick={handleRunSimulationClick}
               disabled={controlsDisabled}
               aria-disabled={controlsDisabled}
@@ -3536,7 +3536,7 @@ export default function Builder() {
             {/* AI & Measurement tools — integrated into action bar */}
             <button
               type="button"
-              className={`edge-action-btn edge-action-btn--ai${isAIHelperOpen ? " edge-action-btn--active" : ""}`}
+              className={`edge-action-btn${isAIHelperOpen ? " edge-action-btn--active" : ""}`}
               onClick={() => setIsAIHelperOpen((prev) => !prev)}
               aria-label={isAIHelperOpen ? "Close Circuit AI" : "Open Circuit AI assistant"}
               aria-expanded={isAIHelperOpen}
