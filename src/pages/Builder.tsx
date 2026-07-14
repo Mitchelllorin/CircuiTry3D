@@ -1115,10 +1115,47 @@ function ComponentLibraryCard({
   );
 }
 
+/* ── Quick-add bar button with 3D thumbnail ───────────────────────────── */
 type QuickAddButtonProps = {
   component: ComponentAction;
   onClick: () => void;
   disabled: boolean;
+};
+
+function QuickAddButton({ component, onClick, disabled }: QuickAddButtonProps) {
+  const builderType = component.builderType ?? component.id;
+  const thumbSrc = useComponent3DThumbnail(builderType);
+
+  return (
+    <button
+      type="button"
+      className="quick-add-btn"
+      onClick={onClick}
+      disabled={disabled}
+      aria-disabled={disabled}
+      title={component.description || component.label}
+    >
+      <span className="quick-add-btn-symbol" aria-hidden="true">
+        {thumbSrc ? (
+          <img
+            src={thumbSrc}
+            alt=""
+            className="quick-add-btn-3d-img"
+            aria-hidden="true"
+          />
+        ) : (
+          <span className="quick-add-btn-icon-text" aria-hidden="true">
+            {component.icon}
+          </span>
+        )}
+      </span>
+      <span className="quick-add-btn-label">{component.label}</span>
+    </button>
+  );
+}
+
+type IntroDialogStep = {
+  icon: string;
   title: string;
   isActive?: boolean;
   showDescriptor?: boolean;
@@ -3337,9 +3374,18 @@ export default function Builder() {
               <span className="edge-action-label" aria-hidden="true">Edit</span>
             </button>
 
-            <span className="unified-action-divider" aria-hidden="true" />
-
-            {/* History / file actions (formerly right edge) */}
+          {/* Centered component quick-add bar — 3D thumbnails rendered by
+              useComponent3DThumbnail (WebGL via Three.js), positioned just
+              below the ticker feed so nothing is obscured. */}
+          <div className="quick-add-bar" aria-label="Quick add components">
+            {QUICK_ADD_COMPONENTS.map((component) => (
+              <QuickAddButton
+                key={component.id}
+                component={component}
+                onClick={() => handleComponentAction(component)}
+                disabled={controlsDisabled}
+              />
+            ))}
             <button
               type="button"
               className="edge-action-btn"
