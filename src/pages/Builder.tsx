@@ -2145,23 +2145,16 @@ export default function Builder() {
     return () => window.clearTimeout(timer);
   }, []);
 
-  const resetWorkspaceSurfaces = useCallback(() => {
-    setPracticeWorkspaceMode(false);
-    setCompactWorksheetOpen(false);
-    setTroubleshootWorkspaceMode(false);
-    setTroubleshootPanelOpen(false);
-    setTroubleshootStatus(null);
-    setTroubleshootCheckPending(false);
-    setTroubleshootPendingCheckProblemId(null);
-    setGuidesWorkspaceMode(false);
-    setGuidesPanelOpen(false);
-    setActiveWorkspacePanelMode(null);
-    setWorkspacePanelOpen(false);
-    setCircuitLocked(false);
-    setOnboardingLocked(false);
-    setEnvironmentalPanelOpen(false);
-    setHelpOpen(false);
-  }, [setHelpOpen]);
+  const openHelpCenter = useCallback(
+    (view: HelpModalView = "overview", sectionTitle?: string) => {
+      if (view === "overview" && sectionTitle) {
+        openHelpWithSection(sectionTitle);
+      } else {
+        openHelpWithView(view);
+      }
+    },
+    [openHelpWithSection, openHelpWithView],
+  );
 
   const assignPracticeProblem = useCallback(
     (problem: PracticeProblem, presetOverride?: string) => {
@@ -2207,47 +2200,93 @@ export default function Builder() {
     ],
   );
 
-
-  const openWorkspacePanelMode = useCallback(
-    (mode: WorkspacePanelMode) => {
-      setWorkspaceModeWithGlobalSync(mode);
-      resetWorkspaceSurfaces();
-      setActiveWorkspacePanelMode(mode);
-      setWorkspacePanelOpen(true);
-
-      if (mode === "arena" && arenaExportStatus !== "ready") {
-        handleArenaSync({ openWindow: false });
+  const handlePracticeAction = useCallback(
+    (action: PanelAction) => {
+      if (action.action === "open-arena") {
+        setArenaPanelOpen(true);
+        handleArenaSync({ openWindow: false, sessionName: "Builder Hand-off" });
+        return;
       }
+      if (action.action === "practice-help") {
+        openHelpCenter("overview");
+        return;
+      }
+      if (action.action === "generate-practice") {
+        triggerBuilderAction(action.action, action.data);
+        const randomProblem = getRandomPracticeProblem();
+        if (randomProblem) {
+          openPracticeWorkspace(randomProblem);
+        }
+        return;
+      }
+      triggerBuilderAction(action.action, action.data);
     },
     [
-      arenaExportStatus,
       handleArenaSync,
-      resetWorkspaceSurfaces,
-      setWorkspaceModeWithGlobalSync,
+      openHelpCenter,
+      openPracticeWorkspace,
+      setArenaPanelOpen,
+      triggerBuilderAction,
     ],
   );
 
-  const openGuidesWorkspace = useCallback(
-    (workflow: GuideWorkflowId = "tutorial") => {
-      setActiveGuideWorkflow(workflow);
-      setWorkspaceModeWithGlobalSync("help");
-      resetWorkspaceSurfaces();
-      setGuidesWorkspaceMode(true);
-      setGuidesPanelOpen(true);
-    },
-    [resetWorkspaceSurfaces, setWorkspaceModeWithGlobalSync],
-  );
+  const openLastArenaSession = useCallback(() => {
+    if (!lastArenaExport?.sessionId) {
+      return;
+    }
+    setArenaPanelOpen(true);
+  }, [lastArenaExport, setArenaPanelOpen]);
 
-  const openHelpCenter = useCallback(
-    (view: HelpModalView = "overview", _sectionTitle?: string) => {
-      if (view === "overview" || view === "tutorial" || view === "wire-guide") {
-        const workflow: GuideWorkflowId = view === "wire-guide" ? view : "tutorial";
-        openGuidesWorkspace(workflow);
+  const handleEnvironmentChange = useCallback((scenario: EnvironmentalScenario) => {
+    setActiveEnvironment(scenario);
+  }, []);
+
+  const resetLogoSettings = useCallback(() => {
+    // Reset to defaults by setting each property
+    handleLogoSettingChange("speed", 14);
+    handleLogoSettingChange("travelX", 50);
+    handleLogoSettingChange("travelY", 40);
+    handleLogoSettingChange("bounce", 22);
+    handleLogoSettingChange("opacity", 52);
+  }, [handleLogoSettingChange]);
+
+  const handleComponentAction = useCallback(
+    (component: ComponentAction) => {
+      if (!component) {
         return;
       }
-      openHelpWithView(view);
+
+      if (component.action === "junction") {
+        postToBuilder({ type: "builder:add-junction" });
+        return;
+      }
+
+      if (!component.builderType) {
+        console.warn(`Missing builder mapping for component '${component.id}'`);
+        return;
+      }
+
+      postToBuilder({
+        type: "builder:add-component",
+        payload: { componentType: component.builderType },
+      });
     },
-    [openGuidesWorkspace, openHelpWithView],
+    [postToBuilder],
+  );
+
+  const handleQuickAction = useCallback(
+    (quickAction: QuickAction) => {
+      triggerBuilderAction(quickAction.action, quickAction.data);
+
+      if (quickAction.kind === "tool" && quickAction.tool) {
+        setActiveQuickTool(quickAction.tool);
+      }
+
+      if (quickAction.id === "simulate") {
+        triggerSimulationPulse();
+      }
+    },
+    [triggerBuilderAction, triggerSimulationPulse],
   );
 
   const handleAdvancePracticeProblem = useCallback(() => {
