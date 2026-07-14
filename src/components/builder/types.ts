@@ -18,6 +18,8 @@ export type BuilderInvokeAction =
   | "set-wire-routing"
   | "toggle-grid"
   | "toggle-labels"
+  | "set-wire-type"
+  | "set-wire-library"
   | "load-preset"
   | "load-circuit-state"
   | "generate-practice"

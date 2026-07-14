@@ -57,6 +57,7 @@ import practiceProblems, {
   findPracticeProblemById,
   getRandomPracticeProblem,
 } from "../data/practiceProblems";
+import { WIRE_LIBRARY, WIRE_MATERIALS, type WireMaterialId } from "../data/wireLibrary";
 import troubleshootingProblems, {
   type TroubleshootingProblem,
   getAnalyzeCircuitResult,
@@ -175,6 +176,12 @@ const toWireProfileBridgePayload = (wireProfile: WireSpec | null) => {
     maxVoltageV: wireProfile.maxVoltageV,
   };
 };
+
+const DEFAULT_WIRE_ID = "awg-18-cu-pvc105";
+const resolveInitialWireId = (): string =>
+  WIRE_LIBRARY.find((wire) => wire.id === DEFAULT_WIRE_ID)?.id ??
+  WIRE_LIBRARY[0]?.id ??
+  DEFAULT_WIRE_ID;
 
 const HELP_SECTIONS: HelpSection[] = [
   {
@@ -1084,6 +1091,7 @@ export default function Builder() {
   const [isEnvironmentalPanelOpen, setEnvironmentalPanelOpen] = useState(false);
   const [isMeasurementPanelOpen, setMeasurementPanelOpen] = useState(false);
   const [isWireLibraryPanelOpen, setWireLibraryPanelOpen] = useState(false);
+  const [selectedWireId, setSelectedWireId] = useState(resolveInitialWireId);
   const [modeBarScrollState, setModeBarScrollState] = useState<{
     canScrollLeft: boolean;
     canScrollRight: boolean;
@@ -1297,72 +1305,36 @@ export default function Builder() {
     onCinematicVideo: handleCinematicVideo,
   });
 
-  const queueOrLoadTroubleshootPreset = useCallback(
-    (preset: string) => {
-      if (!preset) return;
-      if (isFrameReady) {
-        triggerBuilderAction("load-preset", { preset });
-        return;
-      }
-      pendingTroubleshootPresetRef.current = preset;
-    },
-    [isFrameReady, triggerBuilderAction],
+  const wireLibraryPayload = useMemo(
+    () =>
+      WIRE_LIBRARY.map((spec) => {
+        const material = WIRE_MATERIALS[spec.material as WireMaterialId];
+        return {
+          id: spec.id,
+          label: spec.gaugeLabel,
+          materialId: spec.material,
+          materialLabel: spec.materialLabel,
+          insulationLabel: spec.insulationLabel,
+          resistanceOhmPerMeter: spec.resistanceOhmPerMeter,
+          ampacityChassisA: spec.ampacityChassisA,
+          ampacityBundleA: spec.ampacityBundleA,
+          maxVoltageV: spec.maxVoltageV,
+          category: material?.category ?? "conductor",
+        };
+      }),
+    [],
   );
 
   useEffect(() => {
-    if (!isFrameReady) return;
-    const pendingPreset = pendingTroubleshootPresetRef.current;
-    if (!pendingPreset) return;
-    pendingTroubleshootPresetRef.current = null;
-    triggerBuilderAction("load-preset", { preset: pendingPreset });
-  }, [isFrameReady, triggerBuilderAction]);
-
-  const openTroubleshootProblem = useCallback(
-    (problem: TroubleshootingProblem) => {
-      setActiveTroubleshootId(problem.id);
-      setTroubleshootStatus(null);
-      queueOrLoadTroubleshootPreset(problem.preset);
-      setWorkspaceModeWithGlobalSync("troubleshoot");
-      setTroubleshootPanelOpen(true);
-      setCircuitLocked(false);
-      setPracticeWorkspaceMode(false);
-      setCompactWorksheetOpen(false);
-      setArenaPanelOpen(false);
-    },
-    [queueOrLoadTroubleshootPreset, setWorkspaceModeWithGlobalSync],
-  );
-
-  const enterTroubleshootMode = useCallback(
-    (problemOverride?: TroubleshootingProblem | null) => {
-      const fallbackProblem =
-        troubleshootingProblems.find((p) => p.id === activeTroubleshootId) ??
-        troubleshootingProblems[0] ??
-        null;
-      const targetProblem = problemOverride ?? fallbackProblem;
-
-      if (targetProblem) {
-        openTroubleshootProblem(targetProblem);
-        return;
-      }
-
-      setWorkspaceModeWithGlobalSync("troubleshoot");
-      setTroubleshootPanelOpen(true);
-      setCircuitLocked(false);
-      setPracticeWorkspaceMode(false);
-      setCompactWorksheetOpen(false);
-      setArenaPanelOpen(false);
-    },
-    [activeTroubleshootId, openTroubleshootProblem, setWorkspaceModeWithGlobalSync],
-  );
-
-  useEffect(() => {
-    if (!isMeasurementPanelOpen) {
+    if (!isFrameReady || wireLibraryPayload.length === 0 || !selectedWireId) {
       return;
     }
-    triggerBuilderAction("set-tool", { tool: "select" });
-    triggerBuilderAction("open-measurement-tools");
-    triggerBuilderAction("request-meter-state");
-  }, [isMeasurementPanelOpen, triggerBuilderAction]);
+    triggerBuilderAction("set-wire-library", {
+      library: wireLibraryPayload,
+      defaultWireId: selectedWireId,
+    });
+    triggerBuilderAction("set-wire-type", { wireId: selectedWireId });
+  }, [isFrameReady, wireLibraryPayload, selectedWireId, triggerBuilderAction]);
 
   useEffect(() => {
     if (!circuitState) {
@@ -4820,6 +4792,14 @@ export default function Builder() {
           </div>
         </div>
       </div>
+
+      {/* Wire Library Panel */}
+      <WireLibraryPanel
+        isOpen={isWireLibraryPanelOpen}
+        onClose={() => setWireLibraryPanelOpen(false)}
+        onSelectWire={setSelectedWireId}
+        selectedWireId={selectedWireId}
+      />
 
       {/* Circuit Save Modal */}
       <CircuitSaveModal
