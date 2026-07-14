@@ -1695,24 +1695,56 @@ function buildCircuitElements(three: any, problem: PracticeProblem) {
     nodeMap.set(pointKey(point), clonePoint(point));
   };
 
-  const addWire = (path: Vec2[]) => {
-    if (!path || path.length < 2) {
-      return;
+  const wireMaterial = new three.MeshStandardMaterial({ color: strokeColor });
+  applyMaterialStyle(wireMaterial, strokeColor);
+
+  const resistorMaterial = new three.MeshStandardMaterial({ color: strokeColor });
+  applyMaterialStyle(resistorMaterial, strokeColor);
+
+  const nodeMaterial = new three.MeshStandardMaterial({ color: strokeColor });
+  applyMaterialStyle(nodeMaterial, strokeColor);
+
+  const batteryPositiveMaterial = new three.MeshStandardMaterial({ color: strokeColor });
+  applyMaterialStyle(batteryPositiveMaterial, strokeColor);
+
+  const batteryNegativeMaterial = new three.MeshStandardMaterial({ color: strokeColor });
+  applyMaterialStyle(batteryNegativeMaterial, strokeColor);
+
+  const toVec3 = (point: Vec2, height = WIRE_HEIGHT) => new three.Vector3(point.x, height, point.z);
+
+  const addNode = (point: Vec2) => {
+    const geometry = new three.SphereGeometry(NODE_RADIUS, 28, 20);
+    const mesh = new three.Mesh(geometry, nodeMaterial);
+    mesh.position.copy(toVec3(point, COMPONENT_HEIGHT + 0.08));
+    group.add(mesh);
+  };
+
+  const strokeBetween = (startVec: any, endVec: any, radius: number, material: any) => {
+    const direction = new three.Vector3().subVectors(endVec, startVec);
+    const length = direction.length();
+    if (length <= 1e-6) {
+      return null;
     }
-    const compressed: Vec2[] = [];
-    path.forEach((point, index) => {
-      if (index === 0) {
-        compressed.push(clonePoint(point));
-        return;
-      }
-      const previous = path[index - 1];
-      if (point.x === previous.x && point.z === previous.z) {
-        return;
-      }
-      compressed.push(clonePoint(point));
-    });
-    if (compressed.length < 2) {
-      return;
+
+    const thickness = radius * 2;
+    const geometry = new three.BoxGeometry(length, thickness, thickness);
+    const mesh = new three.Mesh(geometry, material);
+    const midpoint = new three.Vector3().addVectors(startVec, endVec).multiplyScalar(0.5);
+    mesh.position.copy(midpoint);
+    const quaternion = new three.Quaternion().setFromUnitVectors(
+      new three.Vector3(1, 0, 0),
+      direction.clone().normalize()
+    );
+    mesh.setRotationFromQuaternion(quaternion);
+    return mesh;
+  };
+
+  const addWireSegment = (start: Vec2, end: Vec2) => {
+    const startVec = toVec3(start, WIRE_HEIGHT);
+    const endVec = toVec3(end, WIRE_HEIGHT);
+    const mesh = strokeBetween(startVec, endVec, WIRE_RADIUS, wireMaterial);
+    if (mesh) {
+      group.add(mesh);
     }
     compressed.forEach(recordNode);
     elements.push({
@@ -1737,8 +1769,130 @@ function buildCircuitElements(three: any, problem: PracticeProblem) {
     });
   };
 
-  const addBattery = (start: Vec2, end: Vec2, label: string) => addTwoTerminal("battery", start, end, label);
-  const addResistor = (start: Vec2, end: Vec2, label: string) => addTwoTerminal("resistor", start, end, label);
+  const createResistor = (start: Vec2, end: Vec2, label: string) => {
+    const resistorGroup = new three.Group();
+    const horizontal = Math.abs(end.x - start.x) >= Math.abs(end.z - start.z);
+    const zigCount = 6;
+    const amplitude = 0.35;
+
+    const points: Vec2[] = [];
+    for (let i = 0; i <= zigCount; i += 1) {
+      const t = i / zigCount;
+      if (horizontal) {
+        const x = start.x + (end.x - start.x) * t;
+        const zOffset = i === 0 || i === zigCount ? 0 : i % 2 === 0 ? -amplitude : amplitude;
+        points.push({ x, z: start.z + zOffset });
+      } else {
+        const z = start.z + (end.z - start.z) * t;
+        const xOffset = i === 0 || i === zigCount ? 0 : i % 2 === 0 ? amplitude : -amplitude;
+        points.push({ x: start.x + xOffset, z });
+      }
+    }
+
+    for (let i = 0; i < points.length - 1; i += 1) {
+      const segStart = toVec3(points[i], COMPONENT_HEIGHT);
+      const segEnd = toVec3(points[i + 1], COMPONENT_HEIGHT);
+      const mesh = strokeBetween(segStart, segEnd, RESISTOR_RADIUS, resistorMaterial);
+      if (mesh) {
+        resistorGroup.add(mesh);
+      }
+    }
+
+    const startVec = toVec3(start, COMPONENT_HEIGHT);
+    const endVec = toVec3(end, COMPONENT_HEIGHT);
+    const leadStart = strokeBetween(toVec3(start, WIRE_HEIGHT), startVec, WIRE_RADIUS, wireMaterial);
+    const leadEnd = strokeBetween(endVec, toVec3(end, WIRE_HEIGHT), WIRE_RADIUS, wireMaterial);
+    if (leadStart) {
+      resistorGroup.add(leadStart);
+    }
+    if (leadEnd) {
+      resistorGroup.add(leadEnd);
+    }
+
+    const labelSprite = createComponentLabel(label);
+    if (labelSprite) {
+      const midpoint = new three.Vector3().addVectors(startVec, endVec).multiplyScalar(0.5);
+      labelSprite.position.copy(midpoint);
+      labelSprite.position.y += LABEL_HEIGHT;
+      resistorGroup.add(labelSprite);
+    }
+
+    group.add(resistorGroup);
+  };
+
+  const createBattery = (start: Vec2, end: Vec2, label: string) => {
+    const batteryGroup = new three.Group();
+    const startVec = toVec3(start, COMPONENT_HEIGHT - 0.05);
+    const endVec = toVec3(end, COMPONENT_HEIGHT - 0.05);
+    const vertical = Math.abs(end.x - start.x) < Math.abs(end.z - start.z);
+
+    if (vertical) {
+      const centerZ = (start.z + end.z) / 2;
+      const x = start.x;
+      const longPlate = new three.Mesh(new three.BoxGeometry(1.0, 0.18, 0.9), batteryPositiveMaterial);
+      longPlate.position.set(x, COMPONENT_HEIGHT, centerZ + 0.4);
+      const shortPlate = new three.Mesh(new three.BoxGeometry(0.8, 0.18, 0.45), batteryNegativeMaterial);
+      shortPlate.position.set(x, COMPONENT_HEIGHT, centerZ - 0.4);
+      batteryGroup.add(longPlate, shortPlate);
+
+      const plusLabel = createLabelSprite("+", "#111111");
+      if (plusLabel) {
+        plusLabel.position.set(x + 0.8, COMPONENT_HEIGHT + 0.12, centerZ + 0.6);
+        plusLabel.scale.set(0.9, 0.9, 1);
+        batteryGroup.add(plusLabel);
+      }
+      const minusLabel = createLabelSprite("−", "#111111");
+      if (minusLabel) {
+        minusLabel.position.set(x + 0.8, COMPONENT_HEIGHT + 0.12, centerZ - 0.6);
+        minusLabel.scale.set(0.9, 0.9, 1);
+        batteryGroup.add(minusLabel);
+      }
+    } else {
+      const centerX = (start.x + end.x) / 2;
+      const z = start.z;
+      const longPlate = new three.Mesh(new three.BoxGeometry(0.9, 0.18, 1.0), batteryPositiveMaterial);
+      longPlate.position.set(centerX + 0.4, COMPONENT_HEIGHT, z);
+      const shortPlate = new three.Mesh(new three.BoxGeometry(0.45, 0.18, 0.8), batteryNegativeMaterial);
+      shortPlate.position.set(centerX - 0.4, COMPONENT_HEIGHT, z);
+      batteryGroup.add(longPlate, shortPlate);
+
+      const plusLabel = createLabelSprite("+", "#111111");
+      if (plusLabel) {
+        plusLabel.position.set(centerX + 0.6, COMPONENT_HEIGHT + 0.12, z + 0.8);
+        plusLabel.scale.set(0.9, 0.9, 1);
+        batteryGroup.add(plusLabel);
+      }
+      const minusLabel = createLabelSprite("−", "#111111");
+      if (minusLabel) {
+        minusLabel.position.set(centerX - 0.6, COMPONENT_HEIGHT + 0.12, z + 0.8);
+        minusLabel.scale.set(0.9, 0.9, 1);
+        batteryGroup.add(minusLabel);
+      }
+    }
+
+    const leadStart = strokeBetween(toVec3(start, WIRE_HEIGHT), startVec, WIRE_RADIUS, wireMaterial);
+    const leadEnd = strokeBetween(endVec, toVec3(end, WIRE_HEIGHT), WIRE_RADIUS, wireMaterial);
+    if (leadStart) {
+      batteryGroup.add(leadStart);
+    }
+    if (leadEnd) {
+      batteryGroup.add(leadEnd);
+    }
+
+    const labelSprite = createComponentLabel(label);
+    if (labelSprite) {
+      const midpoint = new three.Vector3().addVectors(startVec, endVec).multiplyScalar(0.5);
+      labelSprite.position.copy(midpoint);
+      labelSprite.position.y += LABEL_HEIGHT;
+      batteryGroup.add(labelSprite);
+    }
+
+    group.add(batteryGroup);
+  };
+
+  const addSegmentNodes = (points: Vec2[]) => {
+    points.forEach((point) => addNode(point));
+  };
 
   const sourceLabel = problem.source.label ?? "Source";
   const componentLabels = new Map(problem.components.map((component) => [component.id, component.label ?? component.id]));
