@@ -1,9 +1,3 @@
-declare global {
-  interface Window {
-    THREE?: any;
-  }
-}
-
 const THREE_CDN = "https://cdnjs.cloudflare.com/ajax/libs/three.js/r161/three.min.js";
 
 let threeLoaderPromise: Promise<any> | null = null;
@@ -63,3 +57,4 @@ export function loadThree(): Promise<any> {
 
   return threeLoaderPromise;
 }
+

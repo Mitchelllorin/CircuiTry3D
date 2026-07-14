@@ -24,7 +24,7 @@ import WireTable, {
   type WorksheetEntry,
 } from "../components/practice/WireTable";
 import SolutionSteps from "../components/practice/SolutionSteps";
-import ComponentRenderDrawer from "../components/schematic/ComponentRenderDrawer";
+import RenderCatalogDrawer from "../components/schematic/RenderCatalogDrawer";
 import { COMPONENT_CATALOG } from "../schematic/catalog";
 import {
   CatalogEntry,
@@ -39,6 +39,12 @@ import {
 } from "../schematic/types";
 import { buildElement, buildNodeMesh, disposeThreeObject } from "../schematic/threeFactory";
 import { loadThree } from "../schematic/threeLoader";
+
+declare global {
+  interface Window {
+    THREE?: any;
+  }
+}
 
 type TopologyInfo = {
   title: string;
@@ -283,15 +289,25 @@ export default function SchematicMode() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [drawerInitialId, setDrawerInitialId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("practice");
-  const [standard, setStandard] = useState<SchematicStandard>("ansi");
+  const [catalogDrawerOpen, setCatalogDrawerOpen] = useState(false);
+  const [catalogSelectionRequest, setCatalogSelectionRequest] = useState<string | null>(null);
 
-  const handleShowCatalog = useCallback((componentId?: string) => {
-    setDrawerInitialId(componentId ?? null);
-    setDrawerOpen(true);
-  }, []);
+  const openCatalogDrawer = useCallback(() => setCatalogDrawerOpen(true), []);
+  const closeCatalogDrawer = useCallback(() => setCatalogDrawerOpen(false), []);
 
-  const handleCloseCatalog = useCallback(() => {
-    setDrawerOpen(false);
+  const handleDrawerSelect = useCallback(
+    (entry: CatalogEntry) => {
+      setCatalogSelectionRequest(entry.id);
+      if (viewMode !== "builder") {
+        setViewMode("builder");
+      }
+      setCatalogDrawerOpen(false);
+    },
+    [viewMode]
+  );
+
+  const handleCatalogSelectionHandled = useCallback(() => {
+    setCatalogSelectionRequest(null);
   }, []);
 
   return (
@@ -302,15 +318,8 @@ export default function SchematicMode() {
           <h1>Schematic Mode</h1>
           <p>{MODE_SUMMARY[viewMode]}</p>
         </div>
-        <div className="schematic-header-actions">
-          <button
-            type="button"
-            className="schematic-drawer-trigger"
-            onClick={() => handleShowCatalog()}
-          >
-            Browse 3D Catalog
-          </button>
-          <div className="schematic-controls" role="tablist" aria-label="Schematic mode selector">
+        <div className="schematic-controls">
+          <div className="schematic-tabs" role="tablist" aria-label="Schematic mode selector">
             {MODE_TABS.map(({ key, label }) => (
               <button
                 key={key}
@@ -324,14 +333,33 @@ export default function SchematicMode() {
               </button>
             ))}
           </div>
+          <button
+            type="button"
+            className="schematic-catalog-button"
+            onClick={openCatalogDrawer}
+            aria-haspopup="dialog"
+            aria-expanded={catalogDrawerOpen}
+          >
+            View 3D Catalog
+          </button>
         </div>
       </header>
 
       {viewMode === "practice" ? (
-        <PracticeModeView onShowCatalog={handleShowCatalog} />
+        <PracticeModeView />
       ) : (
-        <BuilderModeView onShowCatalog={handleShowCatalog} />
+        <BuilderModeView
+          catalogSelectionRequest={catalogSelectionRequest}
+          onCatalogSelectionHandled={handleCatalogSelectionHandled}
+        />
       )}
+
+      <RenderCatalogDrawer
+        open={catalogDrawerOpen}
+        entries={COMPONENT_CATALOG}
+        onClose={closeCatalogDrawer}
+        onSelectEntry={handleDrawerSelect}
+      />
     </div>
   );
 }
@@ -752,7 +780,12 @@ function PracticeModeView({ onShowCatalog }: { onShowCatalog: CatalogOpener }) {
   );
 }
 
-function BuilderModeView({ onShowCatalog }: { onShowCatalog: CatalogOpener }) {
+type BuilderModeViewProps = {
+  catalogSelectionRequest: string | null;
+  onCatalogSelectionHandled: () => void;
+};
+
+function BuilderModeView({ catalogSelectionRequest, onCatalogSelectionHandled }: BuilderModeViewProps) {
   const [selectedCatalogId, setSelectedCatalogId] = useState<string>(COMPONENT_CATALOG[0]?.id ?? "");
   const [elements, setElements] = useState<SchematicElement[]>([]);
   const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
@@ -819,6 +852,17 @@ function BuilderModeView({ onShowCatalog }: { onShowCatalog: CatalogOpener }) {
     setSelectedElementId(null);
     setFeedbackMessage(`${entry.name} ready for placement.`);
   }, []);
+
+  useEffect(() => {
+    if (!catalogSelectionRequest) {
+      return;
+    }
+    const entry = COMPONENT_CATALOG.find((item) => item.id === catalogSelectionRequest);
+    if (entry) {
+      handleCatalogSelect(entry);
+    }
+    onCatalogSelectionHandled();
+  }, [catalogSelectionRequest, handleCatalogSelect, onCatalogSelectionHandled]);
 
   const handleBoardHover = useCallback((point: Vec2 | null) => {
     if (!point) {
