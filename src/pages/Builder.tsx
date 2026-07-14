@@ -128,23 +128,7 @@ type BuilderMessage =
   | { type: "builder:add-component"; payload: { componentType: string } }
   | { type: "builder:add-junction" }
   | { type: "builder:set-analysis-open"; payload: { open: boolean } }
-  | {
-      type: "builder:invoke-action";
-      payload: { action: BuilderInvokeAction; data?: Record<string, unknown> };
-    }
-  | { type: "builder:request-mode-state" }
-  | {
-      type: "builder:export-arena";
-      payload?: {
-        requestId?: string;
-        openWindow?: boolean;
-        sessionName?: string;
-        testVariables?: Record<string, unknown>;
-      };
-      }
-    | { type: "builder:edit-active-component" }
-    | { type: "builder:rotate-active-component" }
-    | { type: "builder:wire-active-component" };
+  | { type: "builder:invoke-action"; payload: { action: BuilderInvokeAction; data?: Record<string, unknown> } };
 
 type ComponentAction = {
   id: string;
@@ -155,144 +139,6 @@ type ComponentAction = {
 };
 
 type BuilderToolId = "select" | "wire" | "measure";
-
-type LegacyModeState = {
-  isWireMode: boolean;
-  isRotateMode: boolean;
-  isMeasureMode: boolean;
-  currentFlowStyle: string;
-  showPolarityIndicators: boolean;
-  layoutMode: string;
-  wireRoutingMode: string;
-  showGrid: boolean;
-  showLabels: boolean;
-};
-
-type LegacySelectionSnapshot = {
-  id: string | null;
-  type?: string | null;
-  label?: string | null;
-  componentNumber?: string | null;
-  position?: [number, number, number] | null;
-  rotation?: number | null;
-  metadata?: Record<string, unknown> | null;
-  properties?: Record<string, unknown> | null;
-};
-
-const truncate = (value: string, maxLength = 60): string => {
-  if (value.length <= maxLength) {
-    return value;
-  }
-  return `${value.slice(0, Math.max(0, maxLength - 3))}...`;
-};
-
-const formatPropertyLabel = (key: string): string => {
-  const spaced = key
-    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
-    .replace(/[_-]+/g, " ")
-    .trim();
-  if (!spaced) {
-    return "Property";
-  }
-  return spaced.charAt(0).toUpperCase() + spaced.slice(1);
-};
-
-const formatDisplayValue = (value: unknown): string => {
-  if (value === null || typeof value === "undefined") {
-    return "—";
-  }
-  if (typeof value === "number") {
-    if (!Number.isFinite(value)) {
-      return "—";
-    }
-    const abs = Math.abs(value);
-    const digits = abs >= 1000 ? 0 : abs >= 100 ? 1 : abs >= 10 ? 2 : 3;
-    return value.toFixed(digits);
-  }
-  if (typeof value === "boolean") {
-    return value ? "Yes" : "No";
-  }
-  if (typeof value === "string") {
-    return truncate(value, 80);
-  }
-  if (Array.isArray(value)) {
-    return `${value.length} item${value.length === 1 ? "" : "s"}`;
-  }
-  try {
-    return truncate(JSON.stringify(value), 80);
-  } catch {
-    return "—";
-  }
-};
-
-const formatPosition = (position?: [number, number, number] | null): string => {
-  if (!position || position.length !== 3) {
-    return "-";
-  }
-  const [x, y, z] = position;
-  const formatAxis = (axis: number | undefined) => {
-    if (typeof axis !== "number" || Number.isNaN(axis)) {
-      return "0.00";
-    }
-    const digits = Math.abs(axis) >= 10 ? 1 : 2;
-    return axis.toFixed(digits);
-  };
-  return `${formatAxis(x)}, ${formatAxis(y)}, ${formatAxis(z)}`;
-};
-
-const formatRotation = (rotation?: number | null): string => {
-  if (typeof rotation !== "number" || Number.isNaN(rotation)) {
-    return "-";
-  }
-  const degrees = (rotation * 180) / Math.PI;
-  const normalized = ((degrees % 360) + 360) % 360;
-  return `${normalized.toFixed(1)}°`;
-};
-
-const formatComponentLabel = (snapshot: LegacySelectionSnapshot): string => {
-  const parts: string[] = [];
-  if (snapshot.label && snapshot.label.trim().length > 0) {
-    parts.push(snapshot.label.trim());
-  }
-  if (snapshot.componentNumber && snapshot.componentNumber.trim().length > 0) {
-    const token = snapshot.componentNumber.trim();
-    if (!parts.includes(token)) {
-      parts.push(token);
-    }
-  }
-  if (snapshot.type && snapshot.type.trim().length > 0) {
-    const normalized = snapshot.type.trim();
-    if (!parts.some((part) => part.toLowerCase() === normalized.toLowerCase())) {
-      parts.push(normalized);
-    }
-  }
-  if (snapshot.id && snapshot.id.trim().length > 0) {
-    const idToken = `#${snapshot.id.trim()}`;
-    if (!parts.includes(idToken)) {
-      parts.push(idToken);
-    }
-  }
-  if (!parts.length) {
-    return "Component";
-  }
-  return parts.slice(0, 3).join(" · ");
-};
-
-const summarizeMetadata = (metadata?: Record<string, unknown> | null): string => {
-  if (!metadata) {
-    return "No metadata";
-  }
-  if (typeof metadata.displayName === "string" && metadata.displayName.trim().length > 0) {
-    return metadata.displayName.trim();
-  }
-  const entries = Object.entries(metadata)
-    .filter(([key, value]) => key !== "displayName" && typeof value !== "object" && typeof value !== "undefined")
-    .map(([key, value]) => `${formatPropertyLabel(key)}: ${formatDisplayValue(value)}`);
-  if (!entries.length) {
-    return "No metadata";
-  }
-  return entries.slice(0, 2).join(" · ");
-};
 
 type QuickAction = {
   id: string;
@@ -414,155 +260,6 @@ type PanelAction = {
   description: string;
   action: BuilderInvokeAction;
   data?: Record<string, unknown>;
-};
-
-type SettingsItem = {
-  id: string;
-  label: string;
-  action: BuilderInvokeAction;
-  data?: Record<string, unknown>;
-  getDescription: (
-    state: LegacyModeState,
-    helpers: { currentFlowLabel: string },
-  ) => string;
-  isActive?: (state: LegacyModeState) => boolean;
-};
-
-type LegacySelectionPosition = {
-  x: number;
-  y: number;
-  z: number;
-  grid?: {
-    x: number;
-    y: number;
-    z: number;
-  };
-};
-
-type LegacySelectionComponent = {
-  kind: "component";
-  id: string | null;
-  type: string | null;
-  label: string | null;
-  identifier: string | null;
-  componentNumber: number | null;
-  rotation?: {
-    radians: number | null;
-    degrees: number | null;
-  } | null;
-  position?: LegacySelectionPosition | null;
-  properties?: Record<string, unknown> | null;
-  metadata?: Record<string, unknown> | null;
-  connections?: number | null;
-  state?: string | null;
-};
-
-type LegacySelectionJunction = {
-  kind: "junction";
-  id: string | null;
-  label: string | null;
-  position?: LegacySelectionPosition | null;
-  connections?: number | null;
-};
-
-type LegacySelectionMulti = {
-  kind: "multi";
-  count: number;
-};
-
-type LegacySelectionPayload =
-  | LegacySelectionComponent
-  | LegacySelectionJunction
-  | LegacySelectionMulti
-  | null;
-
-type PropertyDisplayEntry = {
-  id: string;
-  label: string;
-  value: string;
-};
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === "object" && value !== null && !Array.isArray(value);
-
-const normalizeLegacySelectionPayload = (raw: unknown): LegacySelectionPayload => {
-  if (!isRecord(raw)) {
-    return null;
-  }
-
-  const kind = raw.kind;
-  if (kind === "component" || kind === "junction" || kind === "multi") {
-    return raw as LegacySelectionPayload;
-  }
-
-  return null;
-};
-
-type ArenaExportSummary = {
-  sessionId: string;
-  exportedAt: string;
-  componentCount: number;
-  wireCount: number;
-  junctionCount: number;
-  analysis?: {
-    basic?: {
-      voltage?: number;
-      current?: number;
-      resistance?: number;
-      power?: number;
-      topology?: string;
-    };
-    advanced?: {
-      impedance?: number;
-      netReactance?: number;
-      phaseAngleDegrees?: number;
-      totalResistance?: number;
-      totalCapacitance?: number;
-      totalInductance?: number;
-      energyDelivered?: number;
-      estimatedThermalRise?: number;
-      frequencyHz?: number;
-      temperatureC?: number;
-    };
-  };
-  testVariables?: Record<string, unknown>;
-  storage?: string;
-  requestId?: string | null;
-};
-
-type ArenaExportStatus = "idle" | "exporting" | "ready" | "error";
-
-type BuilderLogoSettings = {
-  speed: number;
-  travelX: number;
-  travelY: number;
-  bounce: number;
-  opacity: number;
-  isVisible: boolean;
-};
-
-type LogoNumericSettingKey =
-  | "speed"
-  | "travelX"
-  | "travelY"
-  | "bounce"
-  | "opacity";
-
-const LOGO_SETTINGS_STORAGE_KEY = "builder:logo-motion";
-const DEFAULT_LOGO_SETTINGS: BuilderLogoSettings = {
-  speed: 28,
-  travelX: 70,
-  travelY: 55,
-  bounce: 28,
-  opacity: 100,
-  isVisible: true,
-};
-
-const clamp = (value: number, min: number, max: number) => {
-  if (Number.isNaN(value)) {
-    return min;
-  }
-  return Math.min(Math.max(value, min), max);
 };
 
 const WIRE_TOOL_ACTIONS: PanelAction[] = [
@@ -696,38 +393,33 @@ const PRACTICE_SCENARIOS: PracticeScenario[] = [
   {
     id: "series-basic",
     label: "Series Circuit",
-    question: "Series loop: solve for total current (I_T).",
-    description:
-      "Log W.I.R.E. values, add the resistances, pick I = E / R_T, then confirm with KVL.",
+    question: "Find total resistance and current.",
+    description: "Combine series resistances and solve for current with W.I.R.E.",
     preset: "series_basic",
     problemId: "series-square-01",
   },
   {
     id: "parallel-basic",
     label: "Parallel Circuit",
-    question: "Parallel bus: find equivalent resistance and branch currents.",
-    description:
-      "Use W.I.R.E. to capture knowns, compute R_T with reciprocals, and check KCL/KVL compliance.",
+    question: "Find equivalent resistance in parallel.",
+    description: "Apply reciprocal sums to determine the total resistance.",
     preset: "parallel_basic",
     problemId: "parallel-square-02",
   },
   {
     id: "mixed-circuit",
     label: "Mixed Circuit",
-    question: "Series-parallel combo: reduce and solve the ladder.",
-    description:
-      "Collapse branches with W.I.R.E., select the right Ohm's Law form, and verify against Kirchhoff.",
+    question: "Analyze a mixed topology.",
+    description: "Break the network into series and parallel segments to solve.",
     preset: "mixed_circuit",
     problemId: "combo-square-03",
   },
   {
-    id: "combo-challenge",
-    label: "Combo Challenge",
-    question: "Multi-loop combo: determine every unknown.",
-    description:
-      "Trace W.I.R.E. values, mix Ohm's Law identities, and enforce Kirchhoff on nested branches.",
-    preset: "combination_advanced",
-    problemId: "combo-square-03",
+    id: "switch-control",
+    label: "Switch Control",
+    question: "Compare behaviour with the switch on or off.",
+    description: "Focus on how switching impacts overall power draw.",
+    preset: "switch_control",
   },
 ];
 
@@ -746,9 +438,8 @@ const PRACTICE_ACTIONS: PanelAction[] = [
   },
   {
     id: "open-arena",
-    label: "Component Arena Sync",
-    description:
-      "Export the active build and open the Component Arena for testing.",
+    label: "Component Arena",
+    description: "Open the arena view for rapid-fire component drills.",
     action: "open-arena",
   },
 ];
@@ -1611,655 +1302,24 @@ const IconChevronDown = ({ className }: IconProps) => (
 );
 
 export default function Builder() {
-  const navigate = useNavigate();
-  const practiceProblemRef = useRef<string | null>(
-    DEFAULT_PRACTICE_PROBLEM?.id ?? null,
-  );
-  const pendingPayoffRef = useRef(false);
-  const currentFlowPayoffTimersRef = useRef<number[]>([]);
-  const appBasePath = useMemo(() => {
-    const baseUrl = import.meta.env.BASE_URL ?? "/";
-    return baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
-  }, []);
-  const activeWorkspaceSection = useMemo<WorkspaceSectionId | null>(() => {
-    const sectionParam = new URLSearchParams(location.search).get("section");
-    return isWorkspaceSectionId(sectionParam) ? sectionParam : null;
-  }, [location.search]);
-
-  const [modeState, setModeState] = useState<LegacyModeState>({
-    isWireMode: false,
-    isRotateMode: false,
-    isMeasureMode: false,
-    currentFlowStyle: "misty",
-    showPolarityIndicators: true,
-    layoutMode: "free",
-    wireRoutingMode: "manhattan",
-    showGrid: true,
-    showLabels: true,
-    labelVisibilityLevel: 3,
-    gridBrightness: 100,
-    gridLineWidth: 1,
-    gridHue: 240,
+  const iframeRef = useRef<HTMLIFrameElement | null>(null);
+  const pendingMessages = useRef<BuilderMessage[]>([]);
+  const helpSectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const simulationPulseTimer = useRef<number | null>(null);
+  const [isFrameReady, setFrameReady] = useState(false);
+  const [isHelpOpen, setHelpOpen] = useState(false);
+  const [requestedHelpSection, setRequestedHelpSection] = useState<string | null>(null);
+  const [helpView, setHelpView] = useState<HelpModalView>("overview");
+  const [isLeftMenuOpen, setLeftMenuOpen] = useState<boolean>(() => {
+    if (typeof window === "undefined") {
+      return false;
+    }
+    return window.innerWidth >= 1024;
   });
-  const [selectionState, setSelectionState] = useState<LegacySelectionPayload>({ kind: "none" });
+  const [isRightMenuOpen, setRightMenuOpen] = useState(false);
+  const [isBottomMenuOpen, setBottomMenuOpen] = useState(false);
+  const [activeQuickTool, setActiveQuickTool] = useState<BuilderToolId>("select");
   const [isSimulatePulsing, setSimulatePulsing] = useState(false);
-  const [arenaExportStatus, setArenaExportStatus] = useState<ArenaExportStatus>("idle");
-  const [arenaExportError, setArenaExportError] = useState<string | null>(null);
-  const [lastArenaExport, setLastArenaExport] = useState<ArenaExportSummary | null>(null);
-  const [isArenaPanelOpen, setArenaPanelOpen] = useState(false);
-  const [isPracticePanelOpen, setPracticePanelOpen] = useState(false);
-  const [isSchematicPanelOpen, setSchematicPanelOpen] = useState(false);
-  const [schematicSymbolStandard, setSchematicSymbolStandard] = useState<SymbolStandard>(DEFAULT_SYMBOL_STANDARD);
-  const [activePracticeProblemId, setActivePracticeProblemId] = useState<string | null>(
-    DEFAULT_PRACTICE_PROBLEM?.id ?? null
-  );
-  const [practiceWorksheetState, setPracticeWorksheetState] = useState<PracticeWorksheetStatus | null>(null);
-  const [selectionInfo, setSelectionInfo] = useState<LegacySelectionPayload>(null);
-  const [logoSettings, setLogoSettings] = useState<BuilderLogoSettings>(() => {
-    if (typeof window === "undefined") {
-      return DEFAULT_LOGO_SETTINGS;
-    }
-
-    try {
-      const stored = window.localStorage.getItem(LOGO_SETTINGS_STORAGE_KEY);
-      if (!stored) {
-        return DEFAULT_LOGO_SETTINGS;
-      }
-    },
-  );
-  const [troubleshootAnswerByProblemId, setTroubleshootAnswerByProblemId] =
-    useState<Record<string, string>>({});
-  const [troubleshootDiagnosedIds, setTroubleshootDiagnosedIds] = useState<string[]>(
-    [],
-  );
-  const [troubleshootStatus, setTroubleshootStatus] = useState<string | null>(
-    null,
-  );
-  const [troubleshootPendingCheckProblemId, setTroubleshootPendingCheckProblemId] =
-    useState<string | null>(null);
-  const [isTroubleshootCheckPending, setTroubleshootCheckPending] =
-    useState(false);
-  const [activePracticeProblemId, setActivePracticeProblemId] = useState<
-    string | null
-  >(DEFAULT_PRACTICE_PROBLEM?.id ?? null);
-  const [, setPracticeWorksheetState] =
-    useState<PracticeWorksheetStatus | null>(null);
-  const [isCompactWorksheetOpen, setCompactWorksheetOpen] = useState(false);
-  const [isPracticeWorkspaceMode, setPracticeWorkspaceMode] = useState(false);
-  const [isTroubleshootWorkspaceMode, setTroubleshootWorkspaceMode] =
-    useState(false);
-  const [isGuidesWorkspaceMode, setGuidesWorkspaceMode] = useState(false);
-  const [isGuidesPanelOpen, setGuidesPanelOpen] = useState(false);
-  const [activeGuideWorkflow, setActiveGuideWorkflow] =
-    useState<GuideWorkflowId>("tutorial");
-  const [isCircuitLocked, setCircuitLocked] = useState(false);
-  // Showcase/payoff edit-lock: keeps the demo circuit view-only (camera still free)
-  // until the user taps to edit. Declared here so the lock-sync effect can use it.
-  const [isShowcaseLocked, setShowcaseLocked] = useState(false);
-  // Tracks whether the circuit is locked specifically for the onboarding payoff
-  // sequence. Used to distinguish onboarding lock from practice/troubleshoot lock
-  // and to show a "tap to edit" chip after the payoff banner is dismissed.
-  const [isOnboardingLocked, setOnboardingLocked] = useState(false);
-  const [isEnvironmentalPanelOpen, setEnvironmentalPanelOpen] = useState(false);
-  const [isMeasurementPanelOpen, setMeasurementPanelOpen] = useState(false);
-  const [isWireLibraryPanelOpen, setWireLibraryPanelOpen] = useState(false);
-  const [, setModeBarScrollState] = useState<{
-    canScrollLeft: boolean;
-    canScrollRight: boolean;
-  }>({ canScrollLeft: false, canScrollRight: false });
-  const modeBarRef = useRef<HTMLDivElement>(null);
-  const [activeEnvironment, setActiveEnvironment] = useState<EnvironmentalScenario>(
-    getDefaultScenario()
-  );
-  const [activeWireProfile, setActiveWireProfile] = useState<WireSpec | null>(
-    null,
-  );
-  const [circuitBaseMetrics, setCircuitBaseMetrics] = useState({
-    watts: 0,
-    current: 0,
-    resistance: 0,
-    voltage: 0,
-  });
-  const [isInteractiveTutorialOpen, setInteractiveTutorialOpen] =
-    useState(false);
-  const [isClassroomPanelOpen, setClassroomPanelOpen] = useState(false);
-  const [isPricingPanelOpen, setPricingPanelOpen] = useState(false);
-  const [isCommunityPanelOpen, setCommunityPanelOpen] = useState(false);
-
-  // Global workspace mode context - sync with local state
-  const globalModeContext = useWorkspaceMode();
-  const pendingModeChangeRef = useRef<WorkspaceMode | null>(null);
-
-  // Sync local workspaceMode with global context on mount and when global changes
-  useEffect(() => {
-    // Notify global context that we're in the workspace
-    globalModeContext.setIsInWorkspace(true);
-    return () => {
-      globalModeContext.setIsInWorkspace(false);
-    };
-  }, []);
-
-  // On Android, reload the app when the user completes the in-app
-  // purchase so IS_DEMO_MODE (module-level constant) re-evaluates to false
-  // and the full component library is immediately available.
-  useEffect(() => {
-    if (!IS_DEMO_MODE || !isAndroidApp()) return;
-    const onUnlocked = () => window.location.reload();
-    window.addEventListener("circuitry3d:premiumUnlocked", onUnlocked);
-    return () => window.removeEventListener("circuitry3d:premiumUnlocked", onUnlocked);
-  }, []);
-
-  // Track global mode changes for later processing
-  useEffect(() => {
-    if (globalModeContext.workspaceMode !== workspaceMode) {
-      pendingModeChangeRef.current = globalModeContext.workspaceMode;
-    }
-  }, [globalModeContext.workspaceMode, workspaceMode]);
-
-  // Update global context when local mode changes (from Builder-internal actions)
-  const setWorkspaceModeWithGlobalSync = useCallback((mode: WorkspaceMode) => {
-    setWorkspaceMode(mode);
-    if (globalModeContext.workspaceMode !== mode) {
-      globalModeContext.setWorkspaceMode(mode);
-    }
-  }, [globalModeContext]);
-
-  const handleModeStateChange = useCallback((next: Partial<LegacyModeState>) => {
-    const nextLabelVisibilityLevel =
-      typeof next.labelVisibilityLevel === "number"
-        ? clampLabelVisibilityLevel(next.labelVisibilityLevel)
-        : null;
-
-    setModeState((previous) => ({
-      ...previous,
-      isWireMode:
-        typeof next.isWireMode === "boolean"
-          ? next.isWireMode
-          : previous.isWireMode,
-      isRotateMode:
-        typeof next.isRotateMode === "boolean"
-          ? next.isRotateMode
-          : previous.isRotateMode,
-      isMeasureMode:
-        typeof next.isMeasureMode === "boolean"
-          ? next.isMeasureMode
-          : previous.isMeasureMode,
-      currentFlowStyle:
-        typeof next.currentFlowStyle === "string" &&
-        next.currentFlowStyle.trim() !== ""
-          ? next.currentFlowStyle
-          : previous.currentFlowStyle,
-      showPolarityIndicators:
-        typeof next.showPolarityIndicators === "boolean"
-          ? next.showPolarityIndicators
-          : previous.showPolarityIndicators,
-      layoutMode:
-        typeof next.layoutMode === "string" && next.layoutMode.trim() !== ""
-          ? next.layoutMode
-          : previous.layoutMode,
-      wireRoutingMode:
-        typeof next.wireRoutingMode === "string" &&
-        next.wireRoutingMode.trim() !== ""
-          ? next.wireRoutingMode
-          : previous.wireRoutingMode,
-      showGrid:
-        typeof next.showGrid === "boolean"
-          ? next.showGrid
-          : previous.showGrid,
-      showLabels:
-        typeof nextLabelVisibilityLevel === "number"
-          ? nextLabelVisibilityLevel > 0
-          : typeof next.showLabels === "boolean"
-          ? next.showLabels
-          : previous.showLabels,
-      labelVisibilityLevel:
-        typeof nextLabelVisibilityLevel === "number"
-          ? nextLabelVisibilityLevel
-          : typeof next.showLabels === "boolean"
-            ? deriveLabelVisibilityFromShowLabels(
-                next.showLabels,
-                previous.labelVisibilityLevel,
-              )
-            : previous.labelVisibilityLevel,
-      gridBrightness:
-        typeof next.gridBrightness === "number"
-          ? next.gridBrightness
-          : previous.gridBrightness,
-      gridLineWidth:
-        typeof next.gridLineWidth === "number"
-          ? next.gridLineWidth
-          : previous.gridLineWidth,
-      gridHue:
-        typeof next.gridHue === "number"
-          ? next.gridHue
-          : previous.gridHue,
-    }));
-  }, []);
-
-  const handleSimulationPulse = useCallback(() => {
-    setSimulatePulsing(true);
-    setTimeout(() => {
-      setSimulatePulsing(false);
-    }, 1400);
-  }, []);
-
-  const { addItem: addGalleryItem } = useGallery();
-
-  const handleCinematicFrame = useCallback(
-    (payload: CinematicFramePayload) => {
-      addGalleryItem({
-        type: "image",
-        dataUrl: payload.dataUrl,
-        circuitName: payload.circuitName,
-        title: `${payload.circuitName} — Frame`,
-        description: "",
-      });
-    },
-    [addGalleryItem],
-  );
-
-  const handleCinematicVideo = useCallback(
-    (payload: CinematicVideoPayload) => {
-      addGalleryItem({
-        type: "video",
-        dataUrl: payload.dataUrl,
-        circuitName: payload.circuitName,
-        title: `${payload.circuitName} — Clip`,
-        description: "",
-      });
-      setCinematicIsRecording(false);
-      // Show "View in Gallery" toast
-      if (galleryToastTimerRef.current !== null) {
-        clearTimeout(galleryToastTimerRef.current);
-      }
-      setShowGalleryToast(true);
-      galleryToastTimerRef.current = window.setTimeout(() => {
-        setShowGalleryToast(false);
-        galleryToastTimerRef.current = null;
-      }, GALLERY_TOAST_DURATION_MS);
-    },
-    [addGalleryItem],
-  );
-
-  const {
-    iframeRef,
-    isFrameReady,
-    arenaExportStatus,
-    circuitState,
-    lastSimulationAt,
-    lastSimulation,
-    meterState,
-    postToBuilder,
-    triggerBuilderAction,
-    handleArenaSync,
-  } = useBuilderFrame({
-    appBasePath,
-    onModeStateChange: handleModeStateChange,
-    onToolChange: setActiveBuilderTool,
-    onSimulationPulse: handleSimulationPulse,
-    onCinematicFrame: handleCinematicFrame,
-    onCinematicVideo: handleCinematicVideo,
-  });
-
-  const wireLibraryPayload = useMemo(
-    () =>
-      WIRE_LIBRARY.map((spec) => {
-        const material = WIRE_MATERIALS[spec.material as WireMaterialId];
-        return {
-          id: spec.id,
-          label: spec.gaugeLabel,
-          materialId: spec.material,
-          materialLabel: spec.materialLabel,
-          insulationLabel: spec.insulationLabel,
-          resistanceOhmPerMeter: spec.resistanceOhmPerMeter,
-          ampacityChassisA: spec.ampacityChassisA,
-          ampacityBundleA: spec.ampacityBundleA,
-          maxVoltageV: spec.maxVoltageV,
-          category: material?.category ?? "conductor",
-        };
-      }),
-    [],
-  );
-
-  useEffect(() => {
-    if (!isFrameReady || wireLibraryPayload.length === 0 || !selectedWireId) {
-      return;
-    }
-    triggerBuilderAction("set-wire-library", {
-      library: wireLibraryPayload,
-      defaultWireId: selectedWireId,
-    });
-    triggerBuilderAction("set-wire-type", { wireId: selectedWireId });
-  }, [isFrameReady, wireLibraryPayload, selectedWireId, triggerBuilderAction]);
-
-  useEffect(() => {
-    if (!circuitState) {
-      return;
-    }
-    setCircuitBaseMetrics({
-      watts: Number.isFinite(circuitState.metrics.power)
-        ? circuitState.metrics.power
-        : 0,
-      current: Number.isFinite(circuitState.metrics.current)
-        ? circuitState.metrics.current
-        : 0,
-      resistance:
-        typeof circuitState.metrics.resistance === "number" &&
-        Number.isFinite(circuitState.metrics.resistance)
-          ? circuitState.metrics.resistance
-          : 0,
-      voltage: Number.isFinite(circuitState.metrics.voltage)
-        ? circuitState.metrics.voltage
-        : 0,
-    });
-  }, [circuitState]);
-
-  const {
-    logoSettings,
-    prefersReducedMotion,
-    handleLogoSettingChange,
-    toggleLogoVisibility,
-  } = useLogoAnimation();
-  const {
-    workspaceSkinOptions,
-    workspaceSkinStyle,
-    activeWorkspaceSkinId,
-    customWorkspaceSkinName,
-    customWorkspaceSkinOpacity,
-    hasCustomWorkspaceSkin,
-    workspaceSkinError,
-    selectWorkspaceSkin,
-    importWorkspaceSkinFromFile,
-    setCustomWorkspaceSkinOpacity,
-    clearCustomWorkspaceSkin,
-    resetWorkspaceSkin,
-  } = useWorkspaceBackground();
-  const [isSettingsPanelOpen, setSettingsPanelOpen] = useState(false);
-  const [activeSettingsPanelTab, setActiveSettingsPanelTab] =
-    useState<SettingsPanelTab>("workspace-skins");
-
-  const {
-    helpSectionRefs,
-    isHelpOpen,
-    setHelpOpen,
-    requestedHelpSection: _requestedHelpSection,
-    setRequestedHelpSection: _setRequestedHelpSection,
-    helpView,
-    setHelpView: _setHelpView,
-    openHelpWithSection,
-    openHelpWithView,
-  } = useHelpModal();
-
-  const {
-    isLeftMenuOpen,
-    setLeftMenuOpen,
-    isRightMenuOpen,
-    setRightMenuOpen,
-    isBottomMenuOpen,
-    setBottomMenuOpen,
-  } = useResponsiveLayout();
-
-  const leftPanelDrag = useDraggablePanel("panel-left");
-  const rightPanelDrag = useDraggablePanel("panel-right");
-  const bottomPanelDrag = useDraggablePanel("panel-bottom");
-  const zoomDrag = useDraggablePanel("zoom-controls");
-
-  const isCoarsePointer = useMemo(() => {
-    if (typeof window === "undefined") {
-      return false;
-    }
-
-    return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  });
-  const practiceProblemRef = useRef<string | null>(DEFAULT_PRACTICE_PROBLEM?.id ?? null);
-  const [selectionSnapshot, setSelectionSnapshot] = useState<LegacySelectionSnapshot | null>(null);
-  const appBasePath = useMemo(() => {
-    const baseUrl = import.meta.env.BASE_URL ?? "/";
-    return baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
-  }, []);
-  const shouldAnimateLibraryThumbnails = isLeftMenuOpen && !isCoarsePointer;
-
-  // Action bar visibility mode — persisted to localStorage
-  const [actionBarMode, setActionBarMode] = useState<ActionBarMode>(() => {
-    try {
-      const stored = localStorage.getItem(ACTION_BAR_MODE_STORAGE_KEY);
-      if (stored === "full" || stored === "tools" || stored === "hidden") {
-        return stored;
-      }
-    } catch { /* ignore */ }
-    // Default to hidden — the quick-action buttons start tucked away; the
-    // user reveals them via the action-bar toggle (Hide / Tools / All).
-    return "hidden";
-  });
-
-  // Persist whenever mode changes
-  useEffect(() => {
-    try {
-      localStorage.setItem(ACTION_BAR_MODE_STORAGE_KEY, actionBarMode);
-    } catch { /* ignore */ }
-  }, [actionBarMode]);
-
-  // Show plain-language descriptors under component thumbnails — persisted.
-  // Helps newcomers who may not recognise a part by name (e.g. "resistor").
-  const [showThumbDescriptors, setShowThumbDescriptors] = useState<boolean>(() => {
-    try {
-      return localStorage.getItem(THUMB_DESCRIPTORS_STORAGE_KEY) === "true";
-    } catch {
-      return false;
-    }
-  });
-
-  const numberFormatter = useMemo(
-    () =>
-      new Intl.NumberFormat(undefined, {
-        maximumFractionDigits: 3,
-        notation: "standard",
-      }),
-    []
-  );
-
-  const degreeFormatter = useMemo(
-    () =>
-      new Intl.NumberFormat(undefined, {
-        maximumFractionDigits: 1,
-        notation: "standard",
-      }),
-    []
-  );
-
-  const formatNumber = useCallback(
-    (value: number | null | undefined) => {
-      if (typeof value !== "number" || !Number.isFinite(value)) {
-        return "—";
-      }
-      return numberFormatter.format(value);
-    },
-    [numberFormatter]
-  );
-
-  const formatDegrees = useCallback(
-    (value: number | null | undefined) => {
-      if (typeof value !== "number" || !Number.isFinite(value)) {
-        return "—";
-      }
-      return `${degreeFormatter.format(value)}°`;
-    },
-    [degreeFormatter]
-  );
-
-  const formatBoolean = useCallback((value: unknown) => {
-    if (typeof value !== "boolean") {
-      return "—";
-    }
-    return value ? "Yes" : "No";
-  }, []);
-
-  const formatLabelText = useCallback((label: string) => {
-    if (!label) {
-      return "";
-    }
-    const spaced = label
-      .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
-      .replace(/[_-]+/g, " ")
-      .trim();
-    if (spaced.length === 0) {
-      return "";
-    }
-    return spaced.charAt(0).toUpperCase() + spaced.slice(1);
-  }, []);
-
-  const formatPosition = useCallback(
-    (position?: LegacySelectionPosition | null) => {
-      if (!position) {
-        return "—";
-      }
-      const base = `${formatNumber(position.x)}, ${formatNumber(position.y)}, ${formatNumber(position.z)}`;
-      if (position.grid) {
-        return `${base} · grid (${position.grid.x}, ${position.grid.y}, ${position.grid.z})`;
-      }
-      return base;
-    },
-    [formatNumber]
-  );
-
-  const formatValue = useCallback(
-    (value: unknown) => {
-      if (value === null || typeof value === "undefined") {
-        return "—";
-      }
-      if (typeof value === "number") {
-        return formatNumber(value);
-      }
-      if (typeof value === "boolean") {
-        return formatBoolean(value);
-      }
-      if (typeof value === "string") {
-        return value;
-      }
-      try {
-        return JSON.stringify(value);
-      } catch {
-        return String(value);
-      }
-    },
-    [formatBoolean, formatNumber]
-  );
-
-  const propertyEntries = useMemo<PropertyDisplayEntry[]>(() => {
-    if (selectionInfo === null) {
-      return [
-        { id: "component", label: "Selected Component", value: "None" },
-        { id: "position", label: "Position", value: "—" },
-        { id: "rotation", label: "Rotation", value: "—" },
-        { id: "metadata", label: "Metadata", value: "Tap any element to inspect" },
-      ];
-    }
-
-    if (selectionInfo.kind === "multi") {
-      return [
-        {
-          id: "component",
-          label: "Selected Components",
-          value: `${selectionInfo.count} items`,
-        },
-      ];
-    }
-
-    if (selectionInfo.kind === "junction") {
-      return [
-        {
-          id: "component",
-          label: "Selected Junction",
-          value: selectionInfo.label ?? "Junction",
-        },
-        {
-          id: "position",
-          label: "Position",
-          value: formatPosition(selectionInfo.position),
-        },
-        {
-          id: "connections",
-          label: "Connections",
-          value:
-            typeof selectionInfo.connections === "number"
-              ? selectionInfo.connections.toString()
-              : "—",
-        },
-      ];
-    }
-
-    const summary: PropertyDisplayEntry[] = [];
-    const identifierParts = [selectionInfo.label, selectionInfo.identifier].filter(
-      (part, index, array) => typeof part === "string" && array.indexOf(part) === index
-    ) as string[];
-    const displayName =
-      identifierParts.length > 0
-        ? identifierParts.join(" · ")
-        : selectionInfo.type ?? "Component";
-
-    summary.push({ id: "component", label: "Selected Component", value: displayName });
-    summary.push({ id: "type", label: "Type", value: selectionInfo.type ?? "—" });
-
-    if (typeof selectionInfo.componentNumber === "number" && Number.isFinite(selectionInfo.componentNumber)) {
-      summary.push({
-        id: "component-number",
-        label: "Reference",
-        value: selectionInfo.componentNumber.toString(),
-      });
-    }
-
-    summary.push({
-      id: "rotation",
-      label: "Rotation",
-      value: formatDegrees(selectionInfo.rotation?.degrees ?? null),
-    });
-
-    summary.push({
-      id: "position",
-      label: "Position",
-      value: formatPosition(selectionInfo.position),
-    });
-
-    if (typeof selectionInfo.connections === "number") {
-      summary.push({
-        id: "connections",
-        label: "Connections",
-        value: selectionInfo.connections.toString(),
-      });
-    }
-
-    if (selectionInfo.state) {
-      summary.push({
-        id: "state",
-        label: "State",
-        value: selectionInfo.state.charAt(0).toUpperCase() + selectionInfo.state.slice(1),
-      });
-    }
-
-    const propertyDetails =
-      selectionInfo.properties && isRecord(selectionInfo.properties)
-        ? Object.entries(selectionInfo.properties)
-            .filter(([, value]) => value !== null && typeof value !== "undefined")
-            .map(([key, value]) => ({
-              id: `property-${key}`,
-              label: `Property · ${formatLabelText(key)}`,
-              value: formatValue(value),
-            }))
-        : [];
-
-    const metadataDetails =
-      selectionInfo.metadata && isRecord(selectionInfo.metadata)
-        ? Object.entries(selectionInfo.metadata)
-            .filter(([, value]) => value !== null && typeof value !== "undefined")
-            .map(([key, value]) => ({
-              id: `metadata-${key}`,
-              label: `Metadata · ${formatLabelText(key)}`,
-              value: formatValue(value),
-            }))
-        : [];
-
-    return [...summary, ...propertyDetails, ...metadataDetails];
-  }, [selectionInfo, formatDegrees, formatLabelText, formatPosition, formatValue]);
 
   useEffect(() => {
     try {
@@ -2308,119 +1368,32 @@ export default function Builder() {
 
       if (type === "legacy:tool-state") {
         const tool = typeof (payload as { tool?: string })?.tool === "string" ? (payload as { tool?: string }).tool : undefined;
-        if (tool === "wire" || tool === "measure") {
+        if (tool === "wire" || tool === "measure" || tool === "select") {
           setActiveQuickTool(tool);
         } else {
           setActiveQuickTool("select");
         }
-
-        setModeState((previous) => ({
-          ...previous,
-          isWireMode: tool === "wire",
-          isMeasureMode: tool === "measure",
-          isRotateMode: tool === "rotate",
-        }));
         return;
       }
 
-        if (type === "legacy:mode-state") {
-          if (!payload || typeof payload !== "object") {
-            return;
-          }
-
-          const next = payload as Partial<LegacyModeState>;
-          setModeState((previous) => ({
-            ...previous,
-            isWireMode: typeof next.isWireMode === "boolean" ? next.isWireMode : previous.isWireMode,
-            isRotateMode: typeof next.isRotateMode === "boolean" ? next.isRotateMode : previous.isRotateMode,
-            isMeasureMode: typeof next.isMeasureMode === "boolean" ? next.isMeasureMode : previous.isMeasureMode,
-            currentFlowStyle:
-              typeof next.currentFlowStyle === "string" && next.currentFlowStyle.trim() !== ""
-                ? next.currentFlowStyle
-                : previous.currentFlowStyle,
-            showPolarityIndicators:
-              typeof next.showPolarityIndicators === "boolean"
-                ? next.showPolarityIndicators
-                : previous.showPolarityIndicators,
-            layoutMode:
-              typeof next.layoutMode === "string" && next.layoutMode.trim() !== ""
-                ? next.layoutMode
-                : previous.layoutMode,
-            wireRoutingMode:
-              typeof next.wireRoutingMode === "string" && next.wireRoutingMode.trim() !== ""
-                ? next.wireRoutingMode
-                : previous.wireRoutingMode,
-            showGrid: typeof next.showGrid === "boolean" ? next.showGrid : previous.showGrid,
-            showLabels: typeof next.showLabels === "boolean" ? next.showLabels : previous.showLabels,
-          }));
-          return;
+      if (type === "legacy:simulation") {
+        if (simulationPulseTimer.current !== null) {
+          window.clearTimeout(simulationPulseTimer.current);
         }
-
-        if (type === "legacy:selection") {
-          setSelectionState(normalizeSelectionPayload(payload));
-          return;
-        }
-
-        if (type === "legacy:simulation") {
-          if (simulationPulseTimer.current !== null) {
-            window.clearTimeout(simulationPulseTimer.current);
-          }
-          setSimulatePulsing(true);
-          simulationPulseTimer.current = window.setTimeout(() => {
-            setSimulatePulsing(false);
-            simulationPulseTimer.current = null;
-          }, 1400);
-          return;
-        }
-
-        if (type === "legacy:arena-export") {
-        const summary = (payload || {}) as ArenaExportSummary | undefined;
-        if (summary && typeof summary.sessionId === "string") {
-          setArenaExportStatus("ready");
-          setArenaExportError(null);
-          setLastArenaExport(summary);
-
-          const requestId = typeof summary.requestId === "string" ? summary.requestId : undefined;
-          let shouldOpenWindow = false;
-
-          if (requestId) {
-            const meta = pendingArenaRequests.current.get(requestId);
-            if (meta) {
-              shouldOpenWindow = Boolean(meta.openWindow);
-              pendingArenaRequests.current.delete(requestId);
-            }
-          } else {
-            shouldOpenWindow = true;
-          }
-
-          if (shouldOpenWindow && typeof window !== "undefined") {
-            const targetUrl = `${appBasePath}arena?session=${encodeURIComponent(summary.sessionId)}`;
-            window.open(targetUrl, "_blank", "noopener");
-          }
-        } else {
-          setArenaExportStatus("error");
-          setArenaExportError("Arena export returned an unexpected response");
-        }
+        setSimulatePulsing(true);
+        simulationPulseTimer.current = window.setTimeout(() => {
+          setSimulatePulsing(false);
+          simulationPulseTimer.current = null;
+        }, 1400);
         return;
       }
-
-      if (type === "legacy:arena-export:error") {
-        const errorPayload = (payload || {}) as { message?: string; requestId?: string };
-        setArenaExportStatus("error");
-        setArenaExportError(errorPayload?.message || "Arena export failed");
-        if (errorPayload?.requestId) {
-          pendingArenaRequests.current.delete(errorPayload.requestId);
-        }
-        return;
-      }
-
     };
 
     window.addEventListener("message", handleMessage);
     return () => {
       window.removeEventListener("message", handleMessage);
     };
-  }, [appBasePath]);
+  }, []);
 
   useEffect(() => {
     const iframe = iframeRef.current;
@@ -2675,147 +1648,34 @@ export default function Builder() {
     [isFrameReady]
   );
 
-  // Sync circuit lock state to the iframe
-  useEffect(() => {
-    if (!isFrameReady) {
-      return;
-    }
-    triggerBuilderAction(isCircuitLocked ? "lock-circuit" : "unlock-circuit");
-  }, [isCircuitLocked, isFrameReady, triggerBuilderAction]);
-
-  const triggerSimulationPulse = useCallback(() => {
-    setSimulatePulsing(true);
-    const timer = window.setTimeout(() => {
-      setSimulatePulsing(false);
-    }, 1200);
-    return () => window.clearTimeout(timer);
-  }, []);
-
-  const openHelpCenter = useCallback(
-    (view: HelpModalView = "overview", sectionTitle?: string) => {
-      if (view === "overview" && sectionTitle) {
-        openHelpWithSection(sectionTitle);
-      } else {
-        openHelpWithView(view);
-      }
+  const triggerBuilderAction = useCallback(
+    (action: BuilderInvokeAction, data?: Record<string, unknown>) => {
+      postToBuilder({ type: "builder:invoke-action", payload: { action, data } });
     },
     [openHelpWithSection, openHelpWithView],
   );
 
-  const assignPracticeProblem = useCallback(
-    (problem: PracticeProblem, presetOverride?: string) => {
-      setActivePracticeProblemId(problem.id);
-      setPracticeWorksheetState({
-        problemId: problem.id,
-        complete: false,
-      });
-      practiceProblemRef.current = problem.id;
+  const handleQuickAction = useCallback(
+    (quickAction: QuickAction) => {
+      triggerBuilderAction(quickAction.action, quickAction.data);
 
-  const openPracticePanel = useCallback(() => {
-    setSchematicPanelOpen(false);
-    setPracticePanelOpen(true);
-  }, []);
-
-  const openSchematicPanel = useCallback(() => {
-    setPracticePanelOpen(false);
-    setSchematicPanelOpen(true);
-  }, []);
-
-  const handlePracticeAction = useCallback(
-    (action: PanelAction) => {
-      if (action.action === "open-arena") {
-        setArenaPanelOpen(true);
-        handleArenaSync({ openWindow: false, sessionName: "Builder Hand-off" });
-        return;
+      if (quickAction.kind === "tool" && quickAction.tool) {
+        setActiveQuickTool(quickAction.tool);
       }
-      if (action.action === "practice-help") {
-        openHelpCenter("overview");
-        return;
-      }
-      if (action.action === "generate-practice") {
-        triggerBuilderAction(action.action, action.data);
-        const randomProblem = getRandomPracticeProblem();
-        if (randomProblem) {
-          practiceProblemRef.current = randomProblem.id;
-          setActivePracticeProblemId(randomProblem.id);
-          setPracticeWorksheetState({
-            problemId: randomProblem.id,
-            complete: false,
-          });
-          if (randomProblem.presetHint) {
-            triggerBuilderAction("load-preset", {
-              preset: randomProblem.presetHint,
-            });
-          }
-          openPracticePanel();
+
+      if (quickAction.id === "simulate") {
+        if (simulationPulseTimer.current !== null) {
+          window.clearTimeout(simulationPulseTimer.current);
         }
-        return;
+        setSimulatePulsing(true);
+        simulationPulseTimer.current = window.setTimeout(() => {
+          setSimulatePulsing(false);
+          simulationPulseTimer.current = null;
+        }, 1200);
       }
-      triggerBuilderAction(action.action, action.data);
     },
-    [handleArenaSync, openHelpCenter, triggerBuilderAction, openPracticePanel]
+    [triggerBuilderAction, setActiveQuickTool, setSimulatePulsing]
   );
-
-  // Deep link support: open practice problem from URL (used by Classroom student view)
-  useEffect(() => {
-    const pendingMode = pendingModeChangeRef.current;
-    if (pendingMode && pendingMode !== workspaceMode) {
-      pendingModeChangeRef.current = null;
-
-      if (pendingMode === "build") {
-        setWorkspaceMode("build");
-        setPracticeWorkspaceMode(false);
-        setCompactWorksheetOpen(false);
-        setCircuitLocked(false);
-        setArenaPanelOpen(false);
-        setTroubleshootPanelOpen(false);
-      } else if (pendingMode === "practice") {
-        setTroubleshootPanelOpen(false);
-        setTroubleshootStatus(null);
-        openPracticeWorkspace();
-      } else if (pendingMode === "arena") {
-        setWorkspaceMode("arena");
-        setTroubleshootPanelOpen(false);
-        setArenaPanelOpen(true);
-        if (arenaExportStatus !== "ready") {
-          handleArenaSync({ openWindow: false });
-        }
-      } else if (pendingMode === "help") {
-        setWorkspaceMode("help");
-        setTroubleshootPanelOpen(false);
-        openHelpCenter("overview");
-      } else if (pendingMode === "troubleshoot") {
-        setWorkspaceMode("troubleshoot");
-        setTroubleshootPanelOpen(true);
-        setTroubleshootStatus(null);
-        setTroubleshootCheckPending(false);
-        setTroubleshootPendingCheckProblemId(null);
-        setCircuitLocked(true);
-        const nextProblem =
-          troubleshootingProblems.find((problem) => problem.id === activeTroubleshootId) ??
-          troubleshootingProblems[0] ??
-          null;
-        if (nextProblem) {
-          if (nextProblem.id !== activeTroubleshootId) {
-            setActiveTroubleshootId(nextProblem.id);
-          }
-          triggerBuilderAction("load-preset", { preset: nextProblem.preset });
-        }
-      }
-
-      // Sync back to global context
-      globalModeContext.setWorkspaceMode(pendingMode);
-    }
-  }, [
-    globalModeContext.workspaceMode,
-    workspaceMode,
-    openPracticeWorkspace,
-    handleArenaSync,
-    openHelpCenter,
-    arenaExportStatus,
-    enterTroubleshootMode,
-    globalModeContext,
-  ]);
 
   const closeWorkspaceSectionOverlay = useCallback(() => {
     navigate("/app");
@@ -2926,311 +1786,6 @@ export default function Builder() {
     [postToBuilder],
   );
 
-  const handleQuickAction = useCallback(
-    (quickAction: QuickAction) => {
-      triggerBuilderAction(quickAction.action, quickAction.data);
-
-      if (quickAction.kind === "tool" && quickAction.tool) {
-        setActiveQuickTool(quickAction.tool);
-      }
-
-      if (quickAction.id === "simulate") {
-        triggerSimulationPulse();
-      }
-    },
-    [triggerBuilderAction, triggerSimulationPulse],
-  );
-
-  const handleLoadBeginnerSeriesPreset = useCallback(
-    (preset: string) => {
-      triggerBuilderAction("load-preset", { preset });
-    },
-    [triggerBuilderAction],
-  );
-
-  const handleAdvancePracticeProblem = useCallback((currentProblemId?: string) => {
-    const currentId =
-      currentProblemId ??
-      practiceProblemRef.current ??
-      activePracticeProblemId ??
-      DEFAULT_PRACTICE_PROBLEM?.id ??
-      null;
-    const nextProblem = getNextPracticeProblem(currentId);
-    if (!nextProblem) {
-      return;
-    }
-    openPracticeWorkspace(nextProblem);
-  }, [activePracticeProblemId, openPracticeWorkspace]);
-
-  const handleSelectTroubleshootProblem = useCallback(
-    (problemId: string) => {
-      const nextProblem =
-        troubleshootingProblems.find((problem) => problem.id === problemId) ?? null;
-      if (!nextProblem) {
-        return;
-      }
-      setActiveTroubleshootId(nextProblem.id);
-      openTroubleshootWorkspace(nextProblem);
-    },
-    [openTroubleshootWorkspace],
-  );
-
-  const handleResetTroubleshootProblem = useCallback(() => {
-    const activeProblem =
-      troubleshootingProblems.find((problem) => problem.id === activeTroubleshootId) ??
-      troubleshootingProblems[0] ??
-      null;
-    if (!activeProblem) {
-      return;
-    }
-    openTroubleshootWorkspace(activeProblem);
-    setTroubleshootStatus(
-      "Reset loaded. Diagnose the fault, apply the fix in 3D, then tap Check Fix.",
-    );
-  }, [activeTroubleshootId, openTroubleshootWorkspace]);
-
-  const handleTroubleshootAnswerChange = useCallback(
-    (value: string) => {
-      const problemId = activeTroubleshootId;
-      if (!problemId) return;
-      setTroubleshootAnswerByProblemId((previous) => ({
-        ...previous,
-        [problemId]: value,
-      }));
-    },
-    [activeTroubleshootId],
-  );
-
-  const handleSubmitTroubleshootAnswer = useCallback(() => {
-    const activeProblem =
-      troubleshootingProblems.find((problem) => problem.id === activeTroubleshootId) ??
-      troubleshootingProblems[0] ??
-      null;
-    if (!activeProblem) {
-      return;
-    }
-
-    const answer = (troubleshootAnswerByProblemId[activeProblem.id] ?? "").trim();
-    if (!answer) {
-      setTroubleshootStatus("Enter your diagnosis in the answer field before submitting.");
-      return;
-    }
-
-    if (isTroubleshootingDiagnosisCorrect(activeProblem, answer)) {
-      setTroubleshootDiagnosedIds((previous) => {
-        if (previous.includes(activeProblem.id)) return previous;
-        return [...previous, activeProblem.id];
-      });
-      setTroubleshootStatus(
-        "Diagnosis accepted. Interact with the 3D circuit to apply your fix, then click Check Fix.",
-      );
-      return;
-    }
-
-    setTroubleshootStatus(
-      "Diagnosis not recognized yet. Try naming the fault directly (open switch, missing wire, short circuit, reversed LED).",
-    );
-  }, [activeTroubleshootId, troubleshootAnswerByProblemId]);
-
-  const handleCheckTroubleshootFix = useCallback(() => {
-    const activeProblem =
-      troubleshootingProblems.find((problem) => problem.id === activeTroubleshootId) ??
-      troubleshootingProblems[0] ??
-      null;
-    if (!activeProblem) {
-      return;
-    }
-    setWorkspaceModeWithGlobalSync("troubleshoot");
-    setTroubleshootWorkspaceMode(true);
-    setTroubleshootPanelOpen(true);
-    setTroubleshootStatus("Checking...");
-    setTroubleshootPendingCheckProblemId(activeProblem.id);
-    setTroubleshootCheckPending(true);
-    triggerBuilderAction("run-simulation");
-  }, [activeTroubleshootId, setWorkspaceModeWithGlobalSync, triggerBuilderAction]);
-
-  const handleAdvanceTroubleshootProblem = useCallback(() => {
-    if (!troubleshootingProblems.length) {
-      return;
-    }
-    const index = activeTroubleshootId
-      ? troubleshootingProblems.findIndex(
-          (problem) => problem.id === activeTroubleshootId,
-        )
-      : -1;
-    const nextProblem =
-      troubleshootingProblems[
-        (index + 1 + troubleshootingProblems.length) % troubleshootingProblems.length
-      ] ??
-      troubleshootingProblems[0] ??
-      null;
-    if (!nextProblem) {
-      return;
-    }
-    setActiveTroubleshootId(nextProblem.id);
-    openTroubleshootWorkspace(nextProblem);
-  }, [activeTroubleshootId, openTroubleshootWorkspace]);
-
-  const handleUnlockTroubleshootEditing = useCallback(() => {
-    setCircuitLocked(false);
-    setTroubleshootStatus("Fix verified. Editing unlocked for this circuit.");
-  }, []);
-
-  const handleClearWorkspace = useCallback(() => {
-    triggerBuilderAction("clear-workspace");
-  }, [triggerBuilderAction]);
-
-  const handleRunSimulationClick = useCallback(() => {
-    triggerBuilderAction("run-simulation");
-    triggerSimulationPulse();
-  }, [triggerBuilderAction, triggerSimulationPulse]);
-
-  const handleEditSelection = useCallback(() => {
-    if (!selectionSnapshot) {
-      return;
-    }
-    postToBuilder({ type: "builder:edit-active-component" });
-  }, [postToBuilder, selectionSnapshot]);
-
-  const handleRotateSelection = useCallback(() => {
-    if (!selectionSnapshot) {
-      return;
-    }
-    postToBuilder({ type: "builder:rotate-active-component" });
-  }, [postToBuilder, selectionSnapshot]);
-
-  const handleWireSelection = useCallback(() => {
-    if (!selectionSnapshot) {
-      return;
-    }
-    postToBuilder({ type: "builder:wire-active-component" });
-  }, [postToBuilder, selectionSnapshot]);
-
-  const arenaStatusMessage = useMemo(() => {
-    switch (arenaExportStatus) {
-      case "exporting":
-        return "Exporting current build to Component Arena...";
-      case "ready": {
-        if (!lastArenaExport) {
-          return "Component Arena export is ready.";
-        }
-        const exportedTime = lastArenaExport.exportedAt ? new Date(lastArenaExport.exportedAt) : null;
-        const formattedTime = exportedTime && !Number.isNaN(exportedTime.getTime())
-          ? exportedTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-          : null;
-        const componentLabel = typeof lastArenaExport.componentCount === "number"
-          ? `${lastArenaExport.componentCount} component${lastArenaExport.componentCount === 1 ? "" : "s"}`
-          : null;
-        if (componentLabel && formattedTime) {
-          return `Last arena export: ${componentLabel} - ${formattedTime}`;
-        }
-        if (componentLabel) {
-          return `Last arena export: ${componentLabel}`;
-        }
-        return "Component Arena export is ready.";
-      }
-      case "error":
-        return arenaExportError ?? "Component Arena export failed.";
-      default:
-        return "Send this build to the Component Arena for advanced testing.";
-    }
-  }, [arenaExportStatus, arenaExportError, lastArenaExport]);
-
-  useEffect(() => {
-    if (
-      !isActiveCircuitBuildMode ||
-      isWorksheetVisible ||
-      isTroubleshootVisible ||
-      isGuidesVisible
-    ) {
-      setSettingsPanelOpen(false);
-    }
-  }, [
-    isActiveCircuitBuildMode,
-    isGuidesVisible,
-    isTroubleshootVisible,
-    isWorksheetVisible,
-  ]);
-
-  const controlsDisabled = !isFrameReady || isCircuitLocked;
-  const controlDisabledTitle = !isFrameReady
-    ? "Workspace is still loading"
-    : isOnboardingLocked
-      ? "Tap '✏️ Start Editing' to begin editing the circuit"
-      : isCircuitLocked
-        ? "Complete the active challenge to unlock editing"
-        : undefined;
-
-    const problem = findPracticeProblemById(currentId);
-    if (!problem) {
-      return "Select a practice problem to start the guided worksheet.";
-    }
-
-    if (practiceWorksheetState?.problemId === problem.id && practiceWorksheetState.complete) {
-      return `Worksheet complete for ${problem.title}. Tap Next Problem to load the next circuit.`;
-    }
-
-    return `Complete the worksheet for ${problem.title} to unlock the next challenge.`;
-  }, [activePracticeProblemId, practiceWorksheetState]);
-
-  const propertyItems = useMemo(() => {
-    const baseItems = [
-      { id: "component", name: "Selected Component", value: "None" },
-      { id: "position", name: "Position", value: "-" },
-      { id: "rotation", name: "Rotation", value: "-" },
-      { id: "metadata", name: "Metadata", value: "Tap any element to inspect" }
-    ];
-
-    if (!selectionSnapshot) {
-      return baseItems;
-    }
-
-    const items = [...baseItems];
-    items[0] = { ...items[0], value: formatComponentLabel(selectionSnapshot) };
-    items[1] = { ...items[1], value: formatPosition(selectionSnapshot.position ?? null) };
-    items[2] = { ...items[2], value: formatRotation(selectionSnapshot.rotation) };
-    items[3] = { ...items[3], value: summarizeMetadata(selectionSnapshot.metadata) };
-
-    const extras: Array<{ id: string; name: string; value: string }> = [];
-
-    if (selectionSnapshot.properties) {
-      Object.entries(selectionSnapshot.properties).forEach(([key, value]) => {
-        extras.push({
-          id: `prop-${key}`,
-          name: formatPropertyLabel(key),
-          value: formatDisplayValue(value)
-        });
-      });
-    }
-
-    if (selectionSnapshot.metadata) {
-      Object.entries(selectionSnapshot.metadata).forEach(([key, value]) => {
-        if (key === "displayName" || typeof value === "object") {
-          return;
-        }
-        extras.push({
-          id: `meta-${key}`,
-          name: formatPropertyLabel(key),
-          value: formatDisplayValue(value)
-        });
-      });
-    }
-
-    const extrasLimited = extras.slice(0, 8);
-
-    return [...items, ...extrasLimited];
-  }, [selectionSnapshot]);
-
-  const hasSelection = Boolean(selectionSnapshot && selectionSnapshot.type !== "junction");
-
-  const isArenaSyncing = arenaExportStatus === "exporting";
-  const canOpenLastArena = Boolean(lastArenaExport?.sessionId);
-
-  const floatingControlsTop = useMemo(
-    () => "calc(84px + var(--builder-safe-area-top) + 12px)",
-    []
-  );
-
   const controlsDisabled = !isFrameReady;
   const controlDisabledTitle = controlsDisabled ? "Workspace is still loading" : undefined;
   const builderFrameSrc = useMemo(() => {
@@ -3240,286 +1795,6 @@ export default function Builder() {
     return `${normalizedBase}legacy.html?embed=builder${demoParam}`;
   }, []);
   const activeHelpContent = HELP_VIEW_CONTENT[helpView];
-  const layoutModeNames: Record<string, string> = {
-    free: "Free",
-    square: "Square",
-    linear: "Linear",
-  };
-  const wireRoutingNames: Record<string, string> = {
-    freeform: "Freeform",
-    manhattan: "Manhattan (90-deg)",
-    simple: "Simple",
-    perimeter: "Perimeter",
-    astar: "A* Auto",
-    diagonal: "Diagonal (45°)",
-    stepped: "Stepped",
-    scurve: "S-Curve",
-  };
-  const normalizedLayoutKey =
-    typeof modeState.layoutMode === "string"
-      ? modeState.layoutMode.toLowerCase()
-      : "";
-  const normalizedRoutingKey =
-    typeof modeState.wireRoutingMode === "string"
-      ? modeState.wireRoutingMode.toLowerCase()
-      : "";
-  const layoutModeLabel =
-    layoutModeNames[normalizedLayoutKey] ?? modeState.layoutMode ?? "Unknown";
-  const wireRoutingLabel =
-    wireRoutingNames[normalizedRoutingKey] ??
-    modeState.wireRoutingMode ??
-    "Unknown";
-  const currentFlowLabel =
-    modeState.currentFlowStyle === "solid" ? "Current Flow" : "Electron Flow";
-  const wireMetrics = useMemo(() => {
-    const volts = liveWireMetricsSnapshot.voltage;
-    const amps = liveWireMetricsSnapshot.current;
-    const watts = liveWireMetricsSnapshot.power;
-    const resistanceValue = liveWireMetricsSnapshot.resistance;
-    const resistanceDigits = activeWireProfile ? 3 : 1;
-    const resistanceDisplay = liveWireMetricsSnapshot.isOpenCircuit
-      ? "∞ Ω"
-      : `${Number.isFinite(resistanceValue) ? resistanceValue.toFixed(resistanceDigits) : "0.0"} Ω`;
-
-    return [
-      {
-        id: "watts",
-        letter: "W",
-        label: "Watts",
-        value: `${Number.isFinite(watts) ? watts.toFixed(activeWireProfile ? 3 : 2) : "0.00"} W`,
-      },
-      {
-        id: "current",
-        letter: "I",
-        label: "Current",
-        value: `${Number.isFinite(amps) ? amps.toFixed(activeWireProfile ? 4 : 3) : "0.000"} A`,
-      },
-      {
-        id: "resistance",
-        letter: "R",
-        label: "Resistance",
-        value: resistanceDisplay,
-      },
-      {
-        id: "voltage",
-        letter: "E",
-        label: "Voltage",
-        value: `${Number.isFinite(volts) ? volts.toFixed(1) : "0.0"} V`,
-      },
-    ];
-  }, [activeWireProfile, liveWireMetricsSnapshot]);
-  const shouldShowCurrentFlowPayoffBanner =
-    isCurrentFlowPayoffVisible &&
-    shouldShowEdgeActions &&
-    !isInteractiveTutorialOpen;
-
-  // While the current-flow payoff demo is playing (sequence running OR banner
-  // showing) the preset circuit must be view-only: a transparent guard sits over
-  // the workspace so an accidental tap can't grab and drag a component. It clears
-  // the moment the demo auto-dismisses or the user taps Edit/×. This is needed
-  // because the returning-user payoff path doesn't lock the iframe, and even the
-  // first-run lock can be reset when load-payoff rebuilds the circuit.
-  const isCurrentFlowPayoffLocking =
-    isCurrentFlowPayoffRunning || shouldShowCurrentFlowPayoffBanner;
-
-  // (isShowcaseLocked is declared earlier, near isCircuitLocked, so the lock-sync
-  // effect can depend on it.) Latch it on once the payoff is loaded/showing.
-  useEffect(() => {
-    if (isCurrentFlowPayoffLocking) setShowcaseLocked(true);
-  }, [isCurrentFlowPayoffLocking]);
-
-  // Plain-language insights that cycle through the payoff banner. Each one names
-  // something the user can actually see happening on screen, so the showcase
-  // teaches instead of just dazzling. Kept short — one idea per card.
-  const currentFlowPayoffTips = useMemo(
-    () => [
-      "⚡ Those crackling bolts of light ARE the electric current — the real flow of energy, invisible in life, shown here in 3D.",
-      "This is a series circuit: one loop, so the SAME current flows through every part. The battery pushes it round and round.",
-      "The colour shows speed: dull red = slow (held back by resistance), through orange and yellow, up to blue-white = ludicrously fast.",
-      "🔍 Pinch or scroll to ZOOM IN — keep going and the current dissolves into electrons, then a copper-atom lattice, then a quantum cloud.",
-      "More resistance → less current. That's Ohm's Law (I = V ÷ R) — the heart of every circuit.",
-      "New to circuits? Tap any part to see what it is and does, or tap the ? Help button anytime.",
-    ],
-    [],
-  );
-  const currentFlowPayoffTip =
-    currentFlowPayoffTips[currentFlowPayoffTipIndex % currentFlowPayoffTips.length];
-
-  // Advance the insight every few seconds while the banner is open; reset to the
-  // first tip whenever it re-appears so each showcase starts from the top.
-  useEffect(() => {
-    if (!shouldShowCurrentFlowPayoffBanner) {
-      setCurrentFlowPayoffTipIndex(0);
-      return;
-    }
-    const intervalId = window.setInterval(() => {
-      setCurrentFlowPayoffTipIndex((index) => index + 1);
-    }, 9000);
-    return () => window.clearInterval(intervalId);
-  }, [shouldShowCurrentFlowPayoffBanner]);
-
-  const renderHelpParagraph = (paragraph: string, key: string) => {
-    const trimmed = paragraph.trim();
-    if (
-      trimmed.startsWith("```") &&
-      trimmed.endsWith("```") &&
-      trimmed.length >= 6
-    ) {
-      const content = trimmed.slice(3, -3).trimEnd();
-      return (
-        <pre key={key} className="help-code">
-          {content}
-        </pre>
-      );
-    }
-
-    const lines = paragraph.split("\n");
-    return (
-      <p key={key}>
-        {lines.map((line, lineIndex) => (
-          <Fragment key={`${key}-line-${lineIndex}`}>
-            {line}
-            {lineIndex < lines.length - 1 && <br />}
-          </Fragment>
-        ))}
-      </p>
-    );
-  };
-
-  const workspacePanelMeta = useMemo(() => {
-    switch (activeWorkspacePanelMode) {
-      case "arena":
-        return {
-          title: "Component Arena",
-        };
-      case "wire-guide":
-        return {
-          title: "Wire Guide",
-          subtitle: activeWireProfile
-            ? `Active profile: ${activeWireProfile.gaugeLabel} (${activeWireSegmentResistance.toFixed(4)} Ω/m)`
-            : "Filter, select, and apply a wire profile to see live W.I.R.E. changes.",
-        };
-      case "community":
-        return {
-          title: "Community",
-          subtitle: "Lab chat, gallery, feedback, and member profiles",
-        };
-      case "gallery":
-        return {
-          title: "Gallery",
-          subtitle: "Cinematic shots and fly-through clips you've captured",
-        };
-      case "account":
-        return {
-          title: "Account",
-          subtitle: "Sign-in, profile, and account preferences",
-        };
-      case "pricing":
-        return {
-          title: "Pricing",
-          subtitle: "Plans, subscriptions, and rollout options",
-        };
-      case "classroom":
-        return {
-          title: "Classroom",
-          subtitle: "Assignments, roster management, and analytics",
-        };
-      case "arcade":
-        return {
-          title: "Arcade",
-          subtitle: "XP progression, missions, and leaderboards",
-        };
-      case "textbook":
-        return {
-          title: "Textbook",
-          subtitle: "Year 1 & Year 2 Electrical Studies — formulas, rules, and safety",
-        };
-      case "settings":
-        return {
-          title: "Settings",
-          subtitle: "Logo, graphics, workspace, simulation & accessibility",
-        };
-      default:
-        return null;
-    }
-  }, [activeWireProfile, activeWireSegmentResistance, activeWorkspacePanelMode]);
-
-  const workspacePanelContent = useMemo(() => {
-    switch (activeWorkspacePanelMode) {
-      case "arena":
-        return (
-          <ArenaView
-            variant="embedded"
-            onNavigateBack={closeArenaWorkspace}
-            sessionId={lastArenaExport?.sessionId ?? null}
-          />
-        );
-      case "wire-guide":
-        return (
-          <WireLibrary
-            activeWireId={activeWireProfile?.id ?? null}
-            onApplyWire={handleApplyWireProfile}
-            onClearAppliedWire={handleClearWireProfile}
-            liveMetrics={{
-              voltage: liveWireMetricsSnapshot.voltage,
-              current: liveWireMetricsSnapshot.current,
-              resistance: liveWireMetricsSnapshot.isOpenCircuit
-                ? null
-                : liveWireMetricsSnapshot.resistance,
-              power: liveWireMetricsSnapshot.power,
-              wireCount: liveWireMetricsSnapshot.wireCount,
-              wirePathResistance: liveWireMetricsSnapshot.wirePathResistance,
-              wireLengthMeters: liveWireMetricsSnapshot.wireLengthMeters,
-              wireResistanceReferenceMeters:
-                liveWireMetricsSnapshot.wireResistanceReferenceMeters,
-              wireAmpacityLimitA: liveWireMetricsSnapshot.wireAmpacityLimitA,
-              wireAmpacityUtilization:
-                liveWireMetricsSnapshot.wireAmpacityUtilization,
-              wireVoltageLimitV: liveWireMetricsSnapshot.wireVoltageLimitV,
-              wireVoltageUtilization:
-                liveWireMetricsSnapshot.wireVoltageUtilization,
-              wireWarning: liveWireMetricsSnapshot.wireWarning,
-            }}
-          />
-        );
-      case "community":
-        return <Community />;
-      case "gallery":
-        return <Gallery />;
-      case "account":
-        return <Account />;
-      case "settings":
-        return <Settings embedded />;
-      case "pricing":
-        return (
-          <>
-            <PricingSection />
-            <SubscriptionSection />
-          </>
-        );
-      case "classroom":
-        return <Classroom />;
-      case "arcade":
-        return <Arcade />;
-      case "textbook":
-        return <Textbook />;
-      default:
-        return null;
-    }
-  }, [
-    activeWireProfile,
-    activeWorkspacePanelMode,
-    closeArenaWorkspace,
-    handleApplyWireProfile,
-    handleClearWireProfile,
-    lastArenaExport?.sessionId,
-    liveWireMetricsSnapshot.current,
-    liveWireMetricsSnapshot.isOpenCircuit,
-    liveWireMetricsSnapshot.power,
-    liveWireMetricsSnapshot.resistance,
-    liveWireMetricsSnapshot.voltage,
-    liveWireMetricsSnapshot.wireCount,
-  ]);
 
   return (
     <div className="builder-shell">
@@ -3974,57 +2249,20 @@ export default function Builder() {
             <div className="slider-section">
               <span className="slider-heading">Wire Modes</span>
               <div className="slider-stack">
-                {WIRE_TOOL_ACTIONS.map((action) => {
-                  const isWireToggle = action.action === "toggle-wire-mode";
-                  const isRotateToggle = action.action === "toggle-rotate-mode";
-                  const isCycleRouting = action.action === "cycle-wire-routing";
-                  const isActionActive =
-                    (isWireToggle && modeState.isWireMode) ||
-                    (isRotateToggle && modeState.isRotateMode);
-                  const description = (() => {
-                    if (isWireToggle) {
-                      return modeState.isWireMode
-                        ? "Wire tool active"
-                        : "Activate wire mode to sketch connections";
-                    }
-                    if (isRotateToggle) {
-                      return modeState.isRotateMode
-                        ? "Rotate mode active"
-                        : "Rotate the active component";
-                    }
-                    if (isCycleRouting) {
-                      return `Current routing: ${wireRoutingLabel}`;
-                    }
-                    return action.description;
-                  })();
-
-                  return (
-                    <button
-                      key={action.id}
-                      type="button"
-                      className="slider-btn slider-btn-stacked"
-                      onClick={() =>
-                        triggerBuilderAction(action.action, action.data)
-                      }
-                      disabled={controlsDisabled}
-                      aria-disabled={controlsDisabled}
-                      title={
-                        controlsDisabled
-                          ? controlDisabledTitle
-                          : action.description
-                      }
-                      data-active={isActionActive ? "true" : undefined}
-                      aria-pressed={
-                        isWireToggle || isRotateToggle
-                          ? isActionActive
-                          : undefined
-                      }
-                    >
-                      <span className="slider-label">{action.label}</span>
-                      <span className="slider-description">{description}</span>
-                    </button>
-                  );
-                })}
+                {WIRE_TOOL_ACTIONS.map((action) => (
+                  <button
+                    key={action.id}
+                    type="button"
+                    className="slider-btn slider-btn-stacked"
+                    onClick={() => triggerBuilderAction(action.action, action.data)}
+                    disabled={controlsDisabled}
+                    aria-disabled={controlsDisabled}
+                    title={controlsDisabled ? controlDisabledTitle : action.description}
+                  >
+                    <span className="slider-label">{action.label}</span>
+                    <span className="slider-description">{action.description}</span>
+                  </button>
+                ))}
               </div>
             </div>
           </div>
@@ -4114,115 +2352,39 @@ export default function Builder() {
             <div className="slider-section">
               <span className="slider-heading">Modes</span>
               <div className="slider-stack">
-                {CURRENT_MODE_ACTIONS.map((action) => {
-                  const isFlowToggle = action.action === "toggle-current-flow";
-                  const isPolarityToggle = action.action === "toggle-polarity";
-                  const isLayoutCycle = action.action === "cycle-layout";
-                  const isMeasurementToggle =
-                    action.action === "open-measurement-tools";
-                  const isActionActive = isFlowToggle
-                    ? modeState.currentFlowStyle === "solid"
-                    : isPolarityToggle
-                      ? modeState.showPolarityIndicators
-                      : isMeasurementToggle
-                        ? isMeasurementPanelOpen
-                      : false;
-
-                  const description = (() => {
-                    if (isFlowToggle) {
-                      return `${currentFlowLabel} visualisation active`;
-                    }
-                    if (isPolarityToggle) {
-                      return modeState.showPolarityIndicators
-                        ? "Polarity markers visible"
-                        : "Polarity markers hidden";
-                    }
-                    if (isLayoutCycle) {
-                      return `Current layout: ${layoutModeLabel}`;
-                    }
-                    if (isMeasurementToggle) {
-                      return isMeasurementPanelOpen
-                        ? "Measurement tools open"
-                        : action.description;
-                    }
-                    return action.description;
-                  })();
-
-                  return (
-                    <button
-                      key={action.id}
-                      type="button"
-                      className="slider-btn slider-btn-stacked"
-                      onClick={() => handleModeAction(action)}
-                      disabled={controlsDisabled}
-                      aria-disabled={controlsDisabled}
-                      title={
-                        controlsDisabled
-                          ? controlDisabledTitle
-                          : action.description
-                      }
-                      data-active={isActionActive ? "true" : undefined}
-                      aria-pressed={
-                        isFlowToggle || isPolarityToggle || isMeasurementToggle
-                          ? isActionActive
-                          : undefined
-                      }
-                    >
-                      <span className="slider-label">{action.label}</span>
-                      <span className="slider-description">{description}</span>
-                    </button>
-                  );
-                })}
+                {CURRENT_MODE_ACTIONS.map((action) => (
+                  <button
+                    key={action.id}
+                    type="button"
+                    className="slider-btn slider-btn-stacked"
+                    onClick={() => triggerBuilderAction(action.action, action.data)}
+                    disabled={controlsDisabled}
+                    aria-disabled={controlsDisabled}
+                    title={controlsDisabled ? controlDisabledTitle : action.description}
+                  >
+                    <span className="slider-label">{action.label}</span>
+                    <span className="slider-description">{action.description}</span>
+                  </button>
+                ))}
               </div>
             </div>
             <div className="slider-section">
               <span className="slider-heading">View</span>
               <div className="slider-stack">
-                {VIEW_CONTROL_ACTIONS.map((action) => {
-                  const isGridToggle = action.action === "toggle-grid";
-                  const isLabelToggle = action.action === "toggle-labels";
-                  const isActionActive =
-                    (isGridToggle && modeState.showGrid) ||
-                    (isLabelToggle && labelVisibilityLevel > 0);
-                  const description = (() => {
-                    if (isGridToggle) {
-                      return modeState.showGrid
-                        ? "Grid visible"
-                        : "Grid hidden";
-                    }
-                    if (isLabelToggle) {
-                      return labelVisibilityDescription;
-                    }
-                    return action.description;
-                  })();
-
-                  return (
-                    <button
-                      key={action.id}
-                      type="button"
-                      className="slider-btn slider-btn-stacked"
-                      onClick={() =>
-                        triggerBuilderAction(action.action, action.data)
-                      }
-                      disabled={controlsDisabled}
-                      aria-disabled={controlsDisabled}
-                      title={
-                        controlsDisabled
-                          ? controlDisabledTitle
-                          : action.description
-                      }
-                      data-active={isActionActive ? "true" : undefined}
-                      aria-pressed={
-                        isGridToggle || isLabelToggle
-                          ? isActionActive
-                          : undefined
-                      }
-                    >
-                      <span className="slider-label">{action.label}</span>
-                      <span className="slider-description">{description}</span>
-                    </button>
-                  );
-                })}
+                {VIEW_CONTROL_ACTIONS.map((action) => (
+                  <button
+                    key={action.id}
+                    type="button"
+                    className="slider-btn slider-btn-stacked"
+                    onClick={() => triggerBuilderAction(action.action, action.data)}
+                    disabled={controlsDisabled}
+                    aria-disabled={controlsDisabled}
+                    title={controlsDisabled ? controlDisabledTitle : action.description}
+                  >
+                    <span className="slider-label">{action.label}</span>
+                    <span className="slider-description">{action.description}</span>
+                  </button>
+                ))}
               </div>
               <div className="slider-section">
                 <span className="slider-heading">Grid Style</span>
@@ -4415,67 +2577,19 @@ export default function Builder() {
             <div className="slider-section">
               <span className="slider-heading">Practice</span>
               <div className="menu-track menu-track-chips">
-                <div
-                  role="status"
-                  style={{
-                    fontSize: "11px",
-                    color: "rgba(136, 204, 255, 0.78)",
-                    textAlign: "center",
-                    padding: "8px 12px",
-                    borderRadius: "10px",
-                    border: "1px solid rgba(136, 204, 255, 0.22)",
-                    background: "rgba(14, 30, 58, 0.48)",
-                  }}
-                >
-                  {practiceWorksheetMessage}
-                </div>
-                {PRACTICE_ACTIONS.map((action) => {
-                  const isOpenArenaAction = action.action === "open-arena";
-                  const actionDisabled =
-                    controlsDisabled ||
-                    (isOpenArenaAction && isArenaSyncing);
-                  const actionTitle = controlsDisabled
-                    ? controlDisabledTitle
-                    : isOpenArenaAction && isArenaSyncing
-                      ? "Preparing Component Arena export…"
-                      : action.description;
-                  return (
-                    <button
-                      key={action.id}
-                      type="button"
-                      className="slider-chip"
-                      onClick={() => handlePracticeAction(action)}
-                      disabled={actionDisabled}
-                      aria-disabled={actionDisabled}
-                      title={actionTitle}
-                    >
-                      <span className="slider-chip-label">{action.label}</span>
-                    </button>
-                  );
-                })}
-                <button
-                  type="button"
-                  className="slider-chip"
-                  onClick={openPracticePanel}
-                  title={practiceWorksheetMessage}
-                  data-complete={isPracticeWorksheetComplete ? "true" : undefined}
-                >
-                  <span className="slider-chip-label">Practice Worksheets</span>
-                </button>
-                <button
-                  type="button"
-                  className="slider-chip"
-                  onClick={openSchematicPanel}
-                  disabled={controlsDisabled}
-                  aria-disabled={controlsDisabled}
-                  title={
-                    controlsDisabled
-                      ? controlDisabledTitle
-                      : "Open the 3D schematic builder overlay"
-                  }
-                >
-                  <span className="slider-chip-label">3D Schematic Builder</span>
-                </button>
+                {PRACTICE_ACTIONS.map((action) => (
+                  <button
+                    key={action.id}
+                    type="button"
+                    className="slider-chip"
+                    onClick={() => triggerBuilderAction(action.action, action.data)}
+                    disabled={controlsDisabled}
+                    aria-disabled={controlsDisabled}
+                    title={controlsDisabled ? controlDisabledTitle : action.description}
+                  >
+                    <span className="slider-chip-label">{action.label}</span>
+                  </button>
+                ))}
                 {PRACTICE_SCENARIOS.map((scenario) => (
                   <button
                     key={scenario.id}
@@ -4500,20 +2614,6 @@ export default function Builder() {
                     <span className="slider-chip-label">{scenario.label}</span>
                   </button>
                 ))}
-                <button
-                  type="button"
-                  className="slider-chip"
-                  onClick={openLastArenaSession}
-                  disabled={!canOpenLastArena}
-                  aria-disabled={!canOpenLastArena}
-                  title={
-                    canOpenLastArena
-                      ? "Open the most recent Component Arena export"
-                      : "Run a Component Arena export first"
-                  }
-                >
-                  <span className="slider-chip-label">Open Last Arena Run</span>
-                </button>
               </div>
             </div>
             <div className="slider-section">
