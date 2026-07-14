@@ -189,39 +189,6 @@
 
 /* ── Close button — HIGH VISIBILITY ──────────────────────────────────────── */
 
-.ai-helper-panel__size-btn {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1.5px solid rgba(255, 255, 255, 0.2);
-  color: rgba(200, 228, 255, 0.85);
-  font-size: 14px;
-  font-weight: 600;
-  line-height: 1;
-  cursor: pointer;
-  padding: 0;
-  border-radius: 8px;
-  transition: color 0.15s, background 0.15s, border-color 0.15s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 30px;
-  min-height: 30px;
-  width: 30px;
-  height: 30px;
-  flex-shrink: 0;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.ai-helper-panel__size-btn:hover {
-  color: #fff;
-  background: rgba(136, 204, 255, 0.2);
-  border-color: rgba(136, 204, 255, 0.55);
-}
-
-.ai-helper-panel__size-btn:focus-visible {
-  outline: 2px solid var(--brand-blue, #88ccff);
-  outline-offset: 2px;
-}
-
 .ai-helper-panel__close {
   background: rgba(255, 255, 255, 0.12);
   border: 1.5px solid rgba(255, 255, 255, 0.3);
