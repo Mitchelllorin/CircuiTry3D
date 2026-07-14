@@ -26,38 +26,15 @@ const parseHexColor = (hex: string, fallback: number): number => {
 };
 
 /**
- * Brand palette colors used to tint the animated current-flow particles.
- *
- * NOTE — SEPARATE FROM THE W.I.R.E. UI LABEL SYSTEM:
- * These Three.js hex colors drive the schematic particle animation and indicate
- * current *intensity* (how much current is flowing) via a speed/brightness ramp.
- * They have nothing to do with the CSS variables (--wire-w, --wire-i, --wire-r, --wire-e)
- * used to color the W.I.R.E. quantity labels in the HTML/CSS layer.  Both systems
- * intentionally draw from a similar blue/orange/green brand palette, but they serve
- * completely different purposes and live in separate rendering layers.
+ * Color scheme for current intensity visualization
+ * CircuiTry3D standard: colors progress from red (slow/low) to blue-white (fast/high)
  */
-const BRAND_FLOW_COLORS = {
-  negative: parseHexColor(LOGO_COLORS.wireGradientStart, 0x88ccff),
-  mid: parseHexColor(LOGO_COLORS.componentGradientStart, 0xff8844),
-  positive: parseHexColor(LOGO_COLORS.wireGradientEnd, 0x00ff88),
-} as const;
-
-/**
- * Color ramp for current intensity visualization.
- * Maps low → medium → high current to blue → orange → green.
- * This indicates *how much* current is flowing, NOT *which quantity* (W/I/R/E) is being shown.
- * See CSS --wire-w / --wire-i / --wire-r / --wire-e in layout.css for the W.I.R.E. label colors.
- */
-export const CURRENT_FLOW_COLOR_RAMP = {
-  slow: BRAND_FLOW_COLORS.negative,
-  mid: BRAND_FLOW_COLORS.mid,
-  fast: BRAND_FLOW_COLORS.positive,
-} as const;
-
-const CURRENT_FLOW_OFF_COLORS = {
-  core: 0x6b7280,     // Gray - no current
-  glow: 0x9ca3af,
-  emissive: 0x4b5563
+export const INTENSITY_COLORS = {
+  off: { core: 0x6b7280, glow: 0x9ca3af, emissive: 0x4b5563 },        // Gray - no current
+  low: { core: 0xef4444, glow: 0xfca5a5, emissive: 0xdc2626 },        // Red - low/slow current
+  medium: { core: 0xf97316, glow: 0xfb923c, emissive: 0xea580c },     // Orange - medium current
+  high: { core: 0xeab308, glow: 0xfde047, emissive: 0xca8a04 },       // Yellow - high current
+  critical: { core: 0xffffff, glow: 0xbfdbfe, emissive: 0x3b82f6 }    // Blue-white - critical/max current
 } as const;
 
 /**
