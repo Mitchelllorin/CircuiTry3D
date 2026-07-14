@@ -8856,11 +8856,10 @@ body.android-optimized .zoom-btn {
                 renderer.setClearColor(0x0a0a1a, 1);
                 renderer.toneMapping = THREE.ACESFilmicToneMapping;
                 renderer.toneMappingExposure = 1.1;
-                // Enable proper sRGB output encoding for vivid, accurate colors.
-                // Previously reverted due to "dim grid on Android" — root cause was
-                // actually the TDZ crash + missing androidScheme:https, not sRGB.
-                renderer.outputEncoding = THREE.sRGBEncoding;
-
+                // sRGB encoding removed: Three.js r128 does not support
+                // renderer.outputColorSpace.  Setting it was a no-op but caused
+                // confusion across multiple fix cycles.  If upgrading to r152+,
+                // re-enable: renderer.outputColorSpace = THREE.SRGBColorSpace
                 // Handle WebGL context loss / restoration (common on Android when
                 // the app is backgrounded or the OS reclaims GPU memory).
                 // preventDefault() on contextlost tells the browser to attempt
@@ -11263,7 +11262,7 @@ body.android-optimized .zoom-btn {
             'serpentine': 'scurve'
         });
 
-        function normalizeRouterMode(rawMode, fallback = 'manhattan') {
+        function normalizeRouterMode(rawMode, fallback = 'freeform') {
             if (typeof rawMode !== 'string') {
                 return fallback;
             }
@@ -11300,7 +11299,7 @@ body.android-optimized .zoom-btn {
             }
 
             if (!resolved) {
-                resolved = normalizeRouterMode(window.ROUTER_MODE, 'manhattan');
+                resolved = normalizeRouterMode(window.ROUTER_MODE, 'freeform');
             }
 
             window.ROUTER_MODE = resolved;
@@ -18147,17 +18146,15 @@ Made with ? for visual learners everywhere!
             }
 
             const sourceBattery = batteries[0];
-            // Path follows conventional-current direction (positive → negative through external
-            // circuit) so that directionMultiplier logic produces correct particle direction:
-            //   solid mode  (conventional): directionMultiplier = +1 → particles go +→−  ✓
-            //   misty mode  (electron flow): directionMultiplier = −1 → particles go −→+  ✓
-            const startKey = getTerminalKey(sourceBattery, 'positive');
-            const endKey = getTerminalKey(sourceBattery, 'negative');
+            const startKey = getTerminalKey(sourceBattery, 'negative');
+            const endKey = getTerminalKey(sourceBattery, 'positive');
             console.log('[CT3D Flow] startKey=' + startKey + ', endKey=' + endKey);
 
             const adjacency = buildFlowGraph(components, wires, junctions);
             console.log('[CT3D Flow] adjacency has ' + adjacency.size + ' nodes');
-            // Edge-level logging removed for performance
+            adjacency.forEach((edges, key) => {
+                edges.forEach(e => console.log('[CT3D Flow]   ' + key + ' -> ' + e.to + ' type=' + e.type));
+            });
             const path = findLowestResistancePath(adjacency, startKey, endKey);
             console.log('[CT3D Flow] computeFlowState: path ' + (path ? 'FOUND (' + path.segments.length + ' segments)' : 'NOT FOUND'));
 
@@ -19394,20 +19391,6 @@ Made with ? for visual learners everywhere!
             console.log('[CT3D Flow] animateCurrentFlow called: hasFlow=' + flowState?.hasFlow +
                 ', currentValue=' + flowState?.currentValue +
                 ', wireSegments=' + (flowState?.wireSegments?.length ?? 'none'));
-            // Force world-matrix update before ANY wire-curve computation.
-            // On Android with local-bundle assets the page can load so fast that
-            // animateCurrentFlow is called before the first requestAnimationFrame fires,
-            // leaving every mesh.matrixWorld at identity (0,0,0).  Without this call
-            // all wire curves collapse to zero-length paths and particles are created at
-            // the scene origin, invisible to the user.  This is the same guard that was
-            // added to loadPayoffCircuit (PR #754) but generalised to every call site.
-            if (scene) scene.updateMatrixWorld(true);
-            // Reset the watchdog frame counter and attempt counter so the watchdog
-            // clock restarts fresh for each new flow activation (including FUSE-timer
-            // re-analyses).  Resetting attempts here means a successful re-creation
-            // (even via the watchdog itself) restores the full 5-attempt budget.
-            _flowWatchdogFrames   = 0;
-            _flowWatchdogAttempts = 0;
             // Capture whether the circuit was already flowing BEFORE we update the state.
             // Used below to detect the no-flow → flow transition for FUSE thermal onset.
             const wasFlowing = Boolean(currentFlowState?.hasFlow);
@@ -19482,26 +19465,12 @@ Made with ? for visual learners everywhere!
             console.log('[CT3D Flow] animateCurrentFlow: using ' + segments.length + ' segments' +
                 (flowState.wireSegments?.length > 0 ? ' (from flow path)' : ' (fallback: all wires)'));
             
-            // Failsafe: if wireSegments contain wireId references instead of wire objects
-            // (happens when the sanitized flow state is used directly for animation),
-            // resolve each wireId back to the live wire object so direction/speedFactor
-            // from the computed path are preserved.
+            // Failsafe: if wireSegments exist but their wire references are broken
+            // (e.g. serialized wireId instead of wire object), fall back to all wires
             const firstSeg = segments[0];
             if (firstSeg && !firstSeg.wire && firstSeg.wireId) {
-                console.warn('[CT3D Flow] wireSegments contain wireId strings instead of wire objects, resolving by ID');
-                const wireById = new Map(wires.map(w => [w.id, w]));
-                segments = segments
-                    .map(seg => {
-                        if (seg.wire) return seg;
-                        const resolvedWire = wireById.get(seg.wireId);
-                        return resolvedWire ? { ...seg, wire: resolvedWire } : null;
-                    })
-                    .filter(Boolean);
-                // If none resolved (e.g. IDs don't match), fall back to all wires
-                if (!segments.length) {
-                    console.warn('[CT3D Flow] wireId resolution failed, falling back to all wires');
-                    segments = wires.map(wire => ({ wire, direction: 1, speedFactor: 1 }));
-                }
+                console.warn('[CT3D Flow] wireSegments contain wireId strings instead of wire objects, falling back to all wires');
+                segments = wires.map(wire => ({ wire, direction: 1, speedFactor: 1 }));
             }
 
             if (!segments.length) return;
@@ -19532,13 +19501,6 @@ Made with ? for visual learners everywhere!
                 console.log('[CT3D Flow] Segment ' + segmentIndex + ': processing wire ' + (wire.id || 'no-id'));
 
                 // Always recreate the curve to ensure it uses current terminal positions.
-                // Refresh world matrices immediately before each createCurve() call so
-                // the connection-point positions are always current, regardless of whether
-                // the render loop has ticked since the last component move or wire addition.
-                // This is the per-segment counterpart to the scene-wide updateMatrixWorld
-                // at the top of animateCurrentFlow and is particularly important on Android
-                // where the JS→render pipeline can be out of sync during rapid interactions.
-                if (scene) scene.updateMatrixWorld(true);
                 try { wire.createCurve(); console.log('[CT3D Flow] Segment ' + segmentIndex + ': curve created OK'); } catch (e) {
                     console.error('[CT3D Flow] Segment ' + segmentIndex + ': createCurve FAILED:', e); console.warn('Could not create wire curve:', e); }
                 if (!wire.curve) return;
@@ -19869,43 +19831,25 @@ Made with ? for visual learners everywhere!
                     if (!wire || !wire.wireGroup) return;
                     try { wire.createCurve(); } catch(e) { return; }
                     if (!wire.curve) return;
-                    // On Android increase failsafe particle count and size for guaranteed visibility
-                    var pCount = isAndroid
-                        ? Math.max(ANDROID_FAILSAFE_MIN_PARTICLES, Math.floor(ANDROID_FAILSAFE_PARTICLE_MULTIPLIER * (wire.wireLength || 1)))
-                        : Math.max(DEFAULT_FAILSAFE_MIN_PARTICLES, Math.floor(DEFAULT_FAILSAFE_PARTICLE_MULTIPLIER  * (wire.wireLength || 1)));
+                    var pCount = Math.max(3, Math.floor(6 * (wire.wireLength || 1)));
                     for (var pi = 0; pi < pCount; pi++) {
                         var progress = pi / pCount;
                         try {
                             var pos = wire.curve.getPoint(progress);
                             if (!pos || isNaN(pos.x) || isNaN(pos.y) || isNaN(pos.z)) continue;
-                            // Larger particles on Android so they're impossible to miss
-                            var geom = new THREE.SphereGeometry(isAndroid ? ANDROID_FAILSAFE_PARTICLE_RADIUS : DEFAULT_FAILSAFE_PARTICLE_RADIUS, 6, 6);
+                            var geom = new THREE.SphereGeometry(0.06, 6, 6);
                             var mat = new THREE.MeshPhongMaterial({
                                 color: 0xff6600, emissive: 0xff3300,
-                                shininess: isAndroid ? ANDROID_SHININESS : 80,
-                                emissiveIntensity: isAndroid ? ANDROID_FAILSAFE_EMISSIVE : DEFAULT_FAILSAFE_EMISSIVE,
-                                transparent: !isAndroid, opacity: 0.9,
-                                depthTest: !isAndroid
+                                emissiveIntensity: 0.8, transparent: true, opacity: 0.9
                             });
                             var particle = new THREE.Mesh(geom, mat);
-                            particle.frustumCulled = false; // Never cull failsafe particles on Android
                             particle.position.copy(pos);
                             particle.userData.progress = progress;
                             particle.userData.speed = 0.003 * (1 + Math.random() * 0.3);
                             particle.userData.wire = wire;
                             particle.userData.direction = 1;
-                            particle.userData.isFlowing = true;
                             particle.userData.baseY = pos.y;
                             particle.userData.trailMeshes = [];
-                            particle.userData.pulsePhase = Math.random() * Math.PI * 2;
-                            particle.userData.baseOpacity = 0.9;
-                            particle.userData.baseEmissive = isAndroid ? ANDROID_FAILSAFE_EMISSIVE : DEFAULT_FAILSAFE_EMISSIVE;
-                            particle.userData.jitterAmp = 0.65 + Math.random() * 0.45;
-                            particle.userData.jitterPhaseX = Math.random() * Math.PI * 2;
-                            particle.userData.jitterPhaseY = Math.random() * Math.PI * 2;
-                            particle.userData.jitterPhaseZ = Math.random() * Math.PI * 2;
-                            particle.userData.baseColorHex = 0xff6600;
-                            particle.userData.activeTierKey = null;
                             scene.add(particle);
                             currentFlowParticles.push(particle);
                         } catch(e) { /* skip */ }
