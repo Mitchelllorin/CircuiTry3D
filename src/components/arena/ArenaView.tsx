@@ -5,7 +5,48 @@ import SectionWorkflowStrip, {
   type SectionWorkflowStep,
 } from "../SectionWorkflowStrip";
 import "../../styles/arena.css";
-import type { ArenaViewProps } from "./types";
+import { buildElement, disposeThreeObject } from "../../schematic/threeFactory";
+import type { TwoTerminalElement, Vec2 } from "../../schematic/types";
+
+declare global {
+  interface Window {
+    THREE?: any;
+  }
+}
+
+const THREE_CDN = "https://cdnjs.cloudflare.com/ajax/libs/three.js/r161/three.min.js";
+let threeLoaderPromise: Promise<any> | null = null;
+
+function loadThreeJS(): Promise<any> {
+  if (typeof window === "undefined") {
+    return Promise.reject(new Error("Window not available"));
+  }
+
+  if (window.THREE) {
+    return Promise.resolve(window.THREE);
+  }
+
+  if (threeLoaderPromise) {
+    return threeLoaderPromise;
+  }
+
+  threeLoaderPromise = new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = THREE_CDN;
+    script.async = true;
+    script.onload = () => {
+      if (window.THREE) {
+        resolve(window.THREE);
+      } else {
+        reject(new Error("THREE not loaded"));
+      }
+    };
+    script.onerror = () => reject(new Error("Failed to load THREE.js"));
+    document.head.appendChild(script);
+  });
+
+  return threeLoaderPromise;
+}
 
 type ArenaViewProps = {
   variant?: "page" | "embedded";
@@ -639,137 +680,172 @@ function findMetricByTokens(profile: ComponentShowdownProfile | null, tokens: st
     setHasError(false);
   }, [reloadToken, activeSessionId]);
 
-// @ts-expect-error TS6133 - declared but never read
-function _ComponentGlyph({ type }: ComponentGlyphProps) {
-  const glyphKey = resolveGlyphKey(type);
-  const ariaLabel = type ? `${type} visual` : "Component visual";
+function ComponentGlyph({ type }: ComponentGlyphProps) {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const sceneRef = useRef<any>(null);
+  const rendererRef = useRef<any>(null);
+  const cameraRef = useRef<any>(null);
+  const componentGroupRef = useRef<any>(null);
+  const animationFrameRef = useRef<number | null>(null);
+  const [threeLoaded, setThreeLoaded] = useState(false);
 
-  const renderShape = () => {
-    switch (glyphKey) {
-      case "resistor":
-        // CircuiTry3D standard: 3-peak zigzag with lead wires (proportional to RESISTOR_SPECS.integratedPoints)
-        return (
-          <g stroke="currentColor" strokeWidth="6" fill="none" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="6,30 20,30 29,12 47,48 65,12 83,48 92,30 114,30" />
-          </g>
-        );
-      case "capacitor":
-        return (
-          <g stroke="currentColor" strokeWidth="6" fill="none" strokeLinecap="round">
-            <line x1="10" y1="30" x2="46" y2="30" />
-            <line x1="46" y1="12" x2="46" y2="48" />
-            <line x1="74" y1="12" x2="74" y2="48" />
-            <line x1="74" y1="30" x2="110" y2="30" />
-          </g>
-        );
-      case "battery":
-        // CircuiTry3D standard: short plate (negative) + long plate (positive) with polarity markers
-        return (
-          <g stroke="currentColor" fill="none" strokeLinecap="round">
-            <line x1="10" y1="30" x2="42" y2="30" strokeWidth="5" />
-            <line x1="42" y1="16" x2="42" y2="44" strokeWidth="5" />
-            <line x1="58" y1="10" x2="58" y2="50" strokeWidth="7" />
-            <line x1="58" y1="30" x2="110" y2="30" strokeWidth="5" />
-            <text x="36" y="54" fontSize="12" fill="currentColor" textAnchor="middle" fontWeight="bold">−</text>
-            <text x="64" y="10" fontSize="12" fill="currentColor" textAnchor="middle" fontWeight="bold">+</text>
-          </g>
-        );
-      case "led":
-        // CircuiTry3D standard: filled diode triangle + cathode bar + light emission arrows
-        return (
-          <g stroke="currentColor" strokeWidth="5" fill="none" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="10" y1="30" x2="34" y2="30" />
-            <polygon points="34,14 34,46 62,30" fill="currentColor" />
-            <line x1="62" y1="14" x2="62" y2="46" />
-            <line x1="62" y1="30" x2="110" y2="30" />
-            <polyline points="56,12 68,0 74,6" strokeWidth="3" />
-            <polyline points="66,8 78,-4 84,2" strokeWidth="3" />
-          </g>
-        );
-      case "inductor":
-        return (
-          <g stroke="currentColor" strokeWidth="5" fill="none" strokeLinecap="round">
-            <line x1="6" y1="30" x2="18" y2="30" />
-            <path d="M18,30 C30,10 42,50 54,30 C66,10 78,50 90,30 C102,10 114,50 126,30" transform="translate(-12 0)" />
-            <line x1="90" y1="30" x2="108" y2="30" />
-          </g>
-        );
-      case "switch":
-        // CircuiTry3D standard: two contact circles + blade + lead wires
-        return (
-          <g stroke="currentColor" strokeWidth="5" fill="none" strokeLinecap="round">
-            <line x1="10" y1="34" x2="38" y2="34" />
-            <circle cx="42" cy="34" r="5" fill="currentColor" />
-            <line x1="42" y1="34" x2="78" y2="14" />
-            <circle cx="78" cy="34" r="5" fill="currentColor" />
-            <line x1="82" y1="34" x2="110" y2="34" />
-          </g>
-        );
-      case "transistor":
-        return (
-          <g stroke="currentColor" strokeWidth="4" fill="none" strokeLinecap="round">
-            <circle cx="46" cy="30" r="18" />
-            <line x1="64" y1="30" x2="104" y2="30" />
-            <line x1="30" y1="12" x2="18" y2="6" />
-            <line x1="30" y1="48" x2="18" y2="54" />
-            <polyline points="44,12 70,12 70,26" />
-            <polyline points="44,48 70,48 70,34" />
-          </g>
-        );
-      case "sensor":
-        return (
-          <g stroke="currentColor" strokeWidth="4" fill="none" strokeLinecap="round">
-            <circle cx="46" cy="30" r="16" />
-            <path d="M62,18 C78,10 92,10 106,18" />
-            <path d="M62,42 C78,50 92,50 106,42" />
-            <line x1="18" y1="30" x2="30" y2="30" />
-          </g>
-        );
-      case "diode":
-        // CircuiTry3D standard: filled triangle (anode) + cathode bar + lead wires
-        return (
-          <g stroke="currentColor" strokeWidth="5" fill="none" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="10" y1="30" x2="36" y2="30" />
-            <polygon points="36,14 36,46 64,30" fill="currentColor" />
-            <line x1="64" y1="14" x2="64" y2="46" />
-            <line x1="64" y1="30" x2="110" y2="30" />
-          </g>
-        );
-      case "motor":
-        // CircuiTry3D standard: circle with "M" letter + lead wires
-        return (
-          <g stroke="currentColor" strokeWidth="5" fill="none" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="10" y1="30" x2="30" y2="30" />
-            <circle cx="60" cy="30" r="22" />
-            <line x1="82" y1="30" x2="110" y2="30" />
-            <text x="60" y="37" textAnchor="middle" fill="currentColor" fontSize="22" fontWeight="800" style={{ userSelect: "none" }}>M</text>
-          </g>
-        );
-      default:
-        return (
-          <g stroke="currentColor" strokeWidth="4" fill="none" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="18" y="14" width="64" height="32" rx="10" />
-            <circle cx="38" cy="30" r="6" />
-            <circle cx="62" cy="30" r="6" />
-            <line x1="10" y1="30" x2="18" y2="30" />
-            <line x1="82" y1="30" x2="110" y2="30" />
-          </g>
-        );
+  const glyphKey = resolveGlyphKey(type);
+  const ariaLabel = type ? `${type} 3D model` : "Component 3D model";
+
+  useEffect(() => {
+    loadThreeJS()
+      .then(() => setThreeLoaded(true))
+      .catch((error) => console.error("Failed to load Three.js for arena:", error));
+  }, []);
+
+  useEffect(() => {
+    if (!threeLoaded || !canvasRef.current || !window.THREE) {
+      return;
     }
-  };
+
+    const THREE = window.THREE;
+    const canvas = canvasRef.current;
+    const container = canvas.parentElement;
+    
+    if (!container) {
+      console.warn("Canvas has no parent container");
+      return;
+    }
+
+    const width = container.clientWidth || 200;
+    const height = container.clientHeight || 200;
+
+    const scene = new THREE.Scene();
+    sceneRef.current = scene;
+
+    const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+    camera.position.set(0, 3, 6);
+    camera.lookAt(0, 0, 0);
+    cameraRef.current = camera;
+
+    const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+    renderer.setSize(width, height);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setClearColor(0x000000, 0);
+    rendererRef.current = renderer;
+
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    scene.add(ambientLight);
+
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    directionalLight.position.set(5, 10, 7.5);
+    scene.add(directionalLight);
+
+    const fillLight = new THREE.DirectionalLight(0xffffff, 0.3);
+    fillLight.position.set(-5, 5, -5);
+    scene.add(fillLight);
+
+    const componentGroup = new THREE.Group();
+    componentGroupRef.current = componentGroup;
+    scene.add(componentGroup);
+
+    const componentElement = createComponentElement(glyphKey);
+    console.log("Arena ComponentGlyph - Creating element for:", glyphKey, componentElement);
+    if (componentElement) {
+      const buildResult = buildElement(THREE, componentElement, {});
+      console.log("Arena ComponentGlyph - Build result:", buildResult);
+      if (buildResult && buildResult.group) {
+        buildResult.group.scale.set(2.5, 2.5, 2.5);
+        buildResult.group.position.set(0, 0, 0);
+        componentGroup.add(buildResult.group);
+        console.log("Arena ComponentGlyph - Added group with children:", buildResult.group.children.length);
+      } else {
+        console.warn("Arena ComponentGlyph - No group in build result");
+      }
+    } else {
+      console.warn("Arena ComponentGlyph - Failed to create component element for:", glyphKey);
+    }
+
+    let rotationSpeed = 0;
+    const targetRotationSpeed = 0.005;
+    const rotationAcceleration = 0.0001;
+
+    const animate = () => {
+      animationFrameRef.current = requestAnimationFrame(animate);
+
+      if (rotationSpeed < targetRotationSpeed) {
+        rotationSpeed += rotationAcceleration;
+      }
+
+      if (componentGroup) {
+        componentGroup.rotation.y += rotationSpeed;
+      }
+
+      renderer.render(scene, camera);
+    };
+
+    animate();
+
+    return () => {
+      if (animationFrameRef.current !== null) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+      if (componentGroup) {
+        disposeThreeObject(componentGroup);
+      }
+      if (renderer) {
+        renderer.dispose();
+      }
+    };
+  }, [threeLoaded, glyphKey]);
 
   return (
-    <div className={`arena-component-glyph arena-glyph-${glyphKey}`}>
-      <svg viewBox="0 0 120 60" role="img" aria-label={ariaLabel} focusable="false">
-        {renderShape()}
-      </svg>
+    <div className={`arena-component-glyph arena-glyph-${glyphKey}`} role="img" aria-label={ariaLabel}>
+      <canvas
+        ref={canvasRef}
+        style={{
+          width: "100%",
+          height: "100%",
+          display: "block"
+        }}
+      />
     </div>
   );
 }
 void getComponentBadgeLabel;
 void ComponentGlyph;
 
-function sanitiseComponent(raw: unknown, _index: number): ArenaComponent | null {
+function createComponentElement(type: string): TwoTerminalElement | null {
+  const start: Vec2 = { x: -1, z: 0 };
+  const end: Vec2 = { x: 1, z: 0 };
+
+  const baseElement: Partial<TwoTerminalElement> = {
+    id: `arena-${type}`,
+    start,
+    end,
+    orientation: "horizontal" as const,
+    label: ""
+  };
+
+  switch (type) {
+    case "resistor":
+      return { ...baseElement, kind: "resistor" } as TwoTerminalElement;
+    case "capacitor":
+      return { ...baseElement, kind: "capacitor" } as TwoTerminalElement;
+    case "led":
+    case "lamp":
+      return { ...baseElement, kind: "lamp" } as TwoTerminalElement;
+    case "diode":
+      return { ...baseElement, kind: "diode" } as TwoTerminalElement;
+    case "switch":
+      return { ...baseElement, kind: "switch" } as TwoTerminalElement;
+    case "inductor":
+      return { ...baseElement, kind: "inductor" } as TwoTerminalElement;
+    case "battery":
+      return { ...baseElement, kind: "battery" } as TwoTerminalElement;
+    case "transistor":
+      return { ...baseElement, kind: "resistor" } as TwoTerminalElement;
+    default:
+      return { ...baseElement, kind: "resistor" } as TwoTerminalElement;
+  }
+}
+
+function sanitiseComponent(raw: unknown, index: number): ArenaComponent | null {
   if (!raw || typeof raw !== "object") {
     return null;
   }
@@ -1335,34 +1411,9 @@ export default function ArenaView({ variant = "page", onOpenBuilder }: ArenaView
   });
   const [battleState, setBattleState] = useState<"idle" | "battling" | "complete">("idle");
   const [battleWinner, setBattleWinner] = useState<"left" | "right" | "tie" | null>(null);
-  const [winnerDismissed, setWinnerDismissed] = useState(false);
-  const [beforeMetrics, setBeforeMetrics] = useState<{ left: ComponentTelemetryEntry[] | null; right: ComponentTelemetryEntry[] | null }>({
-    left: null,
-    right: null
-  });
-  const [rotationEnabled, setRotationEnabled] = useState(true);
-  const [varianceEnabled, setVarianceEnabled] = useState(true);
-  const [selectedMetrics, setSelectedMetrics] = useState<Set<string>>(new Set(["all"]));
-  const [afterMetrics, setAfterMetrics] = useState<{ left: ComponentTelemetryEntry[] | null; right: ComponentTelemetryEntry[] | null }>({
-    left: null,
-    right: null
-  });
-  const [selectedScenario, setSelectedScenario] = useState<string>("standard");
-  const [battleScore, setBattleScore] = useState<{ leftWins: number; rightWins: number; ties: number; totalRounds: number } | null>(null);
-  const [nameplateTick, setNameplateTick] = useState(0);
-  const battleSeedRef = useRef<number>(0);
-
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-    const intervalId = window.setInterval(() => {
-      setNameplateTick((previous) => (previous + 1) % 1000000);
-    }, 900);
-    return () => {
-      window.clearInterval(intervalId);
-    };
-  }, []);
+  const [beforeMetrics, setBeforeMetrics] = useState<{left: ComponentTelemetryEntry[] | null, right: ComponentTelemetryEntry[] | null}>({left: null, right: null});
+  const [selectedMetrics, setSelectedMetrics] = useState<string[]>(["all"]);
+  const [metricResults, setMetricResults] = useState<Map<string, {winner: "left" | "right" | "tie", advantage: number}>>(new Map());
 
   const sendArenaMessage = useCallback((message: ArenaBridgeMessage) => {
     const frameWindow = iframeRef.current?.contentWindow;
@@ -1922,9 +1973,10 @@ export default function ArenaView({ variant = "page", onOpenBuilder }: ArenaView
         statusMessage: "Loaded builder circuit snapshot.",
         sourceOverride: latest.source ?? "builder"
       });
+      setImportError(null);
     } else {
-      setBridgeStatus("No saved builder snapshot yet. Open Builder and choose Component Arena to sync.");
-      setImportError("No builder snapshot detected. Open the builder and export to arena first.");
+      setBridgeStatus("No saved builder snapshot yet. Try importing a sample or using the clipboard.");
+      setImportError("No builder snapshot detected. Import components using one of the options below.");
     }
   }, [applyResolvedPayload, readLatestPayload]);
 
@@ -2092,45 +2144,66 @@ export default function ArenaView({ variant = "page", onOpenBuilder }: ArenaView
     });
     setBattleState("battling");
     setBattleWinner(null);
-    setBattleScore(null);
-    setAfterMetrics({ left: null, right: null });
-
+    
+    const results = new Map<string, {winner: "left" | "right" | "tie", advantage: number}>();
+    
+    if (selectedMetrics.includes("all")) {
+      showdownScore.rounds.forEach(round => {
+        results.set(round.key, {
+          winner: round.winner,
+          advantage: round.advantageScore
+        });
+      });
+    } else {
+      selectedMetrics.forEach(metricKey => {
+        const round = showdownScore.rounds.find(r => r.key === metricKey);
+        if (round) {
+          results.set(metricKey, {
+            winner: round.winner,
+            advantage: round.advantageScore
+          });
+        }
+      });
+    }
+    
     setTimeout(() => {
-      // Use a stable per-battle seed so the "after" results and winner match what the user sees.
-      const seed = Date.now();
-      battleSeedRef.current = seed;
-
-      const modifiedLeftTelemetry = applyScenarioModifiers(componentATelemetry, selectedScenario);
-      const modifiedRightTelemetry = applyScenarioModifiers(componentBTelemetry, selectedScenario);
-
-      const varianceFraction = 0.05;
-      const variedLeft = applyVariance(modifiedLeftTelemetry, seed ^ 0xA5A5A5A5, varianceFraction);
-      const variedRight = applyVariance(modifiedRightTelemetry, seed ^ 0x5A5A5A5A, varianceFraction);
-
-      setAfterMetrics({ left: variedLeft, right: variedRight });
-
-      const score = computeBattleScore(variedLeft, variedRight);
-      setBattleScore(score);
-
-      if (score.totalRounds === 0) {
-        setBattleWinner(null);
-      } else if (score.leftWins > score.rightWins) {
-        setBattleWinner("left");
-      } else if (score.rightWins > score.leftWins) {
-        setBattleWinner("right");
-      } else {
-        setBattleWinner("tie");
-      }
+      setMetricResults(results);
+      
+      let leftWins = 0;
+      let rightWins = 0;
+      results.forEach(result => {
+        if (result.winner === "left") leftWins++;
+        if (result.winner === "right") rightWins++;
+      });
+      
+      const overallWinner = leftWins > rightWins ? "left" : rightWins > leftWins ? "right" : "tie";
+      setBattleWinner(overallWinner);
       setBattleState("complete");
     }, 3000);
-  }, [battleState, componentATelemetry, componentBTelemetry, applyScenarioModifiers, selectedScenario, applyVariance, computeBattleScore]);
+  }, [battleState, componentATelemetry, componentBTelemetry, selectedMetrics, showdownScore]);
 
   const handleResetBattle = useCallback(() => {
     setBattleState("idle");
     setBattleWinner(null);
-    setBattleScore(null);
-    setBeforeMetrics({ left: null, right: null });
-    setAfterMetrics({ left: null, right: null });
+    setBeforeMetrics({left: null, right: null});
+    setMetricResults(new Map());
+  }, []);
+
+  const handleMetricToggle = useCallback((metricKey: string) => {
+    setSelectedMetrics(prev => {
+      if (metricKey === "all") {
+        return ["all"];
+      }
+      
+      const withoutAll = prev.filter(k => k !== "all");
+      
+      if (withoutAll.includes(metricKey)) {
+        const filtered = withoutAll.filter(k => k !== metricKey);
+        return filtered.length === 0 ? ["all"] : filtered;
+      } else {
+        return [...withoutAll, metricKey];
+      }
+    });
   }, []);
 
   const handleMetricToggle = useCallback((metricId: string) => {
@@ -2203,31 +2276,10 @@ export default function ArenaView({ variant = "page", onOpenBuilder }: ArenaView
     return (
       <div className={`arena-battle-panel arena-battle-panel-${side}`}>
         <div className="arena-component-info">
-          {/* Before Metrics - Above Component */}
-          {showBefore && (
-            <div className="arena-metrics-section arena-metrics-before">
-              <div className="arena-metrics-label">📊 BEFORE</div>
-              <div className="arena-metrics-compact">
-                {getFilteredTelemetry(beforeData).map((entry) => (
-                  <div key={`before-${side}-${entry.id}`} className="arena-metric-compact">
-                    <span className="metric-compact-icon">{entry.icon}</span>
-                    <span className="metric-compact-value">{entry.displayValue}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* 3D Component on Rotating Platform */}
-          <div className={`arena-component-stage${rotationEnabled ? " rotating" : ""}${battleState === "battling" ? " battling" : ""}`}>
+          <div className={`arena-component-stage rotating${battleState === "battling" ? " battling" : ""}`}>
             <div className="arena-component-dais">
-              <div className="arena-dais-platform arena-3d-platform">
-                <Component3DViewer
-                  componentType={profile?.type || 'generic'}
-                  isRotating={rotationEnabled}
-                />
-              </div>
-              <div className="arena-dais-base" />
+              <ComponentGlyph type={profile?.type} />
+              <div className="arena-dais-platform" />
             </div>
           </div>
 
@@ -2281,9 +2333,23 @@ export default function ArenaView({ variant = "page", onOpenBuilder }: ArenaView
     >
       <header className="arena-header">
         <div className="arena-header-left">
-          <BrandSignature size="sm" decorative className="arena-brand" />
+          <button className="arena-btn ghost" type="button" onClick={handleBackClick}>
+            ← Back
+          </button>
+          <div className="arena-logo">
+            <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="16" cy="16" r="14" stroke="currentColor" strokeWidth="2" opacity="0.3"/>
+              <circle cx="16" cy="16" r="10" stroke="currentColor" strokeWidth="2" opacity="0.5"/>
+              <circle cx="16" cy="16" r="6" stroke="currentColor" strokeWidth="2" opacity="0.7"/>
+              <circle cx="16" cy="16" r="2" fill="currentColor"/>
+              <line x1="16" y1="2" x2="16" y2="8" stroke="currentColor" strokeWidth="2"/>
+              <line x1="16" y1="24" x2="16" y2="30" stroke="currentColor" strokeWidth="2"/>
+              <line x1="2" y1="16" x2="8" y2="16" stroke="currentColor" strokeWidth="2"/>
+              <line x1="24" y1="16" x2="30" y2="16" stroke="currentColor" strokeWidth="2"/>
+            </svg>
+          </div>
           <div className="arena-title-group">
-            <h1>Component Arena</h1>
+            <h1>CircuiTry3D Component Arena</h1>
             <p>Test and compare components side-by-side</p>
           </div>
         </div>
@@ -2314,8 +2380,8 @@ export default function ArenaView({ variant = "page", onOpenBuilder }: ArenaView
               <h2>Import Components</h2>
             </div>
             <div style={{display: 'flex', gap: '12px', flexWrap: 'wrap'}}>
-              <button className="arena-btn solid" type="button" onClick={handleSyncFromStorage} disabled={importPending}>
-                Pull from Builder
+              <button className="arena-btn solid" type="button" onClick={handleSyncFromStorage} disabled={importPending} title="Import components from the Builder workspace via localStorage">
+                Import from Builder
               </button>
               <button className="arena-btn outline" type="button" onClick={handleClipboardImport} disabled={importPending}>
                 Paste from Clipboard
@@ -2393,6 +2459,37 @@ export default function ArenaView({ variant = "page", onOpenBuilder }: ArenaView
               <p className="arena-empty">No components loaded. Use the import section above to load components.</p>
             )}
           </div>
+
+          {hasShowdown && (
+            <div className="arena-card">
+              <div className="arena-card-header">
+                <h2>Select Metrics to Test</h2>
+              </div>
+              <p style={{fontSize: '0.85rem', color: 'rgba(148, 163, 184, 0.85)', marginBottom: '12px'}}>
+                Choose which metrics to compare, or test all metrics at once. Components can excel in some metrics while failing in others.
+              </p>
+              <div style={{display: 'flex', flexWrap: 'wrap', gap: '8px'}}>
+                <button
+                  className={`arena-metric-selector${selectedMetrics.includes("all") ? " selected" : ""}`}
+                  onClick={() => handleMetricToggle("all")}
+                  type="button"
+                >
+                  All Metrics
+                </button>
+                {TELEMETRY_PRESETS.map(preset => (
+                  <button
+                    key={preset.id}
+                    className={`arena-metric-selector${selectedMetrics.includes(preset.id) && !selectedMetrics.includes("all") ? " selected" : ""}`}
+                    onClick={() => handleMetricToggle(preset.id)}
+                    disabled={selectedMetrics.includes("all")}
+                    type="button"
+                  >
+                    {preset.icon} {preset.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </section>
 
         <section className="arena-metrics-selector-section">
@@ -2608,15 +2705,40 @@ export default function ArenaView({ variant = "page", onOpenBuilder }: ArenaView
               
               {battleState === "complete" && battleWinner && (
                 <div className="arena-winner-banner">
-                  <div className="winner-label">🏆 WINNER 🏆</div>
+                  <div className="winner-label">🏆 {selectedMetrics.includes("all") ? "OVERALL WINNER" : "METRIC CHAMPION"} 🏆</div>
                   <div className="winner-name">
                     {battleWinner === "left" ? componentAProfile?.name : battleWinner === "right" ? componentBProfile?.name : "TIE"}
                   </div>
-                  {battleScore && battleScore.totalRounds > 0 ? (
-                    <div style={{ fontSize: "0.8rem", color: "rgba(226, 232, 240, 0.9)", letterSpacing: "0.08em", textTransform: "uppercase" }}>
-                      {battleScore.leftWins}-{battleScore.rightWins}{battleScore.ties > 0 ? `-${battleScore.ties}` : ""} · {battleScore.totalRounds} metric{battleScore.totalRounds === 1 ? "" : "s"}
+                  {metricResults.size > 0 && (
+                    <div style={{marginTop: '12px', padding: '12px', background: 'rgba(2, 6, 23, 0.6)', borderRadius: '12px', width: '100%'}}>
+                      <div style={{fontSize: '0.75rem', color: 'rgba(148, 163, 184, 0.9)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.1em'}}>Results by Metric</div>
+                      <div style={{display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'center'}}>
+                        {Array.from(metricResults.entries()).map(([key, result]) => {
+                          const preset = TELEMETRY_PRESETS.find(p => p.tokens.some(t => key.includes(t)));
+                          const metricLabel = preset?.label || key;
+                          const winnerColor = result.winner === "left" ? "rgba(59, 130, 246, 0.85)" : result.winner === "right" ? "var(--brand-primary-dim)" : "rgba(148, 163, 184, 0.5)";
+                          return (
+                            <div 
+                              key={key}
+                              style={{
+                                padding: '8px 14px',
+                                borderRadius: '999px',
+                                background: winnerColor,
+                                fontSize: '0.75rem',
+                                fontWeight: '700',
+                                color: '#042f2e',
+                                letterSpacing: '0.05em',
+                                textTransform: 'uppercase',
+                                border: '2px solid rgba(4, 47, 46, 0.3)'
+                              }}
+                            >
+                              {preset?.icon} {metricLabel}: {result.winner === "left" ? "A" : result.winner === "right" ? "B" : "Tie"}
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
-                  ) : null}
+                  )}
                   <button className="arena-btn ghost small" onClick={handleResetBattle} type="button">Reset Battle</button>
                 </div>
               )}
