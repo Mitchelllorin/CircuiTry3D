@@ -86,10 +86,29 @@ export function GlobalModeBar() {
     [setWorkspaceMode, navigate, isWorkspacePage],
   );
 
-  // Don't show on landing page — all hooks must be called above this guard.
-  if (isLandingPage) {
-    return null;
-  }
+  const handleBuildClick = useCallback(() => {
+    handleModeClick("build");
+  }, [handleModeClick]);
+
+  const handlePracticeClick = useCallback(() => {
+    handleModeClick("practice");
+  }, [handleModeClick]);
+
+  const handleArenaClick = useCallback(() => {
+    handleModeClick("arena");
+  }, [handleModeClick]);
+
+  const handleHelpClick = useCallback(() => {
+    handleModeClick("help");
+  }, [handleModeClick]);
+
+  const handleWireLibraryClick = useCallback(() => {
+    setWireLibraryPanelOpen(true);
+    // Navigate to workspace if not already there
+    if (!isWorkspacePage) {
+      navigate("/app");
+    }
+  }, [setWireLibraryPanelOpen, navigate, isWorkspacePage]);
 
   return (
     <>
@@ -156,10 +175,10 @@ export function GlobalModeBar() {
           className="mode-tab"
           data-active={workspaceMode === "help" ? "true" : undefined}
           onClick={handleHelpClick}
-          aria-label="Help mode"
-          title="Guides, tutorials, and support resources"
+          aria-label="Help center"
+          title="Support resources, guides, and documentation"
         >
-          <span className="mode-icon" aria-hidden="true">📚</span>
+          <span className="mode-icon" aria-hidden="true">❓</span>
           <span className="mode-label">Help</span>
         </button>
         <button
