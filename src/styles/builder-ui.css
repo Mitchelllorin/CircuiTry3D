@@ -5710,53 +5710,6 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
     transition: none !important;
   }
 }
-/* TEMP FIX — force unlock stuck tools */
-.tool-button.active {
-  pointer-events: auto !important;
-  opacity: 1 !important;
-}
-
-/* TEMP FIX — unlock workspace */
-.workspace {
-  pointer-events: auto !important;
-  opacity: 1 !important;
-}
-
-/* Classroom, Pricing, and Community Panel Overlays */
-.builder-panel-shell--classroom,
-.builder-panel-shell--pricing,
-.builder-panel-shell--community {
-  width: min(96vw, 1280px);
-  max-height: 92vh;
-}
-
-.builder-panel-body--classroom,
-.builder-panel-body--pricing,
-.builder-panel-body--community {
-  overflow: auto;
-  padding: 0;
-  background: rgba(8, 20, 44, 0.95);
-  flex: 1 1 auto;
-  min-height: 0;
-}
-
-.builder-panel-body--classroom > *,
-.builder-panel-body--pricing > *,
-.builder-panel-body--community > * {
-  max-width: 100%;
-}
-
-/* Reset padding for embedded page sections */
-.builder-panel-body--classroom .classroom-page,
-.builder-panel-body--pricing .pricing-section,
-.builder-panel-body--community .community-page {
-  padding: 24px;
-  min-height: 100%;
-}
-
-/* Ensure scrollable content */
-.builder-panel-overlay--classroom .classroom-page,
-.builder-panel-overlay--pricing .pricing-section,
-.builder-panel-overlay--community .community-page {
-  overflow-y: auto;
+.workspace * {
+  outline: 1px solid red !important;
 }
