@@ -34,7 +34,9 @@ type TutorialObjective = {
   done: boolean;
 };
 
-const STORAGE_KEY = "circuitry3d:tutorial:basic-circuits:v2";
+export const INTERACTIVE_TUTORIAL_PROGRESS_STORAGE_KEY =
+  "circuitry3d:tutorial:basic-circuits:v2";
+export const INTERACTIVE_TUTORIAL_DONE_STEP_INDEX = 14;
 
 function safeParseInt(value: string | null) {
   if (!value) return null;
@@ -314,7 +316,10 @@ export function BuilderInteractiveTutorial(props: {
   useEffect(() => {
     if (!isOpen) return;
     try {
-      window.localStorage.setItem(STORAGE_KEY, String(stepIndex));
+      window.localStorage.setItem(
+        INTERACTIVE_TUTORIAL_PROGRESS_STORAGE_KEY,
+        String(stepIndex),
+      );
     } catch {
       // ignore
     }
@@ -323,7 +328,9 @@ export function BuilderInteractiveTutorial(props: {
   useEffect(() => {
     if (!isOpen) return;
     try {
-      const stored = safeParseInt(window.localStorage.getItem(STORAGE_KEY));
+      const stored = safeParseInt(
+        window.localStorage.getItem(INTERACTIVE_TUTORIAL_PROGRESS_STORAGE_KEY),
+      );
       if (stored != null && stored >= 0 && stored < steps.length) {
         setStepIndex(stored);
       }
@@ -699,7 +706,9 @@ export function BuilderInteractiveTutorial(props: {
             className="builder-tutorial-btn builder-tutorial-btn--ghost"
             onClick={() => {
               try {
-                window.localStorage.removeItem(STORAGE_KEY);
+                window.localStorage.removeItem(
+                  INTERACTIVE_TUTORIAL_PROGRESS_STORAGE_KEY,
+                );
               } catch {
                 // ignore
               }

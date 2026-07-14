@@ -1,10 +1,32 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import CIRCUIT_TIPS_FACTS from "../data/circuitTipsFacts";
+import {
+  INTERACTIVE_TUTORIAL_DONE_STEP_INDEX,
+  INTERACTIVE_TUTORIAL_PROGRESS_STORAGE_KEY,
+} from "./builder/tutorial/BuilderInteractiveTutorial";
 import { AskAboutTip } from "./AskAboutTip";
 
-const ROTATION_INTERVAL_MS = 12000;
-const STARTUP_DELAY_MS = 30000;
+const ROTATION_INTERVAL_MS = 45000;
+const STARTUP_DELAY_MS = 90000;
+const ONBOARDING_CHECK_INTERVAL_MS = 10000;
 const DISMISSED_STORAGE_KEY = "circuitry3d:tips-ticker:dismissed:v1";
+const TOUR_DISMISSED_KEY = "circuitry3d:onboarding:tour-dismissed:v1";
+
+function hasCompletedOnboarding(): boolean {
+  try {
+    const tourDismissed = window.localStorage.getItem(TOUR_DISMISSED_KEY) === "1";
+    const tutorialStepIndex = Number.parseInt(
+      window.localStorage.getItem(INTERACTIVE_TUTORIAL_PROGRESS_STORAGE_KEY) ?? "",
+      10,
+    );
+    const tutorialComplete =
+      Number.isFinite(tutorialStepIndex) &&
+      tutorialStepIndex >= INTERACTIVE_TUTORIAL_DONE_STEP_INDEX;
+    return tourDismissed && tutorialComplete;
+  } catch {
+    return false;
+  }
+}
 
 function getRandomIndex(length: number, exclude: number): number {
   if (length <= 1) {
@@ -19,6 +41,9 @@ function getRandomIndex(length: number, exclude: number): number {
 
 export function TipsTicker() {
   const [askOpen, setAskOpen] = useState(false);
+  const [onboardingComplete, setOnboardingComplete] = useState(() =>
+    hasCompletedOnboarding(),
+  );
 
   const [dismissed, setDismissed] = useState(() => {
     try {
@@ -36,15 +61,37 @@ export function TipsTicker() {
   const [visible, setVisible] = useState(true);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  useEffect(() => {
+    if (onboardingComplete) {
+      return;
+    }
+    const checkCompletion = () => {
+      if (hasCompletedOnboarding()) {
+        setOnboardingComplete(true);
+      }
+    };
+    checkCompletion();
+    window.addEventListener("storage", checkCompletion);
+    document.addEventListener("visibilitychange", checkCompletion);
+    const timer = setInterval(() => {
+      checkCompletion();
+    }, ONBOARDING_CHECK_INTERVAL_MS);
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener("storage", checkCompletion);
+      document.removeEventListener("visibilitychange", checkCompletion);
+    };
+  }, [onboardingComplete]);
+
   // Delay initial appearance so the ticker doesn't pop up the moment the
   // workspace loads, giving users time to orient themselves first.
   useEffect(() => {
-    if (dismissed) {
+    if (dismissed || !onboardingComplete) {
       return;
     }
     const timer = setTimeout(() => setReady(true), STARTUP_DELAY_MS);
     return () => clearTimeout(timer);
-  }, [dismissed]);
+  }, [dismissed, onboardingComplete]);
 
   const advance = useCallback(() => {
     setVisible(false);
@@ -87,7 +134,12 @@ export function TipsTicker() {
     }
   };
 
-  if (dismissed || !ready || CIRCUIT_TIPS_FACTS.length === 0) {
+  if (
+    dismissed ||
+    !onboardingComplete ||
+    !ready ||
+    CIRCUIT_TIPS_FACTS.length === 0
+  ) {
     return null;
   }
 
