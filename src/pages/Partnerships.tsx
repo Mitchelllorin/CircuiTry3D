@@ -1,10 +1,4 @@
 import { Link } from "react-router-dom";
-import {
-  MANUFACTURER_PLACEMENT_TIERS,
-  MANUFACTURER_PLACEMENT_EMAIL,
-  EDUCATION_TIERS,
-  EDUCATION_LICENSE_EMAIL,
-} from "../data/hybridPricing";
 
 const CONTACT = {
   schoolBoard: "hello@circuitry3d.net?subject=School%20Board%20%2F%20District%20Partnership%20Inquiry",

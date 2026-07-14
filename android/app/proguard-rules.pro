@@ -5,30 +5,27 @@
 # For more details, see
 #   http://developer.android.com/guide/developing/tools/proguard.html
 
-# ── Capacitor core ────────────────────────────────────────────────────────────
-# Keep the plugin registry and all Capacitor plugin classes so the bridge
-# can resolve them at runtime via reflection.
+# ── Capacitor core ──────────────────────────────────────────────────────────
+# Keep all public Capacitor Plugin API so the JS bridge can call into native.
 -keep class com.getcapacitor.** { *; }
-
-# ── App-specific Capacitor plugins ────────────────────────────────────────────
-# BillingPlugin (and any future plugins in this package) are resolved by the
-# Capacitor bridge via reflection using @CapacitorPlugin(name) and @PluginMethod
-# annotations.  Without this rule, R8/ProGuard renames or removes the annotated
-# methods, causing a NoSuchMethodException at runtime and crashing the bridge on
-# cold start before the WebView has a chance to render.
--keep class com.circuitry3d.app.** { *; }
-
-# Keep all annotations on Capacitor plugin classes so the bridge can read
-# @CapacitorPlugin(name) to map JavaScript plugin names to Java classes and
-# @PluginMethod to find callable methods.
--keepattributes *Annotation*
-
-# ── WebView JavaScript interface ──────────────────────────────────────────────
-# Methods annotated with @JavascriptInterface must not be renamed or removed.
--keepclassmembers class * {
-    @android.webkit.JavascriptInterface <methods>;
+-keep @com.getcapacitor.annotation.CapacitorPlugin class * { *; }
+-keep @com.getcapacitor.annotation.PluginMethod class * { *; }
+-keepclassmembers class * extends com.getcapacitor.Plugin {
+    @com.getcapacitor.annotation.PluginMethod public *;
 }
 
-# ── Preserve source-file/line-number attributes for crash deobfuscation ───────
+# ── WebView JavaScript interface ────────────────────────────────────────────
+# If you ever add a @JavascriptInterface class, keep it here:
+# -keepclassmembers class fqcn.of.javascript.interface.for.webview {
+#   public *;
+# }
+
+# ── AndroidX / support ──────────────────────────────────────────────────────
+# AndroidX libraries ship their own consumer ProGuard rules, so no broad keep
+# is needed here.  Suppress warnings for any unused AndroidX references.
+-dontwarn androidx.**
+
+# ── Preserve source-file names for crash reports ────────────────────────────
+# Remove these two lines to further obfuscate the stack traces in production.
 -keepattributes SourceFile,LineNumberTable
 -renamesourcefileattribute SourceFile

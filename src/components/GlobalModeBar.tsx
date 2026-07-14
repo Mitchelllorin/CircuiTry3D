@@ -99,7 +99,6 @@ export function GlobalModeBar() {
         </div>
       )}
       <div className="workspace-mode-bar workspace-mode-bar--global" ref={modeBarRef}>
-        {/* Brand home link */}
         <Link
           to="/"
           className="mode-tab mode-tab--icon-only mode-tab--brand"
@@ -108,31 +107,143 @@ export function GlobalModeBar() {
         >
           <BrandMark size="xs" decorative />
         </Link>
-
-        {NAV_TABS.map((tab) => (
-          <button
-            key={tab.mode}
-            type="button"
-            className="mode-tab"
-            data-active={workspaceMode === tab.mode ? "true" : undefined}
-            onClick={() => handleModeClick(tab.mode)}
-            aria-label={`${tab.label} mode`}
-            title={tab.title}
-          >
-            {tab.mode === "wire-guide" ? (
-              <img
-                src={wireResourceLogo}
-                alt=""
-                className="mode-icon mode-icon--svg mode-icon--wire-guide"
-                aria-hidden="true"
-              />
-            ) : (
-              <span className="mode-icon" aria-hidden="true">{tab.icon}</span>
-            )}
-            <span className="mode-label">{tab.label}</span>
-          </button>
-        ))}
-
+        <button
+          type="button"
+          className="mode-tab"
+          data-active={workspaceMode === "build" ? "true" : undefined}
+          onClick={handleBuildClick}
+          aria-label="Build mode"
+          title="Component builder and circuit designer"
+        >
+          <span className="mode-icon" aria-hidden="true">🔧</span>
+          <span className="mode-label">Build</span>
+        </button>
+        <button
+          type="button"
+          className="mode-tab"
+          data-active={workspaceMode === "practice" ? "true" : undefined}
+          onClick={handlePracticeClick}
+          aria-label="Practice mode"
+          title="Guided worksheets and W.I.R.E. problems"
+        >
+          <span className="mode-icon" aria-hidden="true">📝</span>
+          <span className="mode-label">Practice</span>
+        </button>
+        <button
+          type="button"
+          className="mode-tab"
+          data-active={workspaceMode === "troubleshoot" ? "true" : undefined}
+          onClick={handleTroubleshootClick}
+          aria-label="Troubleshoot mode"
+          title="Fix broken circuits and restore current flow"
+        >
+          <span className="mode-icon" aria-hidden="true">🩺</span>
+          <span className="mode-label">Troubleshoot</span>
+        </button>
+        <button
+          type="button"
+          className="mode-tab"
+          data-active={workspaceMode === "arena" ? "true" : undefined}
+          onClick={handleArenaClick}
+          aria-label="Arena mode"
+          title="Component testing and advanced simulation"
+        >
+          <span className="mode-icon" aria-hidden="true">⚡</span>
+          <span className="mode-label">Arena</span>
+        </button>
+        <button
+          type="button"
+          className="mode-tab"
+          data-active={workspaceMode === "help" ? "true" : undefined}
+          onClick={handleHelpClick}
+          aria-label="Help mode"
+          title="Guides, tutorials, and support resources"
+        >
+          <span className="mode-icon" aria-hidden="true">📚</span>
+          <span className="mode-label">Help</span>
+        </button>
+        <button
+          type="button"
+          className="mode-tab"
+          data-active={workspaceMode === "arcade" ? "true" : undefined}
+          onClick={() => handleModeClick("arcade")}
+          aria-label="Arcade"
+          title="Circuit Arcade"
+        >
+          <span className="mode-icon" aria-hidden="true">🎯</span>
+          <span className="mode-label">Arcade</span>
+        </button>
+        <button
+          type="button"
+          className="mode-tab"
+          data-active={workspaceMode === "classroom" ? "true" : undefined}
+          onClick={() => handleModeClick("classroom")}
+          aria-label="Classroom"
+          title="Classroom"
+        >
+          <span className="mode-icon" aria-hidden="true">🎓</span>
+          <span className="mode-label">Classroom</span>
+        </button>
+        <button
+          type="button"
+          className="mode-tab"
+          data-active={workspaceMode === "community" ? "true" : undefined}
+          onClick={() => handleModeClick("community")}
+          aria-label="Community"
+          title="Community"
+        >
+          <span className="mode-icon" aria-hidden="true">🌐</span>
+          <span className="mode-label">Community</span>
+        </button>
+        <button
+          type="button"
+          className="mode-tab"
+          data-active={workspaceMode === "account" ? "true" : undefined}
+          onClick={() => handleModeClick("account")}
+          aria-label="Account"
+          title="Account"
+        >
+          <span className="mode-icon" aria-hidden="true">👤</span>
+          <span className="mode-label">Account</span>
+        </button>
+        <button
+          type="button"
+          className="mode-tab"
+          data-active={workspaceMode === "pricing" ? "true" : undefined}
+          onClick={() => handleModeClick("pricing")}
+          aria-label="Pricing"
+          title="Pricing"
+        >
+          <span className="mode-icon" aria-hidden="true">💳</span>
+          <span className="mode-label">Pricing</span>
+        </button>
+        <button
+          type="button"
+          className="mode-tab"
+          data-active={workspaceMode === "wire-guide" ? "true" : undefined}
+          onClick={handleWireGuideClick}
+          aria-label="Wire guide mode"
+          title="Wire guide, formulas, and gauge recommendations"
+        >
+          <img
+            src={wireResourceLogo}
+            alt=""
+            className="mode-icon mode-icon--svg mode-icon--wire-guide"
+            aria-hidden="true"
+          />
+          <span className="mode-label">Wire Guide</span>
+        </button>
+        <button
+          type="button"
+          className="mode-tab"
+          data-active={workspaceMode === "textbook" ? "true" : undefined}
+          onClick={() => handleModeClick("textbook")}
+          aria-label="Electrical Textbook — Year 1 and Year 2 reference"
+          title="Year 1 & Year 2 Electrical Studies Textbook"
+        >
+          <span className="mode-icon" aria-hidden="true">📖</span>
+          <span className="mode-label">Textbook</span>
+        </button>
         {modeBarScrollState.canScrollRight && (
           <div className="mode-bar-scroll-indicator mode-bar-scroll-indicator--inline" aria-hidden="true">
             <span className="scroll-indicator-arrow">›</span>

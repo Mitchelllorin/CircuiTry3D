@@ -37,6 +37,10 @@ android {
         release {
             minifyEnabled true
             shrinkResources true
+            // proguard-android-optimize.txt enables R8's full optimisation pipeline.
+            // Capacitor ships its own consumer ProGuard rules, so the bridge and
+            // plugin methods are kept automatically.  Test on multiple API levels
+            // after any major Capacitor upgrade.
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             if (keystorePropertiesFile.exists()) {
                 signingConfig signingConfigs.release

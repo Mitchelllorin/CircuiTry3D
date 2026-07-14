@@ -1,8 +1,6 @@
 import { useState, useMemo, useCallback } from "react";
 import textbook, { allChapters, getChaptersByYear } from "../data/electricalTextbook";
 import type { TextbookChapter, TextbookSection, Formula } from "../data/electricalTextbook";
-import { getChapterQuiz, getYearFinal } from "../data/textbookQuizzes";
-import type { QuizQuestion } from "../data/textbookQuizzes";
 import "../styles/textbook.css";
 
 // ─── Sub-components ──────────────────────────────────────────────────────────
