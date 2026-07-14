@@ -2500,13 +2500,26 @@ export default function Builder() {
               ))}
             </div>
 
+      {/* ── Unified top action bar ─────────────────────────────────────────
+          Combines the former workspace-edge-actions (left + right) and the
+          quick-add-bar into a single horizontal strip below the ticker. */}
       {shouldShowEdgeActions && (
-        <div
-          className="builder-top-quick-actions"
-          role="toolbar"
-          aria-label="Quick build actions"
-        >
-          <div className="builder-top-quick-actions-group" aria-label="Tool quick actions">
+        <Fragment>
+          <div className="unified-action-bar" aria-label="Quick actions">
+            {/* Quick-add components */}
+            {QUICK_ADD_COMPONENTS.map((component) => (
+              <QuickAddButton
+                key={component.id}
+                component={component}
+                onClick={() => handleComponentAction(component)}
+                disabled={controlsDisabled}
+                title={component.description || component.label}
+              />
+            ))}
+
+            <span className="unified-action-divider" aria-hidden="true" />
+
+            {/* Tool actions (formerly left edge) */}
             <button
               type="button"
               className="edge-action-btn edge-action-btn--clear"
@@ -2517,6 +2530,7 @@ export default function Builder() {
               title="Clear all components, wires, and analysis data"
             >
               <IconTrash className="edge-action-icon-svg" />
+              <span className="edge-action-label" aria-hidden="true">Clear</span>
             </button>
             <button
               type="button"
@@ -2529,6 +2543,7 @@ export default function Builder() {
               title={modeState.isWireMode ? "Exit Wire Mode (W)" : "Wire Mode (W)"}
             >
               <img src={wireStrippersIcon} alt="" className="edge-action-icon-svg" aria-hidden="true" />
+              <span className="edge-action-label" aria-hidden="true">Wire</span>
             </button>
             <button
               type="button"
@@ -2541,6 +2556,7 @@ export default function Builder() {
               title={modeState.isRotateMode ? "Exit Rotate Mode (R)" : "Rotate Mode (R)"}
             >
               <IconRotate className="edge-action-icon-svg" />
+              <span className="edge-action-label" aria-hidden="true">Rotate</span>
             </button>
             <button
               type="button"
@@ -2552,12 +2568,12 @@ export default function Builder() {
               title="Edit / Select (E)"
             >
               <IconPencil className="edge-action-icon-svg" />
+              <span className="edge-action-label" aria-hidden="true">Edit</span>
             </button>
-          </div>
 
-          <span className="builder-top-quick-actions-divider" aria-hidden="true" />
+            <span className="unified-action-divider" aria-hidden="true" />
 
-          <div className="builder-top-quick-actions-group" aria-label="History and file actions">
+            {/* History / file actions (formerly right edge) */}
             <button
               type="button"
               className="edge-action-btn edge-action-btn--simulate"
@@ -2569,6 +2585,7 @@ export default function Builder() {
               title="Run the current circuit simulation"
             >
               <IconPlay className="edge-action-icon-svg" />
+              <span className="edge-action-label" aria-hidden="true">Run</span>
             </button>
             <button
               type="button"
@@ -2579,7 +2596,8 @@ export default function Builder() {
               aria-label="Undo last change"
               title="Undo (Ctrl+Z)"
             >
-              <span className="edge-action-icon" aria-hidden="true">↺</span>
+              <IconUndo className="edge-action-icon-svg" />
+              <span className="edge-action-label" aria-hidden="true">Undo</span>
             </button>
             <button
               type="button"
@@ -2590,44 +2608,62 @@ export default function Builder() {
               aria-label="Redo previous change"
               title="Redo (Ctrl+Shift+Z)"
             >
-              <span className="edge-action-icon" aria-hidden="true">↻</span>
+              <IconRedo className="edge-action-icon-svg" />
+              <span className="edge-action-label" aria-hidden="true">Redo</span>
             </button>
             <button
               type="button"
               className="edge-action-btn"
-              onClick={() => {
-                if (isFeatureLocked("load")) {
-                  showUpgradePrompt("load");
-                } else {
-                  setIsLoadModalOpen(true);
-                }
-              }}
+              onClick={() => setIsLoadModalOpen(true)}
               aria-label="Open circuit"
-              title={isDemoMode ? "Open circuit — Full Version" : "Open saved circuit (Ctrl+O)"}
+              title="Open saved circuit (Ctrl+O)"
             >
-              <span className="edge-action-icon" aria-hidden="true">📂</span>
-              {isDemoMode && <span className="locked-indicator" aria-hidden="true">🔒</span>}
+              <IconFolder className="edge-action-icon-svg" />
+              <span className="edge-action-label" aria-hidden="true">Load</span>
             </button>
             <button
               type="button"
               className="edge-action-btn"
-              onClick={() => {
-                if (isFeatureLocked("save")) {
-                  showUpgradePrompt("save");
-                } else {
-                  setIsSaveModalOpen(true);
-                }
-              }}
+              onClick={() => setIsSaveModalOpen(true)}
               aria-label="Save circuit"
-              title={isDemoMode ? "Save circuit — Full Version" : "Save circuit (Ctrl+S)"}
+              title="Save circuit (Ctrl+S)"
             >
-              <span className="edge-action-icon" aria-hidden="true">💾</span>
+              <IconSave className="edge-action-icon-svg" />
+              <span className="edge-action-label" aria-hidden="true">Save</span>
               {circuitStorage.hasUnsavedChanges && (
                 <span className="unsaved-dot" aria-label="Unsaved changes" />
               )}
             </button>
           </div>
-        </div>
+
+          {/* Junction info tip — shown until dismissed, explains the role
+              of junctions and how to use them so they are never missed */}
+          {isJunctionTipVisible && (
+            <div className="junction-info-tip" role="note" aria-label="Junction nodes tip">
+              <span className="junction-info-tip-icon" aria-hidden="true">─●─</span>
+              <div className="junction-info-tip-body">
+                <p className="junction-info-tip-title">Junction Nodes — critical for complex circuits</p>
+                <p className="junction-info-tip-text">
+                  Drop a <strong>Junction ─●─</strong> anywhere on a wire to instantly branch it.
+                  Essential for parallel circuits and combination topologies.
+                </p>
+                <ul className="junction-info-tip-bullets">
+                  <li>Press <kbd>J</kbd> or tap the pulsing <strong>Junction</strong> button in the component bar above</li>
+                  <li>In Wire mode, click any wire to split it and branch from that point</li>
+                  <li aria-label="KCL applies at every junction: sum of currents in equals sum of currents out">KCL applies at every junction: Σ I<sub>in</sub> = Σ I<sub>out</sub></li>
+                </ul>
+              </div>
+              <button
+                type="button"
+                className="junction-info-tip-close"
+                aria-label="Dismiss junction tip"
+                onClick={handleDismissJunctionTip}
+              >
+                ×
+              </button>
+            </div>
+          )}
+        </Fragment>
       )}
 
       {isIntroDialogVisible && (
