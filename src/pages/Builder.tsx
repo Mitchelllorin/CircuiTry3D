@@ -1314,17 +1314,9 @@ export default function Builder() {
   const [isBottomOpen, setBottomOpen] = useState(false);
   const [isHelpOpen, setHelpOpen] = useState(false);
   const [requestedHelpSection, setRequestedHelpSection] = useState<string | null>(null);
-  const [helpView, setHelpView] = useState<HelpModalView>("overview");
-  const [isLeftMenuOpen, setLeftMenuOpen] = useState<boolean>(() => {
-    if (typeof window === "undefined") {
-      return false;
-    }
-    return window.innerWidth >= 1024;
-  });
+  const [isLeftMenuOpen, setLeftMenuOpen] = useState(false);
   const [isRightMenuOpen, setRightMenuOpen] = useState(false);
   const [isBottomMenuOpen, setBottomMenuOpen] = useState(false);
-  const [activeQuickTool, setActiveQuickTool] = useState<BuilderToolId>("select");
-  const [isSimulatePulsing, setSimulatePulsing] = useState(false);
 
   useEffect(() => {
     try {
@@ -1682,9 +1674,17 @@ export default function Builder() {
     [triggerBuilderAction, setActiveQuickTool, setSimulatePulsing]
   );
 
-  const closeWorkspaceSectionOverlay = useCallback(() => {
-    navigate("/app");
-  }, [navigate]);
+  const toggleLeftMenu = useCallback(() => {
+    setLeftMenuOpen((previous) => !previous);
+  }, []);
+
+  const toggleRightMenu = useCallback(() => {
+    setRightMenuOpen((previous) => !previous);
+  }, []);
+
+  const toggleBottomMenu = useCallback(() => {
+    setBottomMenuOpen((previous) => !previous);
+  }, []);
 
   useEffect(() => {
     if (!activeWorkspaceSection) {
@@ -1894,169 +1894,260 @@ export default function Builder() {
         </div>
       )}
 
-      {shouldShowCurrentFlowPayoffBanner && (
-        <section className="current-flow-payoff-banner" role="status" aria-live="polite">
-          <div className="current-flow-payoff-kicker">⚡ Welcome to CircuiTry3D — Electricity Illuminated</div>
-          <h2 className="current-flow-payoff-title">
-            {currentFlowPayoffHasFlow
-              ? "Live current is flowing through your circuit right now."
-              : "Close the loop to watch current come alive in 3D."}
-          </h2>
-          <p className="current-flow-payoff-text">
-            The battery is the electron pump — it creates a voltage difference that pushes current through the switch, resistor, and LED.{" "}
-            {currentFlowPayoffVolts > 0 && currentFlowPayoffAmps > 0
-              ? `At ${currentFlowPayoffVolts.toFixed(0)} V with ${(currentFlowPayoffVolts / currentFlowPayoffAmps).toFixed(0)} Ω total resistance, Ohm's Law gives I = V ÷ R ≈ ${currentFlowPayoffAmps.toFixed(3)} A.`
-              : "Apply Ohm's Law (I = V ÷ R) to find the current, then watch it animate in real time."}{" "}
-            Orbit with left-drag, pan with right-drag, and zoom with the scroll wheel.
-          </p>
-          <div className="current-flow-payoff-explainer">
-            <div className="payoff-explainer-item">
-              <span className="payoff-explainer-label">⚡ Current (I)</span>
-              <span className="payoff-explainer-value">
-                Flow of electric charge through the circuit.{" "}
-                {currentFlowPayoffAmps > 0
-                  ? `${currentFlowPayoffAmps.toFixed(activeWireProfile ? 4 : 3)} A flowing now.`
-                  : "Complete the circuit to start flow."}
-              </span>
-            </div>
-            <div className="payoff-explainer-item">
-              <span className="payoff-explainer-label">🔋 Voltage (E)</span>
-              <span className="payoff-explainer-value">
-                Electrical pressure pushing charge around the circuit.{" "}
-                {currentFlowPayoffVolts > 0
-                  ? `${currentFlowPayoffVolts.toFixed(1)} V supplied by the battery.`
-                  : "Add a battery to supply voltage."}
-              </span>
-            </div>
-            <div className="payoff-explainer-item">
-              <span className="payoff-explainer-label">🟢 Resistance (R)</span>
-              <span className="payoff-explainer-value">
-                Opposition to current. Higher resistance → less current.
-                Ohm's Law: <strong>E = I × R</strong>.
-              </span>
-            </div>
-            <div className="payoff-explainer-item">
-              <span className="payoff-explainer-label">🔵 Power (W)</span>
-              <span className="payoff-explainer-value">
-                Energy used per second.{" "}
-                <strong>P = E × I</strong>.{" "}
-                {currentFlowPayoffWatts > 0
-                  ? `${currentFlowPayoffWatts.toFixed(activeWireProfile ? 3 : 2)} W consumed now.`
-                  : "Appears once current flows."}
-              </span>
+      <nav
+        id="builder-menu-left"
+        className={`builder-menu builder-menu-left ${isLeftMenuOpen ? "open" : "collapsed"}`}
+        role="navigation"
+        aria-label="Component and wiring controls"
+      >
+        <div className="builder-menu-scroll" aria-hidden={!isLeftMenuOpen}>
+          <div className="slider-section">
+            <span className="slider-heading">Parts</span>
+            <div className="slider-stack">
+              {COMPONENT_ACTIONS.map((component) => (
+                <button
+                  key={component.id}
+                  type="button"
+                  className="slider-btn slider-btn-compact"
+                  onClick={() => handleComponentAction(component)}
+                  disabled={controlsDisabled}
+                  aria-disabled={controlsDisabled}
+                  title={controlsDisabled ? controlDisabledTitle : component.label}
+                  data-component-action={component.action}
+                  tabIndex={isLeftMenuOpen ? 0 : -1}
+                >
+                  <span className="slider-icon" aria-hidden="true">
+                    {component.icon}
+                  </span>
+                  <span className="slider-label">{component.label}</span>
+                </button>
+              ))}
             </div>
           </div>
-          <div className="current-flow-payoff-metrics">
-            <span className="current-flow-payoff-metric">
-              <strong>I</strong>{" "}
-              <span>{currentFlowPayoffAmps.toFixed(activeWireProfile ? 4 : 3)} A</span>
-            </span>
-            <span className="current-flow-payoff-metric">
-              <strong>E</strong> <span>{currentFlowPayoffVolts.toFixed(1)} V</span>
-            </span>
-            <span className="current-flow-payoff-metric">
-              <strong>W</strong>{" "}
-              <span>{currentFlowPayoffWatts.toFixed(activeWireProfile ? 3 : 2)} W</span>
-            </span>
+          <div className="slider-section">
+            <span className="slider-heading">Quick Actions</span>
+            <div className="slider-stack">
+              {TOOL_BUTTONS.map((button) => (
+                <button
+                  key={button.id}
+                  type="button"
+                  className="slider-btn slider-btn-stacked"
+                  title={button.description}
+                  tabIndex={isLeftMenuOpen ? 0 : -1}
+                >
+                  <span className="slider-label">{button.label}</span>
+                  <span className="slider-description">{button.description}</span>
+                </button>
+              ))}
+            </div>
           </div>
-          <div className="current-flow-payoff-actions">
-            <button
-              type="button"
-              className="builder-intro-dialog-close"
-              aria-label="Close introduction"
-              onClick={handleDismissIntroDialog}
-            >
-              ×
-            </button>
-
-            <div className="builder-intro-dialog-kicker">
-              CircuiTry3D
+          <div className="slider-section">
+            <span className="slider-heading">Wire Modes</span>
+            <div className="slider-stack">
+              {WIRE_TOOL_ACTIONS.map((action) => (
+                <button
+                  key={action.id}
+                  type="button"
+                  className="slider-btn slider-btn-stacked"
+                  onClick={() => triggerBuilderAction(action.action, action.data)}
+                  disabled={controlsDisabled}
+                  aria-disabled={controlsDisabled}
+                  title={controlsDisabled ? controlDisabledTitle : action.description}
+                  tabIndex={isLeftMenuOpen ? 0 : -1}
+                >
+                  <span className="slider-label">{action.label}</span>
+                  <span className="slider-description">{action.description}</span>
+                </button>
+              ))}
             </div>
+          </div>
+        </div>
+        <button
+          type="button"
+          className={`builder-menu-handle builder-menu-handle-left ${isLeftMenuOpen ? "open" : "collapsed"}`}
+          onClick={toggleLeftMenu}
+          aria-controls="builder-menu-left"
+          aria-expanded={isLeftMenuOpen}
+          aria-label={isLeftMenuOpen ? "Collapse component menu" : "Expand component menu"}
+        >
+          <span aria-hidden="true">{isLeftMenuOpen ? "<" : ">"}</span>
+        </button>
+      </nav>
 
-            <div
-              className="builder-intro-dialog-step-icon"
-              aria-hidden="true"
-            >
-              {INTRO_WELCOME.icon}
+      <nav
+        id="builder-menu-right"
+        className={`builder-menu builder-menu-right ${isRightMenuOpen ? "open" : "collapsed"}`}
+        role="complementary"
+        aria-label="Mode and view controls"
+      >
+        <div className="builder-menu-scroll" aria-hidden={!isRightMenuOpen}>
+          <div className="slider-section">
+            <span className="slider-heading">Properties</span>
+            <div className="property-stack">
+              {PROPERTY_ITEMS.map((item) => (
+                <div key={item.id} className="property-item">
+                  <div className="property-name">{item.name}</div>
+                  <div className="property-value">{item.value}</div>
+                </div>
+              ))}
             </div>
-            <h2
-              className="builder-intro-dialog-title"
-              id="intro-dialog-title"
-            >
-              {INTRO_WELCOME.title}
-            </h2>
-            <p className="builder-intro-dialog-body">
-              {INTRO_WELCOME.body}
-            </p>
+          </div>
+          <div className="slider-section">
+            <span className="slider-heading">Modes</span>
+            <div className="slider-stack">
+              {CURRENT_MODE_ACTIONS.map((action) => (
+                <button
+                  key={action.id}
+                  type="button"
+                  className="slider-btn slider-btn-stacked"
+                  onClick={() => triggerBuilderAction(action.action, action.data)}
+                  disabled={controlsDisabled}
+                  aria-disabled={controlsDisabled}
+                  title={controlsDisabled ? controlDisabledTitle : action.description}
+                  tabIndex={isRightMenuOpen ? 0 : -1}
+                >
+                  <span className="slider-label">{action.label}</span>
+                  <span className="slider-description">{action.description}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="slider-section">
+            <span className="slider-heading">View</span>
+            <div className="slider-stack">
+              {VIEW_CONTROL_ACTIONS.map((action) => (
+                <button
+                  key={action.id}
+                  type="button"
+                  className="slider-btn slider-btn-stacked"
+                  onClick={() => triggerBuilderAction(action.action, action.data)}
+                  disabled={controlsDisabled}
+                  aria-disabled={controlsDisabled}
+                  title={controlsDisabled ? controlDisabledTitle : action.description}
+                  tabIndex={isRightMenuOpen ? 0 : -1}
+                >
+                  <span className="slider-label">{action.label}</span>
+                  <span className="slider-description">{action.description}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+        <button
+          type="button"
+          className={`builder-menu-handle builder-menu-handle-right ${isRightMenuOpen ? "open" : "collapsed"}`}
+          onClick={toggleRightMenu}
+          aria-controls="builder-menu-right"
+          aria-expanded={isRightMenuOpen}
+          aria-label={isRightMenuOpen ? "Collapse mode menu" : "Expand mode menu"}
+        >
+          <span aria-hidden="true">{isRightMenuOpen ? ">" : "<"}</span>
+        </button>
+      </nav>
 
-            <div className="builder-intro-dialog-actions">
+      <nav
+        id="builder-menu-bottom"
+        className={`builder-menu builder-menu-bottom ${isBottomMenuOpen ? "open" : "collapsed"}`}
+        role="navigation"
+        aria-label="Analysis, practice, and guides"
+      >
+        <div className="builder-menu-scroll builder-menu-scroll-bottom" aria-hidden={!isBottomMenuOpen}>
+          <div className="slider-section">
+            <span className="slider-heading">Analysis</span>
+            <div className="menu-track menu-track-metrics">
+              {WIRE_METRICS.map((metric) => (
+                <div key={metric.id} className="slider-metric">
+                  <span className="metric-letter">{metric.letter}</span>
+                  <span className="metric-value">{metric.value}</span>
+                  <span className="metric-label">{metric.label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="slider-section">
+            <span className="slider-heading">Practice</span>
+            <div className="menu-track menu-track-chips">
+              {PRACTICE_ACTIONS.map((action) => (
+                <button
+                  key={action.id}
+                  type="button"
+                  className="slider-chip"
+                  onClick={() => triggerBuilderAction(action.action, action.data)}
+                  disabled={controlsDisabled}
+                  aria-disabled={controlsDisabled}
+                  title={controlsDisabled ? controlDisabledTitle : action.description}
+                  tabIndex={isBottomMenuOpen ? 0 : -1}
+                >
+                  <span className="slider-chip-label">{action.label}</span>
+                </button>
+              ))}
+              {PRACTICE_SCENARIOS.map((scenario) => (
+                <button
+                  key={scenario.id}
+                  type="button"
+                  className="slider-chip"
+                  onClick={() => triggerBuilderAction("load-preset", { preset: scenario.preset })}
+                  disabled={controlsDisabled}
+                  aria-disabled={controlsDisabled}
+                  title={controlsDisabled ? controlDisabledTitle : scenario.question}
+                  tabIndex={isBottomMenuOpen ? 0 : -1}
+                >
+                  <span className="slider-chip-label">{scenario.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="slider-section">
+            <span className="slider-heading">Guides</span>
+            <div className="menu-track menu-track-chips">
+              {HELP_ACTIONS.map((action) => (
+                <button
+                  key={action.id}
+                  type="button"
+                  className="slider-chip"
+                  onClick={() => triggerBuilderAction(action.action, action.data)}
+                  disabled={controlsDisabled}
+                  aria-disabled={controlsDisabled}
+                  title={controlsDisabled ? controlDisabledTitle : action.description}
+                  tabIndex={isBottomMenuOpen ? 0 : -1}
+                >
+                  <span className="slider-chip-label">{action.label}</span>
+                </button>
+              ))}
+              {HELP_SHORTCUTS.map((shortcut) => (
+                <button
+                  key={shortcut.id}
+                  type="button"
+                  className="slider-chip"
+                  onClick={() => openHelpSection(shortcut.title)}
+                  title={shortcut.summary}
+                  tabIndex={isBottomMenuOpen ? 0 : -1}
+                >
+                  <span className="slider-chip-label">{shortcut.title}</span>
+                </button>
+              ))}
               <button
                 type="button"
-                className="builder-intro-dialog-btn builder-intro-dialog-btn--primary"
-                onClick={handleDismissIntroDialog}
+                className="slider-chip"
+                onClick={() => openHelpSection()}
+                tabIndex={isBottomMenuOpen ? 0 : -1}
               >
-                Start Building →
+                <span className="slider-chip-label">Help Center</span>
               </button>
             </div>
           </div>
         </div>
-      )}
-
-      {shouldShowCurrentFlowPayoffBanner && (
-        <section
-          className="current-flow-payoff-strip"
-          role="status"
-          aria-live="polite"
+        <button
+          type="button"
+          className={`builder-menu-handle builder-menu-handle-bottom ${isBottomMenuOpen ? "open" : "collapsed"}`}
+          onClick={toggleBottomMenu}
+          aria-controls="builder-menu-bottom"
+          aria-expanded={isBottomMenuOpen}
+          aria-label={isBottomMenuOpen ? "Collapse analysis menu" : "Expand analysis menu"}
         >
-          <span className="current-flow-payoff-strip__badge" aria-hidden="true">
-            ⚡
-          </span>
-          <p
-            className="current-flow-payoff-strip__tip"
-            key={currentFlowPayoffTipIndex}
-          >
-            {currentFlowPayoffTip}
-          </p>
-          <div className="current-flow-payoff-strip__actions">
-            <button
-              type="button"
-              className="current-flow-payoff-strip__btn current-flow-payoff-strip__btn--primary"
-              onClick={() => {
-                setCurrentFlowPayoffVisible(false);
-                setOnboardingLocked(false);
-                setCircuitLocked(false);
-                setShowcaseLocked(false);
-              }}
-            >
-              ✏️ Edit
-            </button>
-            <button
-              type="button"
-              className="current-flow-payoff-strip__btn"
-              onClick={handleReplayCurrentFlowPayoff}
-              disabled={controlsDisabled || isCurrentFlowPayoffRunning}
-              aria-disabled={controlsDisabled || isCurrentFlowPayoffRunning}
-              aria-label="Replay the current-flow demo"
-              title="Replay the current-flow demo"
-            >
-              {isCurrentFlowPayoffRunning ? "…" : "↺"}
-            </button>
-            <button
-              type="button"
-              className="current-flow-payoff-strip__close"
-              aria-label="Dismiss"
-              onClick={() => {
-                setCurrentFlowPayoffVisible(false);
-                setOnboardingLocked(false);
-                setCircuitLocked(false);
-                setShowcaseLocked(false);
-              }}
-            >
-              ×
-            </button>
-          </div>
-        </section>
-      )}
+          <span aria-hidden="true">{isBottomMenuOpen ? "v" : "^"}</span>
+        </button>
+      </nav>
 
       <div
         className={`builder-menu-stage builder-menu-stage-left${isLeftMenuOpen ? " open" : ""}`}

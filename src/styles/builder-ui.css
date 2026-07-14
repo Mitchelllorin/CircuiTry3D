@@ -14,31 +14,7 @@
   --builder-text: var(--text-primary);
   --builder-muted: var(--text-muted);
   --builder-shadow: rgba(3, 12, 32, 0.55);
-  /* Toggle tabs - extra slim, long perimeter profile */
-  --builder-menu-toggle-width: 18px;
-  --builder-menu-toggle-height: 74px;
-  /* On touch devices, toggles are widened via min-width; keep edge actions clear of that hitbox. */
-  --builder-menu-toggle-hit-width: max(var(--builder-menu-toggle-width), 30px);
-  /* Keep side rails perimeter-oriented by revealing ~90% when expanded. */
-  --builder-menu-side-reveal: 0.9;
-  /* Slimmer sidebar widths */
-  --builder-menu-left-width: 156px;
-  --builder-menu-right-width: 150px;
-  --builder-menu-bottom-width: min(460px, calc(100vw - 104px));
-  --builder-menu-bottom-height: 236px;
-  --builder-safe-area-top: env(safe-area-inset-top, 0px);
-  --builder-safe-area-bottom: env(safe-area-inset-bottom, 0px);
-  --builder-ticker-top: 72px;
-  --builder-ticker-height: 32px;
-  --builder-ticker-gap: 8px;
-  --builder-top-quick-actions-height: 38px;
-  --builder-top-quick-actions-gap: 6px;
-  --builder-floating-action-offset: 140px;
-  --builder-floating-button-size: 46px;
-  --builder-edge-actions-gap: 12px;
-  --builder-edge-action-button-size: 40px;
-  --builder-edge-action-icon-size: 18px;
-  --builder-edge-actions-peek: 12px;
+  --builder-menu-handle-size: 44px;
 }
 
 body.builder-body {
@@ -141,28 +117,52 @@ body.builder-body::before {
   z-index: 800;
   display: flex;
   flex-direction: column;
-  transition: transform 0.45s cubic-bezier(0.45, 0, 0.2, 1);
-  color: #ffffff;
+  gap: 12px;
+  padding: 14px 12px;
+  z-index: 820;
+  transition: transform 0.32s cubic-bezier(0.22, 0.61, 0.36, 1), opacity 0.22s ease;
+  will-change: transform;
   overflow: hidden;
 }
 
-.builder-panel.panel-left {
-  left: 8px;
-  top: 120px;
-  bottom: 136px;
-  width: 200px;
-  border-radius: 0 14px 14px 0;
-  transform: translateX(-108%);
-  overflow-y: auto;
+.builder-menu.open {
+  opacity: 1;
 }
 
-.builder-panel-brand {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  z-index: var(--z-raised);
+.builder-menu.collapsed {
+  opacity: 0.94;
+  box-shadow: 0 10px 24px rgba(3, 12, 32, 0.38);
+}
+
+.builder-menu.collapsed .builder-menu-scroll {
+  opacity: 0;
   pointer-events: none;
-  opacity: 0.95;
+}
+
+.builder-menu-left,
+.builder-menu-right {
+  top: 84px;
+  bottom: 28px;
+  width: 156px;
+}
+
+.builder-menu-left {
+  left: 12px;
+  transform: translateX(0);
+}
+
+.builder-menu-left.collapsed {
+  transform: translateX(calc(-100% + var(--builder-menu-handle-size)));
+}
+
+.builder-menu-right {
+  right: 12px;
+  width: 172px;
+  transform: translateX(0);
+}
+
+.builder-menu-right.collapsed {
+  transform: translateX(calc(100% - var(--builder-menu-handle-size)));
 }
 
 .builder-panel.panel-right {
@@ -338,19 +338,132 @@ body.builder-body::before {
   position: absolute;
   top: 16px;
   right: 16px;
-  left: auto;
-  width: 25px;
-  height: 25px;
-  border-radius: 50%;
-  border: none;
-  background: rgba(255, 136, 0, 0.95);
-  color: #0a1a2f;
-  font-size: 14px;
-  z-index: var(--z-raised);
-  font-weight: 600;
-  line-height: 1;
+  width: 232px;
+  max-height: calc(100vh - 176px);
+  padding: 18px;
+  gap: 12px;
+  transform: translateY(0);
   display: flex;
+  flex-direction: column;
+}
+
+.builder-menu-bottom.collapsed {
+  transform: translateY(calc(100% - var(--builder-menu-handle-size)));
+}
+
+.builder-menu-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  overflow-y: auto;
+  padding-right: 2px;
+  transition: opacity 0.22s ease;
+  opacity: 1;
+}
+
+.builder-menu-scroll-bottom {
+  gap: 18px;
+}
+
+.builder-menu-handle {
+  position: absolute;
+  width: var(--builder-menu-handle-size);
+  height: var(--builder-menu-handle-size);
+  border-radius: 999px;
+  border: 1px solid var(--builder-border);
+  background: rgba(12, 26, 52, 0.94);
+  color: rgba(200, 220, 255, 0.88);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  display: inline-flex;
   align-items: center;
+  justify-content: center;
+  transition: transform 0.25s ease, border-color 0.25s ease, background 0.25s ease, color 0.25s ease;
+  box-shadow: 0 12px 26px rgba(3, 12, 32, 0.45);
+  backdrop-filter: blur(14px);
+  z-index: 1;
+}
+
+.builder-menu-handle:hover,
+.builder-menu-handle:focus-visible {
+  border-color: rgba(0, 255, 136, 0.45);
+  background: rgba(20, 38, 70, 0.98);
+  color: var(--builder-text);
+  outline: none;
+}
+
+.builder-menu-handle-left {
+  top: 50%;
+  right: 0;
+  transform: translate(50%, -50%);
+}
+
+.builder-menu-handle-right {
+  top: 50%;
+  left: 0;
+  transform: translate(-50%, -50%);
+}
+
+.builder-menu-handle-bottom {
+  top: 0;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.builder-menu-handle span {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.builder-menu-bottom::-webkit-scrollbar {
+  width: 8px;
+}
+
+.builder-menu-bottom::-webkit-scrollbar-thumb {
+  background: rgba(0, 255, 136, 0.4);
+  border-radius: 999px;
+}
+
+.builder-menu-bottom .menu-track {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow: hidden;
+  padding-bottom: 0;
+  scroll-snap-type: none;
+}
+
+.builder-menu-bottom .menu-track-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.builder-menu-bottom .menu-track-chips {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow: auto;
+  max-height: 160px;
+  padding-right: 2px;
+}
+
+.builder-menu-bottom .menu-track-chips::-webkit-scrollbar {
+  width: 6px;
+}
+
+.builder-menu-bottom .menu-track-chips::-webkit-scrollbar-thumb {
+  background: rgba(0, 255, 136, 0.35);
+  border-radius: 999px;
+}
+
+.builder-menu-bottom .slider-chip {
+  width: 100%;
   justify-content: center;
   cursor: pointer;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
@@ -359,25 +472,8 @@ body.builder-body::before {
     box-shadow 0.2s ease;
 }
 
-.builder-panel-close:hover,
-.builder-panel-close:focus-visible {
-  transform: translateY(-1px);
-  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.4);
-  outline: none;
-}
-
-.builder-panel-body {
-  flex: 1 1 auto;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.builder-panel-body--practice {
-  overflow: auto;
-  padding: 0;
-  background: rgba(8, 20, 44, 0.9);
+.builder-menu-scroll::-webkit-scrollbar {
+  width: 6px;
 }
 
 .builder-panel-body--practice .practice-page {
