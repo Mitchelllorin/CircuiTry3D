@@ -1,18 +1,18 @@
 :root {
-  --builder-navy: var(--bg-dark);
-  --builder-navy-alt: var(--bg-darker);
-  --builder-navy-deep: var(--bg-deepest);
-  --builder-overlay: var(--bg-overlay);
-  --builder-overlay-soft: var(--bg-surface);
-  --builder-border: var(--border-subtle);
-  --builder-border-strong: var(--border-emphasis);
-  --builder-border-cyan: var(--border-subtle);
-  --builder-blue: var(--brand-blue);
-  --builder-orange: var(--brand-orange);
-  --builder-green: var(--brand-green);
-  --builder-cyan: var(--brand-blue);
-  --builder-text: var(--text-primary);
-  --builder-muted: var(--text-muted);
+  --builder-navy: #0f1b3d;
+  --builder-navy-alt: #16213e;
+  --builder-navy-deep: #0a1028;
+  --builder-overlay: rgba(10, 22, 48, 0.86);
+  --builder-overlay-soft: rgba(14, 28, 52, 0.78);
+  --builder-border: rgba(0, 255, 136, 0.28);
+  --builder-border-strong: rgba(0, 255, 136, 0.45);
+  --builder-border-cyan: rgba(136, 204, 255, 0.28);
+  --builder-green: #00ff88;
+  --builder-orange: #ff8800;
+  --builder-cyan: #88ccff;
+  --builder-blue: #2fb4ff;
+  --builder-text: #e8f6ff;
+  --builder-muted: rgba(200, 220, 255, 0.72);
   --builder-shadow: rgba(3, 12, 32, 0.55);
   --builder-menu-toggle-width: 32px;
   --builder-menu-toggle-side-width: calc(var(--builder-menu-toggle-width) - 8px);
@@ -105,7 +105,12 @@ body.builder-body::before {
   margin-left: 2px;
 }
 
-@keyframes builderLogoFloat {
+.builder-logo-3d {
+  color: var(--builder-blue);
+  letter-spacing: 0.18em;
+}
+
+@keyframes builderLogoPulse {
   0%,
   100% {
     transform: translateY(0);
