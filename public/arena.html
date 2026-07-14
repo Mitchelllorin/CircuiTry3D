@@ -1420,15 +1420,1806 @@
 
     const ALLOWED_TYPES = ['resistor', 'capacitor', 'inductor', 'led'];
 
-    function ingestManufacturerRoster(components) {
-      if (!Array.isArray(components) || !components.length) {
-        manufacturerRoster = [];
-        return;
+      const STORAGE_KEYS = {
+        prefix: "circuitry:arena-session:",
+        last: "circuitry:arena-session:last",
+      };
+
+      const COMPONENT_PROFILES = {
+        battery: {
+          defaultProperties: {
+            voltage: 9,
+            internalResistance: 0.2,
+            capacityMah: 1500,
+            tempCoeff: 0.0004,
+            thermalResistance: 35,
+            maxDischargeCurrent: 2,
+          },
+        },
+        resistor: {
+          defaultProperties: {
+            resistance: 100,
+            tempCoeff: 0.0005,
+            tolerance: 0.05,
+            thermalResistance: 75,
+          },
+        },
+        led: {
+          defaultProperties: {
+            forwardVoltage: 2,
+            seriesResistance: 120,
+            efficiency: 0.35,
+            thermalResistance: 120,
+          },
+        },
+        switch: {
+          defaultProperties: {
+            onResistance: 0.05,
+            offResistance: 1000000,
+            transitionTimeMs: 2,
+          },
+        },
+        capacitor: {
+          defaultProperties: {
+            capacitance: 1e-6,
+            esr: 0.1,
+            tempCoeff: 0.0002,
+            thermalResistance: 40,
+          },
+        },
+        inductor: {
+          defaultProperties: {
+            inductance: 1e-3,
+            resistance: 5,
+            thermalResistance: 55,
+          },
+        },
+      };
+
+      const COMPONENT_PALETTES = {
+        battery: { base: 0xf97316, glow: 0xffedd5, orbit: 0xf59e0b, accent: 0x1f2937 },
+        resistor: { base: 0xf97316, glow: 0xffedd5, orbit: 0xfb923c, band: 0xfacc15 },
+        capacitor: { base: 0x38bdf8, glow: 0x22d3ee, orbit: 0x0ea5e9, accent: 0xffffff },
+        inductor: { base: 0xa855f7, glow: 0xc4b5fd, orbit: 0x8b5cf6 },
+        led: { base: 0xf43f5e, glow: 0xfda4af, orbit: 0xf472b6 },
+        switch: { base: 0x2dd4bf, glow: 0x5eead4, orbit: 0x0ea5e9, accent: 0x0d9488 },
+        default: { base: 0x38bdf8, glow: 0x1d4ed8, orbit: 0x38bdf8 },
+      };
+
+      const DEFAULT_COMPONENT_CATALOG = [
+        {
+          id: "resistor-100",
+          name: "Resistor 100 Ohm",
+          type: "resistor",
+          properties: { resistance: 100, tempCoeff: 0.0005, tolerance: 0.05, thermalResistance: 70 },
+          metadata: { displayName: "R100", source: "Reference Library" },
+        },
+        {
+          id: "resistor-330",
+          name: "Resistor 330 Ohm",
+          type: "resistor",
+          properties: { resistance: 330, tempCoeff: 0.0005, tolerance: 0.05, thermalResistance: 80 },
+          metadata: { displayName: "R330", source: "Reference Library" },
+        },
+        {
+          id: "led-red",
+          name: "LED Red 2V",
+          type: "led",
+          properties: { forwardVoltage: 2, seriesResistance: 120, efficiency: 0.32, thermalResistance: 110 },
+          metadata: { displayName: "LED-R", source: "Reference Library" },
+        },
+        {
+          id: "battery-9v",
+          name: "Battery 9V",
+          type: "battery",
+          properties: { voltage: 9, internalResistance: 0.18, capacityMah: 1200, thermalResistance: 35 },
+          metadata: { displayName: "B9", source: "Reference Library" },
+        },
+        {
+          id: "capacitor-1u",
+          name: "Capacitor 1 uF",
+          type: "capacitor",
+          properties: { capacitance: 1e-6, esr: 0.12, tempCoeff: 0.0002, thermalResistance: 45 },
+          metadata: { displayName: "C1u", source: "Reference Library" },
+        },
+        {
+          id: "switch-basic",
+          name: "Toggle Switch",
+          type: "switch",
+          properties: { onResistance: 0.05, offResistance: 1000000, transitionTimeMs: 1.5 },
+          metadata: { displayName: "SW1", source: "Reference Library" },
+        },
+      ];
+
+      const importTagsElement = document.getElementById("import-tags");
+      const componentSummaryElement = document.getElementById("component-summary");
+
+      let scene;
+      let camera;
+      let renderer;
+        let componentGroupA;
+        let componentGroupB;
+        let energyRing;
+        let pulseRing;
+        let particles;
+        let clock;
+        let pointerCaptureSupported = false;
+        let pointerCaptureWarningLogged = false;
+
+        const CAMERA_DEFAULT_POSITION = new THREE.Vector3(0, 2.8, 7.6);
+        const CAMERA_DEFAULT_TARGET = new THREE.Vector3(0, 0.45, 0);
+        const CAMERA_RADIUS_LIMITS = { min: 4.5, max: 12 };
+        const CAMERA_PAN_LIMITS = { x: 4.5, y: 1.2, z: 4.5 };
+        const TWO_PI = Math.PI * 2;
+
+        const cameraState = {
+          target: CAMERA_DEFAULT_TARGET.clone(),
+          spherical: new THREE.Spherical(),
+          initialSpherical: new THREE.Spherical(),
+          fixedPhi: 0,
+          needsUpdate: false,
+          rotateSpeed: 0.0055,
+          panSpeed: 0.9,
+          zoomSpeed: 0.75,
+          wheelZoomSpeed: 0.003
+        };
+
+        const activePointers = new Map();
+        const multiTouchState = {
+          active: false,
+          lastDistance: 0,
+          lastMidpoint: new THREE.Vector2()
+        };
+
+        const cameraOffset = new THREE.Vector3();
+        const panOffset = new THREE.Vector3();
+        const panVector = new THREE.Vector3();
+        const scratchVec2A = new THREE.Vector2();
+        const scratchVec2B = new THREE.Vector2();
+        const scratchVec2C = new THREE.Vector2();
+
+      const particleSpeeds = [];
+      const COMPONENT_POSITIONS = { A: -1.65, B: 1.65 };
+
+      function initThree() {
+        const canvas = document.getElementById("arena");
+        scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x050716);
+        scene.fog = new THREE.Fog(0x050716, 14, 36);
+
+        camera = new THREE.PerspectiveCamera(62, window.innerWidth / window.innerHeight, 0.1, 100);
+        camera.position.copy(CAMERA_DEFAULT_POSITION);
+        camera.lookAt(CAMERA_DEFAULT_TARGET);
+
+        renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.domElement.style.touchAction = "none";
+        renderer.domElement.style.cursor = "grab";
+
+        pointerCaptureSupported =
+          typeof renderer.domElement.setPointerCapture === "function" &&
+          typeof renderer.domElement.releasePointerCapture === "function";
+
+        registerInteractionEvents(renderer.domElement);
+
+        clock = new THREE.Clock();
+
+        addLights();
+        addStageElements();
+        addParticles();
+
+        initializeCameraState();
+
+        componentGroupA = buildComponent("resistor", 100, true);
+        componentGroupA.position.x = COMPONENT_POSITIONS.A;
+        energizeComponent(componentGroupA, 0.24);
+        scene.add(componentGroupA);
+
+        componentGroupB = buildComponent("resistor", 100, false);
+        componentGroupB.position.x = COMPONENT_POSITIONS.B;
+        componentGroupB.visible = false;
+        energizeComponent(componentGroupB, 0.24);
+        scene.add(componentGroupB);
+
+        window.addEventListener("resize", handleResize);
+
+        animate();
       }
 
-      manufacturerRoster = components
-        .map((component) => {
-          if (!component || typeof component !== 'object') {
+        function handleResize() {
+          if (!camera || !renderer) {
+            return;
+          }
+          camera.aspect = window.innerWidth / window.innerHeight;
+          camera.updateProjectionMatrix();
+          renderer.setSize(window.innerWidth, window.innerHeight);
+          cameraState.needsUpdate = true;
+          updateCamera(true);
+        }
+
+      function addLights() {
+        const hemi = new THREE.HemisphereLight(0x4c86ff, 0x050716, 0.7);
+        scene.add(hemi);
+
+        const key = new THREE.SpotLight(0x8b5cf6, 2.1, 40, Math.PI / 5, 0.7, 1.3);
+        key.position.set(-6, 9, 6);
+        scene.add(key);
+        scene.add(key.target);
+        key.target.position.set(0, 0, 0);
+
+        const fill = new THREE.SpotLight(0x38bdf8, 1.8, 40, Math.PI / 5, 0.7, 1.1);
+        fill.position.set(7, 7, 2);
+        scene.add(fill);
+        scene.add(fill.target);
+        fill.target.position.set(0, 0, 0);
+
+        const rim = new THREE.DirectionalLight(0x22d3ee, 0.7);
+        rim.position.set(0, 6, -6);
+        scene.add(rim);
+
+        const uplight = new THREE.PointLight(0xfacc15, 0.8, 12, 2);
+        uplight.position.set(0, -0.2, 0);
+        scene.add(uplight);
+      }
+
+      function addStageElements() {
+        const grid = new THREE.GridHelper(28, 56, 0x1d4ed8, 0x14b8a6);
+        grid.position.y = -1.6;
+        grid.material.transparent = true;
+        grid.material.opacity = 0.2;
+        grid.material.depthWrite = false;
+        scene.add(grid);
+
+        const platform = new THREE.Mesh(
+          new THREE.CylinderGeometry(3.8, 3.8, 0.45, 72),
+          new THREE.MeshStandardMaterial({
+            color: 0x0b1220,
+            metalness: 0.45,
+            roughness: 0.35,
+            emissive: 0x0ea5e9,
+            emissiveIntensity: 0.24,
+          })
+        );
+        platform.position.y = -0.6;
+        scene.add(platform);
+
+        const innerGlow = new THREE.Mesh(
+          new THREE.CircleGeometry(2.6, 72),
+          new THREE.MeshBasicMaterial({
+            color: 0x1d4ed8,
+            transparent: true,
+            opacity: 0.45,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false,
+          })
+        );
+        innerGlow.rotation.x = -Math.PI / 2;
+        innerGlow.position.y = -0.37;
+        scene.add(innerGlow);
+
+        energyRing = new THREE.Mesh(
+          new THREE.TorusGeometry(3.2, 0.08, 24, 220),
+          new THREE.MeshBasicMaterial({
+            color: 0x38bdf8,
+            transparent: true,
+            opacity: 0.55,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false,
+          })
+        );
+        energyRing.rotation.x = Math.PI / 2;
+        energyRing.position.y = -0.28;
+        scene.add(energyRing);
+
+        pulseRing = new THREE.Mesh(
+          new THREE.RingGeometry(2.2, 2.45, 72),
+          new THREE.MeshBasicMaterial({
+            color: 0xfacc15,
+            transparent: true,
+            opacity: 0,
+            side: THREE.DoubleSide,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false,
+          })
+        );
+        pulseRing.rotation.x = Math.PI / 2;
+        pulseRing.position.y = -0.32;
+        pulseRing.userData = { life: 0, strength: 0 };
+        scene.add(pulseRing);
+      }
+
+      function addParticles() {
+        const particleCount = 420;
+        const positions = new Float32Array(particleCount * 3);
+        for (let i = 0; i < particleCount; i++) {
+          positions[i * 3] = (Math.random() - 0.5) * 16;
+          positions[i * 3 + 1] = Math.random() * 5.5 + 0.3;
+          positions[i * 3 + 2] = (Math.random() - 0.5) * 16;
+          particleSpeeds.push(Math.random() * 0.7 + 0.25);
+        }
+        const geometry = new THREE.BufferGeometry();
+        geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+
+        const material = new THREE.PointsMaterial({
+          color: 0x60a5fa,
+          size: 0.07,
+          transparent: true,
+          opacity: 0.85,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false,
+        });
+
+        particles = new THREE.Points(geometry, material);
+        particles.frustumCulled = false;
+        scene.add(particles);
+      }
+
+        function initializeCameraState() {
+          cameraState.target.copy(CAMERA_DEFAULT_TARGET);
+          cameraOffset.copy(CAMERA_DEFAULT_POSITION).sub(cameraState.target);
+          cameraState.spherical.setFromVector3(cameraOffset);
+          cameraState.spherical.radius = THREE.MathUtils.clamp(
+            cameraState.spherical.radius,
+            CAMERA_RADIUS_LIMITS.min,
+            CAMERA_RADIUS_LIMITS.max
+          );
+          normalizeAzimuth();
+          cameraState.fixedPhi = cameraState.spherical.phi;
+          cameraState.initialSpherical.copy(cameraState.spherical);
+          cameraState.needsUpdate = true;
+          updateCamera(true);
+        }
+
+        function normalizeAzimuth() {
+          cameraState.spherical.theta = THREE.MathUtils.euclideanModulo(
+            cameraState.spherical.theta + Math.PI,
+            TWO_PI
+          ) - Math.PI;
+        }
+
+        function updateCamera(force = false) {
+          if (!camera) {
+            return;
+          }
+          if (!force && !cameraState.needsUpdate) {
+            return;
+          }
+
+          cameraState.spherical.radius = THREE.MathUtils.clamp(
+            cameraState.spherical.radius,
+            CAMERA_RADIUS_LIMITS.min,
+            CAMERA_RADIUS_LIMITS.max
+          );
+          cameraState.spherical.phi = cameraState.fixedPhi;
+
+          const offset = cameraOffset.setFromSpherical(cameraState.spherical);
+          camera.position.copy(cameraState.target).add(offset);
+          camera.lookAt(cameraState.target);
+          camera.updateMatrix();
+          camera.updateMatrixWorld(true);
+          cameraState.needsUpdate = false;
+        }
+
+        function resetCameraControl() {
+          cameraState.target.copy(CAMERA_DEFAULT_TARGET);
+          cameraState.spherical.copy(cameraState.initialSpherical);
+          cameraState.fixedPhi = cameraState.initialSpherical.phi;
+          normalizeAzimuth();
+          cameraState.needsUpdate = true;
+          activePointers.clear();
+          multiTouchState.active = false;
+          multiTouchState.lastDistance = 0;
+          multiTouchState.lastMidpoint.set(0, 0);
+          updateCamera(true);
+        }
+
+        function applyPan(deltaX, deltaY) {
+          if (!camera || !renderer) {
+            return;
+          }
+          const element = renderer.domElement;
+          if (!element) {
+            return;
+          }
+
+          camera.updateMatrix();
+          cameraOffset.copy(camera.position).sub(cameraState.target);
+          let targetDistance = cameraOffset.length();
+          targetDistance *= Math.tan((camera.fov / 2) * (Math.PI / 180));
+
+          if (!Number.isFinite(targetDistance) || targetDistance <= 0) {
+            targetDistance = 0.01;
+          }
+
+          if (element.clientHeight === 0) {
+            return;
+          }
+
+          const moveX = (2 * deltaX * targetDistance) / element.clientHeight;
+          const moveY = (2 * deltaY * targetDistance) / element.clientHeight;
+
+          panOffset.set(0, 0, 0);
+
+          panVector.setFromMatrixColumn(camera.matrix, 0);
+          panVector.multiplyScalar(-moveX * cameraState.panSpeed);
+          panOffset.add(panVector);
+
+          panVector.setFromMatrixColumn(camera.matrix, 1);
+          panVector.multiplyScalar(moveY * cameraState.panSpeed);
+          panOffset.add(panVector);
+
+          cameraState.target.add(panOffset);
+          cameraState.target.y = THREE.MathUtils.clamp(
+            cameraState.target.y,
+            CAMERA_DEFAULT_TARGET.y - CAMERA_PAN_LIMITS.y,
+            CAMERA_DEFAULT_TARGET.y + CAMERA_PAN_LIMITS.y
+          );
+          cameraState.target.x = THREE.MathUtils.clamp(
+            cameraState.target.x,
+            -CAMERA_PAN_LIMITS.x,
+            CAMERA_PAN_LIMITS.x
+          );
+          cameraState.target.z = THREE.MathUtils.clamp(
+            cameraState.target.z,
+            -CAMERA_PAN_LIMITS.z,
+            CAMERA_PAN_LIMITS.z
+          );
+
+          cameraState.needsUpdate = true;
+        }
+
+        function registerInteractionEvents(element) {
+          element.addEventListener("pointerdown", handlePointerDown, { passive: false });
+          element.addEventListener("pointermove", handlePointerMove, { passive: false });
+          element.addEventListener("pointerup", handlePointerUp, { passive: false });
+          element.addEventListener("pointercancel", handlePointerUp, { passive: false });
+          element.addEventListener("pointerleave", handlePointerUp, { passive: false });
+          element.addEventListener("wheel", handleWheel, { passive: false });
+        }
+
+        function getPrimaryPointers() {
+          return Array.from(activePointers.values())
+            .sort((a, b) => a.id - b.id)
+            .slice(0, 2);
+        }
+
+        function handlePointerDown(event) {
+          if (!renderer) {
+            return;
+          }
+          if (event.pointerType === "touch") {
+            event.preventDefault();
+          }
+
+          const pointer = {
+            id: event.pointerId,
+            current: new THREE.Vector2(event.clientX, event.clientY),
+            last: new THREE.Vector2(event.clientX, event.clientY)
+          };
+
+          activePointers.set(event.pointerId, pointer);
+          if (pointerCaptureSupported && renderer && renderer.domElement && typeof renderer.domElement.setPointerCapture === "function") {
+            try {
+              renderer.domElement.setPointerCapture(event.pointerId);
+            } catch (error) {
+              pointerCaptureSupported = false;
+              if (!pointerCaptureWarningLogged) {
+                console.warn("Arena: pointer capture not supported in this browser. Continuing without it.", error);
+                pointerCaptureWarningLogged = true;
+              }
+            }
+          } else {
+            pointerCaptureSupported = false;
+          }
+
+          if (event.pointerType !== "touch") {
+            renderer.domElement.style.cursor = "grabbing";
+          }
+
+          if (activePointers.size >= 2) {
+            const [first, second] = getPrimaryPointers();
+            multiTouchState.active = true;
+            multiTouchState.lastDistance = first.current.distanceTo(second.current);
+            scratchVec2C.copy(first.current).add(second.current).multiplyScalar(0.5);
+            multiTouchState.lastMidpoint.copy(scratchVec2C);
+          } else {
+            multiTouchState.active = false;
+            multiTouchState.lastDistance = 0;
+          }
+        }
+
+        function handlePointerMove(event) {
+          if (!activePointers.has(event.pointerId)) {
+            return;
+          }
+          if (event.pointerType === "touch") {
+            event.preventDefault();
+          }
+
+          const pointer = activePointers.get(event.pointerId);
+          pointer.last.copy(pointer.current);
+          pointer.current.set(event.clientX, event.clientY);
+
+          if (activePointers.size === 1) {
+            const deltaX = pointer.current.x - pointer.last.x;
+            if (deltaX !== 0) {
+              cameraState.spherical.theta -= deltaX * cameraState.rotateSpeed;
+              normalizeAzimuth();
+              cameraState.needsUpdate = true;
+            }
+          } else if (activePointers.size >= 2) {
+            const [first, second] = getPrimaryPointers();
+            scratchVec2A.copy(first.current);
+            scratchVec2B.copy(second.current);
+            const midpoint = scratchVec2C.copy(scratchVec2A).add(scratchVec2B).multiplyScalar(0.5);
+
+            if (multiTouchState.active) {
+              const deltaMidX = midpoint.x - multiTouchState.lastMidpoint.x;
+              const deltaMidY = midpoint.y - multiTouchState.lastMidpoint.y;
+              if (deltaMidX !== 0 || deltaMidY !== 0) {
+                applyPan(deltaMidX, deltaMidY);
+              }
+
+              const distance = scratchVec2A.distanceTo(scratchVec2B);
+              const distanceDelta = distance - multiTouchState.lastDistance;
+              const element = renderer ? renderer.domElement : null;
+              if (element && Math.abs(distanceDelta) > 0.3) {
+                if (element.clientWidth !== 0) {
+                  const normalized = distanceDelta / element.clientWidth;
+                  const scale = THREE.MathUtils.clamp(
+                    1 - normalized * cameraState.zoomSpeed,
+                    0.7,
+                    1.3
+                  );
+                  if (!Number.isNaN(scale) && Number.isFinite(scale)) {
+                    cameraState.spherical.radius *= scale;
+                    cameraState.needsUpdate = true;
+                  }
+                }
+                multiTouchState.lastDistance = distance;
+              } else {
+                multiTouchState.lastDistance = distance;
+              }
+            } else {
+              multiTouchState.active = true;
+              multiTouchState.lastDistance = scratchVec2A.distanceTo(scratchVec2B);
+            }
+
+            multiTouchState.lastMidpoint.copy(midpoint);
+          }
+        }
+
+        function handlePointerUp(event) {
+          if (!renderer || !activePointers.has(event.pointerId)) {
+            return;
+          }
+          if (event.pointerType === "touch") {
+            event.preventDefault();
+          }
+
+          if (pointerCaptureSupported && renderer && renderer.domElement && typeof renderer.domElement.releasePointerCapture === "function") {
+            try {
+              renderer.domElement.releasePointerCapture(event.pointerId);
+            } catch (error) {
+              pointerCaptureSupported = false;
+              if (!pointerCaptureWarningLogged) {
+                console.warn("Arena: unable to release pointer capture; disabling pointer capture fallback.", error);
+                pointerCaptureWarningLogged = true;
+              }
+            }
+          }
+          activePointers.delete(event.pointerId);
+
+          if (activePointers.size === 0 && renderer.domElement) {
+            renderer.domElement.style.cursor = "grab";
+          }
+
+          if (activePointers.size < 2) {
+            multiTouchState.active = false;
+            multiTouchState.lastDistance = 0;
+            multiTouchState.lastMidpoint.set(0, 0);
+          }
+        }
+
+        function handleWheel(event) {
+          if (!camera) {
+            return;
+          }
+
+          event.preventDefault();
+          cameraState.spherical.radius += event.deltaY * cameraState.wheelZoomSpeed;
+          cameraState.needsUpdate = true;
+        }
+
+        function resetCameraView() {
+          resetCameraControl();
+          if (renderer && renderer.domElement) {
+            renderer.domElement.style.cursor = "grab";
+          }
+        }
+
+      function buildComponent(type, nominalValue, isPrimary) {
+        const palette = COMPONENT_PALETTES[type] || COMPONENT_PALETTES.default;
+        const group = new THREE.Group();
+        group.userData = {
+          palette,
+          componentType: type,
+          energy: 0.3,
+          bobOffset: Math.random() * Math.PI * 2,
+          baseScale: computeScale(nominalValue),
+          nominalValue,
+        };
+
+        const material = new THREE.MeshStandardMaterial({
+          color: palette.base,
+          metalness: 0.35,
+          roughness: 0.28,
+          emissive: palette.glow,
+          emissiveIntensity: 0.35,
+        });
+
+        let core;
+        switch (type) {
+          case "resistor": {
+            core = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.5, 0.5), material);
+            const leadGeometry = new THREE.CylinderGeometry(0.07, 0.07, 0.9, 20);
+            const leadMaterial = new THREE.MeshStandardMaterial({
+              color: 0xbcd0ff,
+              metalness: 0.85,
+              roughness: 0.25,
+              emissive: 0x1e293b,
+              emissiveIntensity: 0.1,
+            });
+            const leadL = new THREE.Mesh(leadGeometry, leadMaterial);
+            leadL.position.x = -1.05;
+            leadL.rotation.z = Math.PI / 2;
+            const leadR = leadL.clone();
+            leadR.position.x = 1.05;
+            group.add(leadL, leadR);
+
+            const bandMaterial = new THREE.MeshStandardMaterial({
+              color: palette.band || 0xfacc15,
+              metalness: 0.45,
+              roughness: 0.35,
+              emissive: palette.band || palette.glow,
+              emissiveIntensity: 0.22,
+            });
+            [-0.35, 0, 0.35].forEach((offset) => {
+              const band = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.6, 0.58), bandMaterial);
+              band.position.x = offset;
+              group.add(band);
+            });
+            break;
+          }
+          case "capacitor": {
+            core = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.55, 1.2, 48), material);
+            const capTopMat = new THREE.MeshStandardMaterial({
+              color: palette.accent || 0xffffff,
+              metalness: 0.9,
+              roughness: 0.18,
+              emissive: palette.glow,
+              emissiveIntensity: 0.12,
+            });
+            const top = new THREE.Mesh(new THREE.CircleGeometry(0.55, 48), capTopMat);
+            top.rotation.x = Math.PI / 2;
+            top.position.y = 0.6;
+            const bottom = top.clone();
+            bottom.position.y = -0.6;
+            bottom.rotation.x = -Math.PI / 2;
+            group.add(top, bottom);
+
+            const leadMaterial = new THREE.MeshStandardMaterial({
+              color: 0x86efac,
+              metalness: 0.6,
+              roughness: 0.45,
+            });
+            const leadGeometry = new THREE.CylinderGeometry(0.045, 0.045, 1.4, 16);
+            const lead1 = new THREE.Mesh(leadGeometry, leadMaterial);
+            lead1.position.set(-0.2, -1.1, 0);
+            const lead2 = lead1.clone();
+            lead2.position.x = 0.2;
+            group.add(lead1, lead2);
+            break;
+          }
+          case "inductor": {
+            core = new THREE.Mesh(new THREE.TorusKnotGeometry(0.55, 0.16, 100, 18, 2, 3), material);
+            break;
+          }
+          case "led": {
+            core = new THREE.Mesh(new THREE.ConeGeometry(0.45, 1.2, 36, 1, true), material);
+            core.position.y = 0.35;
+            const bulb = new THREE.Mesh(
+              new THREE.SphereGeometry(0.38, 36, 36),
+              new THREE.MeshStandardMaterial({
+                color: 0xffffff,
+                emissive: palette.glow,
+                emissiveIntensity: 0.85,
+                metalness: 0.1,
+                roughness: 0.08,
+                transparent: true,
+                opacity: 0.75,
+              })
+            );
+            bulb.position.y = 0.65;
+            group.add(bulb);
+
+            const base = new THREE.Mesh(
+              new THREE.CylinderGeometry(0.26, 0.32, 0.28, 32),
+              new THREE.MeshStandardMaterial({
+                color: 0x1f2937,
+                metalness: 0.75,
+                roughness: 0.42,
+              })
+            );
+            base.position.y = -0.35;
+            group.add(base);
+
+            const legGeometry = new THREE.CylinderGeometry(0.045, 0.045, 1.35, 16);
+            const legMaterial = new THREE.MeshStandardMaterial({
+              color: 0xdbeafe,
+              metalness: 0.9,
+              roughness: 0.25,
+            });
+            const leg1 = new THREE.Mesh(legGeometry, legMaterial);
+            leg1.position.set(-0.14, -1.05, 0);
+            const leg2 = leg1.clone();
+            leg2.position.x = 0.14;
+            group.add(leg1, leg2);
+            break;
+          }
+          case "battery": {
+            core = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.65, 1.2, 48), material);
+            const capMaterial = new THREE.MeshStandardMaterial({
+              color: palette.accent || 0xffffff,
+              metalness: 0.85,
+              roughness: 0.2,
+              emissive: palette.glow,
+              emissiveIntensity: 0.18,
+            });
+            const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.18, 32), capMaterial);
+            cap.position.y = 0.69;
+            const terminal = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.22, 24), capMaterial);
+            terminal.position.y = 0.84;
+            group.add(cap, terminal);
+            break;
+          }
+          case "switch": {
+            core = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.3, 0.8), material);
+            const base = new THREE.Mesh(
+              new THREE.BoxGeometry(1.4, 0.1, 1),
+              new THREE.MeshStandardMaterial({
+                color: palette.accent || 0x0f766e,
+                metalness: 0.4,
+                roughness: 0.35,
+                emissive: palette.glow,
+                emissiveIntensity: 0.12,
+              })
+            );
+            base.position.y = -0.25;
+            const lever = new THREE.Mesh(
+              new THREE.CylinderGeometry(0.08, 0.04, 0.9, 24),
+              new THREE.MeshStandardMaterial({
+                color: palette.glow,
+                metalness: 0.9,
+                roughness: 0.3,
+              })
+            );
+            lever.position.set(0, 0.45, 0);
+            lever.rotation.z = -Math.PI / 6;
+            group.add(base, lever);
+            break;
+          }
+          default: {
+            core = new THREE.Mesh(new THREE.OctahedronGeometry(0.75, 0), material);
+            break;
+          }
+        }
+
+        group.add(core);
+        group.userData.core = core;
+
+        const halo = new THREE.Mesh(
+          new THREE.SphereGeometry(0.95, 32, 32),
+          new THREE.MeshBasicMaterial({
+            color: palette.glow,
+            transparent: true,
+            opacity: 0.3,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false,
+          })
+        );
+        group.add(halo);
+        group.userData.halo = halo;
+
+        const orbiters = [];
+        for (let i = 0; i < 3; i++) {
+          const orb = new THREE.Mesh(
+            new THREE.SphereGeometry(0.12 + i * 0.03, 18, 18),
+            new THREE.MeshBasicMaterial({
+              color: palette.orbit,
+              transparent: true,
+              opacity: 0.78 - i * 0.2,
+              depthWrite: false,
+              blending: THREE.AdditiveBlending,
+            })
+          );
+          orb.userData = {
+            radius: 0.95 + i * 0.22,
+            height: 0.28 + i * 0.16,
+            speed: 0.7 + i * 0.42,
+          };
+          orbiters.push(orb);
+          group.add(orb);
+        }
+        group.userData.orbiters = orbiters;
+
+        group.scale.setScalar(group.userData.baseScale);
+        group.position.y = 0.25;
+
+        if (isPrimary) {
+          const badge = new THREE.Mesh(
+            new THREE.CircleGeometry(0.44, 32),
+            new THREE.MeshBasicMaterial({
+              color: 0x22d3ee,
+              transparent: true,
+              opacity: 0.4,
+              depthWrite: false,
+            })
+          );
+          badge.rotation.x = -Math.PI / 2;
+          badge.position.set(0, -0.68, 0);
+          group.add(badge);
+        }
+
+        return group;
+      }
+
+      function computeScale(value) {
+        if (!Number.isFinite(value) || value <= 0) {
+          return 1;
+        }
+        const scaled = Math.log10(value + 10) / 3;
+        return THREE.MathUtils.clamp(0.75 + scaled, 0.7, 2.3);
+      }
+
+      function rebuildComponentGroup(slot, type, nominalValue) {
+        const isPrimary = slot === "A";
+        const current = isPrimary ? componentGroupA : componentGroupB;
+        if (current) {
+          scene.remove(current);
+          disposeGroup(current);
+        }
+
+        const nextGroup = buildComponent(type, nominalValue, isPrimary);
+        nextGroup.position.x = COMPONENT_POSITIONS[slot];
+        nextGroup.visible = isPrimary || (state.mode === "compare" && Boolean(state.selectedB));
+        scene.add(nextGroup);
+
+        if (isPrimary) {
+          componentGroupA = nextGroup;
+        } else {
+          componentGroupB = nextGroup;
+        }
+
+        return nextGroup;
+      }
+
+      function ensureComponentGroup(slot, component) {
+        const isPrimary = slot === "A";
+        const current = isPrimary ? componentGroupA : componentGroupB;
+
+        if (!component) {
+          if (current) {
+            current.visible = false;
+          }
+          return current || null;
+        }
+
+        const paletteKey = component.type && COMPONENT_PALETTES[component.type]
+          ? component.type
+          : "default";
+        const nominalValue = extractNominalValue(component);
+        const baseScale = computeScale(nominalValue);
+
+        let group = current;
+        if (!group || group.userData.componentType !== paletteKey) {
+          group = rebuildComponentGroup(slot, paletteKey, nominalValue);
+        } else {
+          group.visible = isPrimary || (state.mode === "compare" && Boolean(state.selectedB));
+          group.userData.baseScale = baseScale;
+          group.scale.setScalar(group.userData.baseScale);
+        }
+
+        group.userData.nominalValue = nominalValue;
+        group.userData.componentType = paletteKey;
+        group.userData.bobOffset = group.userData.bobOffset ?? Math.random() * Math.PI * 2;
+        return group;
+      }
+
+      function disposeGroup(group) {
+        group.traverse((child) => {
+          if (child.geometry) {
+            child.geometry.dispose();
+          }
+          if (child.material) {
+            if (Array.isArray(child.material)) {
+              child.material.forEach((mat) => mat.dispose());
+            } else {
+              child.material.dispose();
+            }
+          }
+        });
+      }
+
+        function animate() {
+          requestAnimationFrame(animate);
+          if (!clock) {
+            updateCamera();
+            renderer.render(scene, camera);
+            return;
+          }
+
+          const delta = clock.getDelta();
+          const elapsed = clock.elapsedTime;
+
+          updateComponentAnimation(componentGroupA, elapsed, delta);
+          if (componentGroupB && componentGroupB.visible) {
+            updateComponentAnimation(componentGroupB, elapsed + 0.6, delta);
+          }
+
+          if (energyRing) {
+            energyRing.rotation.z += delta * 0.55;
+            const energyLevel = Math.max(
+              componentGroupA ? componentGroupA.userData.energy || 0 : 0,
+              componentGroupB && componentGroupB.visible ? componentGroupB.userData.energy || 0 : 0,
+            );
+            energyRing.material.opacity = 0.35 + energyLevel * 0.35;
+            const pulse = 1 + Math.sin(elapsed * 1.4) * 0.04 + energyLevel * 0.12;
+            energyRing.scale.setScalar(pulse);
+          }
+
+          if (pulseRing && pulseRing.userData.life > 0) {
+            pulseRing.userData.life -= delta * 0.9;
+            const life = Math.max(pulseRing.userData.life, 0);
+            pulseRing.material.opacity = life * pulseRing.userData.strength;
+            const scale = 1 + (1 - life) * (1.4 + pulseRing.userData.strength * 1.2);
+            pulseRing.scale.setScalar(scale);
+          }
+
+          animateParticles(delta);
+
+          updateCamera();
+          renderer.render(scene, camera);
+        }
+
+      function updateComponentAnimation(group, elapsed, delta) {
+        if (!group) {
+          return;
+        }
+        const energy = group.userData.energy || 0.25;
+        group.rotation.y += delta * (0.8 + energy * 2.8);
+        group.rotation.x = Math.sin(elapsed * 0.8 + group.userData.bobOffset) * 0.2;
+        group.position.y = 0.25 + Math.sin(elapsed * 1.6 + group.userData.bobOffset) * (0.12 + energy * 0.12);
+        (group.userData.orbiters || []).forEach((orb, idx) => {
+          const data = orb.userData;
+          const angle = elapsed * (data.speed + energy) + idx * Math.PI * 0.75;
+          orb.position.set(
+            Math.cos(angle) * data.radius,
+            data.height + Math.sin(angle * 1.8) * 0.12,
+            Math.sin(angle) * data.radius,
+          );
+        });
+      }
+
+      function animateParticles(delta) {
+        if (!particles) {
+          return;
+        }
+        const positions = particles.geometry.getAttribute("position");
+        for (let i = 0; i < particleSpeeds.length; i++) {
+          positions.array[i * 3 + 1] += particleSpeeds[i] * delta;
+          if (positions.array[i * 3 + 1] > 7) {
+            positions.array[i * 3] = (Math.random() - 0.5) * 16;
+            positions.array[i * 3 + 1] = Math.random() * 2;
+            positions.array[i * 3 + 2] = (Math.random() - 0.5) * 16;
+          }
+        }
+        positions.needsUpdate = true;
+      }
+
+      function triggerPulse(intensity) {
+        if (!pulseRing) {
+          return;
+        }
+        pulseRing.userData.life = 1;
+        pulseRing.userData.strength = THREE.MathUtils.clamp(intensity, 0.2, 1.1);
+        pulseRing.scale.setScalar(1);
+      }
+
+      function energizeComponent(group, energy) {
+        if (!group) {
+          return;
+        }
+        group.userData.energy = energy;
+        const core = group.userData.core;
+        if (core && core.material) {
+          core.material.emissiveIntensity = 0.3 + energy * 1.2;
+        }
+        group.scale.setScalar(group.userData.baseScale * (0.9 + energy * 0.45));
+        if (group.userData.halo) {
+          group.userData.halo.material.opacity = 0.22 + energy * 0.5;
+          group.userData.halo.scale.setScalar(1 + energy * 0.8);
+        }
+      }
+
+      function computeVisualEnergy(component, metrics) {
+        if (!component) {
+          return 0.24;
+        }
+        const fallback = Math.abs(extractNominalValue(component)) || 0.1;
+        if (!metrics) {
+          return THREE.MathUtils.clamp(Math.log10(fallback + 1.5) / 2.5, 0.18, 1);
+        }
+        const values = [
+          metrics.powerDissipation,
+          metrics.currentRms,
+          metrics.impedance,
+          metrics.storedEnergy,
+          metrics.energyDelivered,
+          metrics.thermalRise,
+        ];
+        let magnitude = Math.abs(fallback);
+        values.forEach((value) => {
+          if (Number.isFinite(value)) {
+            magnitude = Math.max(magnitude, Math.abs(value));
+          }
+        });
+        const normalized = Math.log10(magnitude + 1.5) / 2.5;
+        return THREE.MathUtils.clamp(normalized, 0.18, 1);
+      }
+
+      function extractNominalValue(component) {
+        if (!component) {
+          return 1;
+        }
+        const props = component.properties || {};
+        const candidates = [
+          props.resistance,
+          props.capacitance,
+          props.inductance,
+          props.forwardVoltage,
+          props.voltage,
+          props.internalResistance,
+          props.onResistance,
+          props.seriesResistance,
+          props.capacityMah,
+        ];
+        for (const value of candidates) {
+          if (typeof value === "number" && Number.isFinite(value) && value !== 0) {
+            return Math.abs(value);
+          }
+        }
+        return 1;
+      }
+
+      function normalizeComponent(raw, sourceLabel) {
+        if (!raw || typeof raw !== "object") {
+          return null;
+        }
+        const type = typeof raw.type === "string" ? raw.type.toLowerCase() : "generic";
+        const properties = Object.assign({}, COMPONENT_PROFILES[type]?.defaultProperties || {}, raw.properties || {});
+        const metadata = Object.assign({}, raw.metadata || {});
+        const id = typeof raw.id === "string" && raw.id.length > 0 ? raw.id : `${type}-${Math.random().toString(36).slice(2, 9)}`;
+        const name = raw.name || metadata.displayName || raw.identifier || id;
+        return {
+          id,
+          name,
+          type,
+          properties,
+          metadata,
+          source: sourceLabel || metadata.source || "library",
+        };
+      }
+
+      function initializeCatalog() {
+        state.components = DEFAULT_COMPONENT_CATALOG.map((entry) => normalizeComponent(entry, "reference"))
+          .filter(Boolean);
+        state.selectedA = state.components[0] || null;
+        state.selectedB = state.components.length > 1 ? state.components[1] : state.components[0] || null;
+        renderImportSummary(buildSummaryFromComponents(state.components));
+      }
+
+      function registerEvents() {
+        const resetBtn = document.getElementById("btn-reset");
+        if (resetBtn) {
+          resetBtn.addEventListener("click", resetArena);
+        }
+
+        const runBtn = document.getElementById("btn-run");
+        if (runBtn) {
+          runBtn.addEventListener("click", runTest);
+        }
+
+        const exportBtn = document.getElementById("btn-export");
+        if (exportBtn) {
+          exportBtn.addEventListener("click", exportResults);
+        }
+
+        const importBuilderBtn = document.getElementById("btn-import-builder");
+        if (importBuilderBtn) {
+          importBuilderBtn.addEventListener("click", () => {
+            const loaded = loadLatestBuilderExport();
+            if (!loaded) {
+              setStatus("No builder export found. Sync from the builder to populate real components.");
+            }
+          });
+        }
+
+        const jsonInput = document.getElementById("input-import-json");
+        if (jsonInput) {
+          jsonInput.addEventListener("change", handleFileImport, false);
+        }
+
+        const modeSelect = document.getElementById("mode");
+        if (modeSelect) {
+          modeSelect.value = state.mode;
+          modeSelect.addEventListener("change", (event) => {
+            state.mode = event.target.value === "compare" ? "compare" : "single";
+            updateCompareVisibility();
+          });
+        }
+
+        const selectA = document.getElementById("component-a");
+        if (selectA) {
+          selectA.addEventListener("change", (event) => {
+            state.selectedA = state.components.find((component) => component.id === event.target.value) || null;
+            updateMeshesForSelection();
+          });
+        }
+
+        const selectB = document.getElementById("component-b");
+        if (selectB) {
+          selectB.addEventListener("change", (event) => {
+            state.selectedB = state.components.find((component) => component.id === event.target.value) || null;
+            updateMeshesForSelection();
+          });
+        }
+
+        [
+          "input-voltage",
+          "input-frequency",
+          "input-temperature",
+          "input-humidity",
+          "input-duty",
+          "input-duration",
+          "input-load",
+        ].forEach((id) => {
+          const input = document.getElementById(id);
+          if (input) {
+            input.addEventListener("change", readTestVariables);
+            input.addEventListener("blur", readTestVariables);
+          }
+        });
+
+        const reloadBtn = document.getElementById("reload-import");
+        if (reloadBtn) {
+          reloadBtn.addEventListener("click", () => {
+            const payload = loadArenaPayloadFromStorage({ announce: true });
+            if (!payload) {
+              setStatus("No builder snapshot found. Sync from the builder to populate real components.");
+            }
+          });
+        }
+
+        document.querySelectorAll("[data-command]").forEach((button) => {
+          button.addEventListener("click", () => {
+            const command = button.getAttribute("data-command");
+            if (command) {
+              handleCommand(command);
+            }
+          });
+        });
+      }
+
+      function populateComponentSelectors() {
+        const selectA = document.getElementById("component-a");
+        const selectB = document.getElementById("component-b");
+        if (!selectA || !selectB) {
+          return;
+        }
+
+        const options = state.components.map((component) => ({
+          value: component.id,
+          label: `${component.name} (${component.type})`,
+        }));
+
+        const populateSelect = (select, selectedId, placeholder) => {
+          select.innerHTML = "";
+          const placeholderOption = document.createElement("option");
+          placeholderOption.value = "";
+          placeholderOption.textContent = placeholder;
+          select.appendChild(placeholderOption);
+          options.forEach((option) => {
+            const opt = document.createElement("option");
+            opt.value = option.value;
+            opt.textContent = option.label;
+            select.appendChild(opt);
+          });
+
+          if (selectedId && options.some((option) => option.value === selectedId)) {
+            select.value = selectedId;
+          } else if (options.length > 0) {
+            select.value = options[0].value;
+          } else {
+            select.value = "";
+          }
+        };
+
+        populateSelect(selectA, state.selectedA?.id || "", "Select component A");
+        populateSelect(selectB, state.selectedB?.id || "", "Select component B");
+
+        state.selectedA = state.components.find((component) => component.id === selectA.value) || null;
+        state.selectedB = state.components.find((component) => component.id === selectB.value) || null;
+        const modeSelect = document.getElementById("mode");
+        const hasOpponents = state.components.length > 1 && Boolean(state.selectedA) && Boolean(state.selectedB);
+        state.mode = hasOpponents ? "compare" : "single";
+        if (modeSelect) {
+          modeSelect.value = state.mode;
+        }
+        updateMeshesForSelection();
+      }
+
+      function updateCompareVisibility() {
+        const compare = state.mode === "compare";
+        document.querySelectorAll(".compare-only").forEach((element) => {
+          element.style.display = compare ? "" : "none";
+        });
+        if (componentGroupB) {
+          componentGroupB.visible = compare && Boolean(state.selectedB);
+        }
+      }
+
+      function updateMeshesForSelection() {
+        const groupA = ensureComponentGroup("A", state.selectedA);
+        if (groupA) {
+          energizeComponent(groupA, 0.24);
+        }
+        const groupB = ensureComponentGroup("B", state.selectedB);
+        if (groupB) {
+          energizeComponent(groupB, 0.24);
+        }
+        updateCompareVisibility();
+      }
+
+      function readTestVariables() {
+        const readNumber = (id, fallback) => {
+          const input = document.getElementById(id);
+          if (!input) {
+            return fallback;
+          }
+          const value = Number.parseFloat(input.value);
+          if (Number.isFinite(value)) {
+            return value;
+          }
+          return fallback;
+        };
+
+        state.testVariables = {
+          voltage: readNumber("input-voltage", state.testVariables.voltage),
+          frequencyHz: readNumber("input-frequency", state.testVariables.frequencyHz),
+          temperatureC: readNumber("input-temperature", state.testVariables.temperatureC),
+          ambientHumidityPercent: readNumber("input-humidity", state.testVariables.ambientHumidityPercent),
+          dutyCyclePercent: readNumber("input-duty", state.testVariables.dutyCyclePercent),
+          durationSeconds: readNumber("input-duration", state.testVariables.durationSeconds),
+          loadImpedanceOhms: readNumber("input-load", state.testVariables.loadImpedanceOhms),
+        };
+
+        return state.testVariables;
+      }
+
+      function setImportStatus(message) {
+        const element = document.getElementById("import-status");
+        if (!element) {
+          return;
+        }
+        element.textContent = message;
+      }
+
+      function buildSummaryFromComponents(components) {
+        if (!Array.isArray(components) || !components.length) {
+          return null;
+        }
+        const byType = components.reduce((acc, component) => {
+          const key = component.type || "unknown";
+          acc[key] = (acc[key] || 0) + 1;
+          return acc;
+        }, {});
+        return {
+          totalComponents: components.length,
+          totalWires: 0,
+          totalJunctions: 0,
+          byType,
+        };
+      }
+
+      function renderImportSummary(summary) {
+        if (importTagsElement) {
+          importTagsElement.innerHTML = "";
+        }
+        if (componentSummaryElement) {
+          componentSummaryElement.innerHTML = "";
+        }
+
+        const resolved = summary || buildSummaryFromComponents(state.components);
+        if (!resolved) {
+          return;
+        }
+
+        const chips = [
+          ["Components", resolved.totalComponents ?? resolved.componentCount],
+          ["Wires", resolved.totalWires ?? resolved.wireCount],
+          ["Junctions", resolved.totalJunctions ?? resolved.junctionCount],
+        ];
+
+        if (importTagsElement) {
+          chips.forEach(([label, value]) => {
+            if (typeof value === "number" && Number.isFinite(value)) {
+              const tag = document.createElement("span");
+              tag.className = "import-tag";
+              tag.textContent = `${label}: ${value}`;
+              importTagsElement.appendChild(tag);
+            }
+          });
+        }
+
+        const byType = resolved.byType || resolved.componentsByType;
+        if (componentSummaryElement && byType && typeof byType === "object") {
+          Object.entries(byType)
+            .filter((entry) => typeof entry[1] === "number" && Number.isFinite(entry[1]))
+            .sort((a, b) => (b[1] ?? 0) - (a[1] ?? 0))
+            .forEach(([type, count]) => {
+              const li = document.createElement("li");
+              const label = document.createElement("span");
+              label.textContent = String(type);
+              const value = document.createElement("span");
+              value.textContent = String(count);
+              li.appendChild(label);
+              li.appendChild(value);
+              componentSummaryElement.appendChild(li);
+            });
+        }
+      }
+
+      function updateImportStatus() {
+        if (state.importManifest) {
+          const manifest = state.importManifest;
+          const exportedTime = manifest.exportedAt ? new Date(manifest.exportedAt) : null;
+          const exportedLabel = exportedTime && !Number.isNaN(exportedTime.getTime())
+            ? exportedTime.toLocaleString()
+            : "unknown time";
+          setImportStatus(
+            `${manifest.label} - ${manifest.componentCount} component${manifest.componentCount === 1 ? "" : "s"} - ${manifest.sourceName || "unknown source"} - ${exportedLabel}`
+          );
+          renderImportSummary(manifest.summary || null);
+        } else {
+          setImportStatus("Using reference component library. Load a builder export to sync live components.");
+          renderImportSummary(null);
+        }
+      }
+
+      function readPersistedSession(sessionId) {
+        if (!sessionId) {
+          return null;
+        }
+        const key = `${STORAGE_KEYS.prefix}${sessionId}`;
+        const stores = [window.localStorage, window.sessionStorage];
+        for (const store of stores) {
+          try {
+            if (!store) {
+              continue;
+            }
+            const raw = store.getItem(key);
+            if (raw) {
+              return JSON.parse(raw);
+            }
+          } catch (error) {
+            console.warn("Arena storage read failed", error);
+          }
+        }
+        return null;
+      }
+
+      function loadLatestBuilderExport() {
+        let sessionId = null;
+        try {
+          sessionId = window.localStorage?.getItem(STORAGE_KEYS.last) || window.sessionStorage?.getItem(STORAGE_KEYS.last) || null;
+        } catch (error) {
+          console.warn("Unable to access storage for builder export", error);
+        }
+
+        if (!sessionId) {
+          return false;
+        }
+
+        const envelope = readPersistedSession(sessionId);
+        if (!envelope) {
+          return false;
+        }
+
+        return applyImportEnvelope(envelope, {
+          sessionId,
+          label: envelope.payload?.sessionName || "Builder Export",
+          source: "builder",
+        });
+      }
+
+      function loadArenaPayloadFromStorage({ announce = false } = {}) {
+        if (typeof window === "undefined" || typeof window.localStorage === "undefined") {
+          return null;
+        }
+        let payload = null;
+        try {
+          payload = parseArenaPayload(window.localStorage.getItem(ARENA_STORAGE_KEY));
+        } catch (error) {
+          console.warn("Arena: unable to read quick import payload", error);
+          payload = null;
+        }
+
+        if (!payload) {
+          return null;
+        }
+
+        const applied = applyArenaPayload(payload, { source: payload.source || "builder", label: payload.label || "Builder Snapshot" });
+        if (applied && announce) {
+          setStatus("Reloaded builder snapshot.");
+        } else if (!applied && announce) {
+          setStatus("Unable to load builder snapshot.");
+        }
+        return applied ? payload : null;
+      }
+
+      function loadSessionFromUrl() {
+        const url = new URL(window.location.href);
+        const sessionId = url.searchParams.get("session");
+        if (!sessionId) {
+          return false;
+        }
+        const envelope = readPersistedSession(sessionId);
+        if (!envelope) {
+          setStatus("Unable to load requested session. Using current library instead.");
+          return false;
+        }
+        return applyImportEnvelope(envelope, { sessionId, label: envelope.payload?.sessionName || "Builder Export", source: "builder" });
+      }
+
+      function parseArenaPayload(value) {
+        if (!value) {
+          return null;
+        }
+        try {
+          const payload = JSON.parse(value);
+          if (payload && typeof payload === "object") {
+            return payload;
+          }
+        } catch (error) {
+          console.warn("Arena: failed to parse import payload", error);
+        }
+        return null;
+      }
+
+      function applyImportEnvelope(envelope, options) {
+        if (!envelope) {
+          return false;
+        }
+        const payload = envelope.payload || envelope;
+        const componentsRaw = Array.isArray(payload.components) ? payload.components : [];
+        const normalized = componentsRaw
+          .map((item) => normalizeComponent(item, payload.source?.name || options?.source || "import"))
+          .filter(Boolean);
+
+        if (!normalized.length) {
+          setStatus("Import did not include any components. Retaining current library.");
+          return false;
+        }
+
+        state.components = normalized;
+        state.selectedA = normalized[0] || null;
+        state.selectedB = normalized.length > 1 ? normalized[1] : normalized[0] || null;
+
+        state.importManifest = {
+          sessionId: envelope.sessionId || options?.sessionId || null,
+          label: payload.sessionName || options?.label || "Imported Components",
+          exportedAt: envelope.exportedAt || payload.exportedAt || new Date().toISOString(),
+          sourceName: (payload.source && (payload.source.name || payload.source.type)) || options?.source || "import",
+          componentCount: normalized.length,
+          wireCount: Array.isArray(payload.wires) ? payload.wires.length : 0,
+          metrics: payload.analysis || payload.metrics || null,
+          summary: payload.summary || null,
+        };
+
+        populateComponentSelectors();
+        updateCompareVisibility();
+        updateImportStatus();
+        setStatus("Loaded component set from import.");
+        return true;
+      }
+
+      function applyArenaPayload(payload, options = {}) {
+        if (!payload || typeof payload !== "object") {
+          return false;
+        }
+
+        const fromPayload = (candidate, fallback) => {
+          if (Array.isArray(candidate)) {
+            return candidate;
+          }
+          if (fallback && Array.isArray(fallback)) {
+            return fallback;
+          }
+          return [];
+        };
+
+        const components = fromPayload(payload.components, payload.state?.components);
+        const wires = fromPayload(payload.wires, payload.state?.wires);
+        const junctions = fromPayload(payload.junctions, payload.state?.junctions);
+
+        const envelope = {
+          sessionId: options.sessionId || payload.sessionId || null,
+          exportedAt: payload.generatedAt ? new Date(payload.generatedAt).toISOString() : payload.exportedAt || null,
+          payload: {
+            components,
+            wires,
+            junctions,
+            analysis: payload.metrics || payload.analysis || null,
+            metrics: payload.metrics || null,
+            summary: payload.summary || null,
+            sessionName: payload.label || payload.sessionName || options.label || "Builder Snapshot",
+            source: typeof payload.source === "object" && payload.source !== null
+              ? payload.source
+              : { name: String(payload.source || options.source || "builder") },
+            testVariables: payload.testVariables || null,
+            state: payload.state || { components },
+          },
+        };
+
+        const applied = applyImportEnvelope(envelope, options);
+        if (applied && payload.metrics && state.importManifest) {
+          state.importManifest.metrics = payload.metrics;
+        }
+        if (applied && payload.summary && state.importManifest) {
+          state.importManifest.summary = payload.summary;
+        }
+        if (applied && payload.generatedAt && state.importManifest) {
+          state.importManifest.exportedAt = new Date(payload.generatedAt).toISOString();
+        }
+        return applied;
+      }
+
+      function handleFileImport(event) {
+        const input = event.target;
+        const file = input.files?.[0];
+        if (!file) {
+          return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = () => {
+          try {
+            const data = JSON.parse(reader.result);
+            const applied = applyImportEnvelope(data, {
+              sessionId: data.sessionId || null,
+              label: data.sessionName || "Uploaded Dataset",
+              source: "upload",
+            });
+            if (applied) {
+              setStatus("Imported components from JSON file.");
+            } else {
+              setStatus("Unable to import data from JSON file. Check format.");
+            }
+          } catch (error) {
+            console.error("JSON import error", error);
+            setStatus("Invalid JSON file. Unable to import components.");
+          }
+        };
+
+        reader.readAsText(file);
+        input.value = "";
+      }
+
+      function runTest() {
+        if (!state.components.length) {
+          setStatus("No components available. Import a component library first.");
+          return;
+        }
+
+        readTestVariables();
+
+        if (!state.selectedA) {
+          state.selectedA = state.components[0];
+        }
+
+        const componentA = state.selectedA;
+        const metricsA = computeComponentMetrics(componentA, state.testVariables);
+        let componentB = null;
+        let metricsB = null;
+
+        if (state.mode === "compare") {
+          componentB = state.selectedB || state.components[1] || componentA;
+          state.selectedB = componentB;
+          metricsB = componentB ? computeComponentMetrics(componentB, state.testVariables) : null;
+        }
+
+        renderMetricGrid("metrics-a", metricsA, { accent: "A" });
+        renderMetricGrid("metrics-b", metricsB, { accent: "B" });
+
+        const deltaMetrics = metricsB ? computeDeltaMetrics(metricsA, metricsB) : null;
+        renderMetricGrid("metrics-delta", deltaMetrics, { accent: "delta", isDelta: true });
+
+        updateMeshesForMetrics(metricsA, metricsB);
+
+        state.lastRun = {
+          timestamp: new Date().toISOString(),
+          mode: state.mode,
+          components: {
+            A: summarizeComponent(componentA),
+            B: metricsB ? summarizeComponent(componentB) : null,
+          },
+          testVariables: Object.assign({}, state.testVariables),
+          metrics: {
+            A: metricsA,
+            B: metricsB,
+            delta: deltaMetrics,
+          },
+          importManifest: state.importManifest,
+        };
+
+        const summaryParts = [`A: ${formatWithUnit(metricsA.currentRms, "A")} - ${formatWithUnit(metricsA.powerDissipation, "W")}`];
+        if (metricsB) {
+          summaryParts.push(`B: ${formatWithUnit(metricsB.currentRms, "A")} - ${formatWithUnit(metricsB.powerDissipation, "W")}`);
+        }
+        setStatus(`Test complete. ${summaryParts.join(" | ")}`);
+      }
+
+      function summarizeComponent(component) {
+        if (!component) {
+          return null;
+        }
+        return {
+          id: component.id,
+          name: component.name,
+          type: component.type,
+          properties: component.properties,
+          metadata: component.metadata,
+          source: component.source,
+        };
+      }
+
+      function computeComponentMetrics(component, variables) {
+        const profile = COMPONENT_PROFILES[component.type] || { defaultProperties: {} };
+        const props = Object.assign({}, profile.defaultProperties || {}, component.properties || {});
+
+        const voltage = Number.isFinite(variables.voltage) ? variables.voltage : 0;
+        const frequency = Math.max(Number.isFinite(variables.frequencyHz) ? variables.frequencyHz : 0, 0);
+        const omega = 2 * Math.PI * frequency;
+        const temperatureOffset = (variables.temperatureC ?? 25) - 25;
+
+        let resistance = props.resistance;
+        if (typeof props.tempCoeff === "number" && Number.isFinite(resistance)) {
+          resistance = resistance * (1 + props.tempCoeff * temperatureOffset);
+        }
+
+        if (typeof props.seriesResistance === "number" && Number.isFinite(props.seriesResistance)) {
+          resistance = Number.isFinite(resistance)
+            ? resistance + props.seriesResistance
+            : props.seriesResistance;
+        }
+
+        if (component.type === "switch") {
+          const onResistance = props.onResistance ?? resistance ?? 0.05;
+          const offResistance = props.offResistance ?? 1000000;
+          resistance = props.isOn === false ? offResistance : onResistance;
+        }
+
+        if (component.type === "battery") {
+          resistance = Math.max(variables.loadImpedanceOhms || resistance || props.internalResistance || 1, 0.0001);
+        }
+
+        let reactanceC = 0;
+        if (typeof props.capacitance === "number" && props.capacitance > 0 && omega > 0) {
+          reactanceC = -1 / (omega * props.capacitance);
+        }
+
+        let reactanceL = 0;
+        if (typeof props.inductance === "number" && props.inductance > 0 && omega > 0) {
+          reactanceL = omega * props.inductance;
+        }
+
+        const netReactance = reactanceL + reactanceC;
+
+        let effectiveResistance = Number.isFinite(resistance) ? resistance : 0;
+        if (!Number.isFinite(effectiveResistance) || effectiveResistance < 0.0001) {
+          effectiveResistance = 0.0001;
+        }
+
+        let impedance = Math.sqrt(Math.pow(effectiveResistance, 2) + Math.pow(netReactance, 2));
+        if (!Number.isFinite(impedance) || impedance < 0.0001) {
+          impedance = effectiveResistance;
+        }
+
+        let current = impedance > 0 ? voltage / impedance : 0;
+        let voltageAcross = voltage;
+
+        if (component.type === "led") {
+          const forward = props.forwardVoltage ?? 2;
+          const seriesR = Math.max(props.seriesResistance ?? effectiveResistance ?? 100, 0.1);
+          voltageAcross = Math.max(voltage - forward, 0);
+          current = voltageAcross / seriesR;
+          impedance = seriesR;
+          effectiveResistance = seriesR;
+        }
+
+        if (component.type === "battery") {
+          const internalR = Math.max(props.internalResistance ?? 0.2, 0.0001);
+          const loadR = Math.max(variables.loadImpedanceOhms || 0, 0.0001);
+          const totalR = internalR + loadR;
+          current = voltage / totalR;
+          impedance = totalR;
+          effectiveResistance = loadR;
+        }
+
+        const dutyCycle = Math.max(Math.min(variables.dutyCyclePercent ?? 100, 100), 0) / 100;
+        const rmsCurrent = current * Math.sqrt(dutyCycle || 1);
+        const power = voltageAcross * current * dutyCycle;
+        const energyDelivered = power * (variables.durationSeconds ?? 0);
+        const storedEnergyCap = typeof props.capacitance === "number" ? 0.5 * props.capacitance * voltage * voltage : 0;
+        const storedEnergyInd = typeof props.inductance === "number" ? 0.5 * props.inductance * current * current : 0;
+        const storedEnergy = storedEnergyCap + storedEnergyInd;
+        const phaseAngle = Math.atan2(netReactance, effectiveResistance);
+        const thermalResistance = props.thermalResistance ?? profile.defaultProperties?.thermalResistance ?? 60;
+        const thermalRise = thermalResistance ? (power * thermalResistance) / 1000 : 0;
+
+        let efficiency = props.efficiency;
+        if (!Number.isFinite(efficiency)) {
+          if (component.type === "battery" && impedance > 0) {
+            efficiency = effectiveResistance / impedance;
+          } else if (component.type === "led") {
+            efficiency = props.efficiency ?? 0.35;
+          } else if (component.type === "resistor") {
+            efficiency = 0;
+          } else {
+            efficiency = null;
+          }
+        }
+
+        return {
+          componentId: component.id,
+          name: component.name,
+          type: component.type,
+          operatingVoltage: voltage,
+          currentRms: rmsCurrent,
+          currentPeak: current * Math.sqrt(2),
+          powerDissipation: power,
+          impedance,
+          reactance: netReactance,
+          resistance: effectiveResistance,
+          phaseAngleDegrees: phaseAngle * (180 / Math.PI),
+          storedEnergy,
+          energyDelivered,
+          thermalRise,
+          efficiency,
+          ambientTemperature: variables.temperatureC,
+          humidity: variables.ambientHumidityPercent,
+          dutyCyclePercent: variables.dutyCyclePercent,
+        };
+      }
+
+      function computeDeltaMetrics(metricsA, metricsB) {
+        if (!metricsA || !metricsB) {
+          return null;
+        }
+        const percentDifference = (a, b) => {
+          if (!Number.isFinite(a) || !Number.isFinite(b) || b === 0) {
             return null;
           }
 
