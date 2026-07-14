@@ -626,6 +626,8 @@ export const QUICK_ACTIONS: QuickAction[] = [
     action: "set-tool",
     data: { tool: "select" },
     tool: "select",
+    icon: "↖",
+    color: "#00c8ff",
   },
   {
     id: "measure",
@@ -635,6 +637,8 @@ export const QUICK_ACTIONS: QuickAction[] = [
     action: "set-tool",
     data: { tool: "measure" },
     tool: "measure",
+    icon: "📐",
+    color: "#bb88ff",
   },
   {
     id: "clear",
@@ -642,6 +646,8 @@ export const QUICK_ACTIONS: QuickAction[] = [
     description: "Remove all components, wires, and analysis data",
     kind: "action",
     action: "clear-workspace",
+    icon: "🗑",
+    color: "#ff6644",
   },
   {
     id: "simulate",
@@ -649,6 +655,8 @@ export const QUICK_ACTIONS: QuickAction[] = [
     description: "Preview circuit behaviour",
     kind: "action",
     action: "run-simulation",
+    icon: "⚡",
+    color: "#00ff88",
   },
 ];
 
@@ -659,6 +667,8 @@ export const WIRE_TOOL_ACTIONS: PanelAction[] = [
     description:
       "Switch into wiring mode to pick freeform, Manhattan (90-deg), square outside, offset, arc, simple, perimeter, A* auto-routing, diagonal (45°), stepped (staircase), or S-Curve paths.",
     action: "toggle-wire-mode",
+    icon: "~",
+    color: "#44aaff",
   },
   {
     id: "cycle-routing",
@@ -666,24 +676,32 @@ export const WIRE_TOOL_ACTIONS: PanelAction[] = [
     description:
       "Switch between freeform, Manhattan 90-deg, square outside, offset, arc, simple, perimeter, A*, diagonal, stepped, and S-Curve routing modes.",
     action: "cycle-wire-routing",
+    icon: "🔄",
+    color: "#00ddb8",
   },
   {
     id: "rotate-mode",
     label: "Rotate Mode",
     description: "Rotate the active component to align with your build.",
     action: "toggle-rotate-mode",
+    icon: "↻",
+    color: "#dd88ff",
   },
   {
     id: "junction",
     label: "Add Junction",
     description: "Junction ─●─ — Drop anywhere on a wire to branch it. Essential for parallel circuits. Press J to add. (KCL: ΣI_in = ΣI_out)",
     action: "add-junction",
+    icon: "●",
+    color: "#ffcc44",
   },
   {
     id: "auto-arrange",
     label: "Auto Arrange",
     description: "Let CircuiTry tidy the layout while preserving connections.",
     action: "auto-arrange",
+    icon: "⊞",
+    color: "#6699ff",
   },
 ];
 
