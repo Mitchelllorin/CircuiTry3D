@@ -281,8 +281,8 @@ Once you have your signed AAB:
 
 ## Getting Help
 
-- **Set up auto-publish to Play Console (one-time):** [PLAY_CONSOLE_AUTO_PUBLISH_SETUP.md](PLAY_CONSOLE_AUTO_PUBLISH_SETUP.md)
-- **Upload the AAB to Play Console manually:** [UPLOAD_TO_PLAY_STORE.md](UPLOAD_TO_PLAY_STORE.md)
+- **Updating the app (after first release):** [UPDATING_THE_APP.md](UPDATING_THE_APP.md)
+- **Upload the AAB to Play Console:** [UPLOAD_TO_PLAY_STORE.md](UPLOAD_TO_PLAY_STORE.md)
 - **Read the full guide:** [PLAY_STORE_SUBMISSION_GUIDE.md](PLAY_STORE_SUBMISSION_GUIDE.md)
 - **Check the package summary:** [PLAY_STORE_PACKAGE_SUMMARY.md](PLAY_STORE_PACKAGE_SUMMARY.md)
 - **Android Developers:** https://developer.android.com/guide
