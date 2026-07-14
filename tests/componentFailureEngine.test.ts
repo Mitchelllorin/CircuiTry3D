@@ -276,6 +276,29 @@ describe("detectFailure — stress conditions", () => {
     expect(result.visual).toBe("blowout");
   });
 
+  it("fuse respects ratedCurrentA property — does not blow below threshold", () => {
+    const comp = { id: "f2", type: "fuse", properties: { ratedCurrentA: 5 } };
+    const result = detectFailure(comp, safeMetrics({ currentRms: 4.9 }));
+    expect(result.severity).toBe(0);
+    expect(result.failed).toBe(false);
+  });
+
+  it("fuse with ratedCurrentA=5 blows at 5.6A (112% of rating)", () => {
+    const comp = { id: "f3", type: "fuse", properties: { ratedCurrentA: 5 } };
+    const result = detectFailure(comp, safeMetrics({ currentRms: 5.6 }));
+    expect(result.severity).toBeGreaterThan(0);
+    expect(result.visual).toBe("blowout");
+  });
+
+  it("fuse blows and marks failed=true at extreme overcurrent (e.g. 10000V scenario)", () => {
+    // Simulates a 10000V battery through a fuse rated 1A — current would be enormous
+    const comp = { id: "f4", type: "fuse", properties: { ratedCurrentA: 1 } };
+    const result = detectFailure(comp, safeMetrics({ currentRms: 200000 }));
+    expect(result.failed).toBe(true);
+    expect(result.severity).toBeGreaterThanOrEqual(2);
+    expect(result.visual).toBe("blowout");
+  });
+
   it("detects motor winding burnout", () => {
     const comp = { id: "m1", type: "motor", properties: { ratedCurrentA: 0.5 } };
     const result = detectFailure(comp, safeMetrics({ currentRms: 1.5 }));
