@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState, useEffect } from "react";
+import type { CSSProperties } from "react";
 import type {
   ComponentAction,
   QuickAction,
@@ -12,6 +13,8 @@ import {
 } from "../constants";
 import { getSchematicSymbol } from "../../circuit/SchematicSymbols";
 import { useComponent3DThumbnail } from "./useComponent3DThumbnail";
+import { useDemoMode } from "../../../context/DemoModeContext";
+import { LockedComponentOverlay, UpgradeBanner } from "../modals/UpgradePromptModal";
 
 interface LeftToolbarProps {
   isOpen: boolean;
@@ -185,6 +188,17 @@ export function LeftToolbar({
   const shouldRenderThumbnails = isOpen;
   const shouldAnimateThumbnails = isOpen && !isCoarsePointer;
 
+  const { isDemoMode, isComponentAvailable, showUpgradePrompt } = useDemoMode();
+
+  const handleComponentClick = (component: ComponentAction) => {
+    const cid = component.builderType ?? component.id;
+    if (!isComponentAvailable(cid)) {
+      showUpgradePrompt("advanced-components");
+      return;
+    }
+    onComponentAction(component);
+  };
+
   return (
     <div className={`library-wrapper ${isOpen ? "open" : ""}`}>
       {/* Toggle is first in DOM so it renders at x=0 (left edge) in flex-direction:row */}
@@ -211,30 +225,40 @@ export function LeftToolbar({
         <div className="builder-menu-scroll">
           <div className="slider-section">
             <span className="slider-heading">Components</span>
+            {isDemoMode && (
+              <UpgradeBanner feature="advanced-components" compact />
+            )}
             <div className="slider-stack">
-              {COMPONENT_ACTIONS.map((component) => (
-                <button
-                  key={component.id}
-                  type="button"
-                  className="slider-btn slider-btn-stacked"
-                  onClick={() => onComponentAction(component)}
-                  disabled={controlsDisabled}
-                  aria-disabled={controlsDisabled}
-                  title={
-                    controlsDisabled
-                      ? controlDisabledTitle
-                      : component.description || component.label
-                  }
-                  data-component-action={component.action}
-                  data-category={component.metadata?.category}
-                >
-                  <ComponentIcon
-                    component={component}
-                    thumbnailsEnabled={shouldRenderThumbnails}
-                    animateThumbnails={shouldAnimateThumbnails}
-                  />
-                </button>
-              ))}
+              {COMPONENT_ACTIONS.map((component) => {
+                const cid = component.builderType ?? component.id;
+                const locked = !isComponentAvailable(cid);
+                return (
+                  <button
+                    key={component.id}
+                    type="button"
+                    className={`slider-btn slider-btn-stacked${locked ? " slider-btn--locked" : ""}`}
+                    onClick={() => handleComponentClick(component)}
+                    disabled={controlsDisabled}
+                    aria-disabled={controlsDisabled || locked}
+                    title={
+                      locked
+                        ? `${component.label} — Available in Full Version`
+                        : controlsDisabled
+                          ? controlDisabledTitle
+                          : component.description || component.label
+                    }
+                    data-component-action={component.action}
+                    data-category={component.metadata?.category}
+                  >
+                    <ComponentIcon
+                      component={component}
+                      thumbnailsEnabled={shouldRenderThumbnails}
+                      animateThumbnails={shouldAnimateThumbnails}
+                    />
+                    {locked && <LockedComponentOverlay componentId={cid} />}
+                  </button>
+                );
+              })}
             </div>
           </div>
           <div className="slider-section">
@@ -248,7 +272,7 @@ export function LeftToolbar({
                   <button
                     key={action.id}
                     type="button"
-                    className="slider-btn slider-btn-stacked"
+                    className="slider-btn slider-btn-action"
                     onClick={() => onQuickAction(action)}
                     disabled={controlsDisabled}
                     aria-disabled={controlsDisabled}
@@ -264,8 +288,20 @@ export function LeftToolbar({
                         ? controlDisabledTitle
                         : action.description
                     }
+                    style={
+                      action.color
+                        ? ({ "--action-color": action.color } as CSSProperties)
+                        : undefined
+                    }
                   >
-                    <span className="slider-label">{action.label}</span>
+                    {action.icon ? (
+                      <span className="action-btn-face">
+                        <span className="action-btn-icon" aria-hidden="true">{action.icon}</span>
+                        <span className="action-btn-label">{action.label}</span>
+                      </span>
+                    ) : (
+                      <span className="slider-label">{action.label}</span>
+                    )}
                   </button>
                 );
               })}
@@ -298,7 +334,7 @@ export function LeftToolbar({
                   <button
                     key={action.id}
                     type="button"
-                    className="slider-btn slider-btn-stacked"
+                    className="slider-btn slider-btn-action"
                     onClick={() => onBuilderAction(action.action, action.data)}
                     disabled={controlsDisabled}
                     aria-disabled={controlsDisabled}
@@ -313,8 +349,20 @@ export function LeftToolbar({
                         ? isActionActive
                         : undefined
                     }
+                    style={
+                      action.color
+                        ? ({ "--action-color": action.color } as CSSProperties)
+                        : undefined
+                    }
                   >
-                    <span className="slider-label">{action.label}</span>
+                    {action.icon ? (
+                      <span className="action-btn-face">
+                        <span className="action-btn-icon" aria-hidden="true">{action.icon}</span>
+                        <span className="action-btn-label">{action.label}</span>
+                      </span>
+                    ) : (
+                      <span className="slider-label">{action.label}</span>
+                    )}
                   </button>
                 );
               })}

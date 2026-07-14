@@ -1,48 +1,39 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../context/AuthContext";
+import { useDemoMode } from "../context/DemoModeContext";
+import BrandSignature from "../components/BrandSignature";
+import SectionWorkflowStrip, {
+  type SectionWorkflowStep,
+} from "../components/SectionWorkflowStrip";
 import type { FormEvent } from "react";
 import { isLifetimeTester } from "../utils/lifetimeTesterEmails";
 import "../styles/account.css";
 
-type Mode = "signin" | "signup" | "profile" | "forgot-password" | "pin";
-
-type PinSetupPhase =
-  | { active: false }
-  | { active: true; step: "enter" | "confirm"; first: string };
-
-function PinDots({ length }: { length: number }) {
-  return (
-    <div className="pin-dots" aria-hidden="true">
-      {[0, 1, 2, 3].map((i) => (
-        <span key={i} className={`pin-dot${length > i ? " is-filled" : ""}`} />
-      ))}
-    </div>
-  );
-}
-
-function PinPad({ onDigit, onBackspace }: { onDigit: (d: string) => void; onBackspace: () => void }) {
-  const keys = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "", "0", "⌫"] as const;
-  return (
-    <div className="pin-pad" role="group" aria-label="PIN keypad">
-      {keys.map((key, i) =>
-        key === "" ? (
-          <span key={i} className="pin-key-empty" aria-hidden="true" />
-        ) : key === "⌫" ? (
-          <button key={i} type="button" className="pin-key pin-key-back" onClick={onBackspace} aria-label="Delete last digit">
-            ⌫
-          </button>
-        ) : (
-          <button key={i} type="button" className="pin-key" onClick={() => onDigit(key)}>
-            {key}
-          </button>
-        )
-      )}
-    </div>
-  );
-}
+type Mode = "signin" | "signup" | "profile";
+const ACCOUNT_WORKFLOW_STEPS: SectionWorkflowStep[] = [
+  {
+    id: "account-auth",
+    title: "Authenticate your account",
+    detail:
+      "Sign in or create a profile so progress, community actions, and preferences stay linked.",
+  },
+  {
+    id: "account-profile",
+    title: "Configure profile details",
+    detail:
+      "Update display name and bio to keep your collaboration identity consistent across sections.",
+  },
+  {
+    id: "account-sync",
+    title: "Continue through app workflows",
+    detail:
+      "Use the global navigation bar to move directly into Classroom, Community, Arcade, and workspace modes.",
+  },
+];
 
 export default function Account() {
-  const { currentUser, lastSignedInUser, hasPIN, loading, users, signIn, signUp, signOut, updateProfile, resetPassword, changePassword, setPIN, clearPIN, signInWithPIN, deleteAccount } = useAuth();
+  const { currentUser, loading, signIn, signUp, signOut, updateProfile } = useAuth();
+  const { isDemoMode, upgradeToPremium } = useDemoMode();
   const [mode, setMode] = useState<Mode>(currentUser ? "profile" : "signin");
   const [signInForm, setSignInForm] = useState({ email: "", password: "" });
   const [signUpForm, setSignUpForm] = useState({ email: "", password: "", displayName: "", bio: "" });
@@ -54,30 +45,18 @@ export default function Account() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [deleteAccountOpen, setDeleteAccountOpen] = useState(false);
 
-  // PIN sign-in state
-  const [pinEntry, setPinEntry] = useState("");
-  const [pinShake, setPinShake] = useState(false);
-
-  // PIN setup state (in profile)
-  const [pinSetup, setPinSetupPhase] = useState<PinSetupPhase>({ active: false });
-  const [pinSetupEntry, setPinSetupEntry] = useState("");
-
-  const hasSetInitialModeRef = useRef(false);
-
-  // After loading, auto-switch to PIN mode if applicable
+  // Handle Stripe checkout success redirect
   useEffect(() => {
-    if (!loading && !hasSetInitialModeRef.current) {
-      hasSetInitialModeRef.current = true;
-      if (currentUser) {
-        setMode("profile");
-        setProfileForm({ displayName: currentUser.displayName, bio: currentUser.bio ?? "" });
-      } else if (hasPIN && lastSignedInUser) {
-        setMode("pin");
-      }
+    const params = new URLSearchParams(window.location.hash.split("?")[1] ?? "");
+    if (params.get("upgrade") === "success" && isDemoMode) {
+      upgradeToPremium();
+      setStatus({ type: "success", message: "Payment successful! Full version unlocked. All premium features are now available." });
+      // Clean the URL
+      const cleanHash = window.location.hash.split("?")[0];
+      window.history.replaceState(null, "", cleanHash);
     }
-  }, [loading, currentUser, hasPIN, lastSignedInUser]);
+  }, [isDemoMode, upgradeToPremium]);
 
-  // When user becomes authenticated, go to profile
   useEffect(() => {
     if (currentUser) {
       setMode("profile");
@@ -361,6 +340,7 @@ export default function Account() {
     <div className="account-page">
       <header className="account-header">
         <div>
+          <WordMark size="sm" decorative className="account-brand" />
           <span className="account-eyebrow">User Accounts</span>
           <h1>{modeLabel}</h1>
           <p>Join the community to chat, share circuits, and sync your builds across devices.</p>
@@ -398,6 +378,11 @@ export default function Account() {
           </button>
         </div>
       </header>
+
+      <SectionWorkflowStrip
+        sectionLabel="Account"
+        steps={ACCOUNT_WORKFLOW_STEPS}
+      />
 
       {status && (
         <div className={`account-status ${status.type === "success" ? "is-success" : "is-error"}`} role="status">

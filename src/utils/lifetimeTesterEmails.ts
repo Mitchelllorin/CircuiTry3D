@@ -27,6 +27,8 @@ const LIFETIME_TESTER_EMAILS: ReadonlySet<string> = new Set([
   "bduncan072461@gmail.com",
   "circuitry3d@gmail.com",
   "circuitry3dsim@gmail.com",
+  "builder@circuitry3d.dev",
+  "mentor@circuitry3d.dev",
 ]);
 
 /** Returns true if the given email belongs to a founding-tester. */

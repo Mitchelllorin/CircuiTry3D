@@ -3,65 +3,6 @@ import type { ReactNode } from "react";
 import { isLifetimeTester } from "../utils/lifetimeTesterEmails";
 import { getStoredTier, setStoredTier } from "../utils/playStoreBilling";
 
-// ── Password hashing (PBKDF2-SHA256) ────────────────────────────────────────
-
-const HASH_PREFIX = "pbkdf2v1";
-const PBKDF2_ITERATIONS = 100_000;
-const PBKDF2_KEY_BITS = 256;
-
-const bytesToHex = (bytes: Uint8Array): string =>
-  Array.from(bytes)
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
-
-const hexToBytes = (hex: string): Uint8Array =>
-  new Uint8Array((hex.match(/.{2}/g) ?? []).map((h) => parseInt(h, 16)));
-
-const hashPassword = async (password: string): Promise<string> => {
-  if (typeof crypto === "undefined" || !crypto.subtle) {
-    return password; // Fallback for non-HTTPS / test environments
-  }
-  const salt = crypto.getRandomValues(new Uint8Array(16));
-  const keyMaterial = await crypto.subtle.importKey(
-    "raw",
-    new TextEncoder().encode(password),
-    "PBKDF2",
-    false,
-    ["deriveBits"]
-  );
-  const bits = await crypto.subtle.deriveBits(
-    { name: "PBKDF2", hash: "SHA-256", salt: salt as BufferSource, iterations: PBKDF2_ITERATIONS },
-    keyMaterial,
-    PBKDF2_KEY_BITS
-  );
-  return `${HASH_PREFIX}$${bytesToHex(salt)}$${bytesToHex(new Uint8Array(bits))}`;
-};
-
-const verifyPassword = async (password: string, stored: string): Promise<boolean> => {
-  if (!stored.startsWith(`${HASH_PREFIX}$`)) {
-    return password === stored; // Legacy plaintext comparison
-  }
-  if (typeof crypto === "undefined" || !crypto.subtle) {
-    return false;
-  }
-  const parts = stored.split("$");
-  if (parts.length !== 3) return false;
-  const [, saltHex, expectedHex] = parts;
-  const salt = hexToBytes(saltHex);
-  const keyMaterial = await crypto.subtle.importKey(
-    "raw",
-    new TextEncoder().encode(password),
-    "PBKDF2",
-    false,
-    ["deriveBits"]
-  );
-  const bits = await crypto.subtle.deriveBits(
-    { name: "PBKDF2", hash: "SHA-256", salt: salt as BufferSource, iterations: PBKDF2_ITERATIONS },
-    keyMaterial,
-    PBKDF2_KEY_BITS
-  );
-  return bytesToHex(new Uint8Array(bits)) === expectedHex;
-};
 
 type AuthStorageSchema = {
   users: StoredUser[];
@@ -72,7 +13,7 @@ type AuthStorageSchema = {
 export type StoredUser = {
   id: string;
   email: string;
-  password: string;
+  passwordHash: string;
   displayName: string;
   avatarColor: string;
   bio?: string;
@@ -80,7 +21,12 @@ export type StoredUser = {
   createdAt: number;
 };
 
-export type AuthUser = Omit<StoredUser, "password" | "pin">;
+type PersistedUser = Partial<Omit<StoredUser, "passwordHash">> & {
+  passwordHash?: unknown;
+  password?: unknown;
+};
+
+export type AuthUser = Omit<StoredUser, "passwordHash">;
 
 export type SignUpPayload = {
   email: string;
@@ -120,13 +66,19 @@ type AuthContextValue = {
 };
 
 const STORAGE_KEY = "circuiTry3d.auth.v1";
+const PASSWORD_HASH_PREFIX = "pbkdf2$";
+const PASSWORD_HASH_ITERATIONS = 120000;
+const SAMPLE_MENTOR_PASSWORD_HASH =
+  "pbkdf2$120000$Q2lyY3VpdFRyeTMtTWVudG9yLVNhbHQ=$Egfdz2N7rk/iUvj2cX6OgdD0W5UDzEvQx2mGihRKLaY=";
+const SAMPLE_BUILDER_PASSWORD_HASH =
+  "pbkdf2$120000$Q2lyY3VpdFRyeTMtQnVpbGRlci1TYWx0$u5AMlG/KlAuMaMtgr9kaFhIMFAm+gaQAkYVfap7aSPY=";
 
 const DEFAULT_STORAGE: AuthStorageSchema = {
   users: [
     {
       id: "sample-mentor",
       email: "mentor@circuitry3d.dev",
-      password: "mentor",
+      passwordHash: SAMPLE_MENTOR_PASSWORD_HASH,
       displayName: "Arena Mentor",
       avatarColor: "#6366f1",
       bio: "Here to help you tune your builds and answer questions about circuit physics.",
@@ -135,7 +87,7 @@ const DEFAULT_STORAGE: AuthStorageSchema = {
     {
       id: "sample-builder",
       email: "builder@circuitry3d.dev",
-      password: "builder",
+      passwordHash: SAMPLE_BUILDER_PASSWORD_HASH,
       displayName: "Prototype Builder",
       avatarColor: "#f97316",
       bio: "Sharing weekly builds from the Component Arena bench.",
@@ -144,6 +96,116 @@ const DEFAULT_STORAGE: AuthStorageSchema = {
   ],
   currentUserId: null,
   lastSignedInUserId: null,
+};
+
+const encodeBase64 = (value: Uint8Array): string => {
+  if (typeof btoa !== "function") {
+    throw new Error("Base64 encoding is unavailable in this environment.");
+  }
+  let binary = "";
+  for (let index = 0; index < value.length; index += 1) {
+    binary += String.fromCharCode(value[index]);
+  }
+  return btoa(binary);
+};
+
+const decodeBase64 = (value: string): Uint8Array => {
+  if (typeof atob !== "function") {
+    throw new Error("Base64 decoding is unavailable in this environment.");
+  }
+  const binary = atob(value);
+  const bytes = new Uint8Array(binary.length);
+  for (let index = 0; index < binary.length; index += 1) {
+    bytes[index] = binary.charCodeAt(index);
+  }
+  return bytes;
+};
+
+const createRandomSalt = (length = 16): Uint8Array => {
+  if (typeof globalThis.crypto !== "undefined" && "getRandomValues" in globalThis.crypto) {
+    return globalThis.crypto.getRandomValues(new Uint8Array(length));
+  }
+  const fallback = new Uint8Array(length);
+  for (let index = 0; index < length; index += 1) {
+    fallback[index] = Math.floor(Math.random() * 256);
+  }
+  return fallback;
+};
+
+const isPbkdf2Hash = (value: string): boolean => value.startsWith(PASSWORD_HASH_PREFIX);
+
+const hashPassword = async (password: string): Promise<string> => {
+  if (typeof globalThis.crypto === "undefined" || !globalThis.crypto.subtle) {
+    return password;
+  }
+
+  const saltBytes = createRandomSalt();
+  const keyMaterial = await globalThis.crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(password),
+    "PBKDF2",
+    false,
+    ["deriveBits"]
+  );
+
+  const derivedBits = await globalThis.crypto.subtle.deriveBits(
+    {
+      name: "PBKDF2",
+      salt: saltBytes as unknown as BufferSource,
+      iterations: PASSWORD_HASH_ITERATIONS,
+      hash: "SHA-256",
+    },
+    keyMaterial,
+    256
+  );
+
+  const hashBytes = new Uint8Array(derivedBits);
+  return `${PASSWORD_HASH_PREFIX}${PASSWORD_HASH_ITERATIONS}$${encodeBase64(saltBytes)}$${encodeBase64(hashBytes)}`;
+};
+
+const verifyPassword = async (inputPassword: string, storedHash: string): Promise<boolean> => {
+  // Legacy records created before hashing rollout.
+  if (!isPbkdf2Hash(storedHash)) {
+    return storedHash === inputPassword;
+  }
+
+  if (typeof globalThis.crypto === "undefined" || !globalThis.crypto.subtle) {
+    return false;
+  }
+
+  const parts = storedHash.split("$");
+  if (parts.length !== 4) {
+    return false;
+  }
+
+  const iterations = Number(parts[1]);
+  const salt = decodeBase64(parts[2]);
+  const expectedHash = parts[3];
+  if (!Number.isFinite(iterations) || iterations <= 0) {
+    return false;
+  }
+
+  const keyMaterial = await globalThis.crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(inputPassword),
+    "PBKDF2",
+    false,
+    ["deriveBits"]
+  );
+
+  const derivedBits = await globalThis.crypto.subtle.deriveBits(
+    {
+      name: "PBKDF2",
+      salt: salt as unknown as BufferSource,
+      iterations,
+      hash: "SHA-256",
+    },
+    keyMaterial,
+    256
+  );
+
+  const candidate = encodeBase64(new Uint8Array(derivedBits));
+  return candidate === expectedHash;
 };
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -162,10 +224,56 @@ const readStorage = (): AuthStorageSchema => {
     if (!parsed || typeof parsed !== "object") {
       return DEFAULT_STORAGE;
     }
-    const users = Array.isArray(parsed.users) ? (parsed.users.filter((user): user is StoredUser => Boolean(user && user.id && user.email && user.password && user.displayName)) as StoredUser[]) : DEFAULT_STORAGE.users;
+    const users: StoredUser[] = Array.isArray(parsed.users)
+      ? parsed.users
+          .map((candidate) => {
+            const user = candidate as PersistedUser;
+            if (!user || typeof user !== "object") {
+              return null;
+            }
+
+            const id = typeof user.id === "string" ? user.id : null;
+            const email = typeof user.email === "string" ? user.email : null;
+            const displayName =
+              typeof user.displayName === "string" ? user.displayName : null;
+            const avatarColor =
+              typeof user.avatarColor === "string"
+                ? user.avatarColor
+                : generateAvatarColor(email ?? undefined);
+            const createdAt =
+              typeof user.createdAt === "number" && Number.isFinite(user.createdAt)
+                ? user.createdAt
+                : Date.now();
+
+            // Support migration from legacy plaintext `password` records.
+            const passwordHash =
+              typeof user.passwordHash === "string" && user.passwordHash.trim()
+                ? user.passwordHash
+                : typeof user.password === "string" && user.password.trim()
+                ? user.password
+                : null;
+
+            if (!id || !email || !displayName || !passwordHash) {
+              return null;
+            }
+
+            const normalized: StoredUser = {
+              id,
+              email,
+              passwordHash,
+              displayName,
+              avatarColor,
+              createdAt,
+            };
+            if (typeof user.bio === "string") {
+              normalized.bio = user.bio;
+            }
+            return normalized;
+          })
+          .filter((user): user is StoredUser => user !== null)
+      : [];
     const currentUserId = typeof parsed.currentUserId === "string" ? parsed.currentUserId : null;
-    const lastSignedInUserId = typeof parsed.lastSignedInUserId === "string" ? parsed.lastSignedInUserId : null;
-    return { users, currentUserId, lastSignedInUserId };
+    return { users: users.length > 0 ? users : DEFAULT_STORAGE.users, currentUserId };
   } catch (error) {
     console.warn("Auth storage read failed", error);
     return DEFAULT_STORAGE;
@@ -187,7 +295,7 @@ const buildAuthUser = (user: StoredUser | null | undefined): AuthUser | null => 
   if (!user) {
     return null;
   }
-  const { password: _password, pin: _pin, ...rest } = user;
+  const { passwordHash: _passwordHash, ...rest } = user;
   return rest;
 };
 
@@ -287,7 +395,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const nextUser: StoredUser = {
       id,
       email,
-      password: hashedPassword,
+      passwordHash: await hashPassword(payload.password),
       displayName,
       bio: payload.bio?.trim() || undefined,
       avatarColor: generateAvatarColor(email),
@@ -313,24 +421,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const email = payload.email.trim().toLowerCase();
     const password = payload.password;
     const match = snapshot.users.find((user) => user.email.toLowerCase() === email);
-
-    // Always run a hash-equivalent operation regardless of whether the email exists,
-    // so response timing cannot reveal whether an account is registered.
-    let isValid = false;
-    if (match) {
-      isValid = await verifyPassword(password, match.password);
-    } else {
-      await hashPassword(password).catch(() => {}); // Dummy operation to equalise timing
-    }
-
-    if (!match || !isValid) {
+    if (!match) {
       return { ok: false, reason: "invalid-credentials", message: "Incorrect email or password." };
     }
 
-    // Transparently upgrade legacy plaintext password to hashed on successful sign-in
-    let finalPassword = match.password;
-    if (!match.password.startsWith(`${HASH_PREFIX}$`)) {
-      finalPassword = await hashPassword(password);
+    const validPassword = await verifyPassword(password, match.passwordHash);
+    if (!validPassword) {
+      return { ok: false, reason: "invalid-credentials", message: "Incorrect email or password." };
+    }
+
+    // Opportunistically migrate legacy plaintext records to PBKDF2 on successful sign-in.
+    if (!isPbkdf2Hash(match.passwordHash)) {
+      const upgradedHash = await hashPassword(password);
+      setState((previous) => ({
+        ...previous,
+        currentUserId: match.id,
+        users: previous.users.map((user) =>
+          user.id === match.id ? { ...user, passwordHash: upgradedHash } : user
+        ),
+      }));
+      return {
+        ok: true,
+        user: buildAuthUser({ ...match, passwordHash: upgradedHash })!,
+      };
     }
 
     setState((previous) => ({

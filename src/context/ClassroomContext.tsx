@@ -5,6 +5,7 @@ import { classroomApi } from "../services/classroomApi";
 import type {
   AddStudentPayload,
   CreateAssignmentPayload,
+  CreateCircuitAssignmentPayload,
   CreateClassroomPayload,
   RecordProgressPayload,
 } from "../services/classroomMutations";
@@ -30,6 +31,7 @@ type ClassroomContextValue = {
   createClassroom: (payload: CreateClassroomPayload) => Promise<void>;
   inviteStudent: (payload: AddStudentPayload) => Promise<void>;
   scheduleAssignment: (payload: CreateAssignmentPayload) => Promise<void>;
+  scheduleCircuitAssignment: (payload: CreateCircuitAssignmentPayload) => Promise<void>;
   recordProgress: (payload: RecordProgressPayload) => Promise<void>;
   refreshAnalytics: (classId: string) => Promise<void>;
 };
@@ -131,6 +133,13 @@ export function ClassroomProvider({ children }: { children: ReactNode }) {
     [runMutation, teacherId],
   );
 
+  const scheduleCircuitAssignment = useCallback(
+    async (payload: CreateCircuitAssignmentPayload) => {
+      await runMutation(() => classroomApi.createCircuitAssignment(teacherId, payload));
+    },
+    [runMutation, teacherId],
+  );
+
   const recordProgress = useCallback(
     async (payload: RecordProgressPayload) => {
       await runMutation(() => classroomApi.recordProgress(teacherId, payload));
@@ -161,6 +170,7 @@ export function ClassroomProvider({ children }: { children: ReactNode }) {
     createClassroom,
     inviteStudent,
     scheduleAssignment,
+    scheduleCircuitAssignment,
     recordProgress,
     refreshAnalytics,
   };

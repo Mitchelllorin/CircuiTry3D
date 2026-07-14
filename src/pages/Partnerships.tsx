@@ -1,15 +1,9 @@
 import { Link } from "react-router-dom";
-import {
-  MANUFACTURER_PLACEMENT_TIERS,
-  MANUFACTURER_PLACEMENT_EMAIL,
-  EDUCATION_TIERS,
-  EDUCATION_LICENSE_EMAIL,
-} from "../data/hybridPricing";
 
 const CONTACT = {
-  schoolBoard: "info@circuitry3d.net?subject=School%20Board%20%2F%20District%20Partnership%20Inquiry",
-  manufacturer: "info@circuitry3d.net?subject=Component%20Arena%20Manufacturer%20Partnership",
-  general: "info@circuitry3d.net?subject=CircuiTry3D%20Partnership",
+  schoolBoard: "hello@circuitry3d.net?subject=School%20Board%20%2F%20District%20Partnership%20Inquiry",
+  manufacturer: "hello@circuitry3d.net?subject=Component%20Arena%20Manufacturer%20Partnership",
+  general: "hello@circuitry3d.net?subject=CircuiTry3D%20Partnership",
 };
 
 export default function Partnerships() {
@@ -304,14 +298,14 @@ export default function Partnerships() {
           we'll figure out the best path forward.
         </p>
         <a href={`mailto:${CONTACT.general}`} style={styles.ctaButtonSecondary}>
-          info@circuitry3d.net →
+          hello@circuitry3d.net →
         </a>
       </div>
 
       <div style={styles.footer}>
-        <Link to="/pricing" style={styles.footerLink}>Pricing</Link>
+        <Link to="/app?mode=pricing" style={styles.footerLink}>Pricing</Link>
         <span style={styles.sep}>·</span>
-        <Link to="/app" style={styles.footerLink}>Component Arena</Link>
+        <Link to="/app?mode=arena" style={styles.footerLink}>Component Arena</Link>
         <span style={styles.sep}>·</span>
         <Link to="/" style={styles.footerLink}>Home</Link>
       </div>

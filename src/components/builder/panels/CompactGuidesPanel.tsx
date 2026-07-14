@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import WordMark from "../../WordMark";
+import BrandSignature from "../../BrandSignature";
 import type { GuideWorkflowId } from "../types";
 import "../../../styles/compact-guides.css";
 
@@ -56,9 +56,9 @@ const GUIDE_WORKFLOWS: Record<GuideWorkflowId, GuideWorkflowConfig> = {
       },
       {
         id: "tutorial-build-circuit",
-        title: "Build and close a circuit",
+        title: "Build and complete the circuit",
         detail:
-          "Add the required parts and close the circuit so the simulator reports a complete circuit.",
+          "Add the required parts and complete the circuit so the simulator reports a complete circuit.",
       },
       {
         id: "tutorial-simulate",
@@ -93,7 +93,7 @@ const GUIDE_WORKFLOWS: Record<GuideWorkflowId, GuideWorkflowConfig> = {
         id: "wire-collapse-parallel",
         title: "Collapse parallel groups to get a simple series circuit",
         detail:
-          "For each parallel group, calculate R_eq using the product-over-sum formula (two branches: R_eq = (R_a × R_b) / (R_a + R_b)) or the reciprocal method (three+ branches: 1/R_eq = 1/R_a + 1/R_b + 1/R_c). Replace the whole parallel group with that single R_eq. Repeat until only series elements remain. R_eq is a working-space calculation — it does NOT get its own column in the W.I.R.E. table.",
+          "For parallel or combination circuits: calculate each parallel branch's equivalent resistance first (R_eq = 1/(1/R_a + 1/R_b)). Replace the whole parallel section with that single equivalent resistor. Now the circuit looks like a simple series circuit — solve it using R_T = R_1 + R_2 + … .",
       },
       {
         id: "wire-fill-table-series",
@@ -230,7 +230,7 @@ export function CompactGuidesPanel({
     <div className={`compact-guides-panel${isOpen ? " open" : ""}`}>
       <div className="compact-guides-header">
         <div className="compact-guides-brand" aria-hidden="true">
-          <WordMark size="sm" decorative />
+          <BrandSignature size="xs" decorative />
         </div>
         <button
           type="button"

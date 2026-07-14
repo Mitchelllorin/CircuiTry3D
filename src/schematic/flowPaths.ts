@@ -3,8 +3,6 @@ import type { SchematicElement, TwoTerminalElement, Vec2, WireElement } from "./
 
 const EPS = 1e-6;
 
-const pointKey = (p: Vec2) => `${p.x.toFixed(6)}|${p.z.toFixed(6)}`;
-
 const pointsEqual = (a: Vec2, b: Vec2) =>
   Math.abs(a.x - b.x) <= EPS && Math.abs(a.z - b.z) <= EPS;
 
@@ -193,7 +191,7 @@ export function buildFlowPathsFromElements(elements: SchematicElement[], standar
 
     const current = [...item.path];
     // Greedily extend in both directions as long as possible.
-    // (This tends to reconstruct the intended loop rails / branches.)
+    // (This tends to reconstruct the intended circuit rails / branches.)
     while (tryExtend(current, "forward")) {
       // keep extending
     }

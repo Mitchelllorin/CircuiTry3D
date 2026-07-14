@@ -5,8 +5,7 @@
   "description": "3D Interactive Electric Circuit Builder - Illuminating Electricity for Education",
   "start_url": "./index.html",
   "display": "standalone",
-  "display_override": ["window-controls-overlay", "standalone", "minimal-ui", "browser"],
-  "orientation": "any",
+  "orientation": "landscape",
   "background_color": "#0f172a",
   "theme_color": "#0f172a",
   "categories": ["education", "utilities"],
@@ -88,64 +87,6 @@
       "sizes": "310x150",
       "type": "image/png",
       "purpose": "any"
-    }
-  ],
-  "screenshots": [
-    {
-      "src": "screenshots/phone-screenshot-1.png",
-      "sizes": "1080x1920",
-      "type": "image/png",
-      "form_factor": "narrow",
-      "label": "CircuiTry3D – Build and simulate circuits"
-    },
-    {
-      "src": "screenshots/phone-screenshot-2.png",
-      "sizes": "1080x1920",
-      "type": "image/png",
-      "form_factor": "narrow",
-      "label": "CircuiTry3D – FUSE™ Failure Simulation"
-    },
-    {
-      "src": "screenshots/chromebook-screenshot-1.png",
-      "sizes": "1920x1080",
-      "type": "image/png",
-      "form_factor": "wide",
-      "label": "CircuiTry3D – Desktop circuit builder"
-    },
-    {
-      "src": "screenshots/chromebook-screenshot-2.png",
-      "sizes": "1920x1080",
-      "type": "image/png",
-      "form_factor": "wide",
-      "label": "CircuiTry3D – 3D visualization on desktop"
-    }
-  ],
-  "shortcuts": [
-    {
-      "name": "Launch Circuit Builder",
-      "short_name": "Builder",
-      "description": "Open the 3D circuit builder",
-      "url": "./index.html#/app",
-      "icons": [
-        {
-          "src": "icons/icon-96.png",
-          "sizes": "96x96",
-          "type": "image/png"
-        }
-      ]
-    },
-    {
-      "name": "Practice Circuits",
-      "short_name": "Practice",
-      "description": "Practice building circuits",
-      "url": "./index.html#/practice",
-      "icons": [
-        {
-          "src": "icons/icon-96.png",
-          "sizes": "96x96",
-          "type": "image/png"
-        }
-      ]
     }
   ],
   "related_applications": [

@@ -1,39 +1,35 @@
-# PR preview deployments are provided by external deployment integrations.
-# This workflow only upserts the one-click preview button on the PR page.
-
 name: PR Preview
 
 on:
-  pull_request_target:
-    types: [opened, synchronize, reopened, ready_for_review]
+  pull_request:
+    types: [opened, synchronize, reopened]
 
 permissions:
   contents: read
-  deployments: read
   pull-requests: write
-  issues: write
 
-# Cancel any in-progress build for the same PR so the latest push always wins.
+# Cancel any in-progress preview build for the same PR so the latest push wins.
 concurrency:
-  group: pages-preview-${{ github.event.pull_request.number }}
+  group: vercel-preview-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
-jobs:
-  upsert-preview-button:
-    name: Upsert PR preview button
-    runs-on: ubuntu-latest
-    if: github.event.pull_request.head.repo.id == github.event.repository.id && github.event.pull_request.head.repo.owner.id == github.event.repository.owner.id
+env:
+  NODE_VERSION: '20.19.0'
+  PR_NUMBER: ${{ github.event.pull_request.number }}
 
-    env:
-      # 18 * 10000ms = 180000ms (180s) total wait for external preview providers to report back.
-      PREVIEW_POLL_ATTEMPTS: '18'
-      PREVIEW_POLL_INTERVAL_MS: '10000'
+jobs:
+  # ── Deploy preview ────────────────────────────────────────────────────────
+  deploy-preview:
+    name: Build & Deploy Preview
+    runs-on: ubuntu-latest
+    if: github.event.action != 'closed'
 
     steps:
-      - name: Upsert PR preview button comment
-        uses: actions/github-script@v7
-        env:
-          MARKER: "<!-- pr-preview-button -->"
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
           script: |
             const owner = context.repo.owner;
@@ -57,130 +53,67 @@ jobs:
               }
             };
 
-            const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-            // Poll up to 3 minutes (18 x 10s) because external preview deployments
-            // can appear shortly after this workflow starts.
-            let previewUrl = null;
+      - name: Install dependencies
+        run: npm ci
 
-            for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
-              const deploymentsResponse = await github.rest.repos.listDeployments({
-                owner,
-                repo,
-                sha,
-                per_page: 20
-              });
-              const deployments = deploymentsResponse.data;
-              const previewDeployment = deployments.find((entry) =>
-                /^preview\b/i.test(entry.environment || "")
-              );
-              if (previewDeployment) {
-                const statusesResponse = await github.rest.repos.listDeploymentStatuses({
-                  owner,
-                  repo,
-                  deployment_id: previewDeployment.id,
-                  per_page: 20
-                });
-                const toTimestamp = (value) => {
-                  if (!value) return Number.NEGATIVE_INFINITY;
-                  const parsed = Date.parse(value);
-                  return Number.isNaN(parsed) ? Number.NEGATIVE_INFINITY : parsed;
-                };
-                const statuses = [...statusesResponse.data].sort(
-                  (a, b) => toTimestamp(b.created_at) - toTimestamp(a.created_at)
-                );
+      - name: Build
+        run: npm run build
 
-                const status = statuses.find((entry) =>
-                  entry.state === "success" &&
-                  (entry.environment_url || entry.target_url)
-                );
+      - name: Deploy to Vercel (Preview)
+        id: deploy
+        run: |
+          OUTPUT=$(npx vercel --token ${{ secrets.VERCEL_TOKEN }} --yes --json 2>/dev/null || npx vercel --token ${{ secrets.VERCEL_TOKEN }} --yes 2>&1)
+          DEPLOY_URL=$(echo "$OUTPUT" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('url',''))" 2>/dev/null || echo "$OUTPUT" | grep -E '^https://' | tail -1)
+          echo "url=$DEPLOY_URL" >> $GITHUB_OUTPUT
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
-                if (status) {
-                  const candidateUrl = status.environment_url || status.target_url;
-                  if (candidateUrl && isAllowedPreviewUrl(candidateUrl)) {
-                    previewUrl = candidateUrl;
-                  } else {
-                    core.warning(`Ignoring unexpected preview URL host: ${candidateUrl || "empty URL"}.`);
-                  }
-                }
-              }
+      - name: Comment PR with preview URL
+        uses: actions/github-script@v7
+        with:
+          source-dir: ./dist
+          preview-branch: gh-pages
+          umbrella-dir: pr-preview
+          action: auto
+          token: ${{ secrets.GITHUB_TOKEN }}
 
-              if (previewUrl) {
-                break;
-              }
+      # ── Portrait screenshots ──────────────────────────────────────────────
+      # CircuiTry3D was designed in portrait orientation. Capture portrait
+      # phone screenshots (412×915 px) from the local preview so the owner
+      # can evaluate every PR in the canonical review viewport.
 
-              if (attempt < MAX_ATTEMPTS) {
-                core.info(`Preview deployment URL not found yet (attempt ${attempt}/${MAX_ATTEMPTS}); waiting ${POLL_INTERVAL_MS / 1000}s...`);
-                await sleep(POLL_INTERVAL_MS);
-              }
-            }
+      - name: Install Playwright browser
+        if: github.event.action != 'closed'
+        run: npx playwright install chromium --with-deps
 
-            if (!previewUrl) {
-              core.warning(`No successful deployment URL found after ${MAX_ATTEMPTS} attempts (${TOTAL_WAIT_SECONDS}s).`);
-            }
+      - name: Start preview server
+        if: github.event.action != 'closed'
+        run: npm run preview &
 
-            const BODY_START = "<!-- pr-preview-start -->";
-            const BODY_END = "<!-- pr-preview-end -->";
+      - name: Wait for preview server
+        if: github.event.action != 'closed'
+        run: |
+          echo "Waiting for preview server on port 4173..."
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:4173 >/dev/null 2>&1; then
+              echo "Server is ready."
+              exit 0
+            fi
+            echo "  attempt $i/30…"
+            sleep 2
+          done
+          echo "::error::Preview server did not become ready after 60 seconds."
+          exit 1
 
-            const previewSection = previewUrl
-              ? `${BODY_START}\n> 🚀 **[Open PR Preview](${previewUrl})**\n${BODY_END}`
-              : `${BODY_START}\n> ⏳ Preview is deploying — check back in a moment.\n${BODY_END}`;
+      - name: Capture portrait screenshots
+        if: github.event.action != 'closed'
+        run: npm run capture-pr-portrait:local
 
-            // Embed preview button at the top of the PR description so it is
-            // immediately visible without scrolling through comments.
-            const prResponse = await github.rest.pulls.get({ owner, repo, pull_number: issue_number });
-            const existingBody = prResponse.data.body || "";
-            const startIdx = existingBody.indexOf(BODY_START);
-            const endIdx   = existingBody.indexOf(BODY_END);
-
-            let newBody;
-            if (startIdx !== -1 && endIdx !== -1) {
-              newBody =
-                existingBody.slice(0, startIdx) +
-                previewSection +
-                existingBody.slice(endIdx + BODY_END.length);
-            } else {
-              newBody = previewSection + "\n\n" + existingBody;
-            }
-
-            await github.rest.pulls.update({ owner, repo, pull_number: issue_number, body: newBody });
-            core.info(`Updated PR description with preview button.`);
-
-            // Also keep a sticky comment as a secondary reference.
-            const button = previewUrl
-              ? `[![PR Preview](https://img.shields.io/badge/PR%20Preview-Open-6f42c1?style=for-the-badge)](${previewUrl})`
-              : "Preview deployment is still in progress. Please check back in a few moments.";
-
-            const body = [
-              marker,
-              "## PR Preview",
-              button,
-              "",
-              "_One click preview from this PR page. This comment automatically updates on new commits._"
-            ].join("\n");
-
-            const comments = await github.paginate(github.rest.issues.listComments, {
-              owner,
-              repo,
-              issue_number,
-              per_page: 100
-            });
-
-            const existing = comments.find((comment) => comment.body?.includes(marker));
-
-            if (existing) {
-              await github.rest.issues.updateComment({
-                owner,
-                repo,
-                comment_id: existing.id,
-                body
-              });
-              core.info(`Updated preview comment #${existing.id}.`);
-            } else {
-              const created = await github.rest.issues.createComment({
-                owner,
-                repo,
-                issue_number,
-                body
-              });
-              core.info(`Created preview comment #${created.data.id}.`);
-            }
+      - name: Upload portrait screenshots
+        if: github.event.action != 'closed'
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr-${{ github.event.pull_request.number }}-portrait-preview
+          path: pr-portrait-screenshots/
+          if-no-files-found: warn

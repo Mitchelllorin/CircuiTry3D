@@ -417,7 +417,7 @@ const chapterQuizzes: ChapterQuiz[] = [
       {
         id: "kl-q3",
         question:
-          "In a circuit, a 12 V source has voltage drops of 4 V and 5 V across two resistors. What is the voltage across the third element in the circuit?",
+          "In a circuit path, a 12 V source has voltage drops of 4 V and 5 V across two resistors. What is the voltage across the third element in the path?",
         options: ["3 V", "21 V", "1 V", "9 V"],
         correctIndex: 0,
         explanation:
@@ -1259,7 +1259,7 @@ const yearFinals: YearFinal[] = [
       {
         id: "y1f-q8",
         question:
-          "In a circuit: source = 24 V, V₁ = 8 V, V₂ = 10 V. By KVL, what is V₃?",
+          "In a circuit path: source = 24 V, V₁ = 8 V, V₂ = 10 V. By KVL, what is V₃?",
         options: ["42 V", "18 V", "6 V", "2 V"],
         correctIndex: 2,
         explanation:

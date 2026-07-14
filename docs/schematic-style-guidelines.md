@@ -2,7 +2,14 @@
 
 Schematic Mode renders classic 2D circuit symbols as thin 3D extrusions. Every component must read exactly like the textbook references when viewed from above, while still offering depth cues and hover interactions. A global symbol standard selector (ANSI/IEEE or IEC) is available in the header; geometry must respect the active standard at all times.
 
-**Theory Foundation:** [ELECTRICAL_THEORY_FUNDAMENTALS.md](./ELECTRICAL_THEORY_FUNDAMENTALS.md) — Electrical theory reference
+- **Standards Compliance**
+  - A "Symbol Standard" selector sits alongside the mode toggle and defaults to ANSI.
+  - `ANSI` and `IEEE` share the same zig-zag resistor profile; `IEC` swaps resistors to a rectangular body. All other symbols already conform across the three standards.
+  - Builder and Practice viewports read the selection live so students see consistent geometry everywhere.
+
+- **Board & Lighting**
+  - Use a neutral, low-saturation board colour so black strokes are easy to read.
+  - Lighting should emphasise silhouettes without introducing coloured reflections or emissive glows.
 
 **Related Documentation:**
 - [COMPONENT_REFERENCE.md](./COMPONENT_REFERENCE.md) — Component theory and specifications
@@ -11,15 +18,27 @@ Schematic Mode renders classic 2D circuit symbols as thin 3D extrusions. Every c
 
 **Reference Images:** See `src/assets/reference-circuits/` for canonical visual examples of circuit layouts.
 
-**Centralized Constants:** All visual specifications are defined in `src/schematic/visualConstants.ts`. Import from `src/schematic/index.ts` for consistent styling across the app.
+- **Standards Compliance**
+  - 3D extrusions trace the IEC 60617, IEEE Std 315, and ANSI/ASME Y32.2 glyph geometry using fixed lead clearances and stroke widths encoded in `schematic/standards.ts`.
+  - Component bodies reserve the same proportions regardless of placement span so the rendered silhouettes match their 2D references when viewed from above.
 
-**CRITICAL: Circuit Layout Standards**
-The following layout constants are the authoritative source for ALL circuit rendering:
-- `LAYOUT_SPECS` - Base SVG dimensions and frame positioning
-- `SERIES_LAYOUT` - Series circuit bounds, margins, and distribution formulas
-- `PARALLEL_LAYOUT` - Parallel circuit bounds and branch spacing rules
-- `COMBINATION_LAYOUT` - Combination circuit positioning and parallel section rules
-- `BATTERY_LAYOUT` - Unified battery scale and positioning (USE EVERYWHERE)
+- **Symbol Profiles**
+  - **Battery:** Two flat plates (long/short) with optional `+` / `−` sprites positioned near the respective terminals.
+  - **Resistor:** Zig-zag for ANSI/IEEE; flat rectangular body for IEC. Both variants keep the same lead spacing and raised label cards.
+  - **Capacitor:** Two parallel plates separated by a neutral dielectric block; leads must stop at the plate faces.
+  - **Inductor:** Four semi-circular turns rendered as thin rings aligned to the wire axis.
+  - **Lamp:** Circular disc with a thin ring and crossed conductors to match the standard lamp symbol.
+  - **Switch:** Two posts with a single angled blade segment indicating the open switch gap.
+  - **Ground:** Three progressively shorter bars stacked vertically beneath the node.
+
+- **Standards Compliance**
+  - Use the **Symbol Standard** selector in Schematic mode to toggle between *ANSI / IEEE Std 315* (zig-zag resistor) and *IEC 60617* (rectangular resistor) profiles.
+  - Shared geometry (battery plates, capacitor plates, inductors, grounds, lamps, switches) follows the common definitions used across IEEE, IEC, and ANSI libraries.
+  - Default exports use the ANSI/IEEE profile; team members targeting IEC deliverables should switch profiles before capturing renders or exporting.
+
+- **Labels**
+  - Component sprites use black text on a semi-transparent white card for readability over the board.
+  - Preview states dim label opacity; selected components keep the card but the geometry shifts to highlight blue.
 
 ```typescript
 // Correct usage - import from centralized module:
@@ -84,12 +103,13 @@ import { SCHEMATIC_COLORS, STROKE_WIDTHS, RESISTOR_SPECS, formatResistance } fro
 #### Battery (Voltage Source)
 - Two flat plates of unequal length: **longer plate = positive (+)**, **shorter plate = negative (−)**.
 - Plate spacing follows the selected template; leads terminate on the outer faces.
+- **Plates are PERPENDICULAR to the wire path** (horizontal plates for vertical battery orientation).
 - Polarity markers (+ and −) displayed when the standard calls for them (ANSI/IEEE default).
 - Position: typically on the left side of the circuit for series/parallel layouts.
 - Label format: voltage value with unit (e.g., "24 V", "12 V", "5V").
 
-#### Resistor (ANSI/IEEE Standard)
-- **Zigzag pattern**: 4–6 complete peaks forming a sawtooth wave.
+#### Resistor (ANSI/IEEE Standard - CircuiTry3D)
+- **Zigzag pattern**: 3 tight, complete peaks forming a sawtooth wave.
 - The zigzag is drawn as a continuous polyline with sharp vertices.
 - Stroke thickness matches connected wires exactly.
 - Horizontal leads extend from both ends of the zigzag body.
@@ -134,10 +154,10 @@ import { SCHEMATIC_COLORS, STROKE_WIDTHS, RESISTOR_SPECS, formatResistance } fro
 ### Circuit Layout Standards
 
 #### Series Circuit
-- Single continuous loop with no branching nodes.
+- Single continuous path with no branching nodes.
 - All components connected end-to-end in one path.
 - Current flows through each component sequentially.
-- Layout: rectangular loop with battery on one side, components distributed along the path.
+- Layout: rectangular path with battery on one side, components distributed along the path.
 
 #### Parallel Circuit
 - Two common nodes (supply rail and return rail).
@@ -179,13 +199,49 @@ Based on the reference image, combination circuits follow this pattern:
 
 When rendering any circuit in CircuiTry3D, verify:
 
-1. **Resistor zigzags** have 4–6 peaks, clearly visible and uniform
-2. **Battery plates** show correct polarity (long = +, short = −)
+1. **Resistor zigzags** have 3 tight peaks, clearly visible and uniform (CircuiTry3D standard)
+2. **Battery plates** are perpendicular to the wire path (long = +, short = −)
 3. **Junction dots** appear at all electrical connection points
 4. **Wire routing** uses orthogonal (90°) paths only
 5. **Labels** include subscript identifiers (R₁, R₂) and values with units (100Ω)
 6. **Component spacing** is even and symmetric where the topology allows
 7. **Overall layout** matches the canonical patterns shown in reference images
+8. **All circuits have 4 components** (battery + 3 others) for the standard square loop
+9. **No empty sides** - EVERY side of the circuit must have a component (Rule C3D-011)
+
+---
+
+### CircuiTry3D Standard: No Empty Circuit Sides (Rule C3D-011)
+
+**This is a mandatory rule for all circuit designs in CircuiTry3D.**
+
+Every side of a series circuit must have a component. There should be no side in a circuit where there is no component - wires-only paths are not allowed in the standard layout.
+
+**Standard Square Loop (4 components minimum):**
+```
+        TL ●────────[TOP]────────● TR
+           │                       │
+           │                       │
+    (+)────┤                     [RIGHT]  ← Component required
+   Battery │                       │
+    (−)────┤                       │
+           │                       │
+        BL ●───────[BOTTOM]──────● BR
+                   ↑
+           Component required
+```
+
+**Required Components by Position:**
+- **LEFT (Battery)**: Always present - power source
+- **TOP**: Load component (resistor, switch, LED, etc.) - horizontal
+- **RIGHT**: Load component - vertical orientation
+- **BOTTOM**: Load component - horizontal (return path)
+
+**Why this rule matters:**
+1. **Educational clarity**: Students understand that every path in a circuit has purpose
+2. **Visual consistency**: All diagrams follow the same balanced layout
+3. **Real-world relevance**: Actual circuits have components on all paths
+4. **Simulation accuracy**: Empty sides can create ambiguous analysis scenarios
 
 ---
 

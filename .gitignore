@@ -1,58 +1,12 @@
-node_modules
+# Node / Vite
+node_modules/
+dist/
+frontend/node_modules/
+frontend/dist/
+
+# Maven
+backend/target/
+
+# Editor / OS
 .DS_Store
-npm-debug.log*
 *.log
-dist
-dist-electron
-previews
-preview-server/data
-.cache
-.env
-.vercel
-.netlify
-
-# Android build artifacts
-android/build/
-android/app/build/
-android/.gradle/
-android/local.properties
-android/.idea/
-*.iml
-*.apk
-*.aab
-circuitry3d-release.aab
-
-# Android signing (never commit)
-android/key.properties
-android/app/keystore/*.keystore
-android/app/keystore/*.jks
-android/app/keystore/*.p12
-
-# Keystore and signing secrets (never commit)
-*.jks
-*.keystore
-*.p12
-*-base64.txt
-instruction-string.txt
-
-tmp-screenshots/
-
-# Circuit bot recorded footage (large binary files, generated locally)
-promo-footage/
--e 
-# Environment files
-*.env
-*.env.*
--e 
-# Environment files
-*.env
-*.env.*
-
-# Coverage reports
-coverage/
-
-# Claude Code private working notes (not app code)
-memory/
-
-# Local probe/screenshot scratch scripts
-/_*.mjs

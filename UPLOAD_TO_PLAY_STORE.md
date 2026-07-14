@@ -18,7 +18,7 @@ Open Play Console and check:
 
 | What you see | What it means |
 |---|---|
-| A release listed with your AAB | ✅ Already uploaded — skip to [Step 3](#step-3--complete-the-store-listing) |
+| A release listed with your AAB | ✅ Already uploaded — **[see AFTER_AAB_UPLOAD.md](AFTER_AAB_UPLOAD.md)** for next steps |
 | "Create new release" button only | ❌ Not uploaded yet — start at [Step 1](#step-1--upload-the-aab) |
 | App not in the list at all | ❌ App not created yet — start at [Create the app](#create-the-app-first-if-needed) |
 
@@ -56,7 +56,7 @@ Then continue to Step 1.
    ```
 7. Click **Save** → **Review release** → **Start rollout to Internal testing**
 
-> **If you see an error about the version code already being used**, you uploaded this AAB before. Go to Step 3.
+> **If you see "version code is already used"** — this means an AAB with the same `versionCode` was already uploaded to Play Console (even if that upload had a key problem, Play still counts it). You must increment the `versionCode` in `android/app/build.gradle` (e.g. `1` → `2`), rebuild the AAB using the **Build AAB** workflow, and upload the new file. You do **not** need to change the version code every time — only when you need to upload a fresh AAB.
 
 ---
 
@@ -134,17 +134,18 @@ https://play.google.com/store/apps/details?id=com.circuitry3d.app
 
 ## Uploading a New AAB Later
 
-Each time you want to update the app:
+Each time you want to update the app **or if a previous AAB upload was rejected by Play Console**:
 
-1. Merge your changes into `main` (or trigger the workflow manually via **Actions → Build AAB → Run workflow**)
-2. The workflow **automatically increments the version code and name** on every run — you do not need to change `build.gradle`
-3. Download the new AAB from the completed run's **Artifacts** section
-4. Upload the new AAB to Play Console as a new release
+1. Open `android/app/build.gradle` and increment `versionCode` by 1 (e.g., `2` → `3`).  
+   ⚠️ **You must do this even if the previous upload failed due to a key issue — Play Console records the version code the moment an AAB is processed.**
+2. Re-run the **Build AAB** GitHub Actions workflow (or local build) to produce a fresh AAB.
+3. Upload the new AAB to Play Console as a new release.
 
 ---
 
 ## More Detail
 
+- **What to do after uploading:** [`AFTER_AAB_UPLOAD.md`](AFTER_AAB_UPLOAD.md)
 - Full submission walkthrough: [`PLAY_STORE_SUBMISSION_GUIDE.md`](PLAY_STORE_SUBMISSION_GUIDE.md)
 - Full checklist with every sub-step: [`SUBMISSION_CHECKLIST.md`](SUBMISSION_CHECKLIST.md)
 - Rebuilding the AAB: [`QUICK_START_AAB.md`](QUICK_START_AAB.md)

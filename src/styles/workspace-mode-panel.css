@@ -102,22 +102,17 @@
   flex-direction: column;
 }
 
-/* ── Settings mode: shorter bottom sheet ──
-   Sit lower (cover ~the bottom half) so the live 3D workspace stays visible
-   above the panel while you drag sliders — you see brightness/grid/logo changes
-   apply in real time. */
-.workspace-mode-panel--settings {
-  height: 54vh;
-  height: 54dvh;
-  max-height: 54vh;
-  max-height: 54dvh;
+.workspace-mode-panel--arena .workspace-mode-panel-body {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
-/* Settings is a short bottom sheet: keep its body translucent so brightness /
-   grid / logo changes on the live 3D workspace remain visible through and above
-   the panel while dragging sliders. */
-.workspace-mode-panel--settings .workspace-mode-panel-body {
-  background: rgba(8, 18, 36, 0.72);
+.workspace-mode-panel--arena .workspace-mode-panel-content {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 /* ── Arena mode: steel sword styling on the title ── */

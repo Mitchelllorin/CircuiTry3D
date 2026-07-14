@@ -37,10 +37,10 @@ export const KNOWLEDGE_BASE: KnowledgeEntry[] = [
   // KVL
   {
     id: "kvl",
-    keywords: ["kvl", "kirchhoff voltage", "voltage law", "loop voltage", "mesh"],
+    keywords: ["kvl", "kirchhoff voltage", "voltage law", "circuit voltage", "mesh"],
     answer:
       "Kirchhoff's Voltage Law (KVL): the sum of all voltage drops around any closed path equals zero. This underpins mesh analysis — a systematic way to solve multi-branch circuits.",
-    followUp: "Open the W.I.R.E. Worksheet in Practice mode to step through KVL problems.",
+    followUp: "Open the W.I.R.E. Worksheet in Practice mode to step through KVL paths.",
   },
   // Series circuits
   {
@@ -170,7 +170,7 @@ export const KNOWLEDGE_BASE: KnowledgeEntry[] = [
     id: "arena",
     keywords: ["arena", "test", "component test", "component arena"],
     answer:
-      "The Arena is an advanced simulation workspace for testing components with configurable inputs and full analysis output. Open it via the Arena tab in the workspace navigation bar at the top of the screen.",
+      "The Arena is an advanced simulation workspace for testing components with configurable inputs and full analysis output. Open it via the Arena tab in the Builder sidebar or navigate to /app?mode=arena.",
   },
   // Thévenin
   {
@@ -441,7 +441,7 @@ export function buildGreeting(circuitState: LegacyCircuitState | null): string {
     if (reason === "no-wires") {
       return `You have ${counts.components} component(s) but no wires. Press W to enter Wire Mode and connect the terminals!`;
     }
-    return `Almost there! Your circuit has ${counts.components} component(s) but is not yet complete (${reason}). Connect all terminals to close the circuit.`;
+    return `Almost there! Your circuit has ${counts.components} component(s) but is not yet complete (${reason}). Connect all terminals to complete the circuit.`;
   }
 
   // Wire warning takes priority in the greeting
@@ -564,11 +564,6 @@ function buildComponentTypeHint(circuitState: LegacyCircuitState | null, q: stri
   // Relay advice
   if ((byType.relay ?? 0) > 0 && (q.includes("relay") || q.includes("coil") || q.includes("contact"))) {
     return "Your circuit includes a Relay. The coil draws continuous current when energised — connect it via a transistor driver and add a flyback diode to suppress the back-EMF when the coil switches off.";
-  }
-
-  // Voltage regulator advice
-  if ((byType["voltage-regulator"] ?? 0) > 0 && (q.includes("regulator") || q.includes("regulate") || q.includes("stable voltage") || q.includes("ldo") || q.includes("7805"))) {
-    return "Your circuit includes a Voltage Regulator. Ensure the input voltage is higher than the output by at least the dropout voltage. Heat dissipation = (V_in − V_out) × I_out — monitor the FUSE™ engine for thermal warnings if current is high.";
   }
 
   // Capacitor charging question

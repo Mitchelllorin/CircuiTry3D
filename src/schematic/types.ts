@@ -5,6 +5,8 @@ export type Vec2 = {
 
 export type Orientation = "horizontal" | "vertical";
 
+export type SymbolStandard = "ansi-ieee" | "iec";
+
 export type ComponentKind =
   | "battery"
   | "resistor"
@@ -32,7 +34,10 @@ export type ComponentKind =
   | "ac_source"
   | "motor"
   | "speaker"
-  | "transformer";
+  | "transformer"
+  | "relay"
+  | "voltage-regulator"
+  | "circuit-breaker";
 
 export type TwoTerminalComponentKind =
   | "battery"
@@ -51,7 +56,8 @@ export type TwoTerminalComponentKind =
   | "fuse"
   | "ac_source"
   | "motor"
-  | "speaker";
+  | "speaker"
+  | "circuit-breaker";
 
 export type SingleNodeComponentKind = "ground";
 

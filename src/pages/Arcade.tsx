@@ -1,8 +1,9 @@
 import { useCallback, useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import RetroCircuitMaze from "../components/arcade/RetroCircuitMaze";
-import OhmsRacer from "../components/arcade/OhmsRacer";
-import VoltFighter from "../components/arcade/VoltFighter";
+import BrandSignature from "../components/BrandSignature";
+import SectionWorkflowStrip, {
+  type SectionWorkflowStep,
+} from "../components/SectionWorkflowStrip";
 import { useAuth } from "../context/AuthContext";
 import { useGamification } from "../context/GamificationContext";
 import { useWorkspaceMode } from "../context/WorkspaceModeContext";
@@ -17,6 +18,26 @@ import { findPracticeProblemById } from "../data/practiceProblems";
 import "../styles/arcade.css";
 
 const formatPercent = (value: number) => `${Math.round(Math.min(100, Math.max(0, value * 100)))}%`;
+const ARCADE_WORKFLOW_STEPS: SectionWorkflowStep[] = [
+  {
+    id: "arcade-missions",
+    title: "Review mission targets",
+    detail:
+      "Check sprint times, clean-clear bonuses, and level goals before starting a run.",
+  },
+  {
+    id: "arcade-launch",
+    title: "Launch a practice sprint",
+    detail:
+      "Jump into Practice mode directly from Arcade so gameplay stays in the same workflow loop.",
+  },
+  {
+    id: "arcade-track",
+    title: "Track leaderboard movement",
+    detail:
+      "Use performance snapshots and badges to validate progress and identify your next objective.",
+  },
+];
 
 const formatDuration = (ms?: number) => {
   const safeMs = typeof ms === "number" && Number.isFinite(ms) && ms > 0 ? ms : 0;
@@ -61,7 +82,7 @@ const CIRCUIT_FACTS = [
   },
   {
     fact: "Kirchhoff's Voltage Law: the sum of all voltage drops around any closed path equals zero.",
-    tip: "Trace a complete circuit in CircuiTry3D with the voltage inspector — the drops will always balance the supply.",
+    tip: "Trace a complete circuit path in CircuiTry3D with the voltage inspector — the drops will always balance the supply.",
   },
   {
     fact: "A short circuit provides a near-zero resistance path, causing dangerously high current.",
@@ -201,8 +222,11 @@ export default function Arcade() {
   const rewardSummary = state.lastReward
     ? {
         xp: state.lastReward.xpEarned,
-        bonus: state.lastReward.bonusXp,
-        labels: state.lastReward.bonusLabels,
+        bonus:
+          typeof state.lastReward.bonusXp === "number" && Number.isFinite(state.lastReward.bonusXp)
+            ? state.lastReward.bonusXp
+            : 0,
+        labels: Array.isArray(state.lastReward.bonusLabels) ? state.lastReward.bonusLabels : [],
       }
     : null;
 
@@ -263,88 +287,10 @@ export default function Arcade() {
         </div>
       </header>
 
-      {/* ── Unified Arcade Cabinet ── */}
-      <section className="arcade-panel arcade-cabinet-panel">
-        <div className="arcade-panel-header">
-          <div>
-            <h2>Retro Arcade Cabinet</h2>
-            <p>Pick a game title, then play in the screen below.</p>
-          </div>
-        </div>
-
-        {/* Game title selector */}
-        <div className="arcade-game-selector" role="group" aria-label="Choose game">
-          <button
-            type="button"
-            className={activeGame === "maze" ? "is-active" : ""}
-            onClick={() => setActiveGame("maze")}
-          >
-            Circuit Chase &#39;84
-          </button>
-          <button
-            type="button"
-            className={activeGame === "racer" ? "is-active" : ""}
-            onClick={() => setActiveGame("racer")}
-          >
-            Ohm&#39;s Racer &#39;85
-          </button>
-          <button
-            type="button"
-            className={activeGame === "fighter" ? "is-active" : ""}
-            onClick={() => setActiveGame("fighter")}
-          >
-            Volt Fighter &#39;87
-          </button>
-        </div>
-
-        {/* Game screen */}
-        <div className="arcade-cabinet-screen">
-          {activeGame === "maze" && <RetroCircuitMaze />}
-          {activeGame === "racer" && <OhmsRacer />}
-          {activeGame === "fighter" && <VoltFighter />}
-        </div>
-      </section>
-
-      {/* ── Circuit Lab Notes (rotating educational facts) ── */}
-      <section className="arcade-panel arcade-facts-panel">
-        <div className="arcade-panel-header">
-          <div>
-            <h2>Circuit Lab Notes</h2>
-            <p>Facts and tips to level up your circuit knowledge.</p>
-          </div>
-          <div className="arcade-facts-nav" aria-label="Navigate facts">
-            <button
-              type="button"
-              aria-label="Previous fact"
-              onClick={() =>
-                setTipIndex((prev) => (prev - 1 + CIRCUIT_FACTS.length) % CIRCUIT_FACTS.length)
-              }
-            >
-              ‹
-            </button>
-            <span>
-              {tipIndex + 1}&thinsp;/&thinsp;{CIRCUIT_FACTS.length}
-            </span>
-            <button
-              type="button"
-              aria-label="Next fact"
-              onClick={() =>
-                setTipIndex((prev) => (prev + 1) % CIRCUIT_FACTS.length)
-              }
-            >
-              ›
-            </button>
-          </div>
-        </div>
-        <div className="arcade-fact-card">
-          <p className="arcade-fact-text">
-            <span aria-hidden="true">💡</span> {CIRCUIT_FACTS[tipIndex].fact}
-          </p>
-          <p className="arcade-fact-tip">
-            <span aria-hidden="true">🎮</span> {CIRCUIT_FACTS[tipIndex].tip}
-          </p>
-        </div>
-      </section>
+      <SectionWorkflowStrip
+        sectionLabel="Arcade"
+        steps={ARCADE_WORKFLOW_STEPS}
+      />
 
       <section className="arcade-panel">
         <div className="arcade-panel-header">
@@ -355,10 +301,10 @@ export default function Arcade() {
           {rewardSummary ? (
             <div className="arcade-reward-pill">
               <strong>Last reward:</strong> +{rewardSummary.xp} XP
-              {rewardSummary.bonus ? (
+            {rewardSummary.bonus ? (
                 <span>
                   +{rewardSummary.bonus} bonus
-                  {rewardSummary.labels.length ? ` (${rewardSummary.labels.join(" + ")})` : ""}
+                {rewardSummary.labels.length ? ` (${rewardSummary.labels.join(" + ")})` : ""}
                 </span>
               ) : null}
             </div>

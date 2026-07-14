@@ -1,20 +1,22 @@
 #!/usr/bin/env node
 /**
- * Captures a portrait screenshot of the CircuiTry3D app for PR review comments.
+ * Captures portrait-mode screenshots of the app for PR review.
  *
- * Designed to run inside the PR preview workflow after `npm run build` and
- * `npm run preview` are up.  Saves a single 412 × 915 (portrait Android phone)
- * PNG to OUTPUT_FILE.
+ * CircuiTry3D was designed and built in portrait orientation.
+ * These screenshots are attached to every PR as workflow artifacts so the
+ * owner can evaluate changes at a glance in the canonical portrait viewport.
  *
- * Environment variables:
- *   BASE_URL    – Base URL of the preview server (default: http://localhost:4173)
- *   BASE_PATH   – App base path as built  (default: /)
- *   OUTPUT_FILE – Where to write the PNG   (default: dist/pr-portrait.png)
+ * Viewport: 412 × 915 px  (Android phone portrait — primary design target)
  *
- * Usage:
- *   BASE_PATH=/CircuiTry3D/pr-preview/pr-42/ \
- *   OUTPUT_FILE=dist/pr-portrait.png \
- *   node scripts/capture-pr-portrait.js
+ * Usage (called by .github/workflows/pr-preview.yml):
+ *   node scripts/capture-pr-portrait.js [--base-url <url>]
+ *
+ * Defaults to http://localhost:4173 (Vite preview server).
+ * Pass --base-url https://... to target a live deployment.
+ *
+ * Outputs:
+ *   pr-portrait-screenshots/landing.png    – home / landing page
+ *   pr-portrait-screenshots/builder.png   – circuit builder (/app route)
  */
 
 import { chromium } from 'playwright';
@@ -26,58 +28,104 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname  = dirname(__filename);
 const ROOT       = join(__dirname, '..');
 
-const BASE_URL    = process.env.BASE_URL    || 'http://localhost:4173';
-const BASE_PATH   = process.env.BASE_PATH   || '/';
-const OUTPUT_FILE = process.env.OUTPUT_FILE || join(ROOT, 'dist', 'pr-portrait.png');
+const OUTPUT_DIR = join(ROOT, 'pr-portrait-screenshots');
 
-// Primary design viewport — portrait Android phone.
-// 412×915 is the reference viewport used throughout the project (see .github/copilot-instructions.md).
+// Portrait phone — Android primary design target
 const VIEWPORT = { width: 412, height: 915 };
 
+const baseUrlArg = process.argv.indexOf('--base-url');
+const BASE_URL   = baseUrlArg !== -1 ? process.argv[baseUrlArg + 1] : 'http://localhost:4173';
+
+const PAGES = [
+  { name: 'landing', path: '/' },
+  { name: 'builder', path: '/#/app' },
+];
+
 async function main() {
-  const url = `${BASE_URL}${BASE_PATH}`;
-  console.log(`📸  Capturing PR portrait screenshot from ${url}`);
+  console.log(`\n📱  Capturing portrait screenshots (${VIEWPORT.width}×${VIEWPORT.height}) from ${BASE_URL}\n`);
 
-  await mkdir(dirname(OUTPUT_FILE), { recursive: true });
+  await mkdir(OUTPUT_DIR, { recursive: true });
 
-  const browser = await chromium.launch({
-    headless: true,
-    args: [
-      '--no-sandbox',
-      '--disable-setuid-sandbox',
-      '--disable-dev-shm-usage',
-      // Enable software-rendered WebGL so the 3-D canvas can render in CI
-      '--enable-webgl',
-      '--use-gl=swiftshader',
-      '--enable-accelerated-2d-canvas',
-      '--no-first-run',
-      '--no-zygote',
-      '--disable-gpu-sandbox',
-    ],
+  const browser = await chromium.launch({ headless: true }).catch((err) => {
+    console.error('❌  Could not launch Chromium.\n   Run: npx playwright install chromium');
+    throw err;
   });
 
-  const page = await browser.newPage();
-  await page.setViewportSize(VIEWPORT);
+  for (const { name, path } of PAGES) {
+    const page = await browser.newPage();
+    await page.setViewportSize(VIEWPORT);
 
-  try {
-    await page.goto(url, { waitUntil: 'networkidle', timeout: 30_000 });
-    // Wait for web fonts to finish loading so text renders correctly in the screenshot
-    await page.evaluate(() => document.fonts.ready).catch(() => {});
-    // Allow time for iframe content and any CSS animations to settle
-    await page.waitForTimeout(3000);
-  } catch (err) {
-    console.warn(`⚠  Navigation timed out or failed: ${err.message}`);
-    console.warn('   Proceeding with whatever has rendered so far.');
+    let navigated = false;
+    try {
+      await page.goto(`${BASE_URL}${path}`, { waitUntil: 'networkidle', timeout: 30_000 });
+      await page.waitForTimeout(1500); // allow 3D/WebGL content to settle
+      navigated = true;
+    } catch (err) {
+      console.warn(`  ⚠  Could not load ${BASE_URL}${path}: ${err.message}`);
+      console.warn(`     Writing fallback placeholder.`);
+    }
+
+    if (!navigated) {
+      await page.close();
+      const fallback = await browser.newPage();
+      await fallback.setViewportSize(VIEWPORT);
+      await fallback.setContent(makeFallbackHtml(name, path));
+      await fallback.waitForTimeout(300);
+      const png = await fallback.screenshot({ type: 'png', fullPage: false });
+      await writeFile(join(OUTPUT_DIR, `${name}.png`), png);
+      console.log(`  ✓  ${name}.png  (fallback placeholder)`);
+      await fallback.close();
+      continue;
+    }
+
+    const png = await page.screenshot({ type: 'png', fullPage: false });
+    await writeFile(join(OUTPUT_DIR, `${name}.png`), png);
+    console.log(`  ✓  ${name}.png  (${VIEWPORT.width}×${VIEWPORT.height})`);
+    await page.close();
   }
 
-  const png = await page.screenshot({ type: 'png', fullPage: false });
-  await writeFile(OUTPUT_FILE, png);
-  console.log(`✓  Screenshot saved → ${OUTPUT_FILE}`);
-
   await browser.close();
+
+  console.log(`\n✅  Portrait screenshots saved to pr-portrait-screenshots/\n`);
+  console.log('   landing.png  – home / landing page');
+  console.log('   builder.png  – circuit builder (/app)\n');
+}
+
+function makeFallbackHtml(name, path) {
+  return `<!doctype html>
+<html>
+<head>
+  <meta charset="UTF-8"/>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html, body {
+      width: ${VIEWPORT.width}px; height: ${VIEWPORT.height}px;
+      background: #0f172a; color: #e2e8f0;
+      display: flex; align-items: center; justify-content: center;
+      font-family: system-ui, sans-serif;
+    }
+    .card {
+      background: #1e293b; border: 1px solid #334155;
+      border-radius: 24px; padding: 2rem; text-align: center; max-width: 340px;
+    }
+    .logo { font-size: 3rem; margin-bottom: 0.75rem; }
+    h1 { font-size: 1.8rem; font-weight: 800; color: #3b82f6; margin-bottom: 0.4rem; }
+    .sub { font-size: 0.95rem; color: #94a3b8; margin-bottom: 1rem; }
+    .spec { font-size: 0.8rem; color: #64748b; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">⚡</div>
+    <h1>CircuiTry3D</h1>
+    <p class="sub">3D Interactive Electric Circuit Builder</p>
+    <p class="spec">${name} — ${path}<br/>${VIEWPORT.width} × ${VIEWPORT.height} px · Portrait</p>
+  </div>
+</body>
+</html>`;
 }
 
 main().catch((err) => {
-  console.error('❌  Screenshot capture failed:', err);
+  console.error('❌  Portrait screenshot capture failed:', err);
   process.exit(1);
 });

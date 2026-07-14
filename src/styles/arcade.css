@@ -480,354 +480,325 @@
   font-size: 0.78rem;
 }
 
-/* Retro Maze Cabinet */
-.retro-maze {
+/* Current Runner */
+.runner-card {
+  background: rgba(8, 20, 40, 0.85);
+  border: 1px solid rgba(110, 176, 255, 0.26);
+  border-radius: 20px;
+  padding: 22px 24px;
   display: grid;
   gap: 16px;
+  box-shadow: 0 18px 40px rgba(2, 8, 20, 0.4);
 }
 
-.retro-maze-header {
+.runner-header {
   display: flex;
   justify-content: space-between;
-  gap: 12px;
-  align-items: flex-start;
+  gap: 16px;
+  align-items: center;
 }
 
-.retro-maze-header h3 {
-  margin: 0 0 6px;
-  color: #fef3c7;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+.runner-header h2 {
+  margin: 0 0 4px;
+  font-size: 1.05rem;
+  color: #9fdcff;
 }
 
-.retro-maze-header p {
+.runner-header p {
   margin: 0;
-  max-width: 720px;
-  color: rgba(218, 234, 255, 0.82);
   font-size: 0.88rem;
-  line-height: 1.55;
+  color: rgba(200, 228, 255, 0.7);
 }
 
-.retro-maze-view-toggle {
-  display: inline-flex;
-  gap: 6px;
-  background: rgba(9, 18, 38, 0.92);
-  border: 1px solid rgba(117, 177, 255, 0.34);
-  border-radius: 10px;
-  padding: 4px;
-}
-
-.retro-maze-view-toggle button {
-  border: 1px solid transparent;
-  background: transparent;
-  color: rgba(197, 225, 255, 0.85);
-  border-radius: 8px;
-  padding: 6px 10px;
-  font-size: 0.75rem;
+.runner-status {
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(120, 200, 255, 0.3);
+  background: rgba(20, 44, 90, 0.65);
+  font-size: 0.72rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  cursor: pointer;
+  color: #cfe8ff;
 }
 
-.retro-maze-view-toggle button[data-active="true"] {
-  background: rgba(19, 58, 106, 0.9);
-  border-color: rgba(140, 205, 255, 0.65);
-  color: #f8fbff;
+.runner-status-running {
+  border-color: rgba(90, 220, 190, 0.6);
+  background: rgba(12, 60, 80, 0.75);
+  color: #aef9eb;
 }
 
-.retro-maze-hud {
+.runner-status-crashed {
+  border-color: rgba(255, 170, 120, 0.5);
+  background: rgba(72, 30, 24, 0.7);
+  color: #ffd1b0;
+}
+
+.runner-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  grid-template-columns: minmax(260px, 1.3fr) minmax(220px, 0.7fr);
+  gap: 18px;
+}
+
+.runner-canvas-shell {
+  position: relative;
+  border-radius: 18px;
+  overflow: hidden;
+  background: rgba(6, 16, 30, 0.9);
+  border: 1px solid rgba(100, 160, 255, 0.2);
+  min-height: 280px;
+}
+
+.runner-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.runner-hud {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  display: grid;
   gap: 8px;
-}
-
-.retro-maze-hud > div {
-  border-radius: 10px;
-  background: rgba(10, 24, 46, 0.85);
-  border: 1px solid rgba(109, 175, 255, 0.3);
   padding: 10px 12px;
-  display: grid;
-  gap: 2px;
+  border-radius: 12px;
+  background: rgba(10, 20, 40, 0.78);
+  border: 1px solid rgba(120, 188, 255, 0.2);
+  font-size: 0.78rem;
 }
 
-.retro-maze-hud span {
-  color: rgba(177, 210, 245, 0.8);
+.runner-hud span {
+  display: block;
+  color: rgba(180, 214, 255, 0.7);
   text-transform: uppercase;
   letter-spacing: 0.08em;
   font-size: 0.68rem;
 }
 
-.retro-maze-hud strong {
-  color: #f8fbff;
-  font-size: 1.05rem;
-  font-weight: 700;
-  text-shadow: 0 0 8px rgba(200, 228, 255, 0.45);
+.runner-hud strong {
+  font-size: 0.9rem;
+  color: #e8f6ff;
 }
 
-.retro-maze-board-frame {
-  position: relative;
-  border-radius: 16px;
-  padding: 14px;
-  border: 1px solid rgba(95, 163, 248, 0.5);
-  background:
-    radial-gradient(circle at 20% -10%, rgba(30, 92, 162, 0.28), transparent 56%),
-    linear-gradient(rgba(40, 100, 200, 0.055) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(40, 100, 200, 0.055) 1px, transparent 1px),
-    rgba(4, 8, 22, 0.97);
-  background-size: 100% 100%, 22px 22px, 22px 22px;
-  box-shadow:
-    0 0 0 1px rgba(60, 140, 255, 0.08),
-    inset 0 0 40px rgba(0, 0, 0, 0.5);
-  overflow: hidden;
-}
-
-.retro-maze-board-frame::after {
-  content: "";
+.runner-overlay {
   position: absolute;
   inset: 0;
-  pointer-events: none;
-  background: repeating-linear-gradient(
-    to bottom,
-    rgba(255, 255, 255, 0.03) 0,
-    rgba(255, 255, 255, 0.03) 1px,
-    transparent 1px,
-    transparent 4px
-  );
-}
-
-.retro-maze-board-frame.is-3d {
-  box-shadow: inset 0 -22px 45px rgba(0, 0, 0, 0.42);
-}
-
-.retro-maze-board {
-  position: relative;
-  z-index: 1;
   display: grid;
-  gap: 2px;
-  width: min(100%, 620px);
-  margin: 0 auto;
-  aspect-ratio: 1 / 1;
-  transition: transform 0.25s ease, filter 0.25s ease;
+  place-items: center;
+  gap: 6px;
+  text-align: center;
+  background: rgba(4, 12, 24, 0.6);
+  color: #e6f4ff;
 }
 
-.retro-maze-board.is-3d {
-  transform: perspective(900px) rotateX(20deg) scale(0.95);
-  transform-origin: center top;
-  filter: drop-shadow(0 20px 28px rgba(0, 0, 0, 0.44));
+.runner-overlay strong {
+  font-size: 1rem;
 }
 
-.retro-maze-cell {
-  background: rgba(3, 8, 24, 0.9);
-  border-radius: 3px;
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 0;
-  min-height: 0;
+.runner-overlay span {
+  font-size: 0.82rem;
+  color: rgba(200, 228, 255, 0.8);
 }
 
-.retro-maze-cell.is-wall {
-  background: linear-gradient(180deg, rgba(22, 72, 162, 0.97), rgba(10, 38, 96, 0.99));
-  box-shadow:
-    inset 0 1px 0 rgba(110, 190, 255, 0.45),
-    inset 0 -1px 0 rgba(4, 14, 42, 0.7),
-    0 0 6px rgba(40, 100, 220, 0.22);
-  border: 1px solid rgba(50, 120, 240, 0.28);
+.runner-panel {
+  display: grid;
+  gap: 16px;
 }
 
-.retro-pellet {
-  width: 6px;
-  height: 6px;
-  border-radius: 999px;
-  background: #dff0ff;
-  box-shadow: 0 0 6px rgba(220, 240, 255, 0.85), 0 0 14px rgba(180, 220, 255, 0.35);
-  z-index: 1;
+.runner-controls {
+  display: grid;
+  gap: 10px;
 }
 
-.retro-pellet.is-power {
-  width: 12px;
-  height: 12px;
-  background: radial-gradient(circle at 35% 35%, #fffbd0, #fcd34d 55%, #f59e0b 100%);
-  box-shadow: 0 0 10px rgba(252, 211, 77, 0.95), 0 0 26px rgba(252, 211, 77, 0.45);
-  animation: retro-pellet-pulse 0.75s ease-in-out infinite;
-}
-
-.retro-player {
-  width: 72%;
-  height: 72%;
-  border-radius: 999px;
-  background: radial-gradient(circle at 34% 34%, #fffde4 0%, #fde047 44%, #ca8a04 100%);
-  clip-path: polygon(100% 50%, 57% 62%, 100% 100%, 0 100%, 0 0, 100% 0);
-  z-index: 3;
-  animation: retro-chomp 0.2s ease-in-out infinite;
-  filter: drop-shadow(0 0 4px rgba(253, 224, 71, 0.85)) drop-shadow(0 0 10px rgba(253, 224, 71, 0.38));
-}
-
-.retro-player.retro-facing-up {
-  transform: rotate(-90deg);
-}
-
-.retro-player.retro-facing-down {
-  transform: rotate(90deg);
-}
-
-.retro-player.retro-facing-left {
-  transform: rotate(180deg);
-}
-
-.retro-player.retro-facing-right {
-  transform: rotate(0deg);
-}
-
-.retro-ghost {
-  width: 72%;
-  height: 72%;
-  border-radius: 44% 44% 22% 22%;
-  position: relative;
-  z-index: 2;
-}
-
-.retro-ghost::before,
-.retro-ghost::after {
-  content: "";
-  position: absolute;
-  width: 20%;
-  height: 20%;
-  top: 28%;
-  background: #f8fafc;
-  border-radius: 999px;
-}
-
-.retro-ghost::before {
-  left: 22%;
-}
-
-.retro-ghost::after {
-  right: 22%;
-}
-
-.retro-ghost-cyan {
-  background: linear-gradient(180deg, #93e3fd 0%, #06b6d4 100%);
-  filter: drop-shadow(0 0 5px rgba(34, 211, 238, 0.6));
-}
-
-.retro-ghost-pink {
-  background: linear-gradient(180deg, #fbb6ce 0%, #e879f9 100%);
-  filter: drop-shadow(0 0 5px rgba(232, 121, 249, 0.6));
-}
-
-.retro-ghost-amber {
-  background: linear-gradient(180deg, #fdd28a 0%, #fb923c 100%);
-  filter: drop-shadow(0 0 5px rgba(251, 146, 60, 0.6));
-}
-
-.retro-ghost.is-frightened {
-  background: linear-gradient(180deg, #93c5fd 0%, #2563eb 100%);
-  filter: drop-shadow(0 0 6px rgba(96, 165, 250, 0.75));
-  animation: retro-ghost-flash 0.45s ease-in-out infinite;
-}
-
-.retro-maze-message {
-  margin: 0;
-  padding: 10px 12px;
+.retro-maze-primary-actions button,
+.retro-dpad-button {
   border-radius: 10px;
-  background: rgba(9, 19, 40, 0.9);
-  border: 1px solid rgba(116, 188, 255, 0.24);
-  color: rgba(220, 238, 255, 0.9);
-  font-size: 0.84rem;
-}
-
-.retro-maze-controls {
-  display: flex;
-  justify-content: center;
-}
-
-/* Nintendo / Gameboy-style D-pad */
-.retro-direction-pad {
-  display: grid;
-  grid-template-columns: repeat(3, 44px);
-  grid-template-rows: repeat(3, 44px);
-  gap: 0;
-  width: fit-content;
-}
-
-.retro-direction-pad button {
-  width: 44px;
-  height: 44px;
-  background: #252525;
-  border: none;
-  border-radius: 6px;
-  color: rgba(255, 255, 255, 0.55);
-  font-size: 0.7rem;
+  padding: 10px 14px;
+  color: inherit;
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease,
+    transform 0.2s ease;
+}
+
+.retro-maze-primary-actions button:hover,
+.retro-maze-primary-actions button:focus-visible,
+.retro-dpad-button:hover,
+.retro-dpad-button:focus-visible {
+  border-color: rgba(178, 220, 255, 0.72);
+  background: rgba(20, 50, 93, 0.95);
+  transform: translateY(-1px);
+  outline: none;
+}
+
+.runner-button-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(80px, 1fr));
+  gap: 10px;
+}
+
+.runner-button-row button {
+  font-size: 1.1rem;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.retro-dpad {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(56px, 64px));
+  grid-template-rows: repeat(3, minmax(56px, 64px));
+  gap: 8px;
+  justify-content: center;
+  align-content: center;
+  padding: 10px;
+  border-radius: 16px;
+  border: 1px solid rgba(120, 188, 255, 0.36);
+  background:
+    radial-gradient(circle at 30% 20%, rgba(48, 106, 186, 0.34), transparent 55%),
+    rgba(7, 16, 36, 0.9);
+}
+
+.retro-dpad-button {
+  width: 100%;
+  height: 100%;
+  padding: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.08s ease;
-  padding: 0;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.1),
-    inset 0 -2px 0 rgba(0, 0, 0, 0.45);
+  text-transform: none;
+  letter-spacing: 0;
 }
 
-.retro-direction-pad button:hover {
-  background: #303030;
-  outline: none;
+.retro-dpad-button span {
+  font-size: 1.05rem;
+  line-height: 1;
 }
 
-.retro-direction-pad button:active,
-.retro-direction-pad button:focus-visible {
-  background: #1a1a1a;
-  outline: none;
-  box-shadow:
-    inset 0 2px 4px rgba(0, 0, 0, 0.6);
+.retro-dpad-button:active {
+  transform: translateY(0) scale(0.96);
 }
 
-/* Grid placement — cross/plus shape */
-.retro-dpad-up    { grid-column: 2; grid-row: 1; border-radius: 6px 6px 0 0; }
-.retro-dpad-left  { grid-column: 1; grid-row: 2; border-radius: 6px 0 0 6px; }
+.retro-dpad-button.is-up {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.retro-dpad-button.is-left {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.retro-dpad-button.is-right {
+  grid-column: 3;
+  grid-row: 2;
+}
+
+.retro-dpad-button.is-down {
+  grid-column: 2;
+  grid-row: 3;
+}
+
 .retro-dpad-center {
   grid-column: 2;
   grid-row: 2;
-  background: #252525;
-  display: block;
-  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.3);
+  border-radius: 12px;
+  border: 1px solid rgba(126, 190, 255, 0.32);
+  background: rgba(20, 47, 84, 0.82);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: inset 0 1px 0 rgba(188, 226, 255, 0.2);
 }
-.retro-dpad-right { grid-column: 3; grid-row: 2; border-radius: 0 6px 6px 0; }
-.retro-dpad-down  { grid-column: 2; grid-row: 3; border-radius: 0 0 6px 6px; }
+
+.retro-dpad-center span {
+  font-size: 0.86rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: rgba(198, 228, 255, 0.9);
+}
 
 .retro-maze-help {
   margin: 0;
-  color: rgba(179, 211, 246, 0.78);
-  font-size: 0.76rem;
+  font-size: 0.88rem;
+  color: #b8e2ff;
 }
 
-@keyframes retro-pellet-pulse {
-  0%,
-  100% {
-    transform: scale(1);
-    opacity: 0.9;
-  }
-  50% {
-    transform: scale(0.74);
-    opacity: 0.48;
-  }
+.runner-history ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
 }
 
-@keyframes retro-chomp {
-  0%,
-  100% {
-    clip-path: polygon(100% 50%, 57% 62%, 100% 100%, 0 100%, 0 0, 100% 0);
-  }
-  50% {
-    clip-path: polygon(100% 50%, 74% 52%, 100% 72%, 0 100%, 0 0, 100% 28%);
-  }
+.runner-history li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.82rem;
+  color: rgba(210, 232, 255, 0.8);
 }
 
-@keyframes retro-ghost-flash {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.55; }
+.runner-history li strong {
+  color: #e8f6ff;
+}
+
+.runner-history p {
+  margin: 0;
+  font-size: 0.82rem;
+  color: rgba(200, 228, 255, 0.7);
+}
+
+.runner-leaderboard {
+  background: rgba(10, 24, 48, 0.72);
+  border: 1px solid rgba(100, 160, 255, 0.2);
+  border-radius: 12px;
+  padding: 12px;
+  display: grid;
+  gap: 8px;
+}
+
+.runner-leaderboard h3 {
+  margin: 0;
+  font-size: 0.88rem;
+  color: #b8e2ff;
+}
+
+.runner-leaderboard ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.runner-leaderboard li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(12, 26, 52, 0.85);
+  border: 1px solid transparent;
+  font-size: 0.8rem;
+  color: rgba(210, 232, 255, 0.85);
+}
+
+.runner-leaderboard li.is-current {
+  border-color: rgba(90, 220, 190, 0.55);
+  background: rgba(10, 34, 24, 0.9);
+  color: #ecfdf5;
+}
+
+.runner-leaderboard .rank {
+  font-weight: 600;
+  width: 2rem;
 }
 
 @media (max-width: 960px) {
@@ -837,6 +808,10 @@
 
   .arcade-page {
     padding: 24px;
+  }
+
+  .runner-grid {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -881,14 +856,11 @@
     height: 38px;
   }
 
-  .retro-direction-pad {
-    grid-template-columns: repeat(3, 38px);
-    grid-template-rows: repeat(3, 38px);
-  }
-
-  .retro-direction-pad button {
-    width: 38px;
-    height: 38px;
+  .retro-dpad {
+    width: min(100%, 240px);
+    margin-inline: auto;
+    grid-template-columns: repeat(3, minmax(46px, 1fr));
+    grid-template-rows: repeat(3, minmax(46px, 1fr));
   }
 }
 

@@ -156,7 +156,7 @@ R = (5 - 2) / 0.020 = 150Ω
 
 **KVL (Voltage Law):**
 ```
-ΣV = 0  (around any closed loop)
+ΣV = 0  (around any closed path)
 ```
 
 ---

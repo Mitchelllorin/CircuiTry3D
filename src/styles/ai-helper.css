@@ -1,6 +1,8 @@
 /* ── AI Helper FAB & Chat Panel ─────────────────────────────────────────────
  * Floating action button (FAB) + sliding chat panel for the in-app
- * Circuit AI assistant. Pinned to the top-right corner, just below the action bar.
+ * Circuit AI assistant.
+ * The FAB sits in the right section of the bottom perimeter bar, flush to
+ * the right edge (just left of the Controls toggle tab).
  * ─────────────────────────────────────────────────────────────────────────── */
 
 /* ── FAB ─────────────────────────────────────────────────────────────────── */
@@ -8,25 +10,37 @@
 .ai-helper-fab {
   display: none !important; /* Moved to action bar */
   position: fixed;
-  /* Top-right corner, just below the action bar */
-  top: calc(var(--builder-ticker-top, 72px) + var(--builder-ticker-height, 32px) + 8px + var(--builder-safe-area-top, 0px));
-  bottom: auto;
-  right: calc(8px + var(--builder-safe-area-right, 0px));
+  /* Vertically centred inside the bottom perimeter bar */
+  bottom: calc(
+    (var(--builder-perimeter-bar-height, 52px) - 40px) / 2 +
+    var(--builder-safe-area-bottom, 0px)
+  );
+  /* Sits just to the left of the Controls toggle tab */
+  right: calc(
+    var(--builder-menu-toggle-width, 28px) + 6px +
+    var(--builder-safe-area-right, 0px)
+  );
+  transform: none;
   z-index: var(--z-ai-helper);
-  width: 46px;
-  height: 46px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   border: 1.5px solid rgba(136, 204, 255, 0.45);
+  border-top: none;
+  border-right: none;
   background: linear-gradient(
     145deg,
     rgba(20, 40, 80, 0.92) 0%,
     rgba(10, 26, 52, 0.95) 100%
   );
   color: #88ccff;
-  font-size: 20px;
+  font-size: 18px;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 2px;
+  padding: 4px;
   cursor: pointer;
   box-shadow:
     0 4px 18px rgba(2, 8, 20, 0.55),
@@ -38,6 +52,7 @@
     background 0.18s ease;
   outline: none;
   -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 .ai-helper-fab:hover {
@@ -70,9 +85,22 @@
   align-items: center;
   justify-content: center;
   line-height: 1;
+  font-size: 20px;
   /* prevent layout shift when icon chars differ */
   width: 1.2em;
   height: 1.2em;
+}
+
+/* Plain-text label beneath the AI FAB icon */
+.ai-helper-fab__label {
+  display: block;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  line-height: 1;
+  color: #88ccff;
+  pointer-events: none;
 }
 
 /* Unread badge dot */
@@ -115,17 +143,17 @@
 
 .ai-helper-panel {
   position: fixed;
-  /* Positioned above the FAB (FAB is 46px + 8px gap = 54px above panels) */
+  /* Open above the FAB (40px button + 12px gap = 52px above perimeter bar) */
   bottom: calc(
-    var(--builder-menu-right-height, 260px) +
-    var(--builder-menu-toggle-height, 64px) +
-    70px +
+    var(--builder-perimeter-bar-height, 52px) +
+    52px +
     var(--builder-safe-area-bottom, 0px)
   );
-  right: calc(var(--builder-safe-area-right, 0px) + 8px);
-  top: calc(var(--builder-ticker-top, 72px) + var(--builder-ticker-height, 32px) + 12px + var(--builder-safe-area-top, 0px));
-  z-index: var(--z-ai-helper, 1100);
-  width: clamp(300px, 38vw, 420px);
+  bottom: auto;
+  left: auto;
+  z-index: var(--z-ai-helper);
+  width: clamp(260px, calc(100vw - 100px), 380px);
+  max-height: calc(100svh - 160px);
   border-radius: 16px;
   border: 1px solid rgba(136, 204, 255, 0.32);
   background: linear-gradient(
@@ -140,14 +168,14 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  transform-origin: bottom right;
+  transform-origin: top right;
   animation: aiPanelReveal 0.22s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 @keyframes aiPanelReveal {
   from {
     opacity: 0;
-    transform: scale(0.88) translateY(12px);
+    transform: scale(0.88) translateY(-8px);
   }
   to {
     opacity: 1;
@@ -188,39 +216,6 @@
 }
 
 /* ── Close button — HIGH VISIBILITY ──────────────────────────────────────── */
-
-.ai-helper-panel__size-btn {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1.5px solid rgba(255, 255, 255, 0.2);
-  color: rgba(200, 228, 255, 0.85);
-  font-size: 14px;
-  font-weight: 600;
-  line-height: 1;
-  cursor: pointer;
-  padding: 0;
-  border-radius: 8px;
-  transition: color 0.15s, background 0.15s, border-color 0.15s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 30px;
-  min-height: 30px;
-  width: 30px;
-  height: 30px;
-  flex-shrink: 0;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.ai-helper-panel__size-btn:hover {
-  color: #fff;
-  background: rgba(136, 204, 255, 0.2);
-  border-color: rgba(136, 204, 255, 0.55);
-}
-
-.ai-helper-panel__size-btn:focus-visible {
-  outline: 2px solid var(--brand-blue, #88ccff);
-  outline-offset: 2px;
-}
 
 .ai-helper-panel__close {
   background: rgba(255, 255, 255, 0.12);
@@ -488,18 +483,22 @@
 
 @media (max-width: 640px) {
   .ai-helper-fab {
-    /* On small phones: keep top-right corner, just slightly tighter */
-    top: calc(var(--builder-ticker-top, 64px) + var(--builder-ticker-height, 24px) + 6px + var(--builder-safe-area-top, 0px));
-    right: calc(6px + var(--builder-safe-area-right, 0px));
-    bottom: auto;
+    /* On small phones: stay in bottom perimeter bar, same position */
+    right: calc(
+      var(--builder-menu-toggle-width, 28px) + 6px +
+      var(--builder-safe-area-right, 0px)
+    );
+    bottom: calc(
+      (var(--builder-perimeter-bar-height, 52px) - 40px) / 2 +
+      var(--builder-safe-area-bottom, 0px)
+    );
   }
 
   .ai-helper-panel {
     right: 8px;
     bottom: calc(
-      var(--builder-menu-right-height, 220px) +
-      var(--builder-menu-toggle-height, 48px) +
-      64px +
+      var(--builder-perimeter-bar-height, 52px) +
+      48px +
       var(--builder-safe-area-bottom, 0px)
     );
     top: calc(var(--builder-ticker-top, 64px) + var(--builder-ticker-height, 24px) + 6px + var(--builder-safe-area-top, 0px));

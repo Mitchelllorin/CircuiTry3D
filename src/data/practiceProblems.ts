@@ -5,17 +5,16 @@ import { XP_REWARD_BY_DIFFICULTY } from "./gamification";
 const SERIES_IDS = ["R1", "R2", "R3"] as const;
 const SERIES_IDS_2 = ["R1", "R2"] as const;
 const SERIES_IDS_4 = ["R1", "R2", "R3", "R4"] as const;
-const SERIES_IDS_5 = ["R1", "R2", "R3", "R4", "R5"] as const;
 
 const practiceProblemSeeds: PracticeProblem[] = [
   {
     id: "series-square-01",
-    title: "Series Circuit · Circuit Current",
+    title: "Series Circuit · Total Current",
     topology: "series",
     difficulty: "intro",
       prompt:
-        "A series circuit consists of three resistors (R1 = 150 Ω, R2 = 200 Ω, R3 = 250 Ω) connected to a 24 V battery. Complete the W.I.R.E. table including all component values and circuit totals.",
-    targetQuestion: "What is the total current flowing through this series circuit?",
+        "A series circuit holds four resistors connected end to end and powered by a 24 V battery. Complete the W.I.R.E. table, including the circuit totals, and determine the total current.",
+    targetQuestion: "What is the total current flowing through the series circuit?",
     targetMetric: { componentId: "totals", key: "current" },
     conceptTags: ["series", "ohms-law", "wire-table"],
     diagram: "seriesRect",
@@ -82,7 +81,7 @@ const practiceProblemSeeds: PracticeProblem[] = [
         };
       },
       ({ totals }) => ({
-        title: "Solve for circuit current",
+        title: "Solve for total current",
         detail: `I_T = E / R_T = ${formatMetricValue(totals.voltage, "voltage")} ÷ ${formatMetricValue(totals.resistance, "resistance")} = ${formatMetricValue(totals.current, "current")}`,
         formula: "I = E / R",
       }),
@@ -790,6 +789,113 @@ const practiceProblemSeeds: PracticeProblem[] = [
     ],
   },
   {
+    id: "parallel-voltage-drop-07",
+    title: "Parallel Circuit · Voltage Drop (Branches)",
+    topology: "parallel",
+    difficulty: "intro",
+    prompt:
+      "Three resistors (R1 = 220 Ω, R2 = 330 Ω, R3 = 470 Ω) are connected in parallel across a 12 V source. Complete the W.I.R.E. table for all branch and total values.",
+    targetQuestion: "What is the voltage drop across R2?",
+    targetMetric: { componentId: "R2", key: "voltage" },
+    conceptTags: ["parallel", "voltage-drop", "kvl", "ohms-law"],
+    diagram: "parallelRect",
+    learningObjective: "Recognize that voltage is the same across all parallel branches and use it to solve branch currents.",
+    hints: [
+      { text: "In a parallel circuit, each branch has the same voltage as the source", formula: "E_1 = E_2 = E_3 = E_T" },
+      { text: "Use Ohm's Law to find each branch current", formula: "I_x = E / R_x" },
+      { text: "Total current is the sum of branch currents (KCL)", formula: "I_T = I_1 + I_2 + I_3" },
+    ],
+    tips: [
+      "Parallel circuits keep voltage constant across each branch",
+      "Lower resistance branches draw higher current",
+      "Check: equivalent resistance must be less than the smallest branch resistance",
+    ],
+    facts: [
+      "Parallel wiring is used for household circuits so every device receives full line voltage",
+    ],
+    realWorldExample: "A power strip: each outlet is a parallel branch with the same supply voltage.",
+    source: {
+      id: "supply",
+      label: "Supply",
+      role: "source",
+      givens: { voltage: 12 },
+      values: { voltage: 12 },
+    },
+    components: [
+      {
+        id: "R1",
+        label: "R1",
+        role: "load",
+        givens: { resistance: 220 },
+        values: { resistance: 220 },
+      },
+      {
+        id: "R2",
+        label: "R2",
+        role: "load",
+        givens: { resistance: 330 },
+        values: { resistance: 330 },
+      },
+      {
+        id: "R3",
+        label: "R3",
+        role: "load",
+        givens: { resistance: 470 },
+        values: { resistance: 470 },
+      },
+    ],
+    network: {
+      kind: "parallel",
+      id: "parallel-voltage-drop",
+      children: ["R1", "R2", "R3"].map((componentId) => ({
+        kind: "component",
+        componentId,
+      })),
+    },
+    totalsGivens: {},
+    presetHint: "parallel_voltage_drop",
+    steps: [
+      ({ components, totals }) => ({
+        title: "Set branch voltages (parallel rule)",
+        detail: `E_1 = E_2 = E_3 = E_T = ${formatMetricValue(totals.voltage, "voltage")}\nR2 voltage is therefore ${formatMetricValue(components.R2.voltage, "voltage")}`,
+        formula: "E_{branch} = E_T",
+      }),
+      ({ components }) => {
+        const detailLines = ["R1", "R2", "R3"]
+          .map((id) => {
+            const amps = formatMetricValue(components[id].current, "current");
+            const volts = formatMetricValue(components[id].voltage, "voltage");
+            const resistance = formatMetricValue(
+              components[id].resistance,
+              "resistance",
+            );
+            return `${id}: I = E / R = ${volts} ÷ ${resistance} = ${amps}`;
+          })
+          .join("\n");
+        return {
+          title: "Solve each branch current",
+          detail: detailLines,
+          formula: "I_x = E / R_x",
+        };
+      },
+      ({ components, totals }) => {
+        const branchSum = ["R1", "R2", "R3"]
+          .map((id) => formatMetricValue(components[id].current, "current"))
+          .join(" + ");
+        return {
+          title: "Apply KCL for total current",
+          detail: `I_T = ${branchSum} = ${formatMetricValue(totals.current, "current")}`,
+          formula: "I_T = Σ I_{branch}",
+        };
+      },
+      ({ totals }) => ({
+        title: "Verify equivalent resistance",
+        detail: `R_T = E_T / I_T = ${formatMetricValue(totals.voltage, "voltage")} ÷ ${formatMetricValue(totals.current, "current")} = ${formatMetricValue(totals.resistance, "resistance")}`,
+        formula: "R = E / I",
+      }),
+    ],
+  },
+  {
     id: "parallel-power-03",
     title: "Parallel Circuit · Power Distribution",
     topology: "parallel",
@@ -1273,7 +1379,7 @@ const practiceProblemSeeds: PracticeProblem[] = [
         return {
           title: "Step 4 — Track voltage drops with KVL",
           detail: `E_T = ${formatMetricValue(totals.voltage, "voltage")} = ${vR1} (R1) + ${vBranch} (parallel branch) + ${vR4} (R4)\nThe remaining voltage appears across the entire parallel section.`,
-          formula: "KVL around the circuit",
+          formula: "KVL around the circuit path",
         };
       },
       ({ components }) => {
@@ -1375,6 +1481,131 @@ const practiceProblemSeeds: PracticeProblem[] = [
           formula: "E_T = V_{R1} + V_{branch}",
         };
       },
+    ],
+  },
+  {
+    id: "combo-series-voltage-drop-07",
+    title: "Combination Circuit · Series Voltage Drop",
+    topology: "combination",
+    difficulty: "standard",
+    prompt:
+      "A circuit has R1 = 120 Ω in series with a parallel branch of R2 = 180 Ω and R3 = 360 Ω. The circuit is connected to a 24 V source. Solve for all W.I.R.E. values.",
+    targetQuestion: "What is the voltage drop across the series resistor R1?",
+    targetMetric: { componentId: "R1", key: "voltage" },
+    conceptTags: ["combination", "voltage-drop", "kvl", "ohms-law", "equivalent-resistance"],
+    diagram: "comboRect",
+    learningObjective: "Collapse a parallel branch to an equivalent resistance, then use KVL to find the series voltage drop.",
+    hints: [
+      { text: "First replace the parallel branch with an equivalent resistor", formula: "R_{2||3} = 1 / (1/R_2 + 1/R_3)" },
+      { text: "Series resistances add", formula: "R_T = R_1 + R_{2||3}" },
+      { text: "The same total current flows through R1 (series element)", formula: "I_{R1} = I_T" },
+    ],
+    tips: [
+      "Solve inside-out: collapse parallel first, then treat as series",
+      "After you have I_T, compute V_R1 with V = I × R",
+    ],
+    facts: [
+      "Series-parallel reduction is the fastest method for many textbook DC resistor networks.",
+    ],
+    realWorldExample:
+      "A protection resistor in series with multiple parallel sensor elements can drop voltage before the current splits.",
+    source: {
+      id: "source",
+      label: "Source",
+      role: "source",
+      givens: { voltage: 24 },
+      values: { voltage: 24 },
+    },
+    components: [
+      {
+        id: "R1",
+        label: "R1",
+        role: "load",
+        givens: { resistance: 120 },
+        values: { resistance: 120 },
+      },
+      {
+        id: "R2",
+        label: "R2",
+        role: "load",
+        givens: { resistance: 180 },
+        values: { resistance: 180 },
+      },
+      {
+        id: "R3",
+        label: "R3",
+        role: "load",
+        givens: { resistance: 360 },
+        values: { resistance: 360 },
+      },
+    ],
+    network: {
+      kind: "series",
+      id: "combo-series-vdrop",
+      children: [
+        { kind: "component", componentId: "R1" },
+        {
+          kind: "parallel",
+          id: "combo-series-vdrop-parallel",
+          children: [
+            { kind: "component", componentId: "R2" },
+            { kind: "component", componentId: "R3" },
+          ],
+        },
+      ],
+    },
+    totalsGivens: {},
+    presetHint: "combo_series_voltage_drop",
+    steps: [
+      ({ components }) => {
+        const reciprocal =
+          1 / components.R2.resistance + 1 / components.R3.resistance;
+        const equivalent = 1 / reciprocal;
+        return {
+          title: "Collapse the parallel branch",
+          detail: `R_{2||3} = 1 / (1/${formatNumber(
+            components.R2.resistance,
+            0,
+          )}Ω + 1/${formatNumber(components.R3.resistance, 0)}Ω) = ${formatNumber(
+            equivalent,
+            2,
+          )} Ω`,
+          formula: "R_{eq} = 1 / (1/R_2 + 1/R_3)",
+        };
+      },
+      ({ totals }) => ({
+        title: "Compute total current",
+        detail: `I_T = E_T / R_T = ${formatMetricValue(
+          totals.voltage,
+          "voltage",
+        )} ÷ ${formatMetricValue(totals.resistance, "resistance")} = ${formatMetricValue(
+          totals.current,
+          "current",
+        )}`,
+        formula: "I = E / R",
+      }),
+      ({ components, totals }) => ({
+        title: "Find the series voltage drop across R1",
+        detail: `V_{R1} = I_T × R1 = ${formatMetricValue(
+          totals.current,
+          "current",
+        )} × ${formatMetricValue(components.R1.resistance, "resistance")} = ${formatMetricValue(
+          components.R1.voltage,
+          "voltage",
+        )}`,
+        formula: "V = I × R",
+      }),
+      ({ components, totals }) => ({
+        title: "Use KVL to get the parallel-branch voltage",
+        detail: `V_{branch} = E_T - V_{R1} = ${formatMetricValue(
+          totals.voltage,
+          "voltage",
+        )} - ${formatMetricValue(components.R1.voltage, "voltage")} = ${formatMetricValue(
+          components.R2.voltage,
+          "voltage",
+        )}\n(In parallel: V_{R2} = V_{R3} = V_{branch})`,
+        formula: "E_T = V_{R1} + V_{branch}",
+      }),
     ],
   },
   {
@@ -1795,7 +2026,7 @@ const practiceProblemSeeds: PracticeProblem[] = [
   },
   // ═══════════════════════════════════════════════════════════════════════════
   // TEXTBOOK-STYLE SERIES PROBLEMS
-  // Single continuous path for current - one loop, no branches
+  // Single continuous path for current - one series circuit, no branches
   // ═══════════════════════════════════════════════════════════════════════════
   {
     id: "textbook-series-basic-01",
@@ -2125,7 +2356,7 @@ const practiceProblemSeeds: PracticeProblem[] = [
         detail: `1/R_T = 1/${formatNumber(components.R1.resistance, 0)}Ω + 1/${formatNumber(components.R2.resistance, 0)}Ω + 1/${formatNumber(components.R3.resistance, 0)}Ω`,
         formula: "1/R_T = 1/R_1 + 1/R_2 + 1/R_3",
       }),
-      ({ components, totals }) => {
+      ({ components }) => {
         const recip = 1/components.R1.resistance + 1/components.R2.resistance + 1/components.R3.resistance;
         return {
           title: "Calculate the sum of reciprocals",
@@ -2353,7 +2584,7 @@ const practiceProblemSeeds: PracticeProblem[] = [
         detail: `I_T = E / R_T = ${formatMetricValue(totals.voltage, "voltage")} ÷ ${formatMetricValue(totals.resistance, "resistance")} = ${formatMetricValue(totals.current, "current")}`,
         formula: "I = E / R",
       }),
-      ({ components, totals }) => ({
+      ({ components }) => ({
         title: "Find voltage across the parallel section",
         detail: `V_{R1} = I_T × R_1 = ${formatMetricValue(components.R1.voltage, "voltage")}\nV_{R4} = I_T × R_4 = ${formatMetricValue(components.R4.voltage, "voltage")}\nV_{parallel} = E - V_{R1} - V_{R4} = ${formatMetricValue(components.R2.voltage, "voltage")}`,
         formula: "KVL: V_{parallel} = E - V_{R1} - V_{R4}",

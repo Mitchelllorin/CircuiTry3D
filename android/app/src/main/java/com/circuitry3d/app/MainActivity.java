@@ -8,10 +8,33 @@ public class MainActivity extends BridgeActivity {
     public void onCreate(android.os.Bundle savedInstanceState) {
         registerPlugin(BillingPlugin.class);
         super.onCreate(savedInstanceState);
-        // Enable edge-to-edge after super.onCreate() so the Activity is fully
-        // initialised. This is the recommended API for Android 15 (SDK 35) and
-        // replaces the deprecated setStatusBarColor approach.
-        // CSS env(safe-area-inset-*) variables will reflect the real inset sizes.
-        EdgeToEdge.enable(this);
+        
+        // Optimize WebView for 3D graphics and touch interactions
+        WebView webView = getBridge().getWebView();
+        if (webView != null) {
+            WebSettings settings = webView.getSettings();
+            
+            // Enable hardware acceleration and GPU rendering
+            webView.setLayerType(WebView.LAYER_TYPE_HARDWARE, null);
+            
+            // Optimize for 3D/WebGL content
+            settings.setJavaScriptEnabled(true);
+            settings.setDomStorageEnabled(true);
+            settings.setDatabaseEnabled(true);
+            settings.setMediaPlaybackRequiresUserGesture(false);
+            
+            // Improve touch responsiveness
+            settings.setBuiltInZoomControls(false);
+            settings.setDisplayZoomControls(false);
+            settings.setSupportZoom(false);
+            
+            // Cache settings for better performance
+            settings.setCacheMode(WebSettings.LOAD_DEFAULT);
+            // AppCache APIs were removed from modern WebView; rely on HTTP caching.
+            
+            // Enable viewport scaling for proper mobile layout
+            settings.setLoadWithOverviewMode(true);
+            settings.setUseWideViewPort(true);
+        }
     }
 }

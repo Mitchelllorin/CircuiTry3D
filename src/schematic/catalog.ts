@@ -105,7 +105,7 @@ export const COMPONENT_CATALOG: CatalogEntry[] = [
     id: "resistor",
     kind: "resistor",
     name: "Resistor",
-    description: "Three zig-zag schematic resistor body with labelled leads.",
+    description: "Resistor body follows the selected ANSI/IEEE (zig-zag) or IEC (rectangle) standard with labelled leads.",
     placement: "two-point",
     icon: "R",
     defaultLabelPrefix: "R",
@@ -335,6 +335,36 @@ export const COMPONENT_CATALOG: CatalogEntry[] = [
     icon: "T",
     defaultLabelPrefix: "T",
     tags: ["passive", "magnetic", "isolation"]
+  },
+  {
+    id: "relay",
+    kind: "relay",
+    name: "Relay",
+    description: "Electromagnetic relay: coil-actuated switch for controlling high-power loads with low-power signals.",
+    placement: "multi-point",
+    icon: "RLY",
+    defaultLabelPrefix: "K",
+    tags: ["electromechanical", "switch", "control", "isolation"]
+  },
+  {
+    id: "voltage-regulator",
+    kind: "voltage-regulator",
+    name: "Voltage Regulator",
+    description: "Three-terminal linear voltage regulator (e.g. LM7805, LM317) for stable output voltage.",
+    placement: "three-point",
+    icon: "VR",
+    defaultLabelPrefix: "VR",
+    tags: ["power", "regulation", "linear", "protection"]
+  },
+  {
+    id: "circuit-breaker",
+    kind: "circuit-breaker",
+    name: "Circuit Breaker",
+    description: "Resettable overcurrent protection device with thermal and magnetic trip mechanisms.",
+    placement: "two-point",
+    icon: "CB",
+    defaultLabelPrefix: "CB",
+    tags: ["protection", "safety", "resettable", "overcurrent"]
   },
   {
     id: "wire",

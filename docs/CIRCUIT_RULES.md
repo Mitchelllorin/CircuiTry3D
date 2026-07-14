@@ -60,17 +60,17 @@ or equivalently:
 
 ### Kirchhoff's Voltage Law (KVL)
 
-> **"Around any closed loop in a circuit, the algebraic sum of all voltage drops and rises equals zero."**
+> **"Around any closed path in a circuit, the algebraic sum of all voltage drops and rises equals zero."**
 
 Mathematical form:
 ```
-Σ V = 0  (around any closed loop)
+Σ V = 0  (around any closed path)
 ```
 
 **CircuiTry3D Implementation:**
 - Enforced through voltage-source constraints
 - Used in Modified Nodal Analysis (MNA) solver
-- Ensures energy conservation in closed loops
+- Ensures energy conservation in closed paths
 
 ---
 
@@ -78,14 +78,14 @@ Mathematical form:
 
 ### Rule C3D-001: Open Circuit = Zero Current
 
-> **"No current shall flow through any circuit path that is not part of a complete closed loop containing a power source."**
+> **"No current shall flow through any circuit path that is not part of a complete closed circuit containing a power source."**
 
 **Rationale:** This is a direct consequence of KCL and charge conservation. For current to flow, charges must have a complete path to return to their source.
 
 **Implementation Requirements:**
-1. Before calculating current flow, verify the circuit forms a closed loop
+1. Before calculating current flow, verify the circuit forms a complete circuit
 2. Detect and flag open circuits during validation
-3. Set current to 0A for all elements not part of a closed loop
+3. Set current to 0A for all elements not part of a complete circuit
 4. Current flow animation MUST NOT display when circuit is open
 
 **Error Condition:** `OPEN_CIRCUIT`
@@ -237,7 +237,7 @@ function areConnected(p1: Vec2, p2: Vec2): boolean {
 |-------|------------|--------------|-----------|
 | `incomplete` | Missing elements or connections | 0A | Disabled |
 | `invalid` | Has errors (short/open circuit) | 0A | Disabled |
-| `complete` | Valid closed loop with source and load | Calculated | Enabled |
+| `complete` | Valid complete circuit with source and load | Calculated | Enabled |
 
 **Implementation:**
 ```typescript
@@ -250,6 +250,44 @@ if (validation.circuitStatus === 'complete') {
   flowAnimationSystem.setCircuitClosed(false);
 }
 ```
+
+### Rule C3D-011: No Empty Circuit Sides (Minimum Component Count)
+
+> **"Every side of a series circuit must have a component. There shall be no side in a circuit where there is no component - this is the CircuiTry3D standard."**
+
+**Rationale:** Educational consistency requires that all circuit layouts show components on every path. Empty sides (wires-only) create visual ambiguity and do not reflect real-world circuit design where every conductive path serves a purpose.
+
+**Standard Square Loop Layout (4 components minimum):**
+
+| Position | Component Type | Orientation | Required |
+|----------|---------------|-------------|----------|
+| LEFT | Battery | Vertical | Always |
+| TOP | Load (resistor, switch, LED, etc.) | Horizontal | Always |
+| RIGHT | Load (resistor, switch, LED, etc.) | Vertical | Always |
+| BOTTOM | Load (resistor, switch, LED, etc.) | Horizontal | Always |
+
+**Visual Reference:**
+```
+        TL ●────────[TOP]────────● TR
+           │                       │
+           │                       │
+    (+)────┤                     [RIGHT]
+   Battery │                       │
+    (−)────┤                       │
+           │                       │
+        BL ●───────[BOTTOM]──────● BR
+```
+
+**Implementation Requirements:**
+1. Series circuits MUST have exactly 4 components (battery + 3 load components)
+2. Validate component count during circuit validation
+3. Flag circuits with fewer than 3 load components as having `insufficient_components`
+4. The `getStandardPlacements()` function always returns all 3 positions (top, right, bottom)
+
+**Error Condition:** `INSUFFICIENT_COMPONENTS`
+- Severity: WARNING
+- Message: "Missing N Component(s) (No Empty Sides)"
+- Description: Identifies which sides are missing components
 
 ---
 
@@ -285,7 +323,7 @@ The circuit validator runs checks in this order:
 
 2. **Open Circuit Detection** (ERROR)
    - Battery and loads in separate connected components
-   - No closed loop for current flow
+   - No complete circuit for current flow
 
 3. **Floating Component Detection** (WARNING)
    - Components with 0 connections
@@ -299,6 +337,10 @@ The circuit validator runs checks in this order:
 
 6. **Missing Power Source** (WARNING)
    - Components present but no battery
+
+7. **Insufficient Components / No Empty Sides** (WARNING)
+   - Series circuits with fewer than 4 components (battery + 3 loads)
+   - Any side of the square loop without a component
 
 ---
 

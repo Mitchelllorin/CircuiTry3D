@@ -17,13 +17,13 @@ const LAWS = [
     title: "Kirchhoff's Voltage Law (KVL)",
     subtitle: "Voltage Rule",
     statement: "The sum of all voltage drops around any closed path equals zero.",
-    formula: "Σ V = 0 (around closed path)",
+    formula: "Σ V = 0 (around path)",
     examples: [
       "E_source = V_R1 + V_R2 + V_R3",
       "Voltage rises equal voltage drops",
       "In series: E_T = V₁ + V₂ + V₃",
     ],
-    tip: "Walk around any closed path — voltage gains equal voltage drops, summing to zero.",
+    tip: "Walk around any closed path - voltage gains equal voltage drops, summing to zero.",
   },
 ];
 

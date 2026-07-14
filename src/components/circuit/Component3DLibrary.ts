@@ -402,38 +402,40 @@ export const COMPONENT_3D_LIBRARY: Component3DGeometry[] = [
   {
     type: 'battery',
     label: 'Battery',
-    description: 'Unbranded AA alkaline cell',
+    description: 'AA-style battery cell',
     geometry: {
       shapes: [
         {
+          // Main cylindrical body (generic "black + copper top" vibe, no branding)
           type: 'cylinder',
           position: [0, 0, 0],
-          scale: [0.36, 1.7, 0.36],
-          color: '#2B2B2B',
+          rotation: [0, 0, Math.PI / 2],
+          scale: [0.32, 1.35, 0.32],
+          color: '#1A1A1A',
         },
         {
+          // Copper-ish top sleeve
           type: 'cylinder',
-          position: [0, 0.5, 0],
-          scale: [0.375, 0.6, 0.375],
-          color: '#B06A2A',
+          position: [0.58, 0, 0],
+          rotation: [0, 0, Math.PI / 2],
+          scale: [0.325, 0.34, 0.325],
+          color: '#B87333',
         },
         {
+          // Positive terminal nub
           type: 'cylinder',
-          position: [0, 0.85, 0],
-          scale: [0.38, 0.06, 0.38],
-          color: '#B9B9B9',
+          position: [0.78, 0, 0],
+          rotation: [0, 0, Math.PI / 2],
+          scale: [0.12, 0.08, 0.12],
+          color: '#D4AF37',
         },
         {
+          // Subtle mid-body band to add visual contrast
           type: 'cylinder',
-          position: [0, 0.91, 0],
-          scale: [0.12, 0.1, 0.12],
-          color: '#E0E0E0',
-        },
-        {
-          type: 'cylinder',
-          position: [0, -0.85, 0],
-          scale: [0.38, 0.06, 0.38],
-          color: '#A7A7A7',
+          position: [0.05, 0, 0],
+          rotation: [0, 0, Math.PI / 2],
+          scale: [0.322, 0.16, 0.322],
+          color: '#2C2C2C',
         },
       ],
       leads: [],
@@ -902,6 +904,38 @@ export const COMPONENT_3D_LIBRARY: Component3DGeometry[] = [
         { position: [-0.22, -0.05, 0], length: 0.35, radius: 0.03, color: '#C0C0C0' },
         { position: [0, -0.05, 0], length: 0.35, radius: 0.03, color: '#C0C0C0' },
         { position: [0.22, -0.05, 0], length: 0.35, radius: 0.03, color: '#C0C0C0' },
+      ],
+    },
+  },
+  {
+    type: 'circuit-breaker',
+    label: 'Circuit Breaker',
+    description: 'Molded-case circuit breaker with toggle actuator',
+    geometry: {
+      shapes: [
+        {
+          type: 'box',
+          position: [0, 0.35, 0],
+          scale: [0.7, 0.55, 0.4],
+          color: '#1A1A2E',
+        },
+        {
+          type: 'box',
+          position: [0, 0.72, 0],
+          scale: [0.24, 0.22, 0.2],
+          color: '#E0E0E0',
+        },
+        {
+          type: 'cylinder',
+          position: [0.2, 0.67, 0],
+          rotation: [Math.PI / 2, 0, 0],
+          scale: [0.06, 0.04, 0.06],
+          color: '#FF4444',
+        },
+      ],
+      leads: [
+        { position: [-0.2, -0.05, 0], length: 0.3, radius: 0.025, color: '#C0C0C0' },
+        { position: [0.2, -0.05, 0], length: 0.3, radius: 0.025, color: '#C0C0C0' },
       ],
     },
   },

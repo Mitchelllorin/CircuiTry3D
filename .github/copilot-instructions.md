@@ -1,5 +1,16 @@
 # CircuiTry3D - GitHub Copilot Instructions
 
+## ⚠️ Portrait-First Design Rule (MANDATORY)
+
+CircuiTry3D was **designed and built in portrait orientation**. The owner reviews and merges pull requests on a portrait-mode device. **Every pull request must target portrait as the primary viewport.**
+
+- **Canonical review viewport**: mobile portrait **412 × 915 px** (Android phone)
+- All UI layout changes must be designed and validated for portrait orientation first
+- CSS media queries should use portrait as the base case; landscape adjustments are secondary
+- Do **not** design UI primarily for landscape — landscape adaptations (handled via `orientation: landscape` media queries in `builder-ui.css`) are supplemental for Android users
+- When reporting on or demonstrating UI changes, always reference how the change looks in portrait mode
+- The PR preview workflow captures portrait screenshots (412 × 915 px) as artifacts — these are the screenshots the owner uses to evaluate changes
+
 ## Project Overview
 CircuiTry3D is a 3D, interactive, electric circuit builder that utilizes Ohm's law and visualizes current flow and behavior in an electric circuit down to the atomic level. The project creates a new way to understand abstract electrical concepts by "illuminating electricity."
 
@@ -23,7 +34,7 @@ CircuiTry3D is a 3D, interactive, electric circuit builder that utilizes Ohm's l
 │       └── ...
 ├── public/
 │   ├── landing.html       # Landing page HTML
-│   ├── legacy.html        # Main circuit builder application
+│   ├── workspace.html     # Main circuit builder application
 │   └── arena.html         # Component testing arena
 ├── index.html             # Root HTML template
 ├── vite.config.ts         # Vite configuration
@@ -61,7 +72,7 @@ CircuiTry3D is a 3D, interactive, electric circuit builder that utilizes Ohm's l
 - New pages should be added to `src/pages/`
 
 ### Key Considerations
-1. **iframe Integration**: The current implementation uses iframes to embed legacy HTML pages (landing.html, legacy.html, arena.html). Be mindful of this architecture when making changes.
+1. **iframe Integration**: The current implementation uses iframes to embed static HTML pages (landing.html, workspace.html, arena.html). Be mindful of this architecture when making changes.
 2. **Sandbox Attributes**: iframes use specific sandbox attributes (`allow-scripts allow-same-origin allow-popups`) for security. Maintain these when working with iframe components.
 3. **Routing**: The app uses React Router with the following routes:
    - `/` - Home/Landing page
@@ -91,9 +102,9 @@ CircuiTry3D is a 3D, interactive, electric circuit builder that utilizes Ohm's l
 3. If needed, create corresponding HTML in `public/`
 
 ### Modifying the Circuit Builder
-- The main circuit builder logic is in `public/legacy.html`
+- The main circuit builder logic is in `public/workspace.html`
 - React wrapper is in `src/pages/Builder.tsx`
-- Consider iframe communication patterns for React-to-legacy integration
+- Consider iframe communication patterns for React-to-workspace integration
 
 ### Styling
 - Current styling is inline or within HTML files

@@ -4,6 +4,18 @@ export type ClassStudentStatus = "invited" | "active" | "inactive";
 
 export type ClassAssignmentStatus = "draft" | "scheduled" | "open" | "closed";
 
+export type StudentAssignmentProgress = {
+  assignmentId: string;
+  status: "not_started" | "in_progress" | "completed";
+  score: number;
+  timeSpentMinutes: number;
+  attempts: number;
+  hintsUsed: number;
+  startedAt?: number;
+  completedAt?: number;
+  lastActivityAt?: number;
+};
+
 export type ClassStudent = {
   id: string;
   name: string;
@@ -11,6 +23,28 @@ export type ClassStudent = {
   status: ClassStudentStatus;
   invitedAt: number;
   lastActiveAt?: number;
+  userId?: string;
+  progress?: StudentAssignmentProgress[];
+  totalXp?: number;
+  currentStreak?: number;
+};
+
+export type ClassAssignmentSubmission = {
+  id: string;
+  assignmentId: string;
+  studentId: string;
+  studentName?: string;
+  submittedAt: number;
+  status: ClassAssignmentSubmissionStatus;
+  score?: number;
+  completionRate?: number;
+  timeMinutes?: number;
+  notes?: string;
+  artifact?: {
+    kind: "practice";
+    problemId: string;
+    worksheetComplete?: boolean;
+  };
 };
 
 export type AssignmentPerformance = {
@@ -24,6 +58,7 @@ export type AssignmentPerformance = {
 export type ClassAssignment = {
   id: string;
   title: string;
+  assignmentType?: "practice" | "circuit";
   problemId: string;
   problemTitle: string;
   problemTags: string[];
@@ -32,6 +67,11 @@ export type ClassAssignment = {
   assignedAt: number;
   status: ClassAssignmentStatus;
   notes?: string;
+  circuitTemplate?: {
+    format: "legacy-json-v2";
+    filename?: string;
+    state: unknown;
+  };
   performance: AssignmentPerformance;
 };
 
@@ -56,7 +96,28 @@ export type Classroom = {
   createdAt: number;
   students: ClassStudent[];
   assignments: ClassAssignment[];
+  submissions: ClassAssignmentSubmission[];
   analytics: ClassAnalytics;
+  sharedCircuits?: SharedCircuit[];
+  liveSession?: LiveSession;
+};
+
+export type SharedCircuit = {
+  id: string;
+  title: string;
+  circuitData: string;
+  sharedAt: number;
+  sharedBy: string;
+  notes?: string;
+};
+
+export type LiveSession = {
+  id: string;
+  startedAt: number;
+  endedAt?: number;
+  activeAssignmentId?: string;
+  participantIds: string[];
+  status: "active" | "paused" | "ended";
 };
 
 export type ClassroomDocument = {

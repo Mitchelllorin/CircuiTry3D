@@ -10,11 +10,18 @@ export type BuilderInvokeAction =
   | "toggle-polarity"
   | "cycle-layout"
   | "open-measurement-tools"
+  | "set-meter-mode"
+  | "toggle-meter-armed"
+  | "clear-meter-selection"
+  | "request-meter-state"
   | "cycle-wire-routing"
   | "set-wire-routing"
   | "toggle-grid"
   | "toggle-labels"
+  | "set-wire-type"
+  | "set-wire-library"
   | "load-preset"
+  | "load-circuit-state"
   | "generate-practice"
   | "practice-help"
   | "show-tutorial"
@@ -109,23 +116,7 @@ export type LegacyCircuitState = {
     /** null when open/infinite resistance */
     resistance: number | null;
     power: number;
-    /** Effective wire-path resistance from routed geometry + active wire profile. */
-    wirePathResistance?: number | null;
-    /** Total routed wire length currently represented by the active path model. */
-    wireLengthMeters?: number | null;
-    /** Reference length used for converting Ω/m to path resistance. */
-    wireResistanceReferenceMeters?: number | null;
-    /** Conservative wire ampacity limit (typically bundled rating). */
-    wireAmpacityLimitA?: number | null;
-    /** I / ampacity limit (1.0 = at rating). */
-    wireAmpacityUtilization?: number | null;
-    /** Wire insulation voltage rating. */
-    wireVoltageLimitV?: number | null;
-    /** E / voltage limit (1.0 = at rating). */
-    wireVoltageUtilization?: number | null;
-    /** Non-null when wire profile limits are being exceeded. */
-    wireWarning?: string | null;
-    /** True when the legacy flow engine reports a complete closed loop. */
+    /** True when the legacy flow engine reports a complete closed circuit. */
     isComplete: boolean;
     /** Diagnostic reason when incomplete (e.g. 'no-battery', 'no-wires'). */
     reason?: string;
@@ -207,7 +198,7 @@ export type ComponentAction = {
   icon: string;
   label: string;
   action: "component" | "junction";
-  builderType?: "battery" | "ac_source" | "resistor" | "capacitor" | "capacitor-ceramic" | "inductor" | "lamp" | "motor" | "speaker" | "diode" | "zener-diode" | "photodiode" | "led" | "thermistor" | "crystal" | "bjt" | "bjt-npn" | "bjt-pnp" | "darlington" | "mosfet" | "switch" | "fuse" | "potentiometer" | "opamp" | "transformer" | "ground" | "relay" | "voltage-regulator" | "flux-capacitor";
+  builderType?: "battery" | "ac_source" | "resistor" | "capacitor" | "capacitor-ceramic" | "inductor" | "lamp" | "motor" | "speaker" | "diode" | "zener-diode" | "photodiode" | "led" | "thermistor" | "crystal" | "bjt" | "bjt-npn" | "bjt-pnp" | "darlington" | "mosfet" | "switch" | "fuse" | "potentiometer" | "opamp" | "transformer" | "ground" | "relay" | "voltage-regulator" | "circuit-breaker";
   description?: string;
   /** Extended metadata for scalable component integration */
   metadata?: ComponentMetadata;
@@ -221,23 +212,7 @@ export type ComponentAction = {
 
 export type BuilderToolId = "select" | "wire" | "measure" | "junction";
 
-export type WorkspaceMode =
-  | "build"
-  | "practice"
-  | "troubleshoot"
-  | "arena"
-  | "help"
-  | "wire-guide"
-  | "arcade"
-  | "classroom"
-  | "community"
-  | "account"
-  | "pricing"
-  | "textbook"
-  | "gallery"
-  | "settings";
-
-export type GuideWorkflowId = "tutorial" | "wire-guide";
+export type WorkspaceMode = "build" | "practice" | "troubleshoot" | "arena" | "help";
 
 export type LegacyModeState = {
   isWireMode: boolean;
@@ -255,6 +230,23 @@ export type LegacyModeState = {
   gridHue: number;
 };
 
+export type MeterMode = "voltage" | "current" | "resistance" | "scope";
+
+export type LegacyMeterState = {
+  mode: MeterMode;
+  armed: boolean;
+  instructions: string;
+  probeA: string;
+  probeB: string;
+  reading: string;
+  subreading?: string;
+  scope?: {
+    readout: string;
+    buffer: number[];
+    active: boolean;
+  };
+};
+
 export type QuickAction = {
   id: string;
   label: string;
@@ -263,6 +255,8 @@ export type QuickAction = {
   action: BuilderInvokeAction;
   data?: Record<string, unknown>;
   tool?: BuilderToolId;
+  icon?: string;
+  color?: string;
 };
 
 export type HelpSection = {
@@ -279,11 +273,12 @@ export type HelpLegendItem = {
 
 export type HelpModalView =
   | "overview"
-  | "tutorial"
+  | "getting-started"
   | "wire-guide"
   | "schematic"
-  | "practice"
   | "shortcuts"
+  | "troubleshooting"
+  | "faq"
   | "about";
 
 export type HelpEntry = {
@@ -299,6 +294,8 @@ export type PanelAction = {
   description: string;
   action: BuilderInvokeAction;
   data?: Record<string, unknown>;
+  icon?: string;
+  color?: string;
 };
 
 export type SettingsItem = {

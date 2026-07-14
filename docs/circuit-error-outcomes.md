@@ -11,7 +11,7 @@ This project uses `src/sim/circuitValidator.ts` to classify "incorrect build" si
 ### Core rules
 
 - **Open circuit (`open_circuit`)**
-  - **Meaning**: There is no complete conductive loop from the source through the circuit and back.
+  - **Meaning**: There is no complete conductive path from the source through the circuit and back.
   - **Outcome**: No sustained current flow; current animation stays off.
   - **UI/animation**: Highlight the affected elements (typically the battery + a load). Builder view may lightly pulse affected parts.
 

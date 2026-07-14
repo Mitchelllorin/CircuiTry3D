@@ -575,17 +575,60 @@ export default function RetroCircuitMaze() {
       <p className="retro-maze-message">{mazeState.message}</p>
 
       <div className="retro-maze-controls">
-        <ArcadeController
-          onDirection={queueDirection}
-          onStart={mazeState.status === "running" ? undefined : handleStartOrRestart}
-          onSelect={handleResetBoard}
-          onA={mazeState.status === "running" ? undefined : handleStartOrRestart}
-          onB={handleResetBoard}
-        />
+        <div className="retro-maze-primary-actions">
+          <button
+            type="button"
+            onClick={handleStartOrRestart}
+            disabled={mazeState.status === "running"}
+          >
+            {primaryActionLabel}
+          </button>
+          <button type="button" className="ghost" onClick={handleResetBoard}>
+            Reset Board
+          </button>
+        </div>
+
+        <div className="retro-dpad" role="group" aria-label="D-pad controller">
+          <button
+            type="button"
+            className="retro-dpad-button is-up"
+            onClick={() => queueDirection("up")}
+            aria-label="Move up"
+          >
+            <span aria-hidden="true">▲</span>
+          </button>
+          <button
+            type="button"
+            className="retro-dpad-button is-left"
+            onClick={() => queueDirection("left")}
+            aria-label="Move left"
+          >
+            <span aria-hidden="true">◀</span>
+          </button>
+          <div className="retro-dpad-center" aria-hidden="true">
+            <span>C</span>
+          </div>
+          <button
+            type="button"
+            className="retro-dpad-button is-right"
+            onClick={() => queueDirection("right")}
+            aria-label="Move right"
+          >
+            <span aria-hidden="true">▶</span>
+          </button>
+          <button
+            type="button"
+            className="retro-dpad-button is-down"
+            onClick={() => queueDirection("down")}
+            aria-label="Move down"
+          >
+            <span aria-hidden="true">▼</span>
+          </button>
+        </div>
       </div>
 
       <p className="retro-maze-help">
-        Keyboard controls: Arrow keys or WASD to move, Enter to start.
+        Controls: Arrow keys or WASD, or tap the D-pad on touch screens.
       </p>
     </section>
   );

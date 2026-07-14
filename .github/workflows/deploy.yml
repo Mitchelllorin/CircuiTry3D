@@ -1,26 +1,24 @@
-# Deploy CircuiTry3D to GitHub Pages on every push to main.
-# The live demo URL is: https://mitchelllorin.github.io/CircuiTry3D/
-#
-# One-time setup (repo owner):
-#   Settings → Pages → Source: "GitHub Actions"
-
 name: Deploy to GitHub Pages
+
+# Runs on every push to main (including after a PR is merged) and can also
+# be triggered manually from the Actions tab.
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
   workflow_dispatch:
+
+# Allow one concurrent production deployment; queue any new run instead of
+# cancelling an in-progress deploy.
+concurrency:
+  group: pages-production
+  cancel-in-progress: false
 
 permissions:
   contents: read
   pages: write
   id-token: write
-
-# Only one deployment runs at a time; cancel any queued/in-progress run so the
-# latest commit is always what ends up live.
-concurrency:
-  group: pages
-  cancel-in-progress: true
 
 jobs:
   build:
@@ -45,17 +43,11 @@ jobs:
 
       - name: Build
         run: npm run build
-        env:
-          # GitHub Pages serves this repo under /CircuiTry3D/ — this matches
-          # the default base path already set in vite.config.ts.
-          VITE_BASE_PATH: /CircuiTry3D/
-          VITE_DEMO_MODE: 'true'
-          VITE_PAYMENT_URL: 'https://play.google.com/store/apps/details?id=com.circuitry3d.app'
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: dist
+          path: dist/
 
   deploy:
     name: Deploy
@@ -69,4 +61,3 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
-

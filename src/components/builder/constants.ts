@@ -47,6 +47,7 @@ export const SCHEMATIC_SYMBOLS = {
   BJT_PNP: "ANSI_BJT_PNP",
   MOSFET: "ANSI_MOSFET",
   SWITCH: "ANSI_SWITCH",
+  PUSH_BUTTON: "ANSI_PUSH_BUTTON",
   FUSE: "ANSI_FUSE",
   POTENTIOMETER: "ANSI_POTENTIOMETER",
   LAMP: "ANSI_LAMP",
@@ -60,7 +61,7 @@ export const SCHEMATIC_SYMBOLS = {
   JUNCTION: "ANSI_JUNCTION",
   RELAY: "ANSI_RELAY",
   VOLTAGE_REGULATOR: "ANSI_VOLTAGE_REGULATOR",
-  FLUX_CAPACITOR: "ANSI_FLUX_CAPACITOR",
+  CIRCUIT_BREAKER: "ANSI_CIRCUIT_BREAKER",
 } as const;
 
 export const COMPONENT_ACTIONS: ComponentAction[] = [
@@ -391,6 +392,23 @@ export const COMPONENT_ACTIONS: ComponentAction[] = [
     },
   },
   {
+    id: "button",
+    icon: "─(○)─",
+    label: "Push Button",
+    action: "component",
+    builderType: "button",
+    description: "Push Button - momentary switch, current flows only while held",
+    metadata: {
+      schematicSymbol: SCHEMATIC_SYMBOLS.PUSH_BUTTON,
+      symbolText: "─(○)─",
+      symbolDesc: "N.O.",
+      symbolUnit: "momentary",
+      symbolRef: "PB1",
+      category: "electromechanical",
+      educationalTags: ["momentary", "normally-open", "control", "closed-circuit"],
+    },
+  },
+  {
     id: "fuse",
     icon: "─◇─",
     label: "Fuse",
@@ -510,6 +528,57 @@ export const COMPONENT_ACTIONS: ComponentAction[] = [
     },
   },
   {
+    id: "relay",
+    icon: "─[K]─",
+    label: "Relay",
+    action: "component",
+    builderType: "relay",
+    description: "Relay - coil-driven switch for isolating and controlling loads",
+    metadata: {
+      schematicSymbol: SCHEMATIC_SYMBOLS.RELAY,
+      symbolText: "─[K]─",
+      symbolDesc: "Coil",
+      symbolUnit: "A",
+      symbolRef: "K1",
+      category: "electromechanical",
+      educationalTags: ["isolation", "switching", "coil-driver"],
+    },
+  },
+  {
+    id: "voltage-regulator",
+    icon: "─[VR]─",
+    label: "Voltage Regulator",
+    action: "component",
+    builderType: "voltage-regulator",
+    description: "Voltage regulator - stable output voltage regardless of input variation",
+    metadata: {
+      schematicSymbol: SCHEMATIC_SYMBOLS.VOLTAGE_REGULATOR,
+      symbolText: "─[VR]─",
+      symbolDesc: "Vout",
+      symbolUnit: "V",
+      symbolRef: "VR1",
+      category: "power",
+      educationalTags: ["regulation", "power-supply", "linear-regulator"],
+    },
+  },
+  {
+    id: "circuit-breaker",
+    icon: "─/CB─",
+    label: "Circuit Breaker",
+    action: "component",
+    builderType: "circuit-breaker",
+    description: "Circuit breaker - resettable overcurrent protection device",
+    metadata: {
+      schematicSymbol: SCHEMATIC_SYMBOLS.CIRCUIT_BREAKER,
+      symbolText: "─/CB─",
+      symbolDesc: "OCP",
+      symbolUnit: "A",
+      symbolRef: "CB1",
+      category: "electromechanical",
+      educationalTags: ["protection", "safety", "resettable", "overcurrent"],
+    },
+  },
+  {
     id: "ground",
     icon: "─┴─",
     label: "Ground",
@@ -527,42 +596,8 @@ export const COMPONENT_ACTIONS: ComponentAction[] = [
     },
   },
   {
-    id: "relay",
-    icon: "─[⌁]─",
-    label: "Relay",
-    action: "component",
-    builderType: "relay",
-    description: "Electromagnetic switch — coil energizes to open or close contacts",
-    metadata: {
-      schematicSymbol: SCHEMATIC_SYMBOLS.RELAY,
-      symbolText: "─[⌁]─",
-      symbolDesc: "SPDT",
-      symbolUnit: "V",
-      symbolRef: "K1",
-      category: "electromechanical",
-      educationalTags: ["switch", "coil", "isolation", "electromagnetic"],
-    },
-  },
-  {
-    id: "voltage-regulator",
-    icon: "─[REG]─",
-    label: "Voltage Reg.",
-    action: "component",
-    builderType: "voltage-regulator",
-    description: "Three-terminal IC regulator — fixed output voltage from varying input",
-    metadata: {
-      schematicSymbol: SCHEMATIC_SYMBOLS.VOLTAGE_REGULATOR,
-      symbolText: "─[REG]─",
-      symbolDesc: "Vout",
-      symbolUnit: "V",
-      symbolRef: "U1",
-      category: "integrated",
-      educationalTags: ["regulation", "power-supply", "ldo", "linear"],
-    },
-  },
-  {
     id: "junction",
-    icon: "─●─",
+    icon: "J",
     label: "Junction",
     action: "junction",
     description: "Junction ─●─ — Drop anywhere on a wire to branch it. Essential for parallel circuits. Press J to add. (KCL: ΣI_in = ΣI_out)",
@@ -617,6 +652,8 @@ export const QUICK_ACTIONS: QuickAction[] = [
     action: "set-tool",
     data: { tool: "measure" },
     tool: "measure",
+    icon: "📐",
+    color: "#bb88ff",
   },
   {
     id: "clear",
@@ -624,6 +661,8 @@ export const QUICK_ACTIONS: QuickAction[] = [
     description: "Remove all components, wires, and analysis data",
     kind: "action",
     action: "clear-workspace",
+    icon: "🗑",
+    color: "#ff6644",
   },
   {
     id: "simulate",
@@ -631,6 +670,8 @@ export const QUICK_ACTIONS: QuickAction[] = [
     description: "Preview circuit behaviour",
     kind: "action",
     action: "run-simulation",
+    icon: "⚡",
+    color: "#00ff88",
   },
 ];
 
@@ -639,33 +680,42 @@ export const WIRE_TOOL_ACTIONS: PanelAction[] = [
     id: "wire-mode",
     label: "Wire Mode",
     description:
-      "Switch into wiring mode to pick freeform, Manhattan (90-deg), square outside, offset, arc, simple, perimeter, A* auto-routing, diagonal (45°), stepped (staircase), or S-Curve paths.",
+      "Switch into wiring mode to pick freeform, Manhattan (90-deg), simple, perimeter, or A* auto-routing paths.",
     action: "toggle-wire-mode",
+    icon: "~",
+    color: "#44aaff",
   },
   {
     id: "cycle-routing",
     label: "Cycle Wire Routing",
-    description:
-      "Switch between freeform, Manhattan 90-deg, square outside, offset, arc, simple, perimeter, A*, diagonal, stepped, and S-Curve routing modes.",
+    description: "Switch between freeform, Manhattan 90-deg, simple, perimeter, and A* routing modes.",
     action: "cycle-wire-routing",
+    icon: "🔄",
+    color: "#00ddb8",
   },
   {
     id: "rotate-mode",
     label: "Rotate Mode",
     description: "Rotate the active component to align with your build.",
     action: "toggle-rotate-mode",
+    icon: "↻",
+    color: "#dd88ff",
   },
   {
     id: "junction",
     label: "Add Junction",
     description: "Junction ─●─ — Drop anywhere on a wire to branch it. Essential for parallel circuits. Press J to add. (KCL: ΣI_in = ΣI_out)",
     action: "add-junction",
+    icon: "●",
+    color: "#ffcc44",
   },
   {
     id: "auto-arrange",
     label: "Auto Arrange",
     description: "Let CircuiTry tidy the layout while preserving connections.",
     action: "auto-arrange",
+    icon: "⊞",
+    color: "#6699ff",
   },
 ];
 
@@ -828,9 +878,9 @@ export const PRACTICE_ACTIONS: PanelAction[] = [
   },
   {
     id: "open-arena",
-    label: "Component Arena Sync",
+    label: "Component Arena",
     description:
-      "Export the active build and open the Component Arena for testing.",
+      "Open the Component Arena to test and compare components from this circuit.",
     action: "open-arena",
   },
 ];
@@ -854,28 +904,49 @@ export const HELP_ENTRIES: HelpEntry[] = [
     id: "wire-guide",
     label: "W.I.R.E. Guide",
     description:
-      "Break down Watts, Current, Resistance, and Voltage in detail.",
+      "Understand Watts, Current, Resistance, and Voltage fundamentals.",
     view: "wire-guide",
   },
   {
     id: "shortcuts",
     label: "Keyboard Shortcuts",
     description:
-      "Look up every keyboard, mouse, and touch shortcut in one place.",
+      "Apply professional circuit layout and wiring conventions.",
+    view: "schematic",
+  },
+  {
+    id: "shortcuts",
+    label: "Keyboard & Gestures",
+    description:
+      "Complete controls reference for desktop and mobile.",
     view: "shortcuts",
+  },
+  {
+    id: "troubleshooting",
+    label: "Troubleshooting",
+    description:
+      "Solutions to common issues and problems.",
+    view: "troubleshooting",
+  },
+  {
+    id: "faq",
+    label: "FAQ",
+    description:
+      "Frequently asked questions about CircuiTry3D.",
+    view: "faq",
   },
   {
     id: "about",
     label: "About CircuiTry3D",
     description:
-      "Learn what is new in v2.5 and how the simulator supports teaching.",
+      "Version information, features, and support resources.",
     view: "about",
   },
   {
     id: "help-center",
-    label: "Help Center",
+    label: "Help Overview",
     description:
-      "Open quick-start tips, navigation help, and the W.I.R.E. legend.",
+      "Return to the main Help Center overview.",
     view: "overview",
   },
 ];

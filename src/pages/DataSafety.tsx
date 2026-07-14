@@ -1,5 +1,4 @@
 import { Link } from "react-router-dom";
-import { PLAY_STORE_URL } from "../constants/urls";
 import "../styles/legal.css";
 
 type DataRow = {

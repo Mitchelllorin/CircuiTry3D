@@ -157,7 +157,7 @@ const CIRCUIT_TIPS_FACTS: TipOrFact[] = [
   {
     id: "trick-3",
     kind: "trick",
-    text: "Trick: Label each node with its voltage before writing any equations — it prevents sign errors in KVL equations.",
+    text: "Trick: Label each node with its voltage before writing any equations — it prevents sign errors in KVL paths.",
   },
   {
     id: "trick-4",

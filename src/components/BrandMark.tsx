@@ -1,6 +1,5 @@
-// app-icon-no-text.svg is the app icon design without the CT3D text overlay,
-// shared across the landing page, in-app branding, and feature graphic.
-const circuitLogo = "/app-icon-no-text.svg";
+import circuitLogo from "../assets/circuit-logo.svg";
+import { APP_BRAND_NAME } from "../constants/branding";
 
 type BrandMarkSize = "xs" | "sm" | "md" | "lg" | "xl";
 
@@ -26,7 +25,7 @@ export default function BrandMark({
   withWordmark = false,
   className,
   imgClassName,
-  label = "CircuiTry3D",
+  label = APP_BRAND_NAME,
   decorative = false,
 }: BrandMarkProps) {
   const pixelSize = SIZE_MAP[size] ?? SIZE_MAP.md;

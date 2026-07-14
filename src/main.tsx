@@ -1,6 +1,7 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
 import { HashRouter } from "react-router-dom";
+import "./styles/brand.css";
 import App from "./routes/App";
 import { AuthProvider } from "./context/AuthContext";
 import { EngagementProvider } from "./context/EngagementContext";
@@ -9,10 +10,8 @@ import { CircuitStorageProvider } from "./context/CircuitStorageContext";
 import { GamificationProvider } from "./context/GamificationContext";
 import { initializeAndroid, registerServiceWorker } from "./hooks/capacitor/useAndroidInit";
 import { ClassroomProvider } from "./context/ClassroomContext";
-import { initBilling, restorePurchases, restoreProPurchases, restorePremiumPurchases, isAndroidApp } from "./utils/playStoreBilling";
-import { setupAndroidSimBootstrap } from "./sim/androidBootstrap";
-// Initialize i18n before rendering so all components can use translations.
-import "./i18n";
+import { DemoModeProvider } from "./context/DemoModeContext";
+
 function renderFatalOverlay(payload: {
   title: string;
   message: string;
@@ -82,6 +81,12 @@ window.addEventListener("error", (event) => {
   }
 
   const message = event.error instanceof Error ? event.error.message : event.message;
+  if (
+    message?.includes("ResizeObserver loop limit exceeded") ||
+    message?.includes("ResizeObserver loop completed with undelivered notifications")
+  ) {
+    return;
+  }
   const stack = event.error instanceof Error ? event.error.stack : undefined;
 
   // If React has already mounted (root has children), do not destroy the app — the
@@ -163,23 +168,13 @@ try {
   }
 
   createRoot(container).render(
-    <React.StrictMode>
-      <HashRouter>
-        <AuthProvider>
-          <EngagementProvider>
-            <GalleryProvider>
-              <CircuitStorageProvider>
-                <GamificationProvider>
-                  <ClassroomProvider>
-                    <App />
-                  </ClassroomProvider>
-                </GamificationProvider>
-              </CircuitStorageProvider>
-            </GalleryProvider>
-          </EngagementProvider>
-        </AuthProvider>
-      </HashRouter>
-    </React.StrictMode>
+    <HashRouter>
+      <AuthProvider>
+        <EngagementProvider>
+          <App />
+        </EngagementProvider>
+      </AuthProvider>
+    </HashRouter>
   );
 
   // Signal the inline fallback script (index.html) that the module bundle

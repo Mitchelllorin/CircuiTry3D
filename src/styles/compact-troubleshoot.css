@@ -38,6 +38,10 @@
   font-size: 15px;
 }
 
+.compact-troubleshoot-brand .circuitry-brand-signature {
+  gap: 6px;
+}
+
 .compact-troubleshoot-toggle {
   display: inline-flex;
   align-items: center;
@@ -61,32 +65,6 @@
 
 .compact-troubleshoot-toggle .toggle-icon {
   font-size: 12px;
-}
-
-.compact-troubleshoot-header-actions {
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.compact-troubleshoot-exit-btn {
-  border: 1px solid rgba(255, 190, 130, 0.45);
-  border-radius: 8px;
-  background: rgba(255, 140, 70, 0.18);
-  color: rgba(255, 225, 200, 0.95);
-  font-size: 12px;
-  font-weight: 600;
-  padding: 6px 12px;
-  cursor: pointer;
-  transition: background 0.2s ease, border-color 0.2s ease;
-}
-
-.compact-troubleshoot-exit-btn:hover,
-.compact-troubleshoot-exit-btn:focus-visible {
-  background: rgba(255, 140, 70, 0.3);
-  border-color: rgba(255, 200, 150, 0.72);
-  outline: none;
 }
 
 .compact-troubleshoot-body {

@@ -1,217 +1,329 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
   <rect width="512" height="512" fill="#0f172a"/>
-  <svg x="16" y="16" width="481" height="481" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <svg x="16" y="16" width="481" height="481" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
     <defs>
-    <!-- ── Background gradient ── -->
-    <radialGradient id="bg" cx="50%" cy="50%" r="64%">
-      <stop offset="0%" stop-color="#1e293b"/>
-      <stop offset="100%" stop-color="#0f172a"/>
-    </radialGradient>
-
-    <!-- ── Workspace grid overlay ──
-         Mirrors the Three.js grid in the main circuit builder:
-           Fine  grid : 0x0a0a1a (#0a0a1a) — fineGrid   lines, 16 px cells
-           Coarse grid: 0x111122 (#111122) — gridHelper  lines, 32 px cells
-    -->
-    <pattern id="grid-fine" width="16" height="16" patternUnits="userSpaceOnUse">
-      <path d="M 16 0 L 0 0 0 16" fill="none" stroke="#0a0a1a" stroke-width="0.5"/>
-    </pattern>
-    <pattern id="grid-coarse" width="32" height="32" patternUnits="userSpaceOnUse">
-      <rect width="32" height="32" fill="url(#grid-fine)"/>
-      <path d="M 32 0 L 0 0 0 32" fill="none" stroke="#111122" stroke-width="1"/>
-    </pattern>
-
-    <!-- ── Circuit glow (applied to wires, resistors, battery, dots) ── -->
-    <!-- filterUnits="userSpaceOnUse" so it covers the whole 512×512 canvas,
-         including peaks that extend outside the circuit rectangle          -->
-    <filter id="circuitGlow" x="0" y="0" width="512" height="512"
-            filterUnits="userSpaceOnUse">
-      <feGaussianBlur stdDeviation="4" result="blur"/>
+    <linearGradient id="wireGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#88ccff;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#00ff88;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="componentGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#ff8844;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#ff8844;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="appTextGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#88ccff;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#00ff88;stop-opacity:1" />
+    </linearGradient>
+    <filter id="appGlow">
+      <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
       <feMerge>
-        <feMergeNode in="blur"/>
+        <feMergeNode in="coloredBlur"/>
         <feMergeNode in="SourceGraphic"/>
       </feMerge>
     </filter>
 
-    <!-- ── Arrowhead for 5 A current-direction corner indicators ── -->
-    <marker id="arrowCurrent"
-            markerWidth="10" markerHeight="8" refX="9" refY="4"
-            orient="auto" markerUnits="userSpaceOnUse">
-      <path d="M0,0 L0,8 L10,4 Z" fill="#ffffff" opacity="0.9"/>
-    </marker>
+    <!-- Photon glow + soft comet tail -->
+    <filter id="photonGlow" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur stdDeviation="3.0" result="blur"/>
+      <feColorMatrix
+        in="blur"
+        type="matrix"
+        values="
+          1 0 0 0 0
+          0 1 0 0 0
+          0 0 1 0 0
+          0 0 0 16 -3.5"
+        result="glow"
+      />
+      <feMerge>
+        <feMergeNode in="glow"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
 
+    <radialGradient id="photonFill" cx="35%" cy="35%" r="80%">
+      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:1" />
+      <stop offset="46%" style="stop-color:#e8fffb;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#00ff88;stop-opacity:1" />
+    </radialGradient>
+
+    <!-- Circuit flow path including resistor zigzags -->
+    <path
+      id="photonPath"
+      d="M 55 150
+         L 55 50
+         L 90 50
+         L 100 50
+         L 108 50
+         L 113 40
+         L 123 60
+         L 133 40
+         L 143 60
+         L 148 50
+         L 160 50
+         L 205 50
+         L 205 75
+         L 205 83
+         L 215 88
+         L 195 98
+         L 215 108
+         L 195 118
+         L 205 123
+         L 205 135
+         L 205 150
+         L 160 150
+         L 155 150
+         L 103 150
+         L 108 140
+         L 118 160
+         L 128 140
+         L 138 160
+         L 143 150
+         L 95 150
+         L 55 150"
+    />
   </defs>
 
-  <!-- ── Background ── -->
-  <rect width="512" height="512" fill="url(#bg)"/>
+  <!-- Background -->
+  <rect width="300" height="300" fill="#0f172a"/>
 
-  <!-- ── Workspace grid overlay (drawn above background, below all circuit elements) ── -->
-  <rect width="512" height="512" fill="url(#grid-coarse)"/>
+    <line x1="55" y1="115" x2="55" y2="95" stroke="url(#wireGradient)" stroke-width="3.5" />
 
-  <!-- ════════════════════════════════════════════════════════════
-       WIRES — green #00ff88, stroke-width 6, matching circuit-logo.svg
-       ════════════════════════════════════════════════════════════ -->
+    <!-- Battery symbol and polarity markers are brand-critical; do not remove without explicit instruction. -->
+    <g transform="translate(55, 80)" data-battery="true" data-polarity="true">
+      <line x1="-18" y1="-12" x2="18" y2="-12" stroke="url(#componentGradient)" stroke-width="4" />
+      <line x1="-12" y1="12" x2="12" y2="12" stroke="url(#componentGradient)" stroke-width="2.8" />
+      <g stroke="#00ff88" stroke-width="2.4" stroke-linecap="round">
+        <line x1="-36" y1="-12" x2="-20" y2="-12" />
+        <line x1="-28" y1="-20" x2="-28" y2="-4" />
+      </g>
+      <g stroke="#88ccff" stroke-width="2.4" stroke-linecap="round">
+        <line x1="-36" y1="12" x2="-20" y2="12" />
+      </g>
+    </g>
 
-  <!-- TOP: left wire lead (TL corner → R1 body start) -->
-  <line x1="56" y1="98" x2="152" y2="98"
-        stroke="#00ff88" stroke-width="6" stroke-linecap="round"
-        filter="url(#circuitGlow)"/>
-  <!-- TOP: right wire lead (R1 body end → TR corner) -->
-  <line x1="360" y1="98" x2="456" y2="98"
-        stroke="#00ff88" stroke-width="6" stroke-linecap="round"
-        filter="url(#circuitGlow)"/>
+    <!-- Battery schematic symbol -->
+    <g>
+      <line x1="44" y1="56" x2="66" y2="56" stroke="#ff2b2b" stroke-width="4" stroke-linecap="square" />
+      <line x1="50" y1="74" x2="60" y2="74" stroke="#ff2b2b" stroke-width="2.2" stroke-linecap="square" />
+    </g>
+    <text x="40" y="54" font-size="10" fill="#ff6b6b" font-weight="bold" text-anchor="middle">+</text>
+    <text x="34" y="67" font-size="10" fill="#88ccff" font-weight="bold" text-anchor="middle">9V</text>
+    <text x="40" y="80" font-size="10" fill="#ff6b6b" font-weight="bold" text-anchor="middle">-</text>
 
-  <!-- RIGHT: top wire lead (TR corner → R2 body start) -->
-  <line x1="456" y1="98" x2="456" y2="182"
-        stroke="#00ff88" stroke-width="6" stroke-linecap="round"
-        filter="url(#circuitGlow)"/>
-  <!-- RIGHT: bottom wire lead (R2 body end → BR corner) -->
-  <line x1="456" y1="330" x2="456" y2="414"
-        stroke="#00ff88" stroke-width="6" stroke-linecap="round"
-        filter="url(#circuitGlow)"/>
+    <!-- Component labels -->
+    <g font-family="system-ui, -apple-system, sans-serif" font-size="9" fill="#88ccff" text-anchor="middle" font-weight="600" stroke="#050b1f" stroke-width="2" paint-order="stroke fill">
+      <text x="146" y="9">R₁ = 3 kΩ</text>
+      <text x="229" y="77" text-anchor="end">R₂ =</text>
+      <text x="140" y="129">R₃ = 5 kΩ</text>
+    </g>
+    <text x="235" y="77" font-family="system-ui, -apple-system, sans-serif" font-size="12" fill="#ff2b2b" font-weight="800" text-anchor="middle" stroke="#050b1f" stroke-width="1.5" paint-order="stroke fill">?</text>
 
-  <!-- BOTTOM: right wire lead (BR corner → R3 body start) -->
-  <line x1="456" y1="414" x2="360" y2="414"
-        stroke="#00ff88" stroke-width="6" stroke-linecap="round"
-        filter="url(#circuitGlow)"/>
-  <!-- BOTTOM: left wire lead (R3 body end → BL corner) -->
-  <line x1="152" y1="414" x2="56" y2="414"
-        stroke="#00ff88" stroke-width="6" stroke-linecap="round"
-        filter="url(#circuitGlow)"/>
+    <!-- Animated photons -->
+    <g aria-hidden="true" filter="url(#appPhotonGlow)">
+      <g>
+        <circle r="4.5" fill="url(#appPhotonFill)" opacity="1">
+          <animateMotion dur="3.4s" repeatCount="indefinite" rotate="auto">
+            <mpath href="#appPhotonPath" xlink:href="#appPhotonPath" />
+          </animateMotion>
+        </circle>
+        <circle r="3.6" fill="url(#appPhotonFill)" opacity="0.55">
+          <animateMotion dur="3.4s" repeatCount="indefinite" rotate="auto" begin="-0.14s">
+            <mpath href="#appPhotonPath" xlink:href="#appPhotonPath" />
+          </animateMotion>
+        </circle>
+        <circle r="2.9" fill="url(#appPhotonFill)" opacity="0.32">
+          <animateMotion dur="3.4s" repeatCount="indefinite" rotate="auto" begin="-0.28s">
+            <mpath href="#appPhotonPath" xlink:href="#appPhotonPath" />
+          </animateMotion>
+        </circle>
+        <circle r="2.3" fill="url(#appPhotonFill)" opacity="0.2">
+          <animateMotion dur="3.4s" repeatCount="indefinite" rotate="auto" begin="-0.42s">
+            <mpath href="#appPhotonPath" xlink:href="#appPhotonPath" />
+          </animateMotion>
+        </circle>
+        <circle r="1.9" fill="url(#appPhotonFill)" opacity="0.12">
+          <animateMotion dur="3.4s" repeatCount="indefinite" rotate="auto" begin="-0.56s">
+            <mpath href="#appPhotonPath" xlink:href="#appPhotonPath" />
+          </animateMotion>
+        </circle>
+        <circle r="1.5" fill="url(#appPhotonFill)" opacity="0.08">
+          <animateMotion dur="3.4s" repeatCount="indefinite" rotate="auto" begin="-0.70s">
+            <mpath href="#appPhotonPath" xlink:href="#appPhotonPath" />
+          </animateMotion>
+        </circle>
+        <circle r="1.2" fill="url(#appPhotonFill)" opacity="0.06">
+          <animateMotion dur="3.4s" repeatCount="indefinite" rotate="auto" begin="-0.84s">
+            <mpath href="#appPhotonPath" xlink:href="#appPhotonPath" />
+          </animateMotion>
+        </circle>
+      </g>
+      <g>
+        <circle r="4.5" fill="url(#appPhotonFill)" opacity="1">
+          <animateMotion dur="3.4s" repeatCount="indefinite" rotate="auto" begin="-1.7s">
+            <mpath href="#appPhotonPath" xlink:href="#appPhotonPath" />
+          </animateMotion>
+        </circle>
+        <circle r="3.6" fill="url(#appPhotonFill)" opacity="0.55">
+          <animateMotion dur="3.4s" repeatCount="indefinite" rotate="auto" begin="-1.84s">
+            <mpath href="#appPhotonPath" xlink:href="#appPhotonPath" />
+          </animateMotion>
+        </circle>
+        <circle r="2.9" fill="url(#appPhotonFill)" opacity="0.32">
+          <animateMotion dur="3.4s" repeatCount="indefinite" rotate="auto" begin="-1.98s">
+            <mpath href="#appPhotonPath" xlink:href="#appPhotonPath" />
+          </animateMotion>
+        </circle>
+        <circle r="2.3" fill="url(#appPhotonFill)" opacity="0.2">
+          <animateMotion dur="3.4s" repeatCount="indefinite" rotate="auto" begin="-2.12s">
+            <mpath href="#appPhotonPath" xlink:href="#appPhotonPath" />
+          </animateMotion>
+        </circle>
+        <circle r="1.9" fill="url(#appPhotonFill)" opacity="0.12">
+          <animateMotion dur="3.4s" repeatCount="indefinite" rotate="auto" begin="-2.26s">
+            <mpath href="#appPhotonPath" xlink:href="#appPhotonPath" />
+          </animateMotion>
+        </circle>
+        <circle r="1.5" fill="url(#appPhotonFill)" opacity="0.08">
+          <animateMotion dur="3.4s" repeatCount="indefinite" rotate="auto" begin="-2.40s">
+            <mpath href="#appPhotonPath" xlink:href="#appPhotonPath" />
+          </animateMotion>
+        </circle>
+        <circle r="1.2" fill="url(#appPhotonFill)" opacity="0.06">
+          <animateMotion dur="3.4s" repeatCount="indefinite" rotate="auto" begin="-2.54s">
+            <mpath href="#appPhotonPath" xlink:href="#appPhotonPath" />
+          </animateMotion>
+        </circle>
+      </g>
+    </g>
+  </svg>
 
-  <!-- LEFT: upper wire (TL corner → battery + plate) -->
-  <line x1="56" y1="98" x2="56" y2="244"
-        stroke="#00ff88" stroke-width="6" stroke-linecap="round"
-        filter="url(#circuitGlow)"/>
-  <!-- LEFT: lower wire (battery − plate → BL corner) -->
-  <line x1="56" y1="268" x2="56" y2="414"
-        stroke="#00ff88" stroke-width="6" stroke-linecap="round"
-        filter="url(#circuitGlow)"/>
+  <!-- Divider line -->
+  <line x1="30" y1="166" x2="270" y2="166" stroke="#1e293b" stroke-width="1"/>
 
-  <!-- ════════════════════════════════════════════════════════════
-       RESISTORS — orange #ff8844, same ANSI 3-peak zigzag as circuit-logo.svg
-       Zigzag source: "-30,0 -22,0 -17,-10 -7,10 3,-10 13,10 18,0 30,0"
-       Scaled ×3.467 to span 208 px (body), amplitude ±34.7 px ≈ ±35 px
-       ════════════════════════════════════════════════════════════ -->
+  <!-- "CircuiTry3D" wordmark -->
+  <text
+    x="150"
+    y="222"
+    text-anchor="middle"
+    font-family="system-ui, -apple-system, sans-serif"
+    font-size="38"
+    font-weight="800"
+    fill="url(#appTextGradient)"
+    letter-spacing="1"
+    filter="url(#appTextGlow)"
+  >CircuiTry3D</text>
 
-  <!-- R1 — TOP horizontal, left→right, body x=152→360 at y=98
-       Scale 3.467: centre (256,98)
-       Up-peaks  y=63  (above wire, away from interior)
-       Down-peaks y=133 (below wire, into interior)     -->
-  <polyline
-    points="152,98 180,98 197,63 232,133 266,63 301,133 318,98 360,98"
-    fill="none" stroke="#ff8844" stroke-width="9"
-    stroke-linecap="round" stroke-linejoin="round"
-    filter="url(#circuitGlow)"/>
+    <g stroke="#00ff88" stroke-width="1.2" opacity="0.9">
+      <line x1="55" y1="115" x2="55" y2="95" />
+      <line x1="55" y1="65" x2="55" y2="50" />
+      <line x1="55" y1="50" x2="100" y2="50" />
+      <line x1="160" y1="50" x2="205" y2="50" />
+      <line x1="205" y1="50" x2="205" y2="75" />
+      <line x1="205" y1="135" x2="205" y2="150" />
+      <line x1="205" y1="150" x2="155" y2="150" />
+      <line x1="95" y1="150" x2="55" y2="150" />
+      <line x1="55" y1="150" x2="55" y2="115" />
+    </g>
 
-  <!-- R2 — RIGHT vertical, top→bottom, body y=182→330 at x=456
-       Same zigzag rotated 90° CW (SVG rotate(90): (x,y)→(−y,x))
-       Scale 2.467: centre (456,256)
-       Right-peaks x=481 (away from interior, outside circuit)
-       Left-peaks  x=431 (into interior)                         -->
-  <polyline
-    points="456,182 456,202 481,214 431,239 481,263 431,288 456,300 456,330"
-    fill="none" stroke="#ff8844" stroke-width="9"
-    stroke-linecap="round" stroke-linejoin="round"
-    filter="url(#circuitGlow)"/>
+    <circle cx="55" cy="50" r="3.5" fill="#00ff88" stroke="#0f172a" stroke-width="1.5" />
+    <circle cx="205" cy="50" r="3.5" fill="#00ff88" stroke="#0f172a" stroke-width="1.5" />
+    <circle cx="205" cy="150" r="3.5" fill="#00ff88" stroke="#0f172a" stroke-width="1.5" />
+    <circle cx="55" cy="150" r="3.5" fill="#00ff88" stroke="#0f172a" stroke-width="1.5" />
 
-  <!-- R3 — BOTTOM horizontal, right→left, body x=360→152 at y=414
-       Reversed zigzag (current flows right→left)
-       Down-peaks y=449 (below wire, away from interior)
-       Up-peaks   y=379 (above wire, into interior)              -->
-  <polyline
-    points="360,414 318,414 301,449 266,379 232,449 197,379 180,414 152,414"
-    fill="none" stroke="#ff8844" stroke-width="9"
-    stroke-linecap="round" stroke-linejoin="round"
-    filter="url(#circuitGlow)"/>
-
-  <!-- ════════════════════════════════════════════════════════════
-       BATTERY — red #ff2b2b on the left branch, centred at y=256
-       Positive plate (long)  at y=244  (centre−12)
-       Negative plate (short) at y=268  (centre+12)
-       ════════════════════════════════════════════════════════════ -->
-  <!-- + plate (wide) -->
-  <line x1="33" y1="244" x2="79" y2="244"
-        stroke="#ff2b2b" stroke-width="13" stroke-linecap="square"/>
-  <!-- − plate (narrow) -->
-  <line x1="43" y1="268" x2="69" y2="268"
-        stroke="#ff2b2b" stroke-width="7" stroke-linecap="square"/>
-  <!-- Polarity markers -->
-  <text x="20" y="248" text-anchor="middle"
-        font-family="sans-serif" font-size="20" font-weight="700"
-        fill="#ff6b6b">+</text>
-  <text x="20" y="274" text-anchor="middle"
-        font-family="sans-serif" font-size="20" font-weight="700"
-        fill="#ff6b6b">−</text>
-  <!-- Voltage label — inline right of − marker, red matching battery color -->
-  <text x="80" y="274" text-anchor="start"
-        font-family="system-ui, -apple-system, sans-serif" font-size="18" font-weight="700"
-        fill="#ff2b2b"
-        stroke="#050b1f" stroke-width="1.5" paint-order="stroke fill">12V</text>
-
-  <!-- ════════════════════════════════════════════════════════════
-       JUNCTION DOTS — purple #8844ff (matching the 3D app's junction sphere color 0x8844ff)
-       Large (r=9) at circuit corners; small (r=6) at component endpoints
-       stroke="#0f172a" matches circuit-logo.svg junction style
-       ════════════════════════════════════════════════════════════ -->
-  <circle cx="56"  cy="98"  r="9" fill="#8844ff" stroke="#0f172a" stroke-width="1.5" filter="url(#circuitGlow)"/>
-  <circle cx="456" cy="98"  r="9" fill="#8844ff" stroke="#0f172a" stroke-width="1.5" filter="url(#circuitGlow)"/>
-  <circle cx="456" cy="414" r="9" fill="#8844ff" stroke="#0f172a" stroke-width="1.5" filter="url(#circuitGlow)"/>
-  <circle cx="56"  cy="414" r="9" fill="#8844ff" stroke="#0f172a" stroke-width="1.5" filter="url(#circuitGlow)"/>
-
-  <circle cx="152" cy="98"  r="6" fill="#8844ff" stroke="#0f172a" stroke-width="1"   filter="url(#circuitGlow)"/>
-  <circle cx="360" cy="98"  r="6" fill="#8844ff" stroke="#0f172a" stroke-width="1"   filter="url(#circuitGlow)"/>
-  <circle cx="456" cy="182" r="6" fill="#8844ff" stroke="#0f172a" stroke-width="1"   filter="url(#circuitGlow)"/>
-  <circle cx="456" cy="330" r="6" fill="#8844ff" stroke="#0f172a" stroke-width="1"   filter="url(#circuitGlow)"/>
-  <circle cx="360" cy="414" r="6" fill="#8844ff" stroke="#0f172a" stroke-width="1"   filter="url(#circuitGlow)"/>
-  <circle cx="152" cy="414" r="6" fill="#8844ff" stroke="#0f172a" stroke-width="1"   filter="url(#circuitGlow)"/>
-
-  <!-- ════════════════════════════════════════════════════════════
-       COMPONENT LABELS — matching circuit-logo.svg label style
-       font-family / fill / stroke / paint-order identical to the wordmark logo
-       R1 above  (y=50, peaks at y=63),  R2 right  (x≈498, peaks at x=481),
-       R3 below  (y=469, peaks at y=449), red ? for R2 unknown value
-       ════════════════════════════════════════════════════════════ -->
-  <g font-family="system-ui, -apple-system, sans-serif" font-size="14"
-     fill="#88ccff" font-weight="600"
-     stroke="#050b1f" stroke-width="1.5" paint-order="stroke fill">
-    <!-- R1 — centred above top resistor -->
-    <text x="256" y="50"   text-anchor="middle">R&#x2081; = 3 k&#x03A9;</text>
-    <!-- R2 — to the right of right resistor (label ends just inside canvas) -->
-    <text x="498" y="260"  text-anchor="end">R&#x2082; =</text>
-    <!-- R3 — centred below bottom resistor -->
-    <text x="256" y="469"  text-anchor="middle">R&#x2083; = 5 k&#x03A9;</text>
+    <text x="35" y="35" font-size="8" fill="#94a3b8" font-weight="bold">1</text>
+    <text x="220" y="35" font-size="8" fill="#94a3b8" font-weight="bold">2</text>
+    <text x="220" y="165" font-size="8" fill="#94a3b8" font-weight="bold">3</text>
+    <text x="35" y="165" font-size="8" fill="#94a3b8" font-weight="bold">4</text>
   </g>
-  <!-- Unknown-value prompt for R2 (red ?, matching circuit-logo.svg) -->
-  <text x="498" y="260"
-        font-family="system-ui, -apple-system, sans-serif" font-size="18"
-        fill="#ff2b2b" font-weight="800" text-anchor="start"
-        stroke="#050b1f" stroke-width="1.5" paint-order="stroke fill">?</text>
 
-  <!-- ════════════════════════════════════════════════════════════
-       CURRENT INDICATORS — white, 5 A at TL and BR corners
-       TL: current flows ↑ along left wire then → along top wire
-       BR: current flows ↓ along right wire then ← along bottom wire
-       ════════════════════════════════════════════════════════════ -->
-  <!-- Top-left corner 5A arrow (inside circuit, near TL junction 56,98) -->
-  <path d="M 91,157 L 91,115 L 137,115"
-        fill="none" stroke="#ffffff" stroke-width="2.5"
-        stroke-linecap="round" stroke-linejoin="round"
-        marker-end="url(#arrowCurrent)"/>
-  <text x="99" y="149"
-        font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="700"
-        fill="#ffffff"
-        stroke="#050b1f" stroke-width="1.5" paint-order="stroke fill">5A</text>
+  <g font-family="system-ui, -apple-system, sans-serif" font-size="9" fill="#88ccff" text-anchor="middle" font-weight="600">
+    <text x="37" y="98">9V</text>
+    <text x="130" y="35">R₁ = 3 kΩ</text>
+    <text x="225" y="105">R₂ = 10 kΩ</text>
+    <text x="125" y="172">R₃ = 5 kΩ</text>
+  </g>
 
-  <!-- Bottom-right corner 5A arrow (inside circuit, near BR junction 456,414) -->
-  <path d="M 421,360 L 421,403 L 374,403"
-        fill="none" stroke="#ffffff" stroke-width="2.5"
-        stroke-linecap="round" stroke-linejoin="round"
-        marker-end="url(#arrowCurrent)"/>
-  <text x="381" y="382"
-        font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="700"
-        fill="#ffffff"
-        stroke="#050b1f" stroke-width="1.5" paint-order="stroke fill">5A</text>
+  <!-- Animated photons (two bright particles with comet tails) -->
+  <g aria-hidden="true" filter="url(#photonGlow)">
+    <!-- Photon A -->
+    <g>
+      <circle r="5.05" fill="url(#photonFill)" opacity="1">
+        <animateMotion dur="3.4s" repeatCount="indefinite" rotate="auto">
+          <mpath href="#photonPath" xlink:href="#photonPath" />
+        </animateMotion>
+      </circle>
+      <circle r="4.05" fill="url(#photonFill)" opacity="0.55">
+        <animateMotion dur="3.4s" repeatCount="indefinite" rotate="auto" begin="-0.14s">
+          <mpath href="#photonPath" xlink:href="#photonPath" />
+        </animateMotion>
+      </circle>
+      <circle r="3.25" fill="url(#photonFill)" opacity="0.32">
+        <animateMotion dur="3.4s" repeatCount="indefinite" rotate="auto" begin="-0.28s">
+          <mpath href="#photonPath" xlink:href="#photonPath" />
+        </animateMotion>
+      </circle>
+      <circle r="2.6" fill="url(#photonFill)" opacity="0.2">
+        <animateMotion dur="3.4s" repeatCount="indefinite" rotate="auto" begin="-0.42s">
+          <mpath href="#photonPath" xlink:href="#photonPath" />
+        </animateMotion>
+      </circle>
+      <circle r="2.1" fill="url(#photonFill)" opacity="0.12">
+        <animateMotion dur="3.4s" repeatCount="indefinite" rotate="auto" begin="-0.56s">
+          <mpath href="#photonPath" xlink:href="#photonPath" />
+        </animateMotion>
+      </circle>
+      <circle r="1.7" fill="url(#photonFill)" opacity="0.08">
+        <animateMotion dur="3.4s" repeatCount="indefinite" rotate="auto" begin="-0.70s">
+          <mpath href="#photonPath" xlink:href="#photonPath" />
+        </animateMotion>
+      </circle>
+      <circle r="1.3" fill="url(#photonFill)" opacity="0.06">
+        <animateMotion dur="3.4s" repeatCount="indefinite" rotate="auto" begin="-0.84s">
+          <mpath href="#photonPath" xlink:href="#photonPath" />
+        </animateMotion>
+      </circle>
+    </g>
+
+    <!-- Photon B (phase offset) -->
+    <g>
+      <circle r="5.05" fill="url(#photonFill)" opacity="1">
+        <animateMotion dur="3.4s" repeatCount="indefinite" rotate="auto" begin="-1.7s">
+          <mpath href="#photonPath" xlink:href="#photonPath" />
+        </animateMotion>
+      </circle>
+      <circle r="4.05" fill="url(#photonFill)" opacity="0.55">
+        <animateMotion dur="3.4s" repeatCount="indefinite" rotate="auto" begin="-1.84s">
+          <mpath href="#photonPath" xlink:href="#photonPath" />
+        </animateMotion>
+      </circle>
+      <circle r="3.25" fill="url(#photonFill)" opacity="0.32">
+        <animateMotion dur="3.4s" repeatCount="indefinite" rotate="auto" begin="-1.98s">
+          <mpath href="#photonPath" xlink:href="#photonPath" />
+        </animateMotion>
+      </circle>
+      <circle r="2.6" fill="url(#photonFill)" opacity="0.2">
+        <animateMotion dur="3.4s" repeatCount="indefinite" rotate="auto" begin="-2.12s">
+          <mpath href="#photonPath" xlink:href="#photonPath" />
+        </animateMotion>
+      </circle>
+      <circle r="2.1" fill="url(#photonFill)" opacity="0.12">
+        <animateMotion dur="3.4s" repeatCount="indefinite" rotate="auto" begin="-2.26s">
+          <mpath href="#photonPath" xlink:href="#photonPath" />
+        </animateMotion>
+      </circle>
+      <circle r="1.7" fill="url(#photonFill)" opacity="0.08">
+        <animateMotion dur="3.4s" repeatCount="indefinite" rotate="auto" begin="-2.40s">
+          <mpath href="#photonPath" xlink:href="#photonPath" />
+        </animateMotion>
+      </circle>
+      <circle r="1.3" fill="url(#photonFill)" opacity="0.06">
+        <animateMotion dur="3.4s" repeatCount="indefinite" rotate="auto" begin="-2.54s">
+          <mpath href="#photonPath" xlink:href="#photonPath" />
+        </animateMotion>
+      </circle>
+    </g>
+  </g>
   </svg>
 </svg>

@@ -1,5 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
+import BrandSignature from "../components/BrandSignature";
+import SectionWorkflowStrip, {
+  type SectionWorkflowStep,
+} from "../components/SectionWorkflowStrip";
 import { useAuth } from "../context/AuthContext";
 import { useEngagement } from "../context/EngagementContext";
 import type { FormEvent } from "react";
@@ -7,6 +11,26 @@ import "../styles/community.css";
 
 const PROFILE_COLORS = ["#6366f1", "#8b5cf6", "#ec4899", "#f97316", "#22d3ee", "#14b8a6", "#facc15", "#4ade80"];
 const DEFAULT_AVATAR_COLOR = PROFILE_COLORS[0];
+const COMMUNITY_WORKFLOW_STEPS: SectionWorkflowStep[] = [
+  {
+    id: "community-chat",
+    title: "Share updates in Lab Chat",
+    detail:
+      "Post short build notes and feedback requests to keep collaboration flowing.",
+  },
+  {
+    id: "community-gallery",
+    title: "Publish circuits for review",
+    detail:
+      "Upload circuit summaries with tags so other builders can discover and react quickly.",
+  },
+  {
+    id: "community-profile",
+    title: "Capture reputation signals",
+    detail:
+      "Maintain your profile and endorsements to track participation across the community workflow.",
+  },
+];
 
 const getInitials = (name?: string | null) => {
   if (!name) {
@@ -48,6 +72,7 @@ const formatRelativeTime = (timestamp: number) => {
 };
 
 export default function Community() {
+  const location = useLocation();
   const { currentUser, users, getUserById, updateProfile } = useAuth();
   const {
     messages,
@@ -107,6 +132,8 @@ export default function Community() {
     }
     return `${stats.averageRating.toFixed(1)} / 5`;
   }, [stats.averageRating]);
+  const accountLinkTarget =
+    location.pathname === "/app" ? "/app?section=account" : "/account";
 
   const memberDirectory = useMemo(() => {
     if (users.length === 0) {
@@ -275,6 +302,7 @@ export default function Community() {
     <div className="community-page">
       <header className="community-hero">
         <div>
+          <WordMark size="sm" decorative className="community-brand" />
           <span className="community-eyebrow">Community Hub</span>
           <h1>The lab where builders compare notes</h1>
           <p>Sync with other makers, trade circuit tips, and capture feedback from the people using your builds.</p>
@@ -304,6 +332,11 @@ export default function Community() {
           </div>
         </div>
       </header>
+
+      <SectionWorkflowStrip
+        sectionLabel="Community"
+        steps={COMMUNITY_WORKFLOW_STEPS}
+      />
 
       <section className="community-grid">
         <article className="community-panel">
@@ -661,7 +694,7 @@ export default function Community() {
           ) : (
             <div className="profile-cta-card">
               <p>Create a profile to post in chat, share circuits, and collect feedback.</p>
-              <Link className="profile-link" to="/account">
+              <Link className="profile-link" to={accountLinkTarget}>
                 Create profile
               </Link>
             </div>

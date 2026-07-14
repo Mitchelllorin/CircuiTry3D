@@ -3,11 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CircuiTry3D — 3D Gameplay Reel</title>
+  <title>CircuiTry3D — FUSE™ Promo</title>
   <meta name="theme-color" content="#050b1f" />
-  <meta name="description" content="CircuiTry3D in action — actual 3D circuit building, atomic zoom, FUSE failure engine, and the Component Arena. Real gameplay. Real 3D." />
   <style>
-    /* ── Reset & Base ──────────────────────────────────────────── */
+    /* ── Reset & Base ──────────────────────────────────────────────── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
       color-scheme: dark;
@@ -15,8 +14,6 @@
       --orange: #ff8844;
       --green:  #00ff88;
       --purple: #c084fc;
-      --red:    #ff4455;
-      --yellow: #ffd060;
       --bg:     #050b1f;
       --card:   rgba(13, 25, 60, 0.85);
       --text:   #f9fafc;
@@ -31,7 +28,7 @@
       user-select: none;
     }
 
-    /* ── Canvas layer ──────────────────────────────────────────── */
+    /* ── Canvas layer ──────────────────────────────────────────────── */
     #bg-canvas {
       position: fixed;
       inset: 0;
@@ -39,14 +36,18 @@
       z-index: 0;
     }
 
-    /* ── Stage container ───────────────────────────────────────── */
+    /* ── Scene container ───────────────────────────────────────────── */
     #stage {
       position: fixed;
       inset: 0;
       z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
     }
 
-    /* ── Scene base ────────────────────────────────────────────── */
+    /* ── Scene base ────────────────────────────────────────────────── */
     .scene {
       position: absolute;
       inset: 0;
@@ -54,355 +55,347 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 60px 24px 64px;
+      padding: 32px 24px;
       opacity: 0;
       pointer-events: none;
-      transition: opacity 0.75s ease;
+      transition: opacity 0.7s ease;
     }
     .scene.active {
       opacity: 1;
       pointer-events: auto;
     }
 
-    /* ── Full-screen video background per scene ────────────────── */
-    .scene-video {
-      position: absolute;
-      inset: 0;
-      width: 100%; height: 100%;
-      object-fit: cover;
-      z-index: 0;
-      opacity: 0;
-      transition: opacity 1.2s ease 0.3s;
-    }
-    .scene.active .scene-video { opacity: 1; }
-
-    /* Dark cinematic overlay above video */
-    .scene-overlay {
-      position: absolute;
-      inset: 0;
-      z-index: 1;
-      background:
-        linear-gradient(to top,    rgba(5,11,31,0.92) 0%,  rgba(5,11,31,0.35) 40%, transparent 70%),
-        linear-gradient(to bottom, rgba(5,11,31,0.75) 0%,  transparent 30%),
-        linear-gradient(to right,  rgba(5,11,31,0.55) 0%,  transparent 50%);
-    }
-
-    /* Fallback: shown when video fails or hasn't loaded */
-    .scene-fallback {
-      position: absolute;
-      inset: 0;
-      z-index: 0;
-      display: none;
-      overflow: hidden;
-    }
-
-    /* Screenshot fallback — actual 3D app workspace imagery */
-    @keyframes screenshot-pan {
-      0%   { transform: scale(1.08) translate(0%,    0%   ); }
-      33%  { transform: scale(1.08) translate(-1.5%, -0.8%); }
-      66%  { transform: scale(1.08) translate( 1.2%,  0.6%); }
-      100% { transform: scale(1.08) translate( 0%,    0%   ); }
-    }
-    .scene-fallback img {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-      animation: screenshot-pan 24s ease-in-out infinite;
-    }
-
-    /* Scene content (text + UI) sits above overlay */
-    .scene-content {
-      position: relative;
-      z-index: 2;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-end;
-      height: 100%;
-      width: 100%;
-      padding: 0 clamp(16px, 5vw, 80px) clamp(80px, 10vh, 120px);
-      pointer-events: none;
-    }
-    /* For scenes with centered content (title, CTA) */
-    .scene-content.centered {
-      justify-content: center;
-      padding-bottom: 0;
-    }
-
-    /* ── Typography helpers ────────────────────────────────────── */
+    /* ── Typography helpers ────────────────────────────────────────── */
     .eyebrow {
-      font-size: clamp(0.62rem, 1.8vw, 0.82rem);
+      font-size: clamp(0.65rem, 2vw, 0.85rem);
       font-weight: 700;
       letter-spacing: 0.22em;
       text-transform: uppercase;
       color: var(--muted);
-      margin-bottom: 10px;
+      margin-bottom: 12px;
       opacity: 0;
       transform: translateY(14px);
-      transition: opacity 0.55s ease 0.4s, transform 0.55s ease 0.4s;
+      transition: opacity 0.55s ease 0.3s, transform 0.55s ease 0.3s;
     }
     .scene.active .eyebrow { opacity: 1; transform: translateY(0); }
 
     .headline {
-      font-size: clamp(2.2rem, 7vw, 5.5rem);
+      font-size: clamp(2rem, 7vw, 5.2rem);
       font-weight: 900;
-      letter-spacing: -0.025em;
-      line-height: 1.04;
-      text-align: left;
+      letter-spacing: -0.02em;
+      line-height: 1.05;
+      text-align: center;
       opacity: 0;
-      transform: translateY(22px);
-      transition: opacity 0.6s ease 0.6s, transform 0.6s ease 0.6s;
+      transform: translateY(20px);
+      transition: opacity 0.6s ease 0.5s, transform 0.6s ease 0.5s;
       max-width: 900px;
-      text-shadow: 0 2px 24px rgba(5,11,31,0.9);
     }
     .scene.active .headline { opacity: 1; transform: translateY(0); }
 
     .tagline {
-      font-size: clamp(0.88rem, 2.2vw, 1.15rem);
-      color: rgba(249,250,252,0.75);
-      font-weight: 400;
-      text-align: left;
-      max-width: 620px;
-      margin-top: 14px;
-      line-height: 1.65;
+      font-size: clamp(0.9rem, 2.5vw, 1.25rem);
+      color: var(--muted);
+      font-weight: 500;
+      text-align: center;
+      max-width: 640px;
+      margin-top: 18px;
+      line-height: 1.55;
       opacity: 0;
       transform: translateY(16px);
-      transition: opacity 0.6s ease 0.85s, transform 0.6s ease 0.85s;
-      text-shadow: 0 1px 12px rgba(5,11,31,0.8);
+      transition: opacity 0.6s ease 0.75s, transform 0.6s ease 0.75s;
     }
     .scene.active .tagline { opacity: 1; transform: translateY(0); }
 
-    /* ── Brand colour helpers ──────────────────────────────────── */
-    .c-blue   { color: var(--blue);   text-shadow: 0 0 28px rgba(136,204,255,.7); }
-    .c-orange { color: var(--orange); text-shadow: 0 0 26px rgba(255,136,68,.65); }
-    .c-green  { color: var(--green);  text-shadow: 0 0 28px rgba(0,255,136,.7);  }
-    .c-purple { color: var(--purple); text-shadow: 0 0 24px rgba(192,132,252,.65);}
-    .c-red    { color: var(--red);    text-shadow: 0 0 26px rgba(255,68,85,.65); }
-    .c-yellow { color: var(--yellow); text-shadow: 0 0 22px rgba(255,208,96,.6); }
+    /* ── Brand colours ─────────────────────────────────────────────── */
+    .c-blue   { color: var(--blue);   text-shadow: 0 0 22px rgba(136,204,255,.65); }
+    .c-orange { color: var(--orange); text-shadow: 0 0 20px rgba(255,136,68,.6);  }
+    .c-green  { color: var(--green);  text-shadow: 0 0 22px rgba(0,255,136,.65);  }
+    .c-purple { color: var(--purple); text-shadow: 0 0 20px rgba(192,132,252,.6); }
 
-    /* ── REC badge ─────────────────────────────────────────────── */
-    .rec-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 7px;
-      padding: 5px 14px;
-      border-radius: 100px;
-      background: rgba(255,68,85,0.18);
-      border: 1.5px solid rgba(255,68,85,0.5);
-      font-size: 0.68rem;
-      font-weight: 800;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
-      color: var(--red);
-      margin-bottom: 14px;
-      opacity: 0;
-      transform: translateY(10px);
-      transition: opacity 0.5s ease 0.2s, transform 0.5s ease 0.2s;
-    }
-    .scene.active .rec-badge { opacity: 1; transform: translateY(0); }
-    .rec-dot {
-      width: 7px; height: 7px;
-      background: var(--red);
-      border-radius: 50%;
-      animation: rec-blink 1s ease-in-out infinite;
-      box-shadow: 0 0 6px var(--red);
-    }
-    @keyframes rec-blink { 0%,49%{ opacity:1; } 50%,100%{ opacity:0; } }
-
-    /* ── Circuit-type badge (bottom-right) ─────────────────────── */
-    .scene-meta {
-      position: absolute;
-      bottom: clamp(64px,9vh,96px);
-      right: clamp(16px,4vw,60px);
-      display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-      gap: 6px;
-      z-index: 2;
-      opacity: 0;
-      transform: translateX(14px);
-      transition: opacity 0.55s ease 1.05s, transform 0.55s ease 1.05s;
-    }
-    .scene.active .scene-meta { opacity: 1; transform: translateX(0); }
-    .meta-chip {
-      padding: 5px 14px;
-      border-radius: 100px;
-      font-size: 0.65rem;
-      font-weight: 800;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      border: 1.5px solid;
-      backdrop-filter: blur(6px);
-    }
-    .mc-blue   { color:var(--blue);   border-color:rgba(136,204,255,.5); background:rgba(136,204,255,.12); }
-    .mc-green  { color:var(--green);  border-color:rgba(0,255,136,.4);   background:rgba(0,255,136,.1);   }
-    .mc-orange { color:var(--orange); border-color:rgba(255,136,68,.45); background:rgba(255,136,68,.1);  }
-    .mc-red    { color:var(--red);    border-color:rgba(255,68,85,.5);   background:rgba(255,68,85,.12);  }
-    .mc-purple { color:var(--purple); border-color:rgba(192,132,252,.45);background:rgba(192,132,252,.1); }
-    .mc-yellow { color:var(--yellow); border-color:rgba(255,208,96,.4);  background:rgba(255,208,96,.09); }
-    .meta-timecode {
-      font-family: "SF Mono", "Fira Code", monospace;
-      font-size: 0.62rem;
-      font-weight: 600;
-      color: rgba(157,184,255,0.5);
-      letter-spacing: 0.08em;
-    }
-
-    /* ── Logo wordmark ─────────────────────────────────────────── */
+    /* ── Logo wordmark ─────────────────────────────────────────────── */
     .wordmark {
-      font-size: clamp(3.5rem, 12vw, 8rem);
+      font-size: clamp(3rem, 11vw, 7.5rem);
       font-weight: 900;
       letter-spacing: -0.02em;
       display: flex;
       gap: 0;
-      filter: drop-shadow(0 0 40px rgba(40,255,190,.4));
+      filter: drop-shadow(0 0 30px rgba(40,255,190,.35));
       opacity: 0;
-      transform: scale(0.82);
-      transition: opacity 0.75s ease 0.2s, transform 0.75s cubic-bezier(.34,1.56,.64,1) 0.2s;
+      transform: scale(0.85);
+      transition: opacity 0.7s ease 0.2s, transform 0.7s cubic-bezier(.34,1.56,.64,1) 0.2s;
       line-height: 1;
     }
     .scene.active .wordmark { opacity: 1; transform: scale(1); }
-    .wordmark .c-orange { font-style: italic; }
 
-    /* ── 3D badge (title scene) ────────────────────────────────── */
-    .intro-badge {
+    .logo-tm {
+      font-size: 0.22em;
+      vertical-align: super;
+      font-weight: 400;
+      color: var(--muted);
+      margin-left: 4px;
+    }
+
+    /* ── Category badge ────────────────────────────────────────────── */
+    .category-badge {
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      padding: 6px 18px;
+      margin-top: 20px;
+      padding: 8px 20px;
       border-radius: 100px;
-      border: 1.5px solid rgba(136,204,255,.4);
-      background: rgba(136,204,255,.08);
-      font-size: clamp(0.68rem, 1.8vw, 0.84rem);
-      font-weight: 800;
-      letter-spacing: 0.14em;
+      border: 1.5px solid rgba(0,255,136,.35);
+      background: rgba(0,255,136,.07);
+      font-size: clamp(0.7rem, 2vw, 0.85rem);
+      font-weight: 700;
+      letter-spacing: 0.12em;
       text-transform: uppercase;
-      color: var(--blue);
-      margin-bottom: 22px;
+      color: var(--green);
       opacity: 0;
-      transform: translateY(10px);
-      transition: opacity 0.5s ease 0.1s, transform 0.5s ease 0.1s;
+      transform: translateY(12px);
+      transition: opacity 0.55s ease 1.05s, transform 0.55s ease 1.05s;
     }
-    .scene.active .intro-badge { opacity: 1; transform: translateY(0); }
+    .scene.active .category-badge { opacity: 1; transform: translateY(0); }
+    .badge-star { font-size: 1.1em; }
 
-    /* ── Feature chips ─────────────────────────────────────────── */
+    /* ── Feature chips ─────────────────────────────────────────────── */
     .chips {
       display: flex;
       flex-wrap: wrap;
       gap: 10px;
       justify-content: center;
-      margin-top: 26px;
+      margin-top: 24px;
       opacity: 0;
       transform: translateY(12px);
-      transition: opacity 0.55s ease 1.05s, transform 0.55s ease 1.05s;
+      transition: opacity 0.55s ease 1s, transform 0.55s ease 1s;
     }
     .scene.active .chips { opacity: 1; transform: translateY(0); }
-    .chip {
-      padding: 7px 16px;
-      border-radius: 100px;
-      font-size: clamp(0.68rem, 1.8vw, 0.84rem);
-      font-weight: 700;
-      letter-spacing: 0.04em;
-      border: 1.5px solid;
-    }
-    .chip-blue   { border-color:rgba(136,204,255,.5); color:var(--blue);   background:rgba(136,204,255,.08); }
-    .chip-green  { border-color:rgba(0,255,136,.4);   color:var(--green);  background:rgba(0,255,136,.07);  }
-    .chip-orange { border-color:rgba(255,136,68,.45); color:var(--orange); background:rgba(255,136,68,.07); }
-    .chip-red    { border-color:rgba(255,68,85,.45);  color:var(--red);    background:rgba(255,68,85,.07);  }
-    .chip-purple { border-color:rgba(192,132,252,.45);color:var(--purple); background:rgba(192,132,252,.07);}
-    .chip-yellow { border-color:rgba(255,208,96,.4);  color:var(--yellow); background:rgba(255,208,96,.07); }
 
-    /* ── CTA buttons ────────────────────────────────────────────── */
-    .cta-wrap {
-      margin-top: 34px;
+    .chip {
+      padding: 6px 14px;
+      border-radius: 100px;
+      font-size: clamp(0.65rem, 1.8vw, 0.78rem);
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      background: rgba(13,25,60,.75);
+      border: 1px solid rgba(136,204,255,.22);
+    }
+    .chip-blue   { border-color: rgba(136,204,255,.35); color: var(--blue); }
+    .chip-green  { border-color: rgba(0,255,136,.35);   color: var(--green); }
+    .chip-orange { border-color: rgba(255,136,68,.35);  color: var(--orange); }
+    .chip-purple { border-color: rgba(192,132,252,.35); color: var(--purple); }
+
+    /* ── FUSE status panel ─────────────────────────────────────────── */
+    .fuse-panel {
       display: flex;
-      gap: 14px;
       flex-wrap: wrap;
+      gap: 12px;
       justify-content: center;
+      margin-top: 26px;
+      max-width: 820px;
+      opacity: 0;
+      transform: translateY(18px);
+      transition: opacity 0.6s ease 0.95s, transform 0.6s ease 0.95s;
+    }
+    .scene.active .fuse-panel { opacity: 1; transform: translateY(0); }
+
+    .fuse-card {
+      background: var(--card);
+      border: 1px solid rgba(136,204,255,.18);
+      border-radius: 12px;
+      padding: 14px 18px;
+      min-width: 170px;
+      flex: 1 1 170px;
+      max-width: 210px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      backdrop-filter: blur(8px);
+    }
+    .fuse-card-status {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 100px;
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      width: fit-content;
+    }
+    .status-ok       { background: rgba(0,255,136,.15);  color: var(--green);  border: 1px solid rgba(0,255,136,.3); }
+    .status-stressed { background: rgba(136,204,255,.12); color: var(--blue);   border: 1px solid rgba(136,204,255,.25); }
+    .status-warning  { background: rgba(255,136,68,.15);  color: var(--orange); border: 1px solid rgba(255,136,68,.3); }
+    .status-failed   { background: rgba(255,60,60,.18);   color: #ff5555;       border: 1px solid rgba(255,60,60,.35); }
+    .fuse-card-name  { font-size: clamp(0.8rem, 2vw, 0.95rem); font-weight: 700; color: var(--text); }
+    .fuse-card-desc  { font-size: 0.7rem; color: var(--muted); line-height: 1.4; }
+
+    /* ── Fuse blown animation ──────────────────────────────────────── */
+    @keyframes fuse-pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(255,60,60,0); }
+      50%       { box-shadow: 0 0 18px 4px rgba(255,60,60,.45); }
+    }
+    .fuse-card.blown {
+      border-color: rgba(255,60,60,.4);
+      animation: fuse-pulse 1.6s ease-in-out infinite;
+    }
+
+    /* ── Zoom tier row ─────────────────────────────────────────────── */
+    .zoom-tiers {
+      display: flex;
+      align-items: center;
+      gap: clamp(8px, 2vw, 22px);
+      margin-top: 26px;
+      opacity: 0;
+      transition: opacity 0.6s ease 0.95s;
+    }
+    .scene.active .zoom-tiers { opacity: 1; }
+    .zoom-tier { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+    .zoom-orb {
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: clamp(1rem, 2.5vw, 1.5rem);
+    }
+    .zoom-label { font-size: clamp(0.6rem, 1.6vw, 0.75rem); font-weight: 600; color: var(--muted); }
+    .tier-arrow { color: rgba(136,204,255,.35); font-size: clamp(0.8rem, 2vw, 1.1rem); }
+
+    /* ── Feature grid ──────────────────────────────────────────────── */
+    .feat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 12px;
+      margin-top: 26px;
+      width: 100%;
+      max-width: 860px;
       opacity: 0;
       transform: translateY(14px);
-      transition: opacity 0.55s ease 1.15s, transform 0.55s ease 1.15s;
+      transition: opacity 0.6s ease 0.9s, transform 0.6s ease 0.9s;
     }
-    .scene.active .cta-wrap { opacity: 1; transform: translateY(0); pointer-events: auto; }
+    .scene.active .feat-grid { opacity: 1; transform: translateY(0); }
+
+    .feat-card {
+      background: var(--card);
+      border: 1px solid rgba(136,204,255,.15);
+      border-radius: 12px;
+      padding: 16px;
+      backdrop-filter: blur(8px);
+    }
+    .feat-icon { font-size: 1.6rem; display: block; margin-bottom: 8px; }
+    .feat-name { font-size: 0.85rem; font-weight: 800; color: var(--text); margin-bottom: 5px; }
+    .feat-desc { font-size: 0.72rem; color: var(--muted); line-height: 1.45; }
+
+    /* ── Practice steps ────────────────────────────────────────────── */
+    .practice-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 24px;
+      width: 100%;
+      max-width: 560px;
+      opacity: 0;
+      transform: translateY(14px);
+      transition: opacity 0.6s ease 0.9s, transform 0.6s ease 0.9s;
+    }
+    .scene.active .practice-steps { opacity: 1; transform: translateY(0); }
+
+    .practice-step {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      background: var(--card);
+      border: 1px solid rgba(136,204,255,.14);
+      border-radius: 10px;
+      padding: 12px 16px;
+      backdrop-filter: blur(8px);
+    }
+    .step-num {
+      min-width: 28px; height: 28px;
+      border-radius: 50%;
+      background: rgba(136,204,255,.12);
+      border: 1px solid rgba(136,204,255,.3);
+      color: var(--blue);
+      font-size: 0.75rem;
+      font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .step-text { font-size: 0.82rem; color: var(--muted); line-height: 1.45; }
+    .step-text strong { color: var(--text); }
+
+    /* ── CTA wrap ──────────────────────────────────────────────────── */
+    .cta-wrap {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-top: 32px;
+      opacity: 0;
+      transform: translateY(14px);
+      transition: opacity 0.6s ease 1.1s, transform 0.6s ease 1.1s;
+    }
+    .scene.active .cta-wrap { opacity: 1; transform: translateY(0); }
+
     .btn-primary {
       display: inline-block;
-      padding: 14px 36px;
+      padding: 14px 32px;
       border-radius: 100px;
       font-weight: 800;
-      font-size: clamp(0.85rem, 2.2vw, 1rem);
+      font-size: clamp(0.85rem, 2.5vw, 0.95rem);
       letter-spacing: 0.04em;
-      background: linear-gradient(135deg, var(--blue) 0%, var(--green) 100%);
-      color: #050b1f;
+      background: linear-gradient(135deg, #00e57a, #00c864);
+      color: #020c14;
       text-decoration: none;
       cursor: pointer;
       border: none;
-      box-shadow: 0 0 32px rgba(0,255,136,.3), 0 4px 18px rgba(0,0,0,.45);
+      box-shadow: 0 0 30px rgba(0,255,136,.25), 0 4px 16px rgba(0,0,0,.4);
       transition: transform 0.18s ease, box-shadow 0.18s ease;
     }
-    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 0 44px rgba(0,255,136,.42), 0 6px 24px rgba(0,0,0,.55); }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 0 40px rgba(0,255,136,.35), 0 6px 22px rgba(0,0,0,.5); }
+
     .btn-secondary {
       display: inline-block;
       padding: 14px 28px;
       border-radius: 100px;
       font-weight: 700;
-      font-size: clamp(0.82rem, 2vw, 0.95rem);
+      font-size: clamp(0.85rem, 2.5vw, 0.95rem);
       letter-spacing: 0.03em;
       background: transparent;
       color: var(--muted);
-      border: 1.5px solid rgba(136,204,255,.38);
+      border: 1.5px solid rgba(136,204,255,.4);
       text-decoration: none;
       cursor: pointer;
       transition: border-color 0.18s ease, color 0.18s ease;
     }
     .btn-secondary:hover { border-color: rgba(136,204,255,.8); color: var(--blue); }
 
-    /* ── Scene number display ───────────────────────────────────── */
-    #scene-counter {
-      position: fixed;
-      top: 20px;
-      left: 68px;
-      font-family: "SF Mono", "Fira Code", monospace;
-      font-size: 0.7rem;
-      font-weight: 700;
-      color: rgba(157,184,255,.45);
-      letter-spacing: 0.1em;
-      z-index: 100;
-    }
-
-    /* ── Progress bar ───────────────────────────────────────────── */
+    /* ── Progress bar ───────────────────────────────────────────────── */
     #progress-bar {
       position: fixed;
       bottom: 0; left: 0;
       height: 3px;
-      background: linear-gradient(90deg, var(--green), var(--blue));
+      background: linear-gradient(90deg, var(--orange), var(--green));
       z-index: 100;
       transition: width 0.1s linear;
-      box-shadow: 0 0 10px rgba(0,255,136,.65);
+      box-shadow: 0 0 8px rgba(255,136,68,.6);
     }
 
-    /* ── Scene dots ─────────────────────────────────────────────── */
+    /* ── Scene dots ─────────────────────────────────────────────────── */
     #scene-dots {
       position: fixed;
-      bottom: 22px; left: 50%; transform: translateX(-50%);
-      display: flex; gap: 9px;
+      bottom: 20px; left: 50%; transform: translateX(-50%);
+      display: flex; gap: 8px;
       z-index: 100;
     }
     .dot {
       width: 7px; height: 7px;
       border-radius: 50%;
-      background: rgba(136,204,255,.22);
-      transition: background 0.3s ease, transform 0.3s ease, width 0.3s ease;
+      background: rgba(136,204,255,.25);
+      transition: background 0.3s ease, transform 0.3s ease;
       cursor: pointer;
     }
-    .dot.active { background: var(--green); transform: scale(1.35); width: 20px; border-radius: 4px; }
+    .dot.active { background: var(--orange); transform: scale(1.3); }
 
-    /* ── Controls ───────────────────────────────────────────────── */
+    /* ── Controls ───────────────────────────────────────────────────── */
     #controls {
       position: fixed;
-      top: 16px; right: 16px;
+      top: 18px; right: 18px;
       display: flex;
       gap: 10px;
       z-index: 100;
@@ -410,24 +403,24 @@
     .ctrl-btn {
       width: 38px; height: 38px;
       border-radius: 50%;
-      background: rgba(13,25,60,.72);
+      background: rgba(13,25,60,.7);
       border: 1.5px solid rgba(136,204,255,.3);
       color: var(--blue);
       font-size: 1rem;
       display: flex; align-items: center; justify-content: center;
       cursor: pointer;
-      backdrop-filter: blur(10px);
+      backdrop-filter: blur(8px);
       transition: background 0.15s ease, border-color 0.15s ease;
     }
-    .ctrl-btn:hover { background: rgba(20,42,95,.88); border-color: rgba(136,204,255,.65); }
+    .ctrl-btn:hover { background: rgba(20,40,90,.85); border-color: rgba(136,204,255,.65); }
 
-    /* ── Back link ──────────────────────────────────────────────── */
+    /* ── Back-to-app link ────────────────────────────────────────────── */
     #back-link {
       position: fixed;
-      top: 18px; left: 16px;
-      font-size: 0.76rem;
+      top: 18px; left: 18px;
+      font-size: 0.78rem;
       font-weight: 700;
-      color: rgba(136,204,255,.5);
+      color: rgba(136,204,255,.55);
       text-decoration: none;
       z-index: 100;
       display: flex; align-items: center; gap: 6px;
@@ -435,7 +428,7 @@
     }
     #back-link:hover { color: var(--blue); }
 
-    /* ── Scanlines ─────────────────────────────────────────────── */
+    /* ── Scan line overlay ─────────────────────────────────────────── */
     #scanlines {
       position: fixed;
       inset: 0;
@@ -443,820 +436,503 @@
       z-index: 50;
       background: repeating-linear-gradient(
         0deg,
-        transparent 0px, transparent 3px,
-        rgba(0,0,0,0.025) 3px, rgba(0,0,0,0.025) 4px
+        transparent 0px,
+        transparent 3px,
+        rgba(0,0,0,0.04) 3px,
+        rgba(0,0,0,0.04) 4px
       );
-      opacity: 0.6;
+      opacity: 0.55;
     }
 
-    /* ── Flare (scene transition) ──────────────────────────────── */
+    /* ── Flare overlay (scene transitions) ─────────────────────────── */
     #flare {
       position: fixed;
       inset: 0;
       pointer-events: none;
       z-index: 60;
-      background: radial-gradient(circle at center, rgba(255,255,255,0.5) 0%, transparent 70%);
+      background: radial-gradient(circle at center, rgba(255,255,255,0.65) 0%, transparent 70%);
       opacity: 0;
       transition: opacity 0.2s ease;
     }
     #flare.flash { opacity: 1; transition: none; }
-
-    /* ══════════════════════════════════════════════════════════════
-       SCENE-SPECIFIC FALLBACK ANIMATIONS
-       Shown when .webm files aren't available yet.
-       These use perspective transforms to evoke 3D depth so the
-       fallback never looks like a flat 2-D schematic.
-    ══════════════════════════════════════════════════════════════ */
-
-    /* ── Falling particles for title ───────────────────────────── */
-    .title-particles {
-      position: absolute;
-      inset: 0;
-      overflow: hidden;
-      z-index: 0;
-    }
-    @keyframes fall {
-      0%   { transform: translateY(-10px) scale(0.8); opacity: 0; }
-      10%  { opacity: 1; }
-      90%  { opacity: 0.8; }
-      100% { transform: translateY(110vh) scale(1.2); opacity: 0; }
-    }
-    .falling-particle {
-      position: absolute;
-      top: 0;
-      width: 4px; height: 4px;
-      border-radius: 50%;
-      animation: fall var(--fall-dur, 5s) linear var(--fall-delay, 0s) infinite;
-      filter: blur(0.5px);
-    }
-
-    /* ── Shared canvas animation keyframes ─────────────────────── */
-    @keyframes heat-flicker { 0%,100%{filter:brightness(1) saturate(1)} 25%{filter:brightness(1.6) saturate(1.8)} 75%{filter:brightness(0.8) saturate(0.7)} }
-    @keyframes pulse-glow   { 0%,100%{opacity:0.6} 50%{opacity:1} }
-    @keyframes orbit-spin   { from{transform:rotateY(0deg)} to{transform:rotateY(360deg)} }
-
-    /* ── CTA scene radial glow ─────────────────────────────────── */
-    .cta-bg-glow {
-      position: absolute;
-      inset: 0;
-      z-index: 0;
-      background: radial-gradient(ellipse 75% 55% at 50% 50%, rgba(0,255,136,0.07) 0%, transparent 70%),
-                  radial-gradient(ellipse 60% 40% at 30% 70%, rgba(136,204,255,0.05) 0%, transparent 60%);
-    }
   </style>
 </head>
 <body>
+  <canvas id="bg-canvas"></canvas>
+  <div id="scanlines"></div>
+  <div id="flare"></div>
 
-<canvas id="bg-canvas"></canvas>
-<div id="scanlines"></div>
-<div id="flare"></div>
+  <!-- Back link -->
+  <a id="back-link" href="/#/" target="_top">← CircuiTry3D</a>
 
-<a id="back-link" href="/#/" target="_top">← CircuiTry3D</a>
+  <!-- Controls -->
+  <div id="controls">
+    <button class="ctrl-btn" id="btn-prev" title="Previous scene">&#8592;</button>
+    <button class="ctrl-btn" id="btn-play" title="Pause/Play">&#10074;&#10074;</button>
+    <button class="ctrl-btn" id="btn-next" title="Next scene">&#8594;</button>
+  </div>
 
-<div id="scene-counter">01 / 08</div>
+  <!-- Progress bar -->
+  <div id="progress-bar" style="width:0%"></div>
 
-<div id="controls">
-  <button class="ctrl-btn" id="btn-prev" title="Previous scene">&#8592;</button>
-  <button class="ctrl-btn" id="btn-play" title="Pause / Play">&#10074;&#10074;</button>
-  <button class="ctrl-btn" id="btn-next" title="Next scene">&#8594;</button>
-</div>
+  <!-- Scene dots -->
+  <div id="scene-dots"></div>
 
-<div id="progress-bar" style="width:0%"></div>
-<div id="scene-dots"></div>
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- SCENES                                                          -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <div id="stage">
 
-<!-- ═════════════════════════════════════════════════════════════
-     SCENES
-     All video backgrounds are actual 3-D gameplay recordings
-     captured by the CircuiTry3D circuit bot from the live app.
-═════════════════════════════════════════════════════════════ -->
-<div id="stage">
-
-  <!-- ─── SCENE 0 · Title / Hook ─────────────────────────────── -->
-  <div class="scene" id="scene-0">
-
-    <!-- Particle depth-field background -->
-    <div class="title-particles" id="title-particles" aria-hidden="true"></div>
-
-    <div class="scene-content centered">
-      <div class="intro-badge">&#9654;&nbsp; Actual 3D Gameplay &middot; Live Recording &middot; 1920&times;1080</div>
+    <!-- SCENE 0 · Brand Intro -->
+    <div class="scene" id="scene-0">
       <div class="wordmark">
         <span class="c-blue">Circui</span><span class="c-orange">Try</span><span class="c-green">3D</span>
       </div>
-      <p class="tagline" style="text-align:center; max-width:600px; margin-top:18px; color:rgba(249,250,252,0.65); font-size:clamp(1rem,2.8vw,1.3rem); font-weight:300;">
-        The&nbsp;<strong style="color:var(--green);font-weight:700;">3D Interactive</strong>&nbsp;Circuit Simulator.<br>
-        <span style="color:rgba(157,184,255,.45); font-size:0.8em;">Build in three dimensions &middot; simulate real physics &middot; down to the atomic level.</span>
+      <p class="tagline" style="margin-top:22px; font-size:clamp(1rem,3vw,1.4rem); font-weight:300;">
+        The Most Advanced Interactive Electrical Platform<br>
+        <span style="color:rgba(136,204,255,.45); font-size:0.75em;">We built our own category — and we're&nbsp;#1.</span>
+      </p>
+      <div class="category-badge">
+        <span class="badge-star">★</span> #1 Interactive Electrical Learning Platform
+      </div>
+    </div>
+
+    <!-- SCENE 1 · FUSE™ at Work -->
+    <div class="scene" id="scene-1">
+      <p class="eyebrow">FUSE™ Engine · Live Failure Simulation</p>
+      <h1 class="headline">
+        <span class="c-orange">FUSE™</span>&nbsp;at&nbsp;Work
+      </h1>
+      <p class="tagline">
+        Push current beyond the limit and watch the
+        <strong style="color:var(--orange)">F</strong>ailure&nbsp;<strong style="color:var(--orange)">U</strong>nderstanding&nbsp;<strong style="color:var(--orange)">S</strong>imulation&nbsp;<strong style="color:var(--orange)">E</strong>ngine™
+        detonate the element in real time — right in your workspace.
+      </p>
+      <div class="fuse-panel">
+        <div class="fuse-card">
+          <span class="fuse-card-status status-ok">OK</span>
+          <div class="fuse-card-name">Resistor 10 kΩ</div>
+          <div class="fuse-card-desc">Operating at 12 % rated power — thermally stable.</div>
+        </div>
+        <div class="fuse-card">
+          <span class="fuse-card-status status-stressed">Stressed</span>
+          <div class="fuse-card-name">Capacitor 100 µF</div>
+          <div class="fuse-card-desc">Approaching voltage limit — ripple current elevated.</div>
+        </div>
+        <div class="fuse-card">
+          <span class="fuse-card-status status-warning">Warning</span>
+          <div class="fuse-card-name">Resistor 1 Ω</div>
+          <div class="fuse-card-desc">Power dissipation critical — thermal runaway imminent.</div>
+        </div>
+        <div class="fuse-card blown">
+          <span class="fuse-card-status status-failed">Blown</span>
+          <div class="fuse-card-name">Fuse 0.5 A</div>
+          <div class="fuse-card-desc">Overcurrent event — element vaporised. Circuit open.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCENE 2 · The Builder -->
+    <div class="scene" id="scene-2">
+      <p class="eyebrow">Circuit Builder · Real Workspace</p>
+      <h1 class="headline">
+        Build.&nbsp;Wire.&nbsp;<span class="c-blue">Simulate.</span>
+      </h1>
+      <p class="tagline">
+        A live 3D workspace where Ohm's law powers every connection.
+        Drop components, route wires with W.I.R.E., and watch current flow
+        from macro all the way down to quantum probability clouds.
       </p>
       <div class="chips">
-        <span class="chip chip-blue">3D Circuit Builder</span>
-        <span class="chip chip-green">Atomic Zoom</span>
-        <span class="chip chip-red">FUSE™ Failure Engine</span>
-        <span class="chip chip-purple">Component Arena</span>
-        <span class="chip chip-yellow">5 Zoom Tiers</span>
-        <span class="chip chip-orange">Real Physics</span>
+        <span class="chip chip-blue">3D Workspace</span>
+        <span class="chip chip-green">Live Simulation</span>
+        <span class="chip chip-orange">Ohm's Law Engine</span>
+        <span class="chip chip-blue">W.I.R.E. Routing</span>
+        <span class="chip chip-purple">Schematic Mode</span>
+      </div>
+      <div class="zoom-tiers">
+        <div class="zoom-tier">
+          <div class="zoom-orb" style="width:clamp(44px,7vw,64px);height:clamp(44px,7vw,64px);background:rgba(136,204,255,.12);color:var(--blue);">⚡</div>
+          <div class="zoom-label" style="color:var(--blue);">Macro</div>
+        </div>
+        <div class="tier-arrow">→</div>
+        <div class="zoom-tier">
+          <div class="zoom-orb" style="width:clamp(38px,6vw,56px);height:clamp(38px,6vw,56px);background:rgba(0,255,136,.1);color:var(--green);">〰</div>
+          <div class="zoom-label" style="color:var(--green);">Wire</div>
+        </div>
+        <div class="tier-arrow">→</div>
+        <div class="zoom-tier">
+          <div class="zoom-orb" style="width:clamp(32px,5vw,48px);height:clamp(32px,5vw,48px);background:rgba(255,136,68,.1);color:var(--orange);">⬡</div>
+          <div class="zoom-label" style="color:var(--orange);">Atomic</div>
+        </div>
+        <div class="tier-arrow">→</div>
+        <div class="zoom-tier">
+          <div class="zoom-orb" style="width:clamp(26px,4vw,40px);height:clamp(26px,4vw,40px);background:rgba(192,132,252,.1);color:var(--purple);">◉</div>
+          <div class="zoom-label" style="color:var(--purple);">Deep</div>
+        </div>
+        <div class="tier-arrow">→</div>
+        <div class="zoom-tier">
+          <div class="zoom-orb" style="width:clamp(20px,3vw,32px);height:clamp(20px,3vw,32px);background:rgba(255,255,255,.06);color:#fff;">∿</div>
+          <div class="zoom-label" style="color:#aaa;">Quantum</div>
+        </div>
       </div>
     </div>
-  </div>
 
-  <!-- ─── SCENE 1 · Series Circuit ───────────────────────────── -->
-  <div class="scene" id="scene-1">
-
-    <video class="scene-video" src="./promo-footage/scene-01-series.webm"
-           autoplay muted loop playsinline preload="auto"
-           onerror="this.style.display='none'"></video>
-    <div class="scene-overlay"></div>
-
-    <div class="scene-fallback" id="fb-series">
-      <img src="https://github.com/user-attachments/assets/ca8aa405-2045-436c-bfc0-4fd76b01080a" alt="" aria-hidden="true">
-    </div>
-
-    <div class="scene-content">
-      <div class="rec-badge"><div class="rec-dot"></div>REC &middot; Scene 01 &middot; 3D Builder</div>
-      <h1 class="headline"><span class="c-green">Current</span> Flows<br>at Every Scale</h1>
-      <p class="tagline">Three resistors in series. A 24&thinsp;V battery drives electrons
-        from the 3D macro overview all the way down to the FCC atomic lattice —
-        in the live app, in real time.</p>
-    </div>
-    <div class="scene-meta">
-      <div class="meta-chip mc-green">&#x2705; Series Circuit &middot; 3D</div>
-      <div class="meta-chip mc-blue">24 V &middot; 40 mA &middot; 600 &Omega;</div>
-      <div class="meta-timecode">SCENE-01 &middot; 1920&times;1080 &middot; WEBM</div>
-    </div>
-  </div>
-
-  <!-- ─── SCENE 2 · Parallel Circuit ─────────────────────────── -->
-  <div class="scene" id="scene-2">
-
-    <video class="scene-video" src="./promo-footage/scene-02-parallel.webm"
-           autoplay muted loop playsinline preload="auto"
-           onerror="this.style.display='none'"></video>
-    <div class="scene-overlay"></div>
-
-    <div class="scene-fallback" id="fb-parallel">
-      <img src="https://github.com/user-attachments/assets/4103b307-bb62-4663-b8ef-2da2af0f397b" alt="" aria-hidden="true">
-    </div>
-
-    <div class="scene-content">
-      <div class="rec-badge"><div class="rec-dot"></div>REC &middot; Scene 02 &middot; 3D Builder</div>
-      <h1 class="headline"><span class="c-blue">Electrons</span> Take<br>Every Path</h1>
-      <p class="tagline">Three parallel branches share the same voltage rail.
-        Independent 3D electron streams split and rejoin at the nodes —
-        each visualised inside the live circuit builder.</p>
-    </div>
-    <div class="scene-meta">
-      <div class="meta-chip mc-blue">&#x26A1; Parallel Circuit &middot; 3D</div>
-      <div class="meta-chip mc-green">Three Independent Paths</div>
-      <div class="meta-timecode">SCENE-02 &middot; 1920&times;1080 &middot; WEBM</div>
-    </div>
-  </div>
-
-  <!-- ─── SCENE 3 · FUSE Thermal Failure ──────────────────────── -->
-  <div class="scene" id="scene-3">
-
-    <video class="scene-video" src="./promo-footage/scene-03-overload.webm"
-           autoplay muted loop playsinline preload="auto"
-           onerror="this.style.display='none'"></video>
-    <!-- Warmer, red-tinted overlay for the failure scene -->
-    <div class="scene-overlay" style="background:
-      linear-gradient(to top,    rgba(30,5,5,0.95) 0%, rgba(20,4,4,0.4) 40%, transparent 70%),
-      linear-gradient(to bottom, rgba(20,4,4,0.8) 0%, transparent 35%),
-      linear-gradient(to right,  rgba(20,4,4,0.55) 0%, transparent 55%);">
-    </div>
-
-    <div class="scene-fallback" id="fb-overload">
-      <img src="https://github.com/user-attachments/assets/cc8668ce-71e2-4ddf-880c-6d6735506144" alt="" aria-hidden="true">
-    </div>
-
-    <div class="scene-content">
-      <div class="rec-badge"><div class="rec-dot"></div>REC &middot; Scene 03 &middot; FUSE&#x2122; Engine</div>
-      <h1 class="headline"><span class="c-red">FUSE&#x2122; Detects</span><br>What You Can&rsquo;t See</h1>
-      <p class="tagline">A 1&thinsp;&Omega; resistor on 24&thinsp;V dissipates 576&thinsp;W.
-        The FUSE&#x2122; Failure Understanding Simulation Engine accumulates heat in 3D
-        and triggers arc flash &mdash; all inside the real app.</p>
-    </div>
-    <div class="scene-meta">
-      <div class="meta-chip mc-red">&#x1F525; FUSE&#x2122; Thermal Failure</div>
-      <div class="meta-chip mc-orange">576 W &middot; &tau; = 5 s</div>
-      <div class="meta-timecode">SCENE-03 &middot; 1920&times;1080 &middot; WEBM</div>
-    </div>
-  </div>
-
-  <!-- ─── SCENE 4 · Mixed Circuit ─────────────────────────────── -->
-  <div class="scene" id="scene-4">
-
-    <video class="scene-video" src="./promo-footage/scene-04-mixed.webm"
-           autoplay muted loop playsinline preload="auto"
-           onerror="this.style.display='none'"></video>
-    <div class="scene-overlay"></div>
-
-    <div class="scene-fallback" id="fb-mixed">
-      <img src="https://github.com/user-attachments/assets/69eb0bbf-1f01-4e44-a0d0-d0226d92235e" alt="" aria-hidden="true">
-    </div>
-
-    <div class="scene-content">
-      <div class="rec-badge"><div class="rec-dot"></div>REC &middot; Scene 04 &middot; 3D Builder</div>
-      <h1 class="headline"><span class="c-purple">Advanced.</span><br>Mastered in 3D.</h1>
-      <p class="tagline">Seven components &mdash; series trunk, parallel branch box, LED return path.
-        Labels on. Simulation running. The full W.I.R.E. methodology
-        applied to a live 3D circuit.</p>
-    </div>
-    <div class="scene-meta">
-      <div class="meta-chip mc-purple">&#x1F52C; Series-Parallel &middot; 3D</div>
-      <div class="meta-chip mc-blue">7 Components &middot; KVL / KCL</div>
-      <div class="meta-timecode">SCENE-04 &middot; 1920&times;1080 &middot; WEBM</div>
-    </div>
-  </div>
-
-  <!-- ─── SCENE 5 · 3D Builder Fly-Through ────────────────────── -->
-  <div class="scene" id="scene-5">
-
-    <video class="scene-video" src="./promo-footage/scene-05-3d-build.webm"
-           autoplay muted loop playsinline preload="auto"
-           onerror="this.style.display='none'"></video>
-    <div class="scene-overlay" style="background:
-      linear-gradient(to top,    rgba(5,11,31,0.90) 0%, rgba(5,11,31,0.30) 40%, transparent 70%),
-      linear-gradient(to bottom, rgba(5,11,31,0.70) 0%, transparent 35%),
-      linear-gradient(to left,   rgba(5,11,31,0.50) 0%, transparent 55%);">
-    </div>
-
-    <div class="scene-fallback" id="fb-3dbuild" style="background:linear-gradient(135deg,#050b1f,#071428);">
-      <canvas id="canvas-3dbuild" style="position:absolute;inset:0;width:100%;height:100%;"></canvas>
-    </div>
-
-    <div class="scene-content">
-      <div class="rec-badge"><div class="rec-dot"></div>REC &middot; Scene 05 &middot; 3D Fly-Through</div>
-      <h1 class="headline">Five <span class="c-yellow">Zoom Tiers</span>,<br>One 3D Circuit</h1>
-      <p class="tagline">Macro &rarr; Component &rarr; Atomic &rarr; Deep-Atomic &rarr; Quantum.
-        The camera dives through five layers of physics in the live 3D builder,
-        revealing electron clouds at each tier.</p>
-    </div>
-    <div class="scene-meta">
-      <div class="meta-chip mc-yellow">&#x1F3A5; 3D Fly-Through</div>
-      <div class="meta-chip mc-blue">Macro &rarr; Quantum &middot; 5 Tiers</div>
-      <div class="meta-timecode">SCENE-05 &middot; 1920&times;1080 &middot; WEBM</div>
-    </div>
-  </div>
-
-  <!-- ─── SCENE 6 · Component Arena ───────────────────────────── -->
-  <div class="scene" id="scene-6">
-
-    <video class="scene-video" src="./promo-footage/scene-06-arena.webm"
-           autoplay muted loop playsinline preload="auto"
-           onerror="this.style.display='none'"></video>
-    <div class="scene-overlay" style="background:
-      linear-gradient(to top,    rgba(10,5,30,0.92) 0%, rgba(10,5,25,0.35) 40%, transparent 70%),
-      linear-gradient(to bottom, rgba(10,5,25,0.75) 0%, transparent 30%),
-      linear-gradient(to right,  rgba(10,5,25,0.55) 0%, transparent 50%);">
-    </div>
-
-    <div class="scene-fallback" id="fb-arena" style="background:linear-gradient(135deg,#050310,#080520);">
-      <canvas id="canvas-arena" style="position:absolute;inset:0;width:100%;height:100%;"></canvas>
-    </div>
-
-    <div class="scene-content">
-      <div class="rec-badge"><div class="rec-dot"></div>REC &middot; Scene 06 &middot; Component Arena</div>
-      <h1 class="headline">The <span class="c-purple">Arena</span>:<br>Components Battle</h1>
-      <p class="tagline">Load any two real components onto the 3D stage.
-        The FUSE&#x2122; engine runs head-to-head failure analysis &mdash;
-        impedance, thermal limits, and lifetime predictions, live.</p>
-    </div>
-    <div class="scene-meta">
-      <div class="meta-chip mc-purple">&#x2694; Component Arena &middot; 3D</div>
-      <div class="meta-chip mc-orange">FUSE&#x2122; Failure Analysis</div>
-      <div class="meta-timecode">SCENE-06 &middot; 1920&times;1080 &middot; WEBM</div>
-    </div>
-  </div>
-
-  <!-- ─── SCENE 7 · CTA ────────────────────────────────────────── -->
-  <div class="scene" id="scene-7">
-    <div class="cta-bg-glow" aria-hidden="true"></div>
-
-    <div class="scene-content centered">
-      <div class="intro-badge" style="border-color:rgba(0,255,136,.45); background:rgba(0,255,136,.07); color:var(--green);">
-        &#9889;&nbsp; No account required
+    <!-- SCENE 3 · Component Arena -->
+    <div class="scene" id="scene-3">
+      <p class="eyebrow">Component Arena · Side-by-Side Testing</p>
+      <h1 class="headline">
+        Every Component.&nbsp;<span class="c-green">Head-to-Head.</span>
+      </h1>
+      <p class="tagline">
+        Stress-test and compare components live with the FUSE™ engine watching every watt.
+        See exactly where each part breaks — before your real circuit does.
+      </p>
+      <div class="feat-grid">
+        <div class="feat-card">
+          <span class="feat-icon">🏟️</span>
+          <div class="feat-name">Live FUSE™ Analysis</div>
+          <div class="feat-desc">Real-time OK / Stressed / Warning / Failed status for every component in the arena.</div>
+        </div>
+        <div class="feat-card">
+          <span class="feat-icon">📊</span>
+          <div class="feat-name">Side-by-Side Compare</div>
+          <div class="feat-desc">Drop multiple components in at once and watch their thermal responses diverge.</div>
+        </div>
+        <div class="feat-card">
+          <span class="feat-icon">💥</span>
+          <div class="feat-name">Failure Replay</div>
+          <div class="feat-desc">Slow-motion replay of every overcurrent and overvoltage event — frame by frame.</div>
+        </div>
+        <div class="feat-card">
+          <span class="feat-icon">📋</span>
+          <div class="feat-name">Spec Sheets</div>
+          <div class="feat-desc">Auto-generated datasheets from your build — voltage ratings, power limits, derating curves.</div>
+        </div>
       </div>
-      <div class="wordmark" style="font-size:clamp(2.5rem,9vw,6rem);">
+    </div>
+
+    <!-- SCENE 4 · Practice Mode -->
+    <div class="scene" id="scene-4">
+      <p class="eyebrow">Practice Mode · W.I.R.E. Methodology</p>
+      <h1 class="headline">
+        Learn by&nbsp;<span class="c-purple">Doing.</span>
+      </h1>
+      <p class="tagline">
+        Guided practice problems take you from placing your first wire to applying
+        Kirchhoff's Laws — all inside the same 3D workspace you already know.
+      </p>
+      <div class="practice-steps">
+        <div class="practice-step">
+          <div class="step-num">W</div>
+          <div class="step-text"><strong>Wires</strong> — Connect components in the live 3D workspace.</div>
+        </div>
+        <div class="practice-step">
+          <div class="step-num">I</div>
+          <div class="step-text"><strong>Identification</strong> — Label and recognise circuit topology and component roles.</div>
+        </div>
+        <div class="practice-step">
+          <div class="step-num">R</div>
+          <div class="step-text"><strong>Relationships</strong> — Apply Ohm's Law and Kirchhoff's rules with instant feedback.</div>
+        </div>
+        <div class="practice-step">
+          <div class="step-num">E</div>
+          <div class="step-text"><strong>Equations</strong> — Solve for voltage, current, and resistance as FUSE™ validates each step.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCENE 5 · Outro / CTA -->
+    <div class="scene" id="scene-5">
+      <div class="wordmark">
         <span class="c-blue">Circui</span><span class="c-orange">Try</span><span class="c-green">3D</span>
       </div>
-      <p class="tagline" style="text-align:center; max-width:520px; color:rgba(249,250,252,0.6); font-size:clamp(0.9rem,2.2vw,1.1rem);">
-        Build your first 3D circuit in seconds.<br>
-        Watch electricity illuminate &mdash; from macro to quantum.
+      <p class="tagline" style="font-size:clamp(1rem,2.8vw,1.3rem); margin-top:16px;">
+        The most advanced interactive electrical platform — in a category we created.<br>
+        <span style="color:rgba(0,255,136,.7); font-weight:700;">#1 in interactive electrical learning.</span>
       </p>
       <div class="cta-wrap">
-        <a href="/#/app" class="btn-primary">&#x26A1; Start Building in 3D</a>
-        <a href="/#/practice" class="btn-secondary">&#x1F393; Try Practice Mode</a>
+        <a class="btn-primary" href="/#/app" target="_top">⚡ Launch Builder</a>
+        <a class="btn-secondary" href="/#/arena" target="_top">Open Arena</a>
       </div>
     </div>
-  </div>
 
-</div><!-- #stage -->
+  </div><!-- /#stage -->
 
-<script>
-/* ══════════════════════════════════════════════════════════════════
-   SCENE ENGINE
-══════════════════════════════════════════════════════════════════ */
-(function () {
-  'use strict';
+  <script>
+  (() => {
+    "use strict";
 
-  var SCENE_COUNT = 8;
-  var SCENE_MS    = 8000;   /* ms per scene */
-  var TRANSIT_MS  = 750;
+    /* ── Constants ──────────────────────────────────────────────────── */
+    const SCENE_COUNT = 6;
+    const SCENE_MS    = 6500;  // ms each scene stays active
+    const TRANSIT_MS  = 700;   // fade transition time
 
-  /* ── State ────────────────────────────────────────────────── */
-  var currentScene = 0;
-  var playing      = true;
-  var timerId      = null;
-  var sceneStart   = performance.now();
+    /* ── State ──────────────────────────────────────────────────────── */
+    let currentScene = 0;
+    let playing      = true;
+    let timerId      = null;
+    let progressRaf  = null;
+    let sceneStart   = performance.now();
 
-  /* ── DOM ──────────────────────────────────────────────────── */
-  var stages   = Array.from(document.querySelectorAll('.scene'));
-  var dotsEl   = document.getElementById('scene-dots');
-  var progBar  = document.getElementById('progress-bar');
-  var btnPlay  = document.getElementById('btn-play');
-  var flare    = document.getElementById('flare');
-  var counter  = document.getElementById('scene-counter');
+    /* ── DOM helpers ────────────────────────────────────────────────── */
+    const stages  = /** @type {HTMLElement[]} */ (Array.from(document.querySelectorAll(".scene")));
+    const dots    = document.getElementById("scene-dots");
+    const progBar = document.getElementById("progress-bar");
+    const btnPlay = document.getElementById("btn-play");
+    const flare   = document.getElementById("flare");
 
-  /* ── Build dots ───────────────────────────────────────────── */
-  for (var i = 0; i < SCENE_COUNT; i++) {
-    (function (idx) {
-      var d = document.createElement('div');
-      d.className = 'dot' + (idx === 0 ? ' active' : '');
-      d.addEventListener('click', function () { goTo(idx, true); });
-      dotsEl.appendChild(d);
-    }(i));
-  }
-  function getDots() { return Array.from(dotsEl.querySelectorAll('.dot')); }
+    /* ── Build dots ──────────────────────────────────────────────────── */
+    for (let i = 0; i < SCENE_COUNT; i++) {
+      const d = document.createElement("div");
+      d.className = "dot" + (i === 0 ? " active" : "");
+      d.addEventListener("click", () => goTo(i, true));
+      dots.appendChild(d);
+    }
 
-  /* ── Flare flash ──────────────────────────────────────────── */
-  function triggerFlare() {
-    flare.classList.add('flash');
-    requestAnimationFrame(function () {
-      requestAnimationFrame(function () { flare.classList.remove('flash'); });
-    });
-  }
+    function getDots() { return /** @type {HTMLDivElement[]} */ (Array.from(dots.querySelectorAll(".dot"))); }
 
-  /* ── Update counter ───────────────────────────────────────── */
-  function updateCounter(idx) {
-    counter.textContent = String(idx + 1).padStart(2, '0') + ' / 0' + SCENE_COUNT;
-  }
+    /* ── Flash transition ────────────────────────────────────────────── */
+    function triggerFlare() {
+      flare.classList.add("flash");
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => { flare.classList.remove("flash"); });
+      });
+    }
 
-  /* ── Go to scene ──────────────────────────────────────────── */
-  function goTo(idx, resetTimer) {
-    resetTimer = resetTimer || false;
-    var prev = currentScene;
-    currentScene = (idx + SCENE_COUNT) % SCENE_COUNT;
-    stages[prev].classList.remove('active');
-    stages[currentScene].classList.add('active');
-    getDots().forEach(function (d, i) { d.classList.toggle('active', i === currentScene); });
-    updateCounter(currentScene);
-    triggerFlare();
-    renderMode = currentScene;
-    /* sync videos: pause old scene's video, play new one from start */
-    var oldVid = stages[prev].querySelector('video');
-    var newVid = stages[currentScene].querySelector('video');
-    if (oldVid) oldVid.pause();
-    if (newVid) { newVid.currentTime = 0; newVid.play().catch(function(){}); }
-    if (resetTimer) {
-      clearTimeout(timerId);
+    /* ── Go to scene ─────────────────────────────────────────────────── */
+    function goTo(idx, resetTimer = false) {
+      const prev = currentScene;
+      currentScene = (idx + SCENE_COUNT) % SCENE_COUNT;
+
+      stages[prev].classList.remove("active");
+      stages[currentScene].classList.add("active");
+
+      getDots().forEach((d, i) => d.classList.toggle("active", i === currentScene));
+
+      triggerFlare();
+
+      if (resetTimer) {
+        clearTimeout(timerId);
+        sceneStart = performance.now();
+        if (playing) scheduleNext();
+      }
+    }
+
+    /* ── Advance ──────────────────────────────────────────────────────── */
+    function advance() {
+      goTo(currentScene + 1);
       sceneStart = performance.now();
       if (playing) scheduleNext();
     }
-  }
 
-  function advance() {
-    goTo(currentScene + 1);
-    sceneStart = performance.now();
-    if (playing) scheduleNext();
-  }
-  function scheduleNext() {
-    clearTimeout(timerId);
-    timerId = setTimeout(advance, SCENE_MS);
-  }
-
-  /* ── Progress bar tick ────────────────────────────────────── */
-  function tickProgress() {
-    if (playing) {
-      var elapsed = performance.now() - sceneStart;
-      var pct = Math.min(100, (elapsed / SCENE_MS) * 100);
-      progBar.style.width = pct + '%';
-    }
-    requestAnimationFrame(tickProgress);
-  }
-
-  /* ── Play / Pause ─────────────────────────────────────────── */
-  function togglePlay() {
-    playing = !playing;
-    btnPlay.innerHTML = playing ? '&#10074;&#10074;' : '&#9654;';
-    if (playing) {
-      sceneStart = performance.now() - (parseFloat(progBar.style.width) / 100) * SCENE_MS;
-      scheduleNext();
-    } else {
+    function scheduleNext() {
       clearTimeout(timerId);
+      timerId = setTimeout(advance, SCENE_MS);
     }
-  }
 
-  /* ── Controls ─────────────────────────────────────────────── */
-  document.getElementById('btn-prev').addEventListener('click', function () { goTo(currentScene - 1, true); });
-  document.getElementById('btn-next').addEventListener('click', function () { goTo(currentScene + 1, true); });
-  btnPlay.addEventListener('click', togglePlay);
-
-  /* ── Keyboard nav ─────────────────────────────────────────── */
-  document.addEventListener('keydown', function (e) {
-    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') goTo(currentScene + 1, true);
-    if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   goTo(currentScene - 1, true);
-    if (e.key === ' ' || e.key === 'k') { e.preventDefault(); togglePlay(); }
-  });
-
-  /* ── Fallback detection: show canvas when video missing ───── */
-  document.querySelectorAll('.scene-video').forEach(function (vid) {
-    var fb = vid.parentElement.querySelector('.scene-fallback');
-    if (!fb) return;
-    vid.addEventListener('error', function () {
-      vid.style.display = 'none';
-      fb.style.display  = 'block';
-    });
-    /* Also show fallback if video stalls for 3.5 s */
-    setTimeout(function () {
-      if (vid.readyState === 0) {
-        vid.style.display = 'none';
-        fb.style.display  = 'block';
+    /* ── Progress bar ─────────────────────────────────────────────────── */
+    function tickProgress() {
+      if (playing) {
+        const elapsed = performance.now() - sceneStart;
+        const pct = Math.min(100, (elapsed / SCENE_MS) * 100);
+        progBar.style.width = pct + "%";
       }
-    }, 3500);
-  });
-
-  /* ── Boot ─────────────────────────────────────────────────── */
-  stages[0].classList.add('active');
-  updateCounter(0);
-  scheduleNext();
-  tickProgress();
-
-  /* ══════════════════════════════════════════════════════════
-     TITLE PARTICLE RAIN
-  ══════════════════════════════════════════════════════════ */
-  (function () {
-    var container = document.getElementById('title-particles');
-    var COLORS = ['#88ccff','#00ff88','#c084fc','#ffd060','#ff8844'];
-    for (var j = 0; j < 60; j++) {
-      var p = document.createElement('div');
-      p.className = 'falling-particle';
-      p.style.left       = Math.random() * 100 + '%';
-      p.style.setProperty('--fall-dur',   (4 + Math.random() * 8) + 's');
-      p.style.setProperty('--fall-delay', (Math.random() * 8) + 's');
-      p.style.background = COLORS[Math.floor(Math.random() * COLORS.length)];
-      p.style.opacity    = (0.3 + Math.random() * 0.5).toFixed(2);
-      p.style.width = p.style.height = (2 + Math.random() * 4) + 'px';
-      container.appendChild(p);
+      progressRaf = requestAnimationFrame(tickProgress);
     }
-  }());
 
-  /* ══════════════════════════════════════════════════════════
-     BACKGROUND NETWORK CANVAS (title + text-only scenes)
-  ══════════════════════════════════════════════════════════ */
-  var renderMode = 0;
-  (function () {
-    var canvas = document.getElementById('bg-canvas');
-    var ctx    = canvas.getContext('2d');
-    var nodes  = [];
-    var TAU    = Math.PI * 2;
+    /* ── Play/Pause ──────────────────────────────────────────────────── */
+    function togglePlay() {
+      playing = !playing;
+      btnPlay.innerHTML = playing ? "&#10074;&#10074;" : "&#9654;";
+      if (playing) {
+        sceneStart = performance.now() - (parseFloat(progBar.style.width) / 100) * SCENE_MS;
+        scheduleNext();
+      } else {
+        clearTimeout(timerId);
+      }
+    }
 
+    /* ── Controls ────────────────────────────────────────────────────── */
+    document.getElementById("btn-prev").addEventListener("click", () => goTo(currentScene - 1, true));
+    document.getElementById("btn-next").addEventListener("click", () => goTo(currentScene + 1, true));
+    btnPlay.addEventListener("click", togglePlay);
+
+    /* ── Keyboard nav ────────────────────────────────────────────────── */
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowRight" || e.key === "ArrowDown") goTo(currentScene + 1, true);
+      if (e.key === "ArrowLeft"  || e.key === "ArrowUp")   goTo(currentScene - 1, true);
+      if (e.key === " " || e.key === "k") { e.preventDefault(); togglePlay(); }
+    });
+
+    /* ── Boot first scene ────────────────────────────────────────────── */
+    stages[0].classList.add("active");
+    scheduleNext();
+    tickProgress();
+
+    /* ══════════════════════════════════════════════════════════════════
+       BACKGROUND CANVAS — animated particle / circuit field
+    ══════════════════════════════════════════════════════════════════ */
+    const canvas = document.getElementById("bg-canvas");
+    const ctx    = canvas.getContext("2d");
+
+    let W, H;
+    const MAX_PARTICLES = 220;
+    const particles     = [];
+    const NODE_COUNT    = 28;
+    const nodes         = [];
+    let   globalTime    = 0;
+
+    /* ── Resize ─────────────────────────────────────────────────────── */
     function resize() {
-      canvas.width  = window.innerWidth;
-      canvas.height = window.innerHeight;
+      W = canvas.width  = window.innerWidth  * (window.devicePixelRatio || 1);
+      H = canvas.height = window.innerHeight * (window.devicePixelRatio || 1);
+      canvas.style.width  = window.innerWidth  + "px";
+      canvas.style.height = window.innerHeight + "px";
+      buildNodes();
     }
-    resize();
-    window.addEventListener('resize', resize);
+    window.addEventListener("resize", resize);
 
-    /* Generate a sparse node network */
-    for (var n = 0; n < 55; n++) {
-      nodes.push({
-        x: Math.random(), y: Math.random(),
-        vx: (Math.random() - 0.5) * 0.00025,
-        vy: (Math.random() - 0.5) * 0.00025,
-        r: 2 + Math.random() * 2.5,
-        phase: Math.random() * TAU,
-        col: ['#88ccff','#00ff88','#c084fc'][Math.floor(Math.random() * 3)]
+    /* ── Circuit nodes ───────────────────────────────────────────────── */
+    function buildNodes() {
+      nodes.length = 0;
+      for (let i = 0; i < NODE_COUNT; i++) {
+        nodes.push({
+          x:  Math.random() * W,
+          y:  Math.random() * H,
+          vx: (Math.random() - 0.5) * 0.18,
+          vy: (Math.random() - 0.5) * 0.18,
+          r:  Math.random() * 3 + 1.5,
+          phase: Math.random() * Math.PI * 2,
+          color: [
+            "rgba(136,204,255,",
+            "rgba(0,255,136,",
+            "rgba(255,136,68,",
+            "rgba(192,132,252,",
+          ][Math.floor(Math.random() * 4)],
+        });
+      }
+    }
+
+    /* ── Flow particles ──────────────────────────────────────────────── */
+    function spawnParticle(fromNode, toNode) {
+      if (particles.length >= MAX_PARTICLES) return;
+      particles.push({
+        x: fromNode.x,
+        y: fromNode.y,
+        tx: toNode.x,
+        ty: toNode.y,
+        t: 0,
+        speed: Math.random() * 0.012 + 0.006,
+        size:  Math.random() * 2.5 + 1,
+        color: fromNode.color,
+        trail: [],
       });
     }
 
-    function bgLoop() {
-      var W = canvas.width, H = canvas.height;
+    /* ── Render loop ─────────────────────────────────────────────────── */
+    function draw() {
+      globalTime += 0.008;
+
       ctx.clearRect(0, 0, W, H);
 
-      /* Only render background on text-only or title scenes */
-      if (renderMode !== 0 && renderMode !== 7) {
-        requestAnimationFrame(bgLoop);
-        return;
-      }
+      /* Gradient background */
+      const grad = ctx.createRadialGradient(W * 0.5, H * 0.3, 0, W * 0.5, H * 0.5, W * 0.75);
+      grad.addColorStop(0,   "rgba(15,30,80,0.55)");
+      grad.addColorStop(0.5, "rgba(4,10,30,0.65)");
+      grad.addColorStop(1,   "rgba(3,7,22,0.8)");
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, W, H);
 
-      var t = performance.now() * 0.001;
-
-      nodes.forEach(function (nd) {
-        nd.x = (nd.x + nd.vx + 1) % 1;
-        nd.y = (nd.y + nd.vy + 1) % 1;
+      /* Move nodes */
+      nodes.forEach(n => {
+        n.x += n.vx; n.y += n.vy;
+        if (n.x < 0 || n.x > W) n.vx *= -1;
+        if (n.y < 0 || n.y > H) n.vy *= -1;
       });
 
-      /* draw edges */
-      for (var a = 0; a < nodes.length; a++) {
-        for (var b = a + 1; b < nodes.length; b++) {
-          var dx = (nodes[a].x - nodes[b].x) * W;
-          var dy = (nodes[a].y - nodes[b].y) * H;
-          var dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < 180) {
-            ctx.save();
-            ctx.strokeStyle = 'rgba(136,204,255,' + (0.055 * (1 - dist / 180)) + ')';
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.moveTo(nodes[a].x * W, nodes[a].y * H);
-            ctx.lineTo(nodes[b].x * W, nodes[b].y * H);
-            ctx.stroke();
-            ctx.restore();
-          }
-        }
-      }
-
-      /* draw nodes */
-      nodes.forEach(function (nd) {
-        var pulse = 0.5 + 0.5 * Math.sin(t * 1.4 + nd.phase);
-        ctx.save();
-        ctx.shadowColor = nd.col;
-        ctx.shadowBlur  = 8 + pulse * 10;
-        ctx.beginPath();
-        ctx.arc(nd.x * W, nd.y * H, nd.r * (0.7 + 0.3 * pulse), 0, TAU);
-        ctx.fillStyle = nd.col.replace(')', ', ' + (0.35 + pulse * 0.3) + ')').replace('rgb(','rgba(');
-        ctx.fill();
-        ctx.restore();
-      });
-
-      requestAnimationFrame(bgLoop);
-    }
-    bgLoop();
-  }());
-
-  /* ══════════════════════════════════════════════════════════════
-     SCENE-SPECIFIC FALLBACK CANVAS ANIMATIONS
-     Scenes 5 and 6 use canvas-based 3D visualisations shown when
-     the .webm files haven't been recorded yet.
-  ══════════════════════════════════════════════════════════════ */
-  (function () {
-    'use strict';
-    var TAU = Math.PI * 2;
-
-    function makeCanvas(id) {
-      var el = document.getElementById(id);
-      if (!el) return null;
-      var ctx = el.getContext('2d');
-      function resize() {
-        var p = el.parentElement;
-        el.width  = p ? (p.offsetWidth  || window.innerWidth)  : window.innerWidth;
-        el.height = p ? (p.offsetHeight || window.innerHeight) : window.innerHeight;
-      }
-      resize();
-      window.addEventListener('resize', resize);
-      return { el: el, ctx: ctx, resize: resize,
-               get W() { return el.width; }, get H() { return el.height; } };
-    }
-
-    function glowLine(ctx, x1, y1, x2, y2, color, lw, blur) {
-      ctx.save();
-      ctx.shadowColor = color; ctx.shadowBlur = blur || 14;
-      ctx.strokeStyle = color; ctx.lineWidth = lw || 2;
-      ctx.lineCap = 'round';
-      ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
-      ctx.restore();
-    }
-
-    function glowDot(ctx, x, y, r, color, alpha) {
-      ctx.save();
-      ctx.shadowColor = color; ctx.shadowBlur = 18;
-      ctx.beginPath(); ctx.arc(x, y, r, 0, TAU);
-      ctx.fillStyle = color.replace(')', ',' + (alpha || 1) + ')').replace('rgb(', 'rgba(');
-      ctx.fill(); ctx.restore();
-    }
-
-    function hud(ctx, W, H, msg, color) {
-      ctx.save();
-      ctx.font = '700 12px "Courier New",monospace';
-      ctx.fillStyle = color || 'rgba(0,200,255,0.45)';
-      ctx.textAlign = 'center';
-      ctx.fillText(msg, W / 2, H - 22);
-      ctx.restore();
-    }
-
-    /* ══════════════════════════════════════════════════════
-       SCENE 5 — 3D BUILDER FLY-THROUGH
-       Simulated perspective: rotating wire-frame cube
-       suggests the 3D space of the real app.
-    ══════════════════════════════════════════════════════ */
-    var s5 = makeCanvas('canvas-3dbuild');
-    if (s5) {
-      var t5 = 0;
-      var eFlux5 = [0, 0.2, 0.4, 0.6, 0.8];
-
-      /* Unit cube vertices */
-      var CUBE_V = [
-        [-1,-1,-1],[1,-1,-1],[1,1,-1],[-1,1,-1],
-        [-1,-1, 1],[1,-1, 1],[1,1, 1],[-1,1, 1]
-      ];
-      var CUBE_E = [
-        [0,1],[1,2],[2,3],[3,0],
-        [4,5],[5,6],[6,7],[7,4],
-        [0,4],[1,5],[2,6],[3,7]
-      ];
-
-      function project(v, W, H, rx, ry) {
-        var cosY = Math.cos(ry), sinY = Math.sin(ry);
-        var x1 = v[0]*cosY - v[2]*sinY;
-        var z1 = v[0]*sinY + v[2]*cosY;
-        var cosX = Math.cos(rx), sinX = Math.sin(rx);
-        var y2 = v[1]*cosX - z1*sinX;
-        var z2 = v[1]*sinX + z1*cosX;
-        var fov = 3.5 / (3.5 + z2);
-        return [W/2 + x1 * fov * W * 0.22, H/2 + y2 * fov * H * 0.38];
-      }
-
-      (function loop5() {
-        s5.resize();
-        var ctx = s5.ctx, W = s5.W, H = s5.H;
-        ctx.clearRect(0, 0, W, H);
-
-        var vg5 = ctx.createRadialGradient(W/2, H/2, 0, W/2, H/2, H*0.72);
-        vg5.addColorStop(0, 'rgba(8,16,50,0.6)'); vg5.addColorStop(1, 'rgba(2,5,18,0.98)');
-        ctx.fillStyle = vg5; ctx.fillRect(0, 0, W, H);
-
-        var ry5 = t5 * 0.35;
-        var rx5 = 0.28 + 0.12 * Math.sin(t5 * 0.22);
-
-        CUBE_E.forEach(function(edge) {
-          var p0 = project(CUBE_V[edge[0]], W, H, rx5, ry5);
-          var p1 = project(CUBE_V[edge[1]], W, H, rx5, ry5);
-          glowLine(ctx, p0[0], p0[1], p1[0], p1[1], '#00c8ff', 1.4, 10);
-        });
-
-        CUBE_V.forEach(function(v, vi) {
-          var p = project(v, W, H, rx5, ry5);
-          var col = ['#00ff88','#88ccff','#c084fc','#ffd060','#ff8844','#ff4455','#88ccff','#00ff88'][vi % 8];
-          glowDot(ctx, p[0], p[1], 5.5, col, 0.9);
-        });
-
-        eFlux5 = eFlux5.map(function(p) { return (p + 0.004) % 1; });
-        eFlux5.forEach(function(pos) {
-          var totalEdges = CUBE_E.length;
-          var edgeIdx = Math.floor(pos * totalEdges);
-          var edgeFrac = (pos * totalEdges) % 1;
-          var e = CUBE_E[edgeIdx];
-          var p0 = project(CUBE_V[e[0]], W, H, rx5, ry5);
-          var p1 = project(CUBE_V[e[1]], W, H, rx5, ry5);
-          var ex5 = p0[0] + (p1[0] - p0[0]) * edgeFrac;
-          var ey5 = p0[1] + (p1[1] - p0[1]) * edgeFrac;
-          glowDot(ctx, ex5, ey5, 4, '#00ffcc', 0.9);
-          glowDot(ctx, ex5, ey5, 2, '#ffffff', 0.5);
-        });
-
-        ctx.save();
-        ctx.font = '700 11px "Courier New",monospace';
-        ctx.fillStyle = 'rgba(136,204,255,0.5)';
-        ctx.textAlign = 'right';
-        var tiers = ['MACRO','COMPONENT','ATOMIC','DEEP-ATOMIC','QUANTUM'];
-        var tierIdx = Math.floor((t5 * 0.08) % tiers.length);
-        ctx.fillText('ZOOM TIER: ' + tiers[tierIdx], W - 24, 40);
-        ctx.restore();
-
-        hud(ctx, W, H, '3D FLY-THROUGH  \u00B7  5 ZOOM TIERS  \u00B7  ELECTRON FLOW ACTIVE', 'rgba(0,255,200,0.45)');
-        t5 += 0.016;
-        requestAnimationFrame(loop5);
-      }());
-    }
-
-    /* ══════════════════════════════════════════════════════
-       SCENE 6 — COMPONENT ARENA (orbiting spheres)
-       Two glowing spheres orbit a central platform,
-       evoking the 3D Arena stage.
-    ══════════════════════════════════════════════════════ */
-    var s6 = makeCanvas('canvas-arena');
-    if (s6) {
-      var t6 = 0;
-
-      (function loop6() {
-        s6.resize();
-        var ctx = s6.ctx, W = s6.W, H = s6.H;
-        ctx.clearRect(0, 0, W, H);
-
-        var vg6 = ctx.createRadialGradient(W/2, H*0.52, H*0.06, W/2, H*0.52, H*0.7);
-        vg6.addColorStop(0, 'rgba(18,12,50,0.7)'); vg6.addColorStop(1, 'rgba(3,2,12,0.98)');
-        ctx.fillStyle = vg6; ctx.fillRect(0, 0, W, H);
-
-        var pCy = H * 0.58;
-        ctx.save();
-        ctx.beginPath();
-        ctx.ellipse(W/2, pCy, W*0.22, H*0.06, 0, 0, TAU);
-        ctx.strokeStyle = 'rgba(56,189,248,0.3)';
-        ctx.lineWidth = 1.5;
-        ctx.stroke();
-        ctx.fillStyle = 'rgba(29,78,216,0.15)';
-        ctx.fill();
-        ctx.restore();
-
-        for (var gi = -3; gi <= 3; gi++) {
-          ctx.save();
+      /* Draw edges between nearby nodes */
+      for (let i = 0; i < nodes.length; i++) {
+        for (let j = i + 1; j < nodes.length; j++) {
+          const dx = nodes[j].x - nodes[i].x;
+          const dy = nodes[j].y - nodes[i].y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist > W * 0.28) continue;
+          const alpha = (1 - dist / (W * 0.28)) * 0.25;
           ctx.beginPath();
-          ctx.ellipse(W/2, pCy, Math.abs(gi * W * 0.065), H * 0.015, 0, 0, TAU);
-          ctx.strokeStyle = 'rgba(20,184,166,0.15)';
+          ctx.moveTo(nodes[i].x, nodes[i].y);
+
+          /* Orthogonal "circuit trace" routing */
+          const mx = nodes[i].x;
+          const my = nodes[j].y;
+          ctx.lineTo(mx, my);
+          ctx.lineTo(nodes[j].x, nodes[j].y);
+          ctx.strokeStyle = nodes[i].color + alpha + ")";
           ctx.lineWidth = 0.8;
           ctx.stroke();
-          ctx.restore();
+
+          /* Occasionally spawn a flow particle */
+          if (Math.random() < 0.0015) spawnParticle(nodes[i], nodes[j]);
+        }
+      }
+
+      /* Draw nodes */
+      nodes.forEach(n => {
+        const pulse = 0.6 + 0.4 * Math.sin(globalTime * 1.8 + n.phase);
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, n.r * pulse, 0, Math.PI * 2);
+        ctx.fillStyle = n.color + (0.55 * pulse) + ")";
+        ctx.fill();
+        /* Glow ring */
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, n.r * pulse * 2.8, 0, Math.PI * 2);
+        ctx.fillStyle = n.color + (0.06 * pulse) + ")";
+        ctx.fill();
+      });
+
+      /* Move & draw flow particles */
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.t += p.speed;
+        if (p.t >= 1) { particles.splice(i, 1); continue; }
+
+        /* Lerp along orthogonal trace */
+        let px, py;
+        if (p.t < 0.5) {
+          const t2 = p.t * 2;
+          px = p.x;
+          py = p.y + (p.ty - p.y) * t2;
+        } else {
+          const t2 = (p.t - 0.5) * 2;
+          px = p.x + (p.tx - p.x) * t2;
+          py = p.ty;
         }
 
-        var orbitR = W * 0.18;
-        var aAngle = t6 * 0.7;
-        var ax = W/2 + Math.cos(aAngle) * orbitR;
-        var az = Math.sin(aAngle) * 0.38;
-        var ay = pCy - H * 0.18 - az * H * 0.06;
-        var aScale = 0.82 + az * 0.18;
+        p.trail.push({ x: px, y: py });
+        if (p.trail.length > 10) p.trail.shift();
 
-        ctx.save();
-        ctx.shadowColor = '#38bdf8'; ctx.shadowBlur = 28 + 10 * Math.sin(t6 * 1.5);
-        var gradA = ctx.createRadialGradient(ax - 8*aScale, ay - 8*aScale, 2, ax, ay, 28*aScale);
-        gradA.addColorStop(0, 'rgba(186,230,255,0.95)');
-        gradA.addColorStop(0.4, 'rgba(56,189,248,0.8)');
-        gradA.addColorStop(1, 'rgba(30,64,175,0.3)');
+        /* Draw trail */
+        p.trail.forEach((pt, ti) => {
+          const a = (ti / p.trail.length) * 0.5;
+          ctx.beginPath();
+          ctx.arc(pt.x, pt.y, p.size * (ti / p.trail.length), 0, Math.PI * 2);
+          ctx.fillStyle = p.color + a + ")";
+          ctx.fill();
+        });
+
+        /* Draw head */
         ctx.beginPath();
-        ctx.arc(ax, ay, 28*aScale, 0, TAU);
-        ctx.fillStyle = gradA;
+        ctx.arc(px, py, p.size, 0, Math.PI * 2);
+        ctx.fillStyle = p.color + "0.9)";
         ctx.fill();
-        ctx.restore();
+      }
 
-        ctx.save();
-        ctx.font = 'bold 10px "Courier New",monospace';
-        ctx.fillStyle = 'rgba(186,230,255,0.7)';
-        ctx.textAlign = 'center';
-        ctx.fillText('COMP A', ax, ay + 38*aScale);
-        ctx.restore();
-
-        var bAngle = aAngle + Math.PI;
-        var bx = W/2 + Math.cos(bAngle) * orbitR;
-        var bz = Math.sin(bAngle) * 0.38;
-        var by = pCy - H * 0.18 - bz * H * 0.06;
-        var bScale = 0.82 + bz * 0.18;
-
-        ctx.save();
-        ctx.shadowColor = '#a855f7'; ctx.shadowBlur = 28 + 10 * Math.cos(t6 * 1.5);
-        var gradB = ctx.createRadialGradient(bx - 8*bScale, by - 8*bScale, 2, bx, by, 28*bScale);
-        gradB.addColorStop(0, 'rgba(233,213,255,0.95)');
-        gradB.addColorStop(0.4, 'rgba(168,85,247,0.8)');
-        gradB.addColorStop(1, 'rgba(88,28,135,0.3)');
-        ctx.beginPath();
-        ctx.arc(bx, by, 28*bScale, 0, TAU);
-        ctx.fillStyle = gradB;
-        ctx.fill();
-        ctx.restore();
-
-        ctx.save();
-        ctx.font = 'bold 10px "Courier New",monospace';
-        ctx.fillStyle = 'rgba(233,213,255,0.7)';
-        ctx.textAlign = 'center';
-        ctx.fillText('COMP B', bx, by + 38*bScale);
-        ctx.restore();
-
-        var arcCount = 4;
-        for (var ai = 0; ai < arcCount; ai++) {
-          var arcFrac = (t6 * 1.4 + ai / arcCount) % 1;
-          var arcX = ax + (bx - ax) * arcFrac;
-          var arcY = ay + (by - ay) * arcFrac - Math.sin(arcFrac * Math.PI) * H * 0.08;
-          var arcAlpha = Math.sin(arcFrac * Math.PI) * 0.7;
-          glowDot(ctx, arcX, arcY, 3, '#ffd060', arcAlpha);
-        }
-
-        var fProgress = (Math.sin(t6 * 0.4) + 1) / 2;
-        var barW = W * 0.3, barH = 7;
-        var barX = W/2 - barW/2, barY = H * 0.82;
-        ctx.save();
-        ctx.fillStyle = 'rgba(255,255,255,0.08)';
-        ctx.beginPath();
-        if (ctx.roundRect) { ctx.roundRect(barX, barY, barW, barH, 4); } else { ctx.rect(barX, barY, barW, barH); }
-        ctx.fill();
-        var barCol = fProgress < 0.6 ? '#00ff88' : fProgress < 0.85 ? '#ffd060' : '#ff4455';
-        ctx.fillStyle = barCol;
-        ctx.shadowColor = barCol; ctx.shadowBlur = 8;
-        ctx.beginPath();
-        if (ctx.roundRect) { ctx.roundRect(barX, barY, barW * fProgress, barH, 4); } else { ctx.rect(barX, barY, barW * fProgress, barH); }
-        ctx.fill();
-        ctx.restore();
-
-        ctx.save();
-        ctx.font = '700 11px "Courier New",monospace';
-        ctx.fillStyle = 'rgba(157,184,255,0.55)';
-        ctx.textAlign = 'center';
-        ctx.fillText('FUSE\u2122 ANALYSIS  \u00B7  \u0394 IMPEDANCE  \u00B7  FAILURE THRESHOLD', W/2, H * 0.88);
-        ctx.restore();
-
-        hud(ctx, W, H, 'COMPONENT ARENA  \u00B7  3D BATTLE STAGE  \u00B7  REAL SPECS', 'rgba(168,85,247,0.45)');
-        t6 += 0.016;
-        requestAnimationFrame(loop6);
-      }());
+      requestAnimationFrame(draw);
     }
 
-  }()); /* end fallback canvas animations */
-
-}()); /* end scene engine */
-</script>
+    resize();
+    draw();
+  })();
+  </script>
 </body>
 </html>

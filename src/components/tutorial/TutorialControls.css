@@ -1,0 +1,98 @@
+/* Tutorial Controls - Restart button */
+
+.tutorial-restart-btn {
+  position: fixed;
+  bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+  left: calc(24px + env(safe-area-inset-left, 0px));
+  z-index: 850;
+
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+
+  background: rgba(14, 32, 64, 0.92);
+  border: 1px solid rgba(136, 204, 255, 0.32);
+  border-radius: 12px;
+
+  color: rgba(200, 220, 255, 0.85);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(12px);
+
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.15s ease,
+    box-shadow 0.2s ease;
+}
+
+.tutorial-restart-btn:hover {
+  background: rgba(18, 38, 72, 0.95);
+  border-color: rgba(0, 255, 136, 0.45);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 32px rgba(0, 255, 136, 0.15);
+}
+
+.tutorial-restart-btn:active {
+  transform: translateY(0);
+}
+
+.tutorial-restart-btn:focus-visible {
+  outline: 2px solid rgba(0, 255, 136, 0.6);
+  outline-offset: 2px;
+}
+
+.tutorial-restart-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  background: linear-gradient(
+    135deg,
+    rgba(0, 255, 136, 0.2),
+    rgba(136, 204, 255, 0.2)
+  );
+  border: 1px solid rgba(0, 255, 136, 0.35);
+  border-radius: 50%;
+  font-size: 13px;
+  font-weight: 700;
+  color: rgba(0, 255, 136, 0.9);
+}
+
+.tutorial-restart-label {
+  text-transform: uppercase;
+}
+
+/* Responsive */
+@media (max-width: 720px) {
+  .tutorial-restart-btn {
+    bottom: calc(200px + env(safe-area-inset-bottom, 0px));
+    left: calc(12px + env(safe-area-inset-left, 0px));
+    padding: 8px 12px;
+    font-size: 11px;
+  }
+
+  .tutorial-restart-icon {
+    width: 20px;
+    height: 20px;
+    font-size: 12px;
+  }
+}
+
+/* Hide on very small screens when menus are likely open */
+@media (max-width: 480px) {
+  .tutorial-restart-btn {
+    padding: 8px;
+    border-radius: 50%;
+  }
+
+  .tutorial-restart-label {
+    display: none;
+  }
+}

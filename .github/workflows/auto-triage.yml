@@ -1,0 +1,78 @@
+name: Auto Triage
+
+on:
+  pull_request_target:
+    types: [opened, reopened, synchronize, ready_for_review]
+  schedule:
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  label-prs:
+    if: github.event_name == 'pull_request_target'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ensure triage labels exist
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const labels = [
+              { name: "dependencies", color: "1D76DB", description: "Dependency updates" },
+              { name: "ci/cd", color: "5319E7", description: "CI/CD and workflow changes" },
+              { name: "frontend", color: "0E8A16", description: "Frontend app and UI changes" },
+              { name: "android", color: "3DDC84", description: "Android and Capacitor changes" },
+              { name: "tests", color: "FBCA04", description: "Test coverage or test code changes" },
+              { name: "docs", color: "0075CA", description: "Documentation-only updates" },
+              { name: "assets", color: "C5DEF5", description: "Screenshots, media, and static assets" },
+              { name: "stale", color: "BFDADC", description: "No recent activity" }
+            ];
+            for (const label of labels) {
+              try {
+                await github.rest.issues.getLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  name: label.name
+                });
+              } catch (error) {
+                if (error.status === 404) {
+                  await github.rest.issues.createLabel({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    ...label
+                  });
+                } else {
+                  throw error;
+                }
+              }
+            }
+
+      - name: Apply path-based labels
+        uses: actions/labeler@v5
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+  stale:
+    if: github.event_name != 'pull_request_target'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Mark and close stale issues/PRs
+        uses: actions/stale@v9
+        with:
+          stale-issue-label: stale
+          stale-pr-label: stale
+          stale-issue-message: 'This issue has been marked as stale due to inactivity. It will be closed if no further activity occurs.'
+          close-issue-message: 'Closing this issue due to inactivity. Comment if this still needs attention and it can be reopened.'
+          stale-pr-message: 'This pull request has been marked as stale due to inactivity. It will be closed if no further activity occurs.'
+          close-pr-message: 'Closing this pull request due to inactivity. Reopen anytime if work should continue.'
+          days-before-issue-stale: 45
+          days-before-issue-close: 14
+          days-before-pr-stale: 21
+          days-before-pr-close: 7
+          exempt-issue-labels: pinned,security,planned
+          exempt-pr-labels: pinned,security,work-in-progress
+          remove-stale-when-updated: true
