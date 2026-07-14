@@ -5621,19 +5621,19 @@ body.android-optimized .zoom-btn {
         const ATOMIC_MODE_EXIT_HYSTERESIS_ABOVE  = 0.30;
         const ATOMIC_MODE_ENTER_THRESHOLD = ATOMIC_ZOOM_THRESHOLD - ATOMIC_MODE_ENTER_HYSTERESIS_BELOW; // enter atomic mode
         const ATOMIC_MODE_EXIT_THRESHOLD  = ATOMIC_ZOOM_THRESHOLD + ATOMIC_MODE_EXIT_HYSTERESIS_ABOVE; // exit atomic mode
-        // Tiered zoom toggle. true = keep the full descent (carrier → lattice →
-        // atomic → quantum) so you can zoom in to see the copper lattice and
-        // electrons. false = stop at the navigable charge-carrier tier. Kept as a
-        // flag so we can A/B; default on because the tiered zoom is a core feature.
-        const AUTO_ATOMIC_DESCENT = true;
-        const ORBITAL_RING_RADIUS_FACTOR = 2.8;
-        const ORBITAL_RING_TUBE_FACTOR = 0.35;
-        const ORBITAL_RING_RADIAL_SEGMENTS = 6;
-        const ORBITAL_RING_TUBULAR_SEGMENTS = 18;
-        const ORBITAL_RING_BASE_ROTATION = Math.PI / 3;
-        const ORBITAL_RING_ROTATION_OFFSET = 0.4;
-        const ORBITAL_RING_Z_ROTATION_FACTOR = 4;
-        const ORBITAL_RING_X_ROTATION_FACTOR = 2;
+        // Electron aura — soft additive glow sphere representing the electron's probability cloud.
+        // Replaces the old multi-ring orbital visualisation which was scientifically misleading:
+        // conduction electrons in a metal are delocalized charge carriers, not Bohr-model atoms
+        // with discrete orbital rings.
+        const ELECTRON_AURA_RADIUS_FACTOR = 1.85;  // aura sphere radius relative to electron size
+        const ELECTRON_AURA_OPACITY       = 0.10;  // base transparency of aura
+        const ELECTRON_AURA_PULSE_AMP     = 0.05;  // opacity swing driven by pulse oscillator
+
+        // Organic transverse wobble — sinusoidal oscillation perpendicular to the wire axis that
+        // makes the electron stream look like a natural river current rather than a rigid rail.
+        // Each electron has its own phase offset (jitterPhaseX) so they move independently.
+        const WOBBLE_AMPLITUDE = 0.06;   // max perpendicular world-unit displacement
+        const WOBBLE_FREQUENCY = 0.038;  // oscillation speed (radians per globalFlowTime tick)
 
         // ── Multi-scale current-flow visualization constants ─────────────────
         // Zoom distance thresholds that control which visualization tier is active.
@@ -9593,6 +9593,16 @@ body.android-optimized .zoom-btn {
                             const q  = new THREE.Quaternion().setFromUnitVectors(worldUpVector, tangent.lengthSq() > 0.0001 ? tangent : worldUpVector);
                             particle.setRotationFromQuaternion(q);
                             particle.scale.set(baseZoomScale, baseZoomScale * elongScale, baseZoomScale);
+
+                            // ── Organic transverse wobble ─────────────────────
+                            // Oscillate each electron slightly perpendicular to the
+                            // wire axis, giving the stream a natural river-current
+                            // quality.  Each electron has its own phase offset so
+                            // they flow independently rather than in lock-step.
+                            const perpRef = Math.abs(tangent.y) < 0.9 ? worldUpVector : new THREE.Vector3(1, 0, 0);
+                            const perp = new THREE.Vector3().crossVectors(tangent, perpRef).normalize();
+                            const wobblePhase = globalFlowTime * WOBBLE_FREQUENCY + (wireData.jitterPhaseX || 0);
+                            particle.position.addScaledVector(perp, WOBBLE_AMPLITUDE * Math.sin(wobblePhase));
                         } else {
                             particle.scale.setScalar(baseZoomScale);
                         }
@@ -9664,22 +9674,13 @@ body.android-optimized .zoom-btn {
                         wireData.trailMeshes.forEach(t => { if (t) t.visible = false; });
                     }
 
-                    // ── Orbital rings (atomic zoom) ──────────────────────────
-                    if (inAtomicZoom) {
-                        const ringSpeed = wireData.speed * ORBITAL_RING_Z_ROTATION_FACTOR;
-                        if (wireData.orbitalRing) {
-                            wireData.orbitalRing.rotation.z += ringSpeed;
-                            wireData.orbitalRing.rotation.x += wireData.speed * ORBITAL_RING_X_ROTATION_FACTOR;
-                        }
-                        if (wireData.orbitalRing2) {
-                            // Counter-rotate second ring for a richer, gyroscopic look
-                            wireData.orbitalRing2.rotation.z -= ringSpeed * 0.7;
-                            wireData.orbitalRing2.rotation.y += wireData.speed * ORBITAL_RING_X_ROTATION_FACTOR * 1.3;
-                        }
-                        if (wireData.orbitalRing3) {
-                            wireData.orbitalRing3.rotation.x += ringSpeed * 0.55;
-                            wireData.orbitalRing3.rotation.z -= wireData.speed * ORBITAL_RING_Z_ROTATION_FACTOR * 0.4;
-                        }
+                    // ── Electron aura pulse (all tiers) ──────────────────────
+                    // Breathe the aura's opacity in sync with the main particle
+                    // pulse so it feels like a living probability cloud rather
+                    // than a static shell.
+                    if (wireData.electronAura?.material) {
+                        wireData.electronAura.material.opacity = Math.max(0,
+                            ELECTRON_AURA_OPACITY + sinVal * ELECTRON_AURA_PULSE_AMP);
                     }
 
                 } catch (error) {
@@ -19815,80 +19816,23 @@ Made with ? for visual learners everywhere!
                         }
                         particle.position.copy(initialPosition);
 
-                        // ── Additive glow halo (fake-bloom) ─────────────────
-                        // Makes every electron a luminous point of light so the
-                        // stream reads as tangible, glowing electricity.
-                        const glowSprite = new THREE.Sprite(new THREE.SpriteMaterial({
-                            map:         getElectronGlowTexture(),
+                        // ── Electron aura (soft probability-cloud glow, all tiers) ──
+                        // A semi-transparent sphere slightly larger than the electron core
+                        // represents the delocalized probability density of a conduction-band
+                        // electron.  Additive blending causes it to brighten the scene rather
+                        // than occlude other geometry, giving a soft organic glow.
+                        const auraGeom = new THREE.SphereGeometry(
+                            particleSize * ELECTRON_AURA_RADIUS_FACTOR,
+                            isMobile ? 6 : 8, isMobile ? 4 : 6);
+                        const auraMat = new THREE.MeshBasicMaterial({
                             color:       flowColor.hex,
                             transparent: true,
-                            opacity:     isAndroid ? 0.34 : 0.375,
-                            blending:    isAndroid ? THREE.NormalBlending : THREE.AdditiveBlending,
-                            depthWrite:  false,
-                            depthTest:   !isAndroid
-                        }));
-                        const glowScale = particleSize * 7.5;
-                        glowSprite.scale.set(glowScale, glowScale, 1);
-                        glowSprite.frustumCulled = false;
-                        particle.add(glowSprite);
-
-                        // ── Orbital rings (atomic zoom only) ────────────────
-                        let orbitalRing  = null;
-                        let orbitalRing2 = null;
-                        let orbitalRing3 = null;
-
-                        if (inAtomicZoom) {
-                            // Ring 1 — primary orbital plane
-                            const r1Geom = new THREE.TorusGeometry(
-                                particleSize * ORBITAL_RING_RADIUS_FACTOR,
-                                particleSize * ORBITAL_RING_TUBE_FACTOR,
-                                ORBITAL_RING_RADIAL_SEGMENTS,
-                                ORBITAL_RING_TUBULAR_SEGMENTS);
-                            orbitalRing = new THREE.Mesh(r1Geom, new THREE.MeshBasicMaterial({
-                                color: flowColor.hex, transparent: !isAndroid, opacity: 0.65,
-                                side: THREE.DoubleSide, depthWrite: false,
-                                // AdditiveBlending with transparent:false crashes/disappears on
-                                // Android GPU drivers; NormalBlending is safe on all hardware.
-                                blending: isAndroid ? THREE.NormalBlending : THREE.AdditiveBlending
-                            }));
-                            orbitalRing.frustumCulled = false;
-                            orbitalRing.rotation.x = ORBITAL_RING_BASE_ROTATION + (i % 3) * ORBITAL_RING_ROTATION_OFFSET;
-                            particle.add(orbitalRing);
-
-                            // Ring 2 — tilted 65% radius, counter-rotating
-                            const r2Geom = new THREE.TorusGeometry(
-                                particleSize * ORBITAL_RING_RADIUS_FACTOR * 0.65,
-                                particleSize * ORBITAL_RING_TUBE_FACTOR,
-                                ORBITAL_RING_RADIAL_SEGMENTS,
-                                ORBITAL_RING_TUBULAR_SEGMENTS);
-                            orbitalRing2 = new THREE.Mesh(r2Geom, new THREE.MeshBasicMaterial({
-                                color: flowColor.hex, transparent: !isAndroid, opacity: 0.40,
-                                side: THREE.DoubleSide, depthWrite: false,
-                                blending: isAndroid ? THREE.NormalBlending : THREE.AdditiveBlending
-                            }));
-                            orbitalRing2.frustumCulled = false;
-                            orbitalRing2.rotation.y = ORBITAL_RING_BASE_ROTATION + (i % 3) * ORBITAL_RING_ROTATION_OFFSET;
-                            orbitalRing2.rotation.z = Math.PI / 4;
-                            particle.add(orbitalRing2);
-
-                            // Ring 3 — smallest, perpendicular, represents f-orbital influence
-                            if (!isMobile) {
-                                const r3Geom = new THREE.TorusGeometry(
-                                    particleSize * ORBITAL_RING_RADIUS_FACTOR * 0.42,
-                                    particleSize * ORBITAL_RING_TUBE_FACTOR * 0.7,
-                                    ORBITAL_RING_RADIAL_SEGMENTS,
-                                    ORBITAL_RING_TUBULAR_SEGMENTS);
-                                orbitalRing3 = new THREE.Mesh(r3Geom, new THREE.MeshBasicMaterial({
-                                    color: 0xffffff, transparent: !isAndroid, opacity: 0.22,
-                                    side: THREE.DoubleSide, depthWrite: false,
-                                    blending: isAndroid ? THREE.NormalBlending : THREE.AdditiveBlending
-                                }));
-                                orbitalRing3.frustumCulled = false;
-                                orbitalRing3.rotation.z = ORBITAL_RING_BASE_ROTATION * 0.5 + (i % 2) * Math.PI * 0.5;
-                                orbitalRing3.rotation.x = Math.PI * 0.25 + (i % 3) * 0.3;
-                                particle.add(orbitalRing3);
-                            }
-                        }
+                            opacity:     ELECTRON_AURA_OPACITY,
+                            blending:    THREE.AdditiveBlending,
+                            depthWrite:  false
+                        });
+                        const electronAura = new THREE.Mesh(auraGeom, auraMat);
+                        particle.add(electronAura);
 
                         // ── Comet trail meshes ───────────────────────────────
                         // Show on desktop at every zoom (electric streaks at macro),
@@ -19934,9 +19878,10 @@ Made with ? for visual learners everywhere!
                             flowColor,
                             isFlowing:     true,
                             flowStyle:     currentFlowStyle,
-                            orbitalRing,
-                            orbitalRing2,
-                            orbitalRing3,
+                            orbitalRing:   null,
+                            orbitalRing2:  null,
+                            orbitalRing3:  null,
+                            electronAura,
                             trailMeshes,
                             pulsePhase:    Math.random() * Math.PI * 2,
                             baseOpacity,
