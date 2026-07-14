@@ -1525,26 +1525,41 @@
       const importTagsElement = document.getElementById("import-tags");
       const componentSummaryElement = document.getElementById("component-summary");
 
-      let scene;
-      let camera;
-      let renderer;
-      let componentGroupA;
-      let componentGroupB;
-      let energyRing;
-      let pulseRing;
-      let particles;
+        let scene;
+        let camera;
+        let renderer;
+        let componentGroupA;
+        let componentGroupB;
+        let energyRing;
+        let pulseRing;
+        let particles;
         let clock;
-        let controls;
+        let cameraTarget;
+        let interactionCanvas;
+        let pointerControlsInitialised = false;
 
-        const CAMERA_DEFAULT_POSITION = new THREE.Vector3(0, 2.8, 7.6);
-        const CAMERA_DEFAULT_TARGET = new THREE.Vector3(0, 0.45, 0);
-        const CAMERA_RADIUS_LIMITS = { min: 4.5, max: 12 };
-        const CAMERA_PAN_LIMITS = { x: 4.5, y: 1.2, z: 4.5 };
-        const CAMERA_POLAR_LIMITS = { min: THREE.MathUtils.degToRad(28), max: THREE.MathUtils.degToRad(82) };
-        const CAMERA_DAMPING = 0.12;
-        const CAMERA_ROTATE_SPEED = 0.65;
-        const CAMERA_ZOOM_SPEED = 0.85;
-        const CAMERA_PAN_SPEED = 0.85;
+        const cameraControls = {
+          azimuth: 0,
+          radius: 7.6,
+          minRadius: 3.6,
+          maxRadius: 16,
+          height: 2.5,
+          rotateSpeed: 0.0042,
+          zoomSpeed: 0.0012,
+          panScalar: 1.1
+        };
+
+        const pointerState = {
+          activePointers: new Map(),
+          lastSinglePosition: null,
+          lastMultiMidpoint: null,
+          lastMultiDistance: null
+        };
+
+        const WORLD_UP = new THREE.Vector3(0, 1, 0);
+        const tmpVecA = new THREE.Vector3();
+        const tmpVecB = new THREE.Vector3();
+        const tmpVecC = new THREE.Vector3();
 
       const particleSpeeds = [];
       const COMPONENT_POSITIONS = { A: -1.65, B: 1.65 };
@@ -1567,7 +1582,24 @@
 
           setupOrbitControls();
 
-          clock = new THREE.Clock();
+        cameraTarget = new THREE.Vector3(0, 0.25, 0);
+        camera.lookAt(cameraTarget);
+        tmpVecA.copy(camera.position).sub(cameraTarget);
+        cameraControls.radius = tmpVecA.length();
+        cameraControls.azimuth = Math.atan2(tmpVecA.x, tmpVecA.z);
+        cameraControls.height = tmpVecA.y;
+        cameraControls.minRadius = Math.max(2.8, cameraControls.radius * 0.45);
+        cameraControls.maxRadius = Math.max(14, cameraControls.radius * 2);
+        if (cameraControls.maxRadius <= cameraControls.minRadius) {
+          cameraControls.maxRadius = cameraControls.minRadius + 0.5;
+        }
+        interactionCanvas = canvas;
+        setupInteractionControls(canvas);
+        updateCameraPosition();
+
+        addLights();
+        addStageElements();
+        addParticles();
 
           addLights();
           addStageElements();
@@ -1603,6 +1635,11 @@
             }
           }
         }
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        updateCameraPosition();
+      }
 
       function addLights() {
         const hemi = new THREE.HemisphereLight(0x4c86ff, 0x050716, 0.7);
@@ -1721,87 +1758,229 @@
         scene.add(particles);
       }
 
-        function setupOrbitControls() {
-          if (!camera || !renderer) {
+      function setupInteractionControls(canvas) {
+        if (!canvas || pointerControlsInitialised) {
+          return;
+        }
+        pointerControlsInitialised = true;
+        pointerState.activePointers.clear();
+        pointerState.lastSinglePosition = null;
+        pointerState.lastMultiMidpoint = null;
+        pointerState.lastMultiDistance = null;
+        canvas.style.touchAction = "none";
+        canvas.style.userSelect = "none";
+        canvas.style.webkitUserSelect = "none";
+        canvas.style.cursor = "grab";
+        canvas.addEventListener("pointerdown", handlePointerDown, { passive: false });
+        canvas.addEventListener("pointermove", handlePointerMove, { passive: false });
+        canvas.addEventListener("pointerup", handlePointerUp, { passive: false });
+        canvas.addEventListener("pointercancel", handlePointerUp, { passive: false });
+        canvas.addEventListener("pointerleave", handlePointerUp, { passive: false });
+        canvas.addEventListener("wheel", handleWheel, { passive: false });
+        canvas.addEventListener("contextmenu", preventContextMenu);
+      }
+
+      function preventContextMenu(event) {
+        event.preventDefault();
+      }
+
+      function handlePointerDown(event) {
+        event.preventDefault();
+        if (!interactionCanvas) {
+          interactionCanvas = event.currentTarget;
+        }
+        if (interactionCanvas) {
+          try {
+            interactionCanvas.setPointerCapture(event.pointerId);
+          } catch (error) {
+            // Ignore pointer capture failures (e.g., unsupported devices)
+          }
+          interactionCanvas.style.cursor = "grabbing";
+        }
+
+        pointerState.activePointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+
+        if (pointerState.activePointers.size === 1) {
+          pointerState.lastSinglePosition = { x: event.clientX, y: event.clientY };
+          pointerState.lastMultiMidpoint = null;
+          pointerState.lastMultiDistance = null;
+        } else if (pointerState.activePointers.size === 2) {
+          const info = getMultiTouchInfo();
+          pointerState.lastMultiMidpoint = info ? info.midpoint : null;
+          pointerState.lastMultiDistance = info ? info.distance : null;
+        }
+      }
+
+      function handlePointerMove(event) {
+        const tracked = pointerState.activePointers.get(event.pointerId);
+        if (!tracked) {
+          return;
+        }
+        event.preventDefault();
+
+        tracked.x = event.clientX;
+        tracked.y = event.clientY;
+
+        if (pointerState.activePointers.size === 1) {
+          if (!pointerState.lastSinglePosition) {
+            pointerState.lastSinglePosition = { x: tracked.x, y: tracked.y };
+            return;
+          }
+          const deltaX = tracked.x - pointerState.lastSinglePosition.x;
+          if (Math.abs(deltaX) > 0.2) {
+            rotateCamera(deltaX);
+          }
+          pointerState.lastSinglePosition = { x: tracked.x, y: tracked.y };
+        } else if (pointerState.activePointers.size >= 2) {
+          const info = getMultiTouchInfo();
+          if (!info) {
             return;
           }
 
-          if (typeof THREE.OrbitControls !== "function") {
-            console.warn("OrbitControls unavailable. Camera interaction disabled.");
-            return;
+          if (pointerState.lastMultiMidpoint) {
+            const deltaMidX = info.midpoint.x - pointerState.lastMultiMidpoint.x;
+            const deltaMidY = info.midpoint.y - pointerState.lastMultiMidpoint.y;
+            if (Math.abs(deltaMidX) > 0.3 || Math.abs(deltaMidY) > 0.3) {
+              panCamera(deltaMidX, deltaMidY);
+            }
           }
+          pointerState.lastMultiMidpoint = info.midpoint;
 
-          controls = new THREE.OrbitControls(camera, renderer.domElement);
-          controls.enableDamping = true;
-          controls.dampingFactor = CAMERA_DAMPING;
-          controls.enablePan = true;
-          controls.enableZoom = true;
-          controls.enableRotate = true;
-          controls.rotateSpeed = CAMERA_ROTATE_SPEED;
-          controls.zoomSpeed = CAMERA_ZOOM_SPEED;
-          controls.panSpeed = CAMERA_PAN_SPEED;
-          controls.screenSpacePanning = false;
-          controls.minDistance = CAMERA_RADIUS_LIMITS.min;
-          controls.maxDistance = CAMERA_RADIUS_LIMITS.max;
-          controls.minPolarAngle = CAMERA_POLAR_LIMITS.min;
-          controls.maxPolarAngle = CAMERA_POLAR_LIMITS.max;
-          controls.target.copy(CAMERA_DEFAULT_TARGET);
-          controls.update();
-          clampControlsTarget();
-          controls.saveState();
-
-          const element = renderer.domElement;
-          if (element) {
-            element.addEventListener("pointerdown", handleInteractionCursorActive);
-            element.addEventListener("pointerup", handleInteractionCursorIdle);
-            element.addEventListener("pointerleave", handleInteractionCursorIdle);
-            element.addEventListener("pointercancel", handleInteractionCursorIdle);
+          if (typeof pointerState.lastMultiDistance === "number") {
+            const distanceDelta = info.distance - pointerState.lastMultiDistance;
+            if (Math.abs(distanceDelta) > 0.5) {
+              zoomCamera(distanceDelta);
+            }
           }
+          pointerState.lastMultiDistance = info.distance;
         }
+      }
 
-        function handleInteractionCursorActive() {
-          if (renderer && renderer.domElement) {
-            renderer.domElement.style.cursor = "grabbing";
-          }
+      function handlePointerUp(event) {
+        if (interactionCanvas && interactionCanvas.hasPointerCapture(event.pointerId)) {
+          interactionCanvas.releasePointerCapture(event.pointerId);
         }
+        pointerState.activePointers.delete(event.pointerId);
 
-        function handleInteractionCursorIdle() {
-          if (renderer && renderer.domElement) {
-            renderer.domElement.style.cursor = "grab";
+        const remainingCount = pointerState.activePointers.size;
+        if (remainingCount === 0) {
+          pointerState.lastSinglePosition = null;
+          pointerState.lastMultiMidpoint = null;
+          pointerState.lastMultiDistance = null;
+          if (interactionCanvas) {
+            interactionCanvas.style.cursor = "grab";
           }
+        } else if (remainingCount === 1) {
+          const remaining = getSinglePointer();
+          pointerState.lastSinglePosition = remaining ? { x: remaining.x, y: remaining.y } : null;
+          pointerState.lastMultiMidpoint = null;
+          pointerState.lastMultiDistance = null;
+          if (interactionCanvas) {
+            interactionCanvas.style.cursor = "grabbing";
+          }
+        } else {
+          const info = getMultiTouchInfo();
+          pointerState.lastMultiMidpoint = info ? info.midpoint : null;
+          pointerState.lastMultiDistance = info ? info.distance : null;
         }
+      }
 
-        function clampControlsTarget() {
-          if (!controls) {
-            return false;
-          }
+      function getSinglePointer() {
+        const entries = Array.from(pointerState.activePointers.values());
+        return entries.length === 1 ? entries[0] : null;
+      }
 
-          const target = controls.target;
-          const clampedX = THREE.MathUtils.clamp(target.x, -CAMERA_PAN_LIMITS.x, CAMERA_PAN_LIMITS.x);
-          const clampedY = THREE.MathUtils.clamp(
-            target.y,
-            CAMERA_DEFAULT_TARGET.y - CAMERA_PAN_LIMITS.y,
-            CAMERA_DEFAULT_TARGET.y + CAMERA_PAN_LIMITS.y
-          );
-          const clampedZ = THREE.MathUtils.clamp(target.z, -CAMERA_PAN_LIMITS.z, CAMERA_PAN_LIMITS.z);
-
-          if (target.x === clampedX && target.y === clampedY && target.z === clampedZ) {
-            return false;
-          }
-
-          target.set(clampedX, clampedY, clampedZ);
-          return true;
+      function getMultiTouchInfo() {
+        const entries = Array.from(pointerState.activePointers.values());
+        if (entries.length < 2) {
+          return null;
         }
+        const [first, second] = entries;
+        const midpoint = {
+          x: (first.x + second.x) / 2,
+          y: (first.y + second.y) / 2
+        };
+        const distance = Math.hypot(second.x - first.x, second.y - first.y);
+        return { midpoint, distance };
+      }
 
-        function resetCameraView() {
-          if (!controls) {
-            return;
-          }
-          controls.reset();
-          if (clampControlsTarget()) {
-            controls.update();
-          }
+      function handleWheel(event) {
+        event.preventDefault();
+        const normalized = Math.max(-1, Math.min(1, event.deltaY));
+        const zoomStep = normalized * (cameraControls.radius * 0.08);
+        cameraControls.radius = THREE.MathUtils.clamp(
+          cameraControls.radius + zoomStep,
+          cameraControls.minRadius,
+          cameraControls.maxRadius
+        );
+        updateCameraPosition();
+      }
+
+      function rotateCamera(deltaX) {
+        if (!cameraTarget) {
+          return;
         }
+        cameraControls.azimuth -= deltaX * cameraControls.rotateSpeed;
+        const twoPi = Math.PI * 2;
+        if (cameraControls.azimuth > twoPi || cameraControls.azimuth < -twoPi) {
+          cameraControls.azimuth = ((cameraControls.azimuth % twoPi) + twoPi) % twoPi;
+        }
+        updateCameraPosition();
+      }
+
+      function panCamera(deltaX, deltaY) {
+        if (!camera || !cameraTarget) {
+          return;
+        }
+        const viewDir = tmpVecA.subVectors(cameraTarget, camera.position).normalize();
+        const right = tmpVecB.crossVectors(viewDir, WORLD_UP).normalize();
+        if (right.lengthSq() === 0) {
+          right.set(1, 0, 0);
+        }
+        const forward = tmpVecC.crossVectors(WORLD_UP, right).normalize();
+
+        const verticalFactor =
+          (2 * cameraControls.radius * Math.tan(THREE.MathUtils.degToRad(camera.fov * 0.5))) /
+          Math.max(window.innerHeight, 1);
+        const horizontalFactor = verticalFactor * camera.aspect;
+
+        cameraTarget.addScaledVector(right, -deltaX * horizontalFactor * cameraControls.panScalar);
+        cameraTarget.addScaledVector(forward, deltaY * verticalFactor * cameraControls.panScalar);
+
+        cameraTarget.x = THREE.MathUtils.clamp(cameraTarget.x, -6, 6);
+        cameraTarget.z = THREE.MathUtils.clamp(cameraTarget.z, -6, 6);
+
+        updateCameraPosition();
+      }
+
+      function zoomCamera(distanceDelta) {
+        if (!cameraTarget || Math.abs(distanceDelta) < 0.5) {
+          return;
+        }
+        const zoomAmount = distanceDelta * cameraControls.radius * cameraControls.zoomSpeed;
+        cameraControls.radius = THREE.MathUtils.clamp(
+          cameraControls.radius - zoomAmount,
+          cameraControls.minRadius,
+          cameraControls.maxRadius
+        );
+        updateCameraPosition();
+      }
+
+      function updateCameraPosition() {
+        if (!camera || !cameraTarget) {
+          return;
+        }
+        cameraControls.radius = THREE.MathUtils.clamp(
+          cameraControls.radius,
+          cameraControls.minRadius,
+          cameraControls.maxRadius
+        );
+        const x = cameraTarget.x + Math.sin(cameraControls.azimuth) * cameraControls.radius;
+        const z = cameraTarget.z + Math.cos(cameraControls.azimuth) * cameraControls.radius;
+        const y = cameraTarget.y + cameraControls.height;
+        camera.position.set(x, y, z);
+        camera.lookAt(cameraTarget);
+      }
 
       function buildComponent(type, nominalValue, isPrimary) {
         const palette = COMPONENT_PALETTES[type] || COMPONENT_PALETTES.default;
@@ -2172,6 +2351,42 @@
             renderer.render(scene, camera);
           }
         }
+
+        const delta = clock.getDelta();
+        const elapsed = clock.elapsedTime;
+
+        updateComponentAnimation(componentGroupA, elapsed, delta);
+        if (componentGroupB && componentGroupB.visible) {
+          updateComponentAnimation(componentGroupB, elapsed + 0.6, delta);
+        }
+
+        if (energyRing) {
+          energyRing.rotation.z += delta * 0.55;
+          const energyLevel = Math.max(
+            componentGroupA ? componentGroupA.userData.energy || 0 : 0,
+            componentGroupB && componentGroupB.visible ? componentGroupB.userData.energy || 0 : 0,
+          );
+          energyRing.material.opacity = 0.35 + energyLevel * 0.35;
+          const pulse = 1 + Math.sin(elapsed * 1.4) * 0.04 + energyLevel * 0.12;
+          energyRing.scale.setScalar(pulse);
+        }
+
+        if (pulseRing && pulseRing.userData.life > 0) {
+          pulseRing.userData.life -= delta * 0.9;
+          const life = Math.max(pulseRing.userData.life, 0);
+          pulseRing.material.opacity = life * pulseRing.userData.strength;
+          const scale = 1 + (1 - life) * (1.4 + pulseRing.userData.strength * 1.2);
+          pulseRing.scale.setScalar(scale);
+        }
+
+        animateParticles(delta);
+
+        if (cameraTarget) {
+          camera.lookAt(cameraTarget);
+        }
+
+        renderer.render(scene, camera);
+      }
 
       function updateComponentAnimation(group, elapsed, delta) {
         if (!group) {
