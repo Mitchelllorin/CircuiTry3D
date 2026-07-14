@@ -980,132 +980,46 @@
             box-shadow: 0 6px 18px rgba(170,136,255,0.55);
         }
 
-        .zoom-controls {
+        .quick-action-bar {
             position: fixed;
-            bottom: calc(20px + env(safe-area-inset-bottom, 0px));
-            right: calc(20px + env(safe-area-inset-right, 0px));
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            z-index: 96;
-        }
-
-        .panel-top-bar {
-            position: fixed;
-            bottom: calc(20px + env(safe-area-inset-bottom, 0px));
-            left: calc(20px + env(safe-area-inset-left, 0px));
-            right: calc(20px + env(safe-area-inset-right, 0px));
-            height: 60px;
-            display: flex;
-            flex-direction: row;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 16px;
-            z-index: 95;
-            background: rgba(0,0,0,0.95);
-            backdrop-filter: blur(15px);
-            border-radius: 0 0 16px 16px;
-            border: 2px solid rgba(0,255,136,0.4);
-            border-top: none;
-        }
-
-        .zoom-btn {
-            background: rgba(0, 0, 0, 0.75);
-            border: 2px solid rgba(0, 255, 136, 0.5);
-            color: #00ff88;
-            border-radius: 50%;
-            width: 48px;
-            height: 48px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 24px;
-            line-height: 1;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-            backdrop-filter: blur(8px);
-            transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
-            padding: 0;
-        }
-
-        .zoom-btn:hover, .zoom-btn:active {
-            background: rgba(0, 255, 136, 0.15);
-            transform: scale(1.1);
-            box-shadow: 0 6px 18px rgba(0, 255, 136, 0.35);
-        }
-
-        /* ── Zoom-mode HUD badge ─────────────────────────────────────────── */
-        #zoom-mode-hud {
-            /* Zoom-tier indicator removed — it sat behind the tour text box. */
-            display: none !important;
-            position: fixed;
-            top: auto;
-            bottom: calc(84px + env(safe-area-inset-bottom, 0px));
-            left: 12px;
-            transform: none;
-            z-index: 97;
-            background: rgba(10, 10, 26, 0.88);
-            color: #88ccff;
-            font-size: 11px;
-            font-family: 'SF Mono', 'Fira Code', monospace, sans-serif;
-            letter-spacing: 0.04em;
-            padding: 6px 14px 8px;
-            border-radius: 14px;
-            border: 1px solid rgba(136, 204, 255, 0.32);
-            backdrop-filter: blur(10px);
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.45);
-            pointer-events: none;
-            white-space: normal;
-            display: none;
-            transition: border-color 0.3s ease, box-shadow 0.3s ease, opacity 0.25s ease;
-            max-width: min(420px, 90vw);
-            overflow: hidden;
-        }
-
-        #view-only-banner {
-            position: fixed;
-            top: 12px;
+            bottom: 248px;
             left: 50%;
             transform: translateX(-50%);
-            z-index: 400;
             display: flex;
-            align-items: center;
-            gap: 10px;
-            background: rgba(10, 10, 26, 0.88);
-            border: 1.5px solid rgba(0,255,136,0.45);
-            border-radius: 32px;
-            padding: 6px 8px 6px 14px;
-            backdrop-filter: blur(8px);
-            box-shadow: 0 4px 18px rgba(0,0,0,0.45);
-            pointer-events: auto;
-        }
-
-        #view-only-banner .view-only-label {
-            color: #aaffcc;
-            font-size: 13px;
-            font-weight: 600;
-            letter-spacing: 0.03em;
+            flex-direction: row;
+            gap: 6px;
+            z-index: 95;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(10px);
+            padding: 6px 10px;
+            border-radius: 20px;
+            border: 1px solid rgba(170, 136, 255, 0.35);
             white-space: nowrap;
         }
 
-        #edit-circuit-btn {
-            background: #00ff88;
-            color: #0a0a1a;
-            border: none;
-            border-radius: 22px;
-            padding: 6px 18px;
-            font-size: 13px;
-            font-weight: 700;
+        .qa-bar-btn {
+            background: rgba(170, 136, 255, 0.85);
+            border: 1.5px solid rgba(255, 255, 255, 0.5);
+            color: #000000;
+            border-radius: 12px;
+            padding: 5px 10px;
             cursor: pointer;
-            letter-spacing: 0.04em;
-            transition: background 0.15s, transform 0.12s;
+            font-weight: bold;
+            font-size: 11px;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
             white-space: nowrap;
         }
 
-        #edit-circuit-btn:hover, #edit-circuit-btn:active {
-            background: #33ffaa;
+        .qa-bar-btn:hover, .qa-bar-btn:active {
             transform: scale(1.06);
+            box-shadow: 0 4px 12px rgba(170, 136, 255, 0.55);
+        }
+
+        .qa-bar-btn.active {
+            background: linear-gradient(135deg, #00ff88, #00cc66);
+            color: #000;
+            border-color: #00ff88;
+            box-shadow: 0 0 12px rgba(0, 255, 136, 0.4);
         }
         
         .status {
@@ -1577,6 +1491,10 @@
                 max-width: 600px;
                 font-size: 14px;
             }
+
+            .quick-action-bar {
+                bottom: 68px;
+            }
             
             .menu-toggle {
                 width: 45px;
@@ -1640,10 +1558,8 @@
                 left: 15px;
             }
 
-            .zoom-btn {
-                width: 44px;
-                height: 44px;
-                font-size: 22px;
+            .quick-action-bar {
+                bottom: 228px;
             }
         }
 
@@ -1706,6 +1622,17 @@
                 height: 56px;
                 font-size: 12px;
             }
+
+            .quick-action-bar {
+                bottom: 228px;
+                gap: 4px;
+                padding: 5px 8px;
+            }
+
+            .qa-bar-btn {
+                font-size: 10px;
+                padding: 4px 8px;
+            }
             
             .analysis-toggle {
                 width: 44px;
@@ -1756,6 +1683,10 @@
             
             .status {
                 bottom: 200px;
+            }
+
+            .quick-action-bar {
+                bottom: 148px;
             }
         }
 
@@ -3379,6 +3310,361 @@
         </div>
     </div>
 
+        <!-- W.I.R.E. Method Panel -->
+        <div class="analysis-content" id="content-wire">
+            <div class="wire-analysis">
+                <div class="wire-title">⚡ W.I.R.E. METHOD</div>
+                <div class="wire-grid">
+                    <div class="wire-item wire-w">
+                        <div class="wire-letter">W</div>
+                        <div class="wire-label">Watts (Power)</div>
+                        <div class="wire-value" id="power">0W</div>
+                    </div>
+                    <div class="wire-item wire-i">
+                        <div class="wire-letter">I</div>
+                        <div class="wire-label">Current (Amps)</div>
+                        <div class="wire-value" id="current">0A</div>
+                    </div>
+                    <div class="wire-item wire-r">
+                        <div class="wire-letter">R</div>
+                        <div class="wire-label">Resistance (Ohms)</div>
+                        <div class="wire-value" id="resistance">--</div>
+                    </div>
+                    <div class="wire-item wire-e">
+                        <div class="wire-letter">E</div>
+                        <div class="wire-label">Voltage (EMF)</div>
+                        <div class="wire-value" id="voltage">0V</div>
+                    </div>
+                </div>
+                <div style="font-size: 12px; color: #888; margin-top: 12px; text-align: center;">
+                    <strong>⚡ Circuit Status:</strong><br>
+                    Components: <span id="count" style="color: #00ff88;">0</span> | 
+                    Wires: <span id="wire-count" style="color: #ffaa88;">0</span> | 
+                    Junctions: <span id="junction-count" style="color: #aa88ff;">0</span>
+                    <br>
+                    <strong>⚡ Topology:</strong> <span id="topology-type" style="color: #88ccff;">Unknown</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- EIR Triangle Panel (EMF, Current, Resistance) -->
+        <div class="analysis-content" id="content-eir" style="display: none;">
+            <div class="vir-triangle">
+                <div class="triangle-container">
+                    <div class="triangle-shape"></div>
+                    <div class="triangle-sections">
+                        <div class="triangle-v" onclick="explainOhmsLaw('E')">E</div>
+                        <div class="triangle-i" onclick="explainOhmsLaw('I')">I</div>
+                        <div class="triangle-r" onclick="explainOhmsLaw('R')">R</div>
+                    </div>
+                </div>
+                <div class="triangle-formula" id="eir-formula">
+                    E = I × R | I = E ÷ R | R = E ÷ I
+                </div>
+                <div style="color: #ccc; font-size: 12px; margin-top: 12px; text-align: center;">
+                    Click E, I, or R to see the formula<br>
+                    <strong>E</strong> = EMF/Voltage | <strong>I</strong> = Current | <strong>R</strong> = Resistance
+                </div>
+            </div>
+            
+            <div class="circuit-diagram">
+                <div class="diagram-title">Circuit Schematic</div>
+                <div class="circuit-schematic" id="circuit-schematic">
+                    <div class="schematic-line">     +─────[R₁]─────+</div>
+                    <div class="schematic-line">     │              │</div>
+                    <div class="schematic-line">   [BAT]          [R₂]</div>
+                    <div class="schematic-line">     │              │</div>
+                    <div class="schematic-line">     +──────────────+</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Power Triangle Panel (Watts, Current, EMF) -->
+        <div class="analysis-content" id="content-power" style="display: none;">
+            <div class="vir-triangle">
+                <div class="triangle-container">
+                    <div class="triangle-shape" style="border-bottom-color: rgba(68,136,255,0.3);"></div>
+                    <div class="triangle-sections">
+                        <div class="triangle-v" onclick="explainPowerLaw('W')" style="color: #4488ff;">W</div>
+                        <div class="triangle-i" onclick="explainPowerLaw('I')" style="color: #ff8844;">I</div>
+                        <div class="triangle-r" onclick="explainPowerLaw('E')" style="color: #ff4444;">E</div>
+                    </div>
+                </div>
+                <div class="triangle-formula" id="power-formula" style="color: #4488ff;">
+                    W = I × E | I = W ÷ E | E = W ÷ I
+                </div>
+                <div style="color: #ccc; font-size: 12px; margin-top: 12px; text-align: center;">
+                    Click W, I, or E to see the power formula<br>
+                    <strong>W</strong> = Watts/Power | <strong>I</strong> = Current | <strong>E</strong> = EMF/Voltage
+                </div>
+                
+                <div style="background: rgba(68,136,255,0.1); padding: 12px; border-radius: 8px; margin-top: 12px; border: 1px solid rgba(68,136,255,0.3);">
+                    <div style="color: #4488ff; font-weight: bold; text-align: center; margin-bottom: 8px;">
+                        ⚡ Additional Power Formulas
+                    </div>
+                    <div style="color: #ccc; font-size: 11px; text-align: center; line-height: 1.4;">
+                        W = I² × R (Power = Current² × Resistance)<br>
+                        W = E² ÷ R (Power = Voltage² ÷ Resistance)
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Worksheet Panel -->
+        <div class="analysis-content" id="content-worksheet" style="display: none;">
+            <div class="worksheet-panel">
+                <div class="worksheet-title">Circuit Analysis Worksheet</div>
+                
+                <div class="component-list" id="component-list">
+                    <!-- Components will be populated here -->
+                </div>
+
+                <div class="calculations-section">
+                    <div class="calculation-step step-resistance">
+                        <div>
+                            <div class="step-label">Total Resistance</div>
+                            <div class="step-formula" id="resistance-formula">R_total = R₁ + R₂ + R₃...</div>
+                        </div>
+                        <div class="step-value" id="calc-resistance">--</div>
+                    </div>
+                    
+                    <div class="calculation-step step-current">
+                        <div>
+                            <div class="step-label">Total Current</div>
+                            <div class="step-formula" id="current-formula">I = V ÷ R_total</div>
+                        </div>
+                        <div class="step-value" id="calc-current">0A</div>
+                    </div>
+                    
+                    <div class="calculation-step step-voltage">
+                        <div>
+                            <div class="step-label">Source Voltage</div>
+                            <div class="step-formula" id="voltage-formula">V = V_bat1 + V_bat2...</div>
+                        </div>
+                        <div class="step-value" id="calc-voltage">0V</div>
+                    </div>
+                    
+                    <div class="calculation-step step-power">
+                        <div>
+                            <div class="step-label">Total Power</div>
+                            <div class="step-formula" id="power-formula">P = V × I</div>
+                        </div>
+                        <div class="step-value" id="calc-power">0W</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Problem Solving Panel -->
+        <div class="analysis-content" id="content-problem" style="display: none;">
+            <div class="problem-mode">
+                <div class="problem-title">⚡ Solve for the Unknown</div>
+                <div style="color: #ccc; margin-bottom: 16px; text-align: center;">
+                    Enter your calculated values below:
+                </div>
+                
+                <div class="unknown-input">
+                    <label style="color: #ff4444; width: 120px;">Total Voltage:</label>
+                    <input type="number" id="student-voltage" step="0.1" placeholder="V">
+                    <span style="color: #ff4444;">V</span>
+                </div>
+                
+                <div class="unknown-input">
+                    <label style="color: #ff8844; width: 120px;">Total Current:</label>
+                    <input type="number" id="student-current" step="0.001" placeholder="A">
+                    <span style="color: #ff8844;">A</span>
+                </div>
+                
+                <div class="unknown-input">
+                    <label style="color: #44ff88; width: 120px;">Total Resistance:</label>
+                    <input type="number" id="student-resistance" step="0.1" placeholder="Ω">
+                    <span style="color: #44ff88;">Ω</span>
+                </div>
+                
+                <div class="unknown-input">
+                    <label style="color: #4488ff; width: 120px;">Total Power:</label>
+                    <input type="number" id="student-power" step="0.01" placeholder="W">
+                    <span style="color: #4488ff;">W</span>
+                </div>
+                
+                <div style="text-align: center; margin-top: 16px;">
+                    <button class="check-answer-btn" onclick="checkStudentAnswers()">
+                        ✓ Check My Answers
+                    </button>
+                </div>
+                
+                <div id="answer-feedback"></div>
+            </div>
+        </div>
+
+        <!-- Practice Mode Panel -->
+        <div class="analysis-content" id="content-practice" style="display: none;">
+            <div class="practice-problem-card" id="practice-problem-card" style="display: none;">
+                <div class="problem-question" id="practice-question">
+                    ⚡ Problem: Find the total resistance
+                </div>
+                <div class="problem-description" id="practice-description">
+                    Calculate the total resistance of this series circuit
+                </div>
+                
+                <div style="display: flex; justify-content: space-between; align-items: center; margin: 12px 0;">
+                    <div style="color: #4da6ff; font-size: 12px; font-weight: bold;">
+                        Problem <span id="problem-counter">1</span> of <span id="total-problems">4</span>
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        <button class="practice-btn" onclick="previousProblem()" id="prev-btn" style="padding: 6px 12px; font-size: 11px;">Prev</button>
+                        <button class="practice-btn" onclick="nextProblem()" id="next-btn" style="padding: 6px 12px; font-size: 11px;">Next</button>
+                    </div>
+                </div>
+                
+                <div class="circuit-status" id="circuit-status">
+                    <div id="circuit-status-text">Circuit incomplete - add wires to connect components.</div>
+                </div>
+                
+                <div class="wire-instructions" id="wire-instructions">
+                    <strong>Use W.I.R.E.:</strong> 1) Log the givens in the worksheet  2) Choose the matching Ohm's or power identity  3) Tap <em>Reveal totals</em> to verify with Kirchhoff's laws. (Use Clear if you want to rebuild the wiring yourself.)
+                </div>
+
+                <div class="wire-table-wrapper" id="wire-table-wrapper" style="display: none;">
+                    <div class="wire-table-header">
+                        W.I.R.E. Worksheet
+                        <span id="wire-table-scenario"></span>
+                    </div>
+                    <div class="wire-table-guide" id="wire-table-guide">
+                        Record the givens, then apply Ohm's Law and power identities to fill the blanks.
+                    </div>
+                    <table class="wire-table" aria-describedby="wire-table-guide wire-table-note">
+                        <thead>
+                            <tr>
+                                <th scope="col">Component</th>
+                                <th scope="col">W (Power)</th>
+                                <th scope="col">I (Current)</th>
+                                <th scope="col">R (Resistance)</th>
+                                <th scope="col">E (Voltage)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="wire-table-body"></tbody>
+                    </table>
+                    <div class="wire-table-note" id="wire-table-note">
+                        Totals appear after you tap Reveal totals and the circuit has a valid solution. Use them to check your work.
+                    </div>
+                    <div class="wire-table-actions">
+                        <button class="practice-btn secondary" type="button" onclick="resetWireWorksheetInputs()">
+                            Clear entries
+                        </button>
+                        <button class="practice-btn secondary" type="button" id="wire-table-toggle-solutions" onclick="toggleWireWorksheetSolutions()">
+                            Reveal totals
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="practice-objectives" style="margin-top: 12px;">
+                    <div style="color: #4da6ff; font-weight: bold; margin-bottom: 8px; font-size: 14px;">Learning Objectives:</div>
+                    <ul id="objectives-list" style="color: #ccc; margin-left: 20px; line-height: 1.5; font-size: 12px;">
+                        <!-- Objectives will be populated here -->
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="worksheet-panel">
+                <div class="worksheet-title">Practice Circuit Problems</div>
+                
+                <div style="text-align: center; margin-bottom: 16px;">
+                    <button class="practice-btn" onclick="startPracticeSequence()" style="background: linear-gradient(135deg, #00ff88, #00cc66); color: #000; padding: 12px 24px; font-size: 14px; font-weight: bold;">
+                        Start Practice Sequence
+                    </button>
+                </div>
+                
+                <div class="practice-buttons">
+                    <button class="practice-btn" onclick="loadPresetCircuit('series_basic')" id="btn-series">Basic Series</button>
+                    <button class="practice-btn" onclick="loadPresetCircuit('parallel_basic')" id="btn-parallel">Basic Parallel</button>
+                    <button class="practice-btn" onclick="loadPresetCircuit('mixed_circuit')" id="btn-mixed">Mixed Circuit</button>
+                    <button class="practice-btn" onclick="loadPresetCircuit('combination_advanced')" id="btn-combination">Advanced Combo</button>
+                    <button class="practice-btn" onclick="generateRandomProblem()" id="btn-random">Random</button>
+                </div>
+                
+                <div id="practice-help-text" style="background: rgba(255,255,255,0.1); padding: 16px; border-radius: 8px; color: #ccc; text-align: center; font-size: 12px;">
+                    <strong>Run the Table Method on every problem:</strong><br>
+                    1. Load a circuit above, then scroll to the W.I.R.E. worksheet that appears below.<br>
+                    2. Record the givens for each component across W, I, R, E columns.<br>
+                    3. Use the matching Ohm's Law or power formula to solve the blanks, then tap <em>Reveal totals</em> to check.<br><br>
+                    <strong>Pick your practice flow:</strong><br>
+                    - <strong>Practice Sequence</strong> - Work through all four problems in order.<br>
+                    - <strong>Individual Problems</strong> - Jump straight to series, parallel, mixed, or combo.<br>
+                    - <strong>Random</strong> - Regenerate the same layouts with fresh values.<br><br>
+                    <small>Need a printable sheet? Open the Table Method Guide from the Builder panel or tap Clear entries to start over.</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Measurement Tools Panel -->
+        <div class="analysis-content" id="content-meter" style="display: none;">
+            <div class="wire-analysis">
+                <div class="wire-title">⚡ MEASUREMENT TOOLS</div>
+                <div style="display:flex; flex-wrap:wrap; gap:10px; justify-content:center; margin: 10px 0 14px;">
+                    <button class="practice-btn" type="button" onclick="setMeterMode('voltage')" id="meter-mode-voltage">Volts (V)</button>
+                    <button class="practice-btn secondary" type="button" onclick="setMeterMode('current')" id="meter-mode-current">Amps (A)</button>
+                    <button class="practice-btn secondary" type="button" onclick="setMeterMode('resistance')" id="meter-mode-resistance">Ohms (Ω)</button>
+                    <button class="practice-btn secondary" type="button" onclick="setMeterMode('scope')" id="meter-mode-scope">Scope</button>
+                </div>
+
+                <div style="display:flex; flex-wrap:wrap; gap:10px; justify-content:center; margin-bottom: 10px;">
+                    <button class="practice-btn secondary" type="button" onclick="toggleMeterArmed()" id="meter-toggle-armed">
+                        Enable probes
+                    </button>
+                    <button class="practice-btn secondary" type="button" onclick="clearMeterSelection()">
+                        Clear
+                    </button>
+                </div>
+
+                <div style="color:#ccc; font-size: 12px; line-height:1.5; text-align:center; margin-bottom: 12px;">
+                    <div id="meter-instructions">Enable probes, then click two terminals to measure voltage.</div>
+                </div>
+
+                <div style="display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-bottom: 10px;">
+                    <div style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 12px; padding: 12px;">
+                        <div style="color:#ff6666; font-weight:700; margin-bottom:6px;">Red probe</div>
+                        <div id="meter-probe-a" style="color:#e8f6ff; font-family: Consolas, Monaco, monospace; font-size: 12px;">—</div>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 12px; padding: 12px;">
+                        <div style="color:#aab0b8; font-weight:700; margin-bottom:6px;">Black probe</div>
+                        <div id="meter-probe-b" style="color:#e8f6ff; font-family: Consolas, Monaco, monospace; font-size: 12px;">—</div>
+                    </div>
+                </div>
+
+                <div style="background: rgba(0,0,0,0.25); border: 1px solid rgba(0,255,136,0.22); border-radius: 12px; padding: 12px; margin-bottom: 10px;">
+                    <div style="display:flex; justify-content:space-between; gap: 12px; flex-wrap:wrap; align-items:baseline;">
+                        <div style="color:#00ff88; font-weight:800; letter-spacing:0.03em;">Reading</div>
+                        <div id="meter-reading" style="color:#e8f6ff; font-family: Consolas, Monaco, monospace; font-size: 16px; font-weight:700;">—</div>
+                    </div>
+                    <div id="meter-subreading" style="margin-top:6px; color: rgba(220,234,255,0.72); font-size: 12px;"></div>
+                </div>
+
+                <div id="scope-panel" style="display:none; background: rgba(255,255,255,0.05); border: 1px solid rgba(136, 204, 255, 0.24); border-radius: 12px; padding: 12px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; gap: 10px; margin-bottom: 8px; flex-wrap:wrap;">
+                        <div style="color:#88ccff; font-weight:800; letter-spacing:0.03em;">Oscilloscope (DC)</div>
+                        <div id="scope-readout" style="color:#e8f6ff; font-family: Consolas, Monaco, monospace; font-size: 12px;">—</div>
+                    </div>
+                    <canvas id="scope-canvas" width="640" height="160" style="width: 100%; height: 160px; background: rgba(0,0,0,0.55); border-radius: 10px; border: 1px solid rgba(255,255,255,0.12);"></canvas>
+                    <div style="margin-top:8px; color: rgba(220,234,255,0.72); font-size: 12px; text-align:center;">
+                        Pick a terminal for the scope probe (black is the reference).
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="status" id="status" style="display: none;">W.I.R.E. Circuit Builder Ready!</div>
+
+    <div id="quick-action-bar" class="quick-action-bar">
+        <button class="qa-bar-btn" onclick="addComponent('battery')" title="Add Battery">⚡ Batt</button>
+        <button class="qa-bar-btn" onclick="addComponent('resistor')" title="Add Resistor">Ω Res</button>
+        <button class="qa-bar-btn" onclick="addComponent('led')" title="Add LED">★ LED</button>
+        <button class="qa-bar-btn" onclick="addComponent('switch')" title="Add Switch">⊡ SW</button>
+        <button class="qa-bar-btn wire-btn" id="quick-wire-btn" onclick="toggleWireMode()" title="Toggle Wire Mode">≈ Wire</button>
+        <button class="qa-bar-btn" onclick="addJunction()" title="Add Junction">⬡ Junct</button>
+    </div>
+    
     <div class="edit-popup" id="edit-popup">
         <h3 id="edit-title">Edit Component</h3>
         <div id="edit-content">
@@ -16884,9 +17170,11 @@ Made with ? for visual learners everywhere!
             try {
                 const wireBtn = document.getElementById('wire-btn');
                 const rotateBtn = document.getElementById('rotate-btn');
+                const quickWireBtn = document.getElementById('quick-wire-btn');
                 
                 if (wireBtn) wireBtn.classList.toggle('active', isWireMode);
                 if (rotateBtn) rotateBtn.classList.toggle('active', isRotateMode);
+                if (quickWireBtn) quickWireBtn.classList.toggle('active', isWireMode);
                 
                 updateUndoRedoButtons();
             } catch (error) {
