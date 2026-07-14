@@ -5901,9 +5901,14 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
     transition: none !important;
   }
 }
-.builder-intro-dialog,
-.builder-intro-overlay {
-  display: none !important;
-  pointer-events: none !important;
-  opacity: 0 !important;
+/* TEMP FIX — force unlock stuck tools */
+.tool-button.active {
+  pointer-events: auto !important;
+  opacity: 1 !important;
+}
+
+/* TEMP FIX — unlock workspace */
+.workspace {
+  pointer-events: auto !important;
+  opacity: 1 !important;
 }
