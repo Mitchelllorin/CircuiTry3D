@@ -938,12 +938,13 @@
         .quick-actions {
             position: fixed;
             top: calc(var(--legacy-menu-gap) + 64px + 10px);
-            left: var(--legacy-menu-gap);
+            left: 50%;
+            transform: translateX(-50%);
             display: flex;
             flex-direction: row;
             gap: 8px;
             z-index: 300;
-            transition: left 0.3s ease;
+            transition: top 0.3s ease;
             background: rgba(10, 10, 26, 0.72);
             border: 1.5px solid rgba(170, 136, 255, 0.35);
             border-radius: 36px;
@@ -951,8 +952,15 @@
             backdrop-filter: blur(8px);
         }
 
+        /* Centered bar — no horizontal shift needed when menu opens */
         .quick-actions.open {
-            left: calc(var(--legacy-menu-gap) + var(--legacy-menu-width) + 16px);
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        /* In demo mode, push below the top banner (~36px) */
+        html.demo-mode:not(.embedded) .quick-actions {
+            top: calc(36px + var(--legacy-menu-gap) + 64px + 10px);
         }
 
         .quick-action-btn {
@@ -1597,11 +1605,13 @@
 
             .quick-actions {
                 top: calc(15px + 45px + 10px);
-                left: 15px;
+                left: 50%;
+                transform: translateX(-50%);
             }
 
             .quick-actions.open {
-                left: 15px;
+                left: 50%;
+                transform: translateX(-50%);
             }
 
             .quick-action-bar {
@@ -1655,7 +1665,8 @@
 
             .quick-actions {
                 top: calc(15px + 56px + 10px);
-                left: 15px;
+                left: 50%;
+                transform: translateX(-50%);
             }
 
             .quick-action-btn {
@@ -3328,24 +3339,151 @@
         <span class="logo-circui">Circui</span><span class="logo-try">Try</span><span class="logo-3d">3D</span>
     </div>
 
-    <!-- AC/DC conflict hazard warning panel -->
-    <div id="hazard-warning" role="alertdialog" aria-modal="true" aria-labelledby="hazard-warning-title" aria-describedby="hazard-warning-body">
-        <div class="hazard-box">
-            <span class="hazard-icon">💥</span>
-            <div class="hazard-title" id="hazard-warning-title">⚡ EXPLOSION HAZARD ⚡</div>
-            <div class="hazard-body" id="hazard-warning-body">
-                <strong>AC and DC power sources cannot be directly connected!</strong><br><br>
-                Connecting an AC source (alternating current, ~120 V / 60 Hz) directly to a DC battery
-                creates a catastrophic short circuit. In the real world this would cause an immediate
-                explosion, fire, and destruction of every component in the circuit.
-                <br><br>
-                <strong>Why?</strong> AC and DC operate on fundamentally different principles.
-                A DC battery provides a steady voltage while an AC source reverses polarity 60 times
-                per second. Bridging them directly produces enormous surge currents that no component
-                can survive.
-                <br><br>
-                Remove one of the power sources or add the proper conversion circuitry
-                (rectifier, transformer, or power-supply circuit) before connecting them.
+    <div class="quick-actions" id="quick-actions">
+        <button class="quick-action-btn" onclick="addJunction()" title="Add Junction">⬡<br>Junct</button>
+        <button class="quick-action-btn" onclick="addComponent('battery')" title="Add Battery">🔋<br>Battery</button>
+        <button class="quick-action-btn" onclick="addComponent('resistor')" title="Add Resistor">⏦<br>Resistor</button>
+        <button class="quick-action-btn" onclick="addComponent('led')" title="Add LED">💡<br>LED</button>
+    </div>
+    
+    <div class="menu-bar" id="menu-bar" style="display: none;">
+        <div class="menu-tabs">
+            <div class="menu-tab" onclick="toggleSubmenu('components')">
+                Components
+                <div class="submenu" id="submenu-components">
+                    <div class="submenu-grid">
+                        <button class="btn" onclick="addComponent('battery')">Battery</button>
+                        <button class="btn" onclick="addComponent('resistor')">Resistor</button>
+                        <button class="btn" onclick="addComponent('led')">LED</button>
+                        <button class="btn" onclick="addComponent('switch')">Switch</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="menu-tab" onclick="toggleSubmenu('tools')">
+                Tools
+                <div class="submenu" id="submenu-tools">
+                    <div class="submenu-row">
+                        <button class="btn wire-btn" id="wire-btn" onclick="toggleWireMode()">Wire</button>
+                        <button class="btn rotate-btn" id="rotate-btn" onclick="toggleRotateMode()">Rotate</button>
+                    </div>
+                    <div class="submenu-row">
+                        <button class="btn" onclick="addJunction()">Junction</button>
+                        <button class="btn" onclick="arrangeByLayoutMode()">Auto-Arrange</button>
+                    </div>
+                    <div class="submenu-row">
+                        <button class="btn" onclick="cycleRoutingMode()">Route: <span id="route-mode">Free-form</span></button>
+                        <button class="btn" onclick="centerCircuit()">Center Circuit</button>
+                    </div>
+                    <div class="submenu-row">
+                        <button class="btn" onclick="clearAll()">Clear All</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="menu-tab" onclick="toggleSubmenu('edit')">
+                Edit
+                <div class="submenu" id="submenu-edit">
+                    <div class="submenu-row">
+                        <button class="btn" onclick="undo()" id="undo-btn">Undo</button>
+                        <button class="btn" onclick="redo()" id="redo-btn">Redo</button>
+                    </div>
+                    <div class="submenu-row">
+                        <button class="btn" onclick="copySelected()">Copy</button>
+                        <button class="btn" onclick="pasteSelected()">Paste</button>
+                    </div>
+                    <div class="submenu-row">
+                        <button class="btn" onclick="selectAll()">Select All</button>
+                        <button class="btn" onclick="deleteSelected()">Delete</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="menu-tab" onclick="toggleSubmenu('file')">
+                File
+                <div class="submenu" id="submenu-file">
+                    <div class="submenu-row">
+                        <button class="btn" onclick="saveCircuit()">Save</button>
+                        <button class="btn" onclick="loadCircuit()">Load</button>
+                    </div>
+                    <div class="submenu-row">
+                        <button class="btn" onclick="exportImage()">Export</button>
+                        <button class="btn" onclick="newCircuit()">New</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="menu-tab" onclick="toggleSubmenu('view')">
+                View
+                <div class="submenu" id="submenu-view">
+                    <div class="submenu-row">
+                        <button class="btn" onclick="resetCamera()">Reset View</button>
+                        <button class="btn" onclick="fitToScreen()">Fit Screen</button>
+                    </div>
+                    <div class="submenu-row">
+                        <button class="btn" onclick="toggleGrid()">Toggle Grid</button>
+                        <button class="btn" onclick="toggleLabels()">Labels</button>
+                    </div>
+                    <div class="submenu-row">
+                        <button class="btn" onclick="toggleCurrentFlowStyle()">Flow: <span id="flow-style">Electron Flow</span></button>
+                        <button class="btn" onclick="togglePolarityIndicators()">Polarity</button>
+                    </div>
+                    <div class="submenu-row">
+                        <button class="btn" onclick="toggleBranding()">Branding</button>
+                        <button class="btn" onclick="cycleLayoutMode()">Layout: <span id="layout-mode">Free</span></button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="menu-tab" onclick="toggleSubmenu('practice')">
+                Practice
+                <div class="submenu" id="submenu-practice">
+                    <div class="submenu-row">
+                        <button class="btn" onclick="loadPresetCircuit('series_basic')">Series Circuit</button>
+                        <button class="btn" onclick="loadPresetCircuit('parallel_basic')">Parallel Circuit</button>
+                    </div>
+                    <div class="submenu-row">
+                        <button class="btn" onclick="loadPresetCircuit('mixed_circuit')">Mixed Circuit</button>
+                        <button class="btn" onclick="loadPresetCircuit('combination_advanced')">Combo Challenge</button>
+                    </div>
+                    <div class="submenu-row">
+                        <button class="btn" onclick="generateRandomProblem()">Random Problem</button>
+                        <button class="btn" onclick="showPracticeModeHelp()">How to Use</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="menu-tab" onclick="toggleSubmenu('arena')">
+                Arena
+                <div class="submenu" id="submenu-arena">
+                    <div class="submenu-row">
+                        <button class="btn" onclick="openArena()">Open Component Arena</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="menu-tab" onclick="toggleSubmenu('subscription')">
+                Subscription
+                <div class="submenu" id="submenu-subscription">
+                    <div class="submenu-row">
+                        <button class="btn" onclick="openSubscriptionPricing()">Subscription Pricing</button>
+                        <button class="btn" onclick="contactSubscriptionTeam()">Contact Team</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="menu-tab" onclick="toggleSubmenu('help')">
+                Help
+                <div class="submenu" id="submenu-help">
+                    <div class="submenu-row">
+                        <button class="btn" onclick="showTutorial()">Tutorial</button>
+                        <button class="btn" onclick="showWireGuide()">W.I.R.E. Guide</button>
+                    </div>
+                    <div class="submenu-row">
+                        <button class="btn" onclick="showShortcuts()">Shortcuts</button>
+                        <button class="btn" onclick="showAbout()">About</button>
+                    </div>
+                </div>
             </div>
             <button class="hazard-close" onclick="dismissHazardWarning()">Understood — Remove the Connection</button>
         </div>
@@ -4504,14 +4642,15 @@ body.android-optimized .menu-toggle.open {
 }
 
 body.android-optimized .quick-actions {
-  top: calc(16px + 56px + 10px + env(safe-area-inset-top, 0px));
-  left: calc(16px + env(safe-area-inset-left, 0px));
-  transition: transform 0.3s ease;
+  top: calc(16px + 56px + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  transition: top 0.3s ease;
 }
 
 body.android-optimized .quick-actions.open {
-  left: 16px;
-  transform: translateX(calc(var(--legacy-menu-width) + 12px));
+  left: 50%;
+  transform: translateX(-50%);
 }
 
 body.android-optimized .quick-action-btn {
