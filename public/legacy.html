@@ -50,7 +50,7 @@
     <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@400;500;600;700&display=swap"></noscript>
     <style>
         html {
-            background-color: #0a0a1a;
+            background-color: #101938;
         }
         * { 
             margin: 0; 
@@ -65,7 +65,7 @@
         }
         
         body { 
-            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            background: linear-gradient(135deg, #1d2950, #174466);
             color: white; 
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             overflow: hidden;
@@ -90,16 +90,16 @@
             width: var(--legacy-menu-width);
             height: calc(100vh - (var(--legacy-menu-gap) * 2));
             z-index: 100;
-            background: rgba(0,0,0,0.95);
+            background: rgba(10, 18, 46, 0.84);
             backdrop-filter: blur(15px);
-            border-right: 2px solid rgba(0,255,136,0.3);
+            border-right: 2px solid rgba(120, 190, 255, 0.42);
             border-radius: 16px;
             padding: 16px 18px;
             transition: transform 0.3s ease, box-shadow 0.3s ease;
             overflow: hidden;
             display: flex;
             flex-direction: column;
-            box-shadow: 6px 0 24px rgba(0, 0, 0, 0.35);
+            box-shadow: 6px 0 24px rgba(0, 0, 0, 0.28), 0 0 18px rgba(120, 190, 255, 0.16);
         }
         
         .menu-bar.hidden {
@@ -122,9 +122,9 @@
         
         .menu-tab {
             padding: 16px 20px;
-            background: linear-gradient(135deg, #333, #444);
-            border: 2px solid #555;
-            color: white;
+            background: linear-gradient(135deg, #31426c, #445886);
+            border: 2px solid #5f76aa;
+            color: #f3f9ff;
             border-radius: 12px;
             font-size: 16px;
             font-weight: 600;
@@ -140,9 +140,9 @@
         }
         
         .menu-tab:hover, .menu-tab:active {
-            background: linear-gradient(135deg, #444, #555);
+            background: linear-gradient(135deg, #3b5180, #4f679a);
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,255,136,0.2);
+            box-shadow: 0 4px 12px rgba(120, 190, 255, 0.32);
         }
         
         .menu-tab.active {
@@ -153,9 +153,9 @@
         }
         
         .submenu {
-            background: rgba(0,0,0,0.95);
+            background: rgba(10, 18, 46, 0.88);
             backdrop-filter: blur(15px);
-            border: 2px solid rgba(0,255,136,0.3);
+            border: 2px solid rgba(120, 190, 255, 0.38);
             border-radius: 12px;
             padding: 16px;
             margin-top: 8px;
@@ -187,9 +187,9 @@
         
         .btn { 
             padding: 16px 20px; 
-            background: linear-gradient(135deg, #333, #444);
-            border: 2px solid #555;
-            color: white; 
+            background: linear-gradient(135deg, #31426c, #445886);
+            border: 2px solid #5f76aa;
+            color: #f3f9ff; 
             border-radius: 12px;
             font-size: 16px;
             font-weight: 600;
@@ -204,9 +204,9 @@
         }
         
         .btn:hover, .btn:active { 
-            background: linear-gradient(135deg, #444, #555);
+            background: linear-gradient(135deg, #3b5180, #4f679a);
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            box-shadow: 0 4px 12px rgba(120, 190, 255, 0.26);
         }
         
         .wire-btn.active { 
@@ -8849,7 +8849,7 @@ body.android-optimized .zoom-btn {
                 const initHeight = (window.innerHeight || document.documentElement.clientHeight || 640);
 
                 scene = new THREE.Scene();
-                scene.background = new THREE.Color(0x0e1322);
+                scene.background = new THREE.Color(0x111b3a);
                 
                 // Use safe non-zero viewport dimensions.  On Android/Capacitor
                 // the local-bundle iframe can execute before the browser layout
@@ -8929,9 +8929,15 @@ body.android-optimized .zoom-btn {
                 
                 renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobile ? 1.5 : 2));
                 renderer.setSize(_vw, _vh);
-                renderer.setClearColor(0x0a0a1a, 1);
-                renderer.toneMapping = THREE.ACESFilmicToneMapping;
-                renderer.toneMappingExposure = 1.1;
+                renderer.setClearColor(0x111b3a, 1);
+                // Android System WebView (Capacitor) may have older GLSL compiler that
+                // misprecises or fails to compile the ACES tone-mapping fragment shader,
+                // resulting in invisible / black materials (including current-flow particles).
+                // LinearToneMapping is trivially simple (color *= exposure) and compiles
+                // correctly on every GPU/driver combination — use it on Android to guarantee
+                // current-flow particles are always visible.
+                renderer.toneMapping = isAndroid ? THREE.LinearToneMapping : THREE.ACESFilmicToneMapping;
+                renderer.toneMappingExposure = isAndroid ? 1.08 : 1.25;
                 // sRGB encoding removed: Three.js r128 does not support
                 // renderer.outputColorSpace.  Setting it was a no-op but caused
                 // confusion across multiple fix cycles.  If upgrading to r152+,
@@ -8969,7 +8975,7 @@ body.android-optimized .zoom-btn {
                 mouse = new THREE.Vector2();
                 
                 // Lighting - key + fill + hemisphere for richer PBR shading
-                const directionalLight = new THREE.DirectionalLight(0xffffff, isMobile ? 1.0 : 1.35);
+                const directionalLight = new THREE.DirectionalLight(0xffffff, isMobile ? 1.25 : 1.7);
                 directionalLight.position.set(10, 10, 5);
                 if (renderShadows) {
                     directionalLight.castShadow = true;
@@ -8987,18 +8993,18 @@ body.android-optimized .zoom-btn {
                 scene.add(directionalLight);
 
                 // Cool-blue fill light from the opposite side to soften harsh shadows
-                const fillLight = new THREE.DirectionalLight(0x9fc4ff, isMobile ? 0.35 : 0.5);
+                const fillLight = new THREE.DirectionalLight(0x8ab4f8, isMobile ? 0.45 : 0.68);
                 fillLight.position.set(-8, 4, -6);
                 scene.add(fillLight);
 
                 if (!isMobile) {
-                    const pointLight = new THREE.PointLight(0xffa500, 0.8, 50);
+                    const pointLight = new THREE.PointLight(0xffb347, 1.0, 50);
                     pointLight.position.set(5, 8, 5);
                     scene.add(pointLight);
                 }
 
                 // HemisphereLight replaces plain AmbientLight for sky/ground gradient illumination
-                const hemisphereLight = new THREE.HemisphereLight(0x6aa6dd, 0x2a1a3a, isMobile ? 0.6 : 0.6);
+                const hemisphereLight = new THREE.HemisphereLight(0x67b8ff, 0x2a1a4a, isMobile ? 0.8 : 0.72);
                 scene.add(hemisphereLight);
 
                 // ── Image-based lighting (IBL) ────────────────────────────────
