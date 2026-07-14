@@ -279,7 +279,7 @@ export function BuilderBuildAlong({
 
   const current = BUILD_STEPS[step];
   const isLast = step >= BUILD_STEPS.length - 1;
-  const showTapIndicator = current.animationType === "tap" && Boolean(rect);
+  const showTapIndicator = current.animationType === "tap" && rect !== null;
   const showLongPressHint = current.animationType === "long-press";
   const showDragHint = current.animationType === "drag";
   // Mechanic/info steps advance via Next; so do auto-steps flagged skippable, so
@@ -360,9 +360,9 @@ export function BuilderBuildAlong({
         </div>
         <div className="builder-tutorial-body">
           {current.ctaLabel && (
-            <div className="tutorial-cta-chip">
+            <div className="builder-tutorial-cta-chip">
               {current.ctaIcon && (
-                <span className="tutorial-cta-chip-icon" aria-hidden="true">
+                <span className="builder-tutorial-cta-chip-icon" aria-hidden="true">
                   {current.ctaIcon}
                 </span>
               )}

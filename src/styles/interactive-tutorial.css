@@ -219,7 +219,7 @@
   color: rgba(232, 246, 255, 0.82);
 }
 
-.tutorial-cta-chip {
+.builder-tutorial-cta-chip {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -235,7 +235,7 @@
   box-shadow: 0 0 14px rgba(0, 255, 136, 0.22);
 }
 
-.tutorial-cta-chip-icon {
+.builder-tutorial-cta-chip-icon {
   line-height: 1;
 }
 
