@@ -167,7 +167,7 @@ const textbook: TextbookData = {
           title: "Current",
           body: [
             "Current (symbol I) is the rate of flow of electric charge past a point in a circuit. It is measured in amperes (A). One ampere equals one coulomb of charge passing per second.",
-            "Current can only flow in a complete (closed) circuit. An open circuit (a break anywhere in the circuit) stops current flow entirely.",
+            "Current can only flow in a complete (closed) circuit. An open circuit (a break anywhere in the path) stops current flow entirely.",
             "The ammeter is used to measure current and must always be connected in series with the load so that all current passes through it.",
           ],
           formulas: [
@@ -397,7 +397,7 @@ const textbook: TextbookData = {
       year: 1,
       title: "Combination (Series-Parallel) Circuits",
       overview:
-        "Most practical circuits combine series and parallel connections. The W.I.R.E. solving method requires you to first collapse every parallel group into a single equivalent resistor, reducing the network to a simple series path. Only then do you fill the W.I.R.E. table and trace back through the original branches to find individual component values.",
+        "Most practical circuits combine series and parallel connections. The W.I.R.E. solving method requires you to first collapse every parallel group into a single equivalent resistor, reducing the network to a simple series circuit. Only then do you fill the W.I.R.E. table and trace back through the original branches to find individual component values.",
       sections: [
         {
           id: "combination-rules",
@@ -465,7 +465,7 @@ const textbook: TextbookData = {
           id: "series-solve",
           title: "Step 2 — Solve the Simplified Series Circuit",
           body: [
-            "After collapsing all parallel groups the circuit is a simple series path. Apply series rules: R_T equals the sum of all series resistances (including every R_eq). Then use Ohm's Law to find I_T. This single current flows through every element in the series path, including each equivalent resistor.",
+            "After collapsing all parallel groups the circuit is a simple series circuit. Apply series rules: R_T equals the sum of all series resistances (including every R_eq). Then use Ohm's Law to find I_T. This single current flows through every element in the series path, including each equivalent resistor.",
           ],
           formulas: [
             {

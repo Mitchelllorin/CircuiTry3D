@@ -129,12 +129,12 @@ export function BuilderInteractiveTutorial(props: {
         id: "tune-parts",
         title: "Tune a part",
         body:
-          "Turn on Wire Mode so you can connect terminals. You’ll complete a circuit: battery → resistor → back to battery.",
+          "Turn on Wire Mode so you can connect terminals. You’ll make a circuit: battery → resistor → back to battery.",
         targetId: "tutorial-enable-wire",
         isComplete: ({ mode }) => Boolean(mode.isWireMode),
       },
       {
-        id: "complete-circuit",
+        id: "close-circuit",
         title: "Step 4 — Complete the circuit so current can flow",
         body:
           "Connect battery → resistor → back to the battery. Any gap (an 'open') and nothing flows.",
@@ -206,7 +206,7 @@ export function BuilderInteractiveTutorial(props: {
         id: "done",
         title: "You've got it",
         body:
-          "Pick parts, wire a circuit, run it, read W.I.R.E. That's the app.",
+          "You've mastered the full approach: place components, complete the circuit, read W.I.R.E. metrics, add junctions for parallel paths, collapse parallel groups to R_eq, then fill the W.I.R.E. table from Totals inward. Head to Practice Worksheets to work through series, parallel, and combination problems using this exact method.",
         canSkipRequirement: true,
         isComplete: () => true,
       },
@@ -660,7 +660,7 @@ export function BuilderInteractiveTutorial(props: {
               Junctions: <strong>{junctionCount}</strong>
             </span>
             <span className="builder-tutorial-status-item">
-              Circuit: <strong>{isComplete ? "Complete" : "Open"}</strong>
+              Circuit: <strong>{isComplete ? "Closed" : "Open"}</strong>
             </span>
           </div>
 

@@ -336,8 +336,8 @@ export function checkCircuitCompletion(
     message = "Circuit is complete and closed";
   } else if (!powerSourceConnected) {
     message = "Power source terminals not connected";
-  } else if (!hasCycle) {
-    message = "No complete circuit detected";
+  } else if (!hasLoop) {
+    message = "No closed path detected in circuit";
   } else if (openEndpoints.length > 0) {
     message = `Open circuit: ${openEndpoints.length} unconnected wire endpoint(s)`;
   } else {

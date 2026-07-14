@@ -4627,20 +4627,10 @@ body.android-optimized .zoom-btn {
                 question: "Series-parallel combo: collapse the ladder and solve for I_T.",
                 expectedAnswer: "current",
                 description: [
-                    "<strong>Plan</strong>: Reduce the series resistor first, then the parallel pair, before finishing the circuit.",
+                    "<strong>Plan</strong>: Reduce the series resistor first, then the parallel pair, before completing the circuit.",
                     "<strong>W.I.R.E.</strong>: Track resistors R1=150 ohm, R2=220 ohm, R3=330 ohm, R4=180 ohm with the 18 V supply.",
                     "<strong>Formulas</strong>: Use the 12 Ohm's Law identities (E=I*R, I=E/R, R=E/I, W=I*E, W=I^2*R, W=E^2/R).",
-                    "<strong>Kirchhoff</strong>: Verify KVL around the outer path and KCL at the branch node."
-                ].join("<br>")
-            },
-            combination_parallel_strings: {
-                question: "Combination circuit: solve each branch string current, then combine them for I_T.",
-                expectedAnswer: "current",
-                description: [
-                    "<strong>Topology</strong>: Two resistor strings are connected in parallel, so each string shares the same 24 V supply.",
-                    "<strong>Branch A</strong>: Add R1 + R2 to get the first branch resistance.",
-                    "<strong>Branch B</strong>: Add R3 + R4 to get the second branch resistance, then solve branch current with I = E / R_branch.",
-                    "<strong>Check</strong>: Add the two branch currents for total current and verify total power with W = I * E."
+                    "<strong>Kirchhoff</strong>: Verify KVL around the outer circuit path and KCL at the branch node."
                 ].join("<br>")
             },
             combination_advanced: {
@@ -4650,7 +4640,7 @@ body.android-optimized .zoom-btn {
                     "<strong>Strategy</strong>: Work outward-in, simplifying parallel legs before folding the bridge back into series.",
                     "<strong>W.I.R.E.</strong>: Log each known resistor value and the 24 V supply; mark the unknowns for W, I, R, and E.",
                     "<strong>Formulas</strong>: Cycle through the Ohm's Law family plus power triangle (W=I*E, W=I^2*R, W=E^2/R).",
-                    "<strong>Checks</strong>: Apply KCL at every junction and KVL for each independent path.",
+                    "<strong>Checks</strong>: Apply KCL at every junction and KVL for each independent circuit path.",
                     "Present the answer set as a W.I.R.E. table." 
                 ].join("<br>")
             }
@@ -4694,7 +4684,7 @@ body.android-optimized .zoom-btn {
             },
             combination_advanced: {
                 guide: "Work branch-by-branch: simplify parallel legs, fold them into series paths, and repeat while logging each equivalent in W.I.R.E.",
-                note: "Reveal totals when you want to verify each branch against Kirchhoff's laws."
+                note: "Reveal totals when you want to verify each circuit path against Kirchhoff's laws."
             },
             random: {
                 guide: "Identify which elements share current or voltage before selecting the right Ohm's Law identity, then fill the blanks methodically.",
@@ -21225,7 +21215,7 @@ Made with ? for visual learners everywhere!
                     "Interpret a multi-section network arranged as top series, middle parallel box, and bottom return chain.",
                     "Track W.I.R.E. entries for R1=120 ohm, R2=150 ohm, R3=180 ohm, R4=270 ohm, R5=220 ohm, LED=60 ohm, E=24 V.",
                     "Jump between Ohm's Law and power identities (I = E / R, W = I * E, W = I^2 * R, W = E^2 / R).",
-                    "Validate results with Kirchhoff's Voltage Law on each path and Current Law at every junction."
+                    "Validate results with Kirchhoff's Voltage Law on each circuit path and Current Law at every junction."
                 ],
                 components: [
                     { id: 'B1', type: 'battery', position: [-14, 0, 0], rotation: 1.5707963267948966, properties: { voltage: 24 } },

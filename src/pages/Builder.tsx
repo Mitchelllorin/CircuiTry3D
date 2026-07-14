@@ -388,8 +388,8 @@ const WIRE_GUIDE_SECTIONS: HelpSection[] = [
   {
     title: "W.I.R.E. Overview",
     paragraphs: [
-      "The W.I.R.E. method keeps four core electrical values front and centre while you build or solve circuits.",
-      "Use this solve cycle: capture known values, choose one unknown, pick the matching formula, then verify with simulation.",
+      "The W.I.R.E. method keeps four core electrical values front and centre while you build or solve circuits. Each value has a dedicated color so you can spot it instantly in any panel or worksheet.",
+      "Use this solve method: capture known values, choose one unknown, pick the matching formula, then verify with simulation.",
     ],
     bullets: [
       "W - Watts (Power) — color: Blue",
@@ -549,7 +549,7 @@ const TABLE_METHOD_SECTIONS: HelpSection[] = [
       "2. Fill in every given value for W, I, R, or E in the worksheet rows.",
       "3. Choose the Ohm's Law or power identity that matches the two known values in the row.",
       "4. Record the newly solved value in the table, then update the totals row when complete.",
-      "5. Check your work with Kirchhoff: sum voltages around each path and verify currents at junctions.",
+      "5. Check your work with Kirchhoff: sum voltages around each circuit path and verify currents at junctions.",
     ],
   },
   {
@@ -1259,42 +1259,50 @@ const INTRO_WELCOME = {
   body: "Build real electric circuits in 3D and watch the current actually flow — no experience needed. New to this? Start by tapping a part below (a Battery powers everything), add a Resistor and an LED, connect them with wires, and press Run. Not sure what a part is? Tap it to see what it does, or tap the ? Help button anytime.",
 };
 
-const GALLERY_TOAST_DURATION_MS = 6000;
-
-// Unified component library: every branded real-world part becomes a first-class
-// card in the SAME picker as the generic components, inheriting that type's icon
-// and category tab and carrying its preset spec values. This removes the separate
-// "Real Parts Library" section that used to stack beneath the reel (and hide
-// behind it on mobile) — there is now one library, one layer, fully filterable.
-//
-// Derived from the shared catalog rather than a second hand-written list, so a
-// branded part is defined once and the Builder and the Arena can never drift.
-// Families the 3D workspace can't draw (ICs) yield no builderType and are
-// skipped — they used to spawn an unhandled component type.
-const REAL_PART_LIBRARY_ACTIONS: ComponentAction[] = CATALOG_COMPONENTS.flatMap(
-  (part) => {
-    const builderType = builderTypeFor(part);
-    if (!builderType) {
-      return [];
-    }
-    const base = COMPONENT_ACTIONS.find((c) => c.builderType === builderType);
-    const properties = toWorkspaceProperties(part);
-    return [
-      {
-        id: part.id,
-        icon: base?.icon ?? "🔩",
-        label: part.name,
-        action: "component" as const,
-        builderType: builderType as ComponentAction["builderType"],
-        // Manufacturer + datasheet spec, shown on the centered card / tooltip.
-        description: `${part.manufacturer} · ${part.spec}`,
-        initialProperties:
-          Object.keys(properties).length > 0 ? properties : undefined,
-        // Inherit the base type's metadata so the branded part filters under the
-        // same category tab (Power / Passive / Semi / …) as its generic sibling.
-        metadata: base?.metadata ? { ...base.metadata } : undefined,
-      },
-    ];
+const INTRO_DIALOG_STEPS: IntroDialogStep[] = [
+  {
+    icon: "⚡",
+    title: "What is an Electric Circuit?",
+    body: "An electric circuit is a closed path through which electric charge (electrons) can flow continuously. Every working circuit needs three things: a voltage source (like a battery), at least one load (like a resistor or bulb), and conductors (wires) forming a complete, unbroken path.",
+    analogy:
+      "🔄 Think of it like a water cycle: a pump pushes water around a closed pipe system. If the pipe is broken anywhere, the flow stops — the same happens with electricity in an open circuit.",
+  },
+  {
+    icon: "🔋",
+    title: "Voltage (E) — The Electrical Push",
+    body: "Voltage, also called Electromotive Force (EMF) or potential difference, is the energy per unit charge that drives electrons through the circuit. It is measured in Volts (V).",
+    formula: "E  (Volts, V)",
+    analogy:
+      "💧 Imagine water pressure in a pipe. Higher pressure pushes more water through — higher voltage pushes more electrons through a conductor.",
+  },
+  {
+    icon: "➡️",
+    title: "Current (I) — The Flow of Electrons",
+    body: "Electric current is the rate at which electric charge flows past a point in a circuit. It is measured in Amperes (Amps, A). In a series circuit, the same current flows through every component.",
+    formula: "I  (Amperes, A)",
+    analogy:
+      "💧 Current is like the volume of water flowing through a pipe per second. A wider pipe (less resistance) allows more water (more current) to flow for the same pressure (voltage).",
+  },
+  {
+    icon: "🌀",
+    title: "Resistance (R) — Opposition to Flow",
+    body: "Resistance is the property of a material that opposes the flow of electric current. It converts electrical energy into heat or light. Resistance is measured in Ohms (Ω). Every real conductor and component has some resistance.",
+    formula: "R  (Ohms, Ω)",
+    analogy:
+      "💧 Resistance is like the narrowness of a pipe. A very narrow pipe (high resistance) restricts water flow even under high pressure. Resistors are deliberately added to control current.",
+  },
+  {
+    icon: "📐",
+    title: "Ohm's Law — The Fundamental Relationship",
+    body: "Ohm's Law states that the voltage across a conductor is directly proportional to the current flowing through it, with resistance as the constant of proportionality. This single equation lets you calculate any one of the three values if you know the other two.",
+    formula: "E = I × R",
+    analogy:
+      "🔧 Rearranged:\n  I = E ÷ R  →  more voltage or less resistance = more current\n  R = E ÷ I  →  knowing voltage and current reveals resistance",
+  },
+  {
+    icon: "🚀",
+    title: "You're Ready to Build!",
+    body: "CircuiTry3D lets you design interactive 3D circuits and instantly see how Ohm's Law plays out in real time. Add a battery, connect resistors, draw wires, and watch current flow — all the way down to the atomic level.\n\nUse the W.I.R.E. table (Watts · Current · Resistance · Voltage) to read every metric in your circuit.",
   },
 );
 
@@ -3681,6 +3689,43 @@ export default function Builder() {
               ? "Conventional current view is active (positive -> negative)."
               : "Electron flow view is active (negative -> positive)."}
           </p>
+          <div className="current-flow-payoff-explainer">
+            <div className="payoff-explainer-item">
+              <span className="payoff-explainer-label">⚡ Current (I)</span>
+              <span className="payoff-explainer-value">
+                Flow of electric charge through the circuit.{" "}
+                {currentFlowPayoffAmps > 0
+                  ? `${currentFlowPayoffAmps.toFixed(activeWireProfile ? 4 : 3)} A flowing now.`
+                  : "Complete the circuit to start flow."}
+              </span>
+            </div>
+            <div className="payoff-explainer-item">
+              <span className="payoff-explainer-label">🔋 Voltage (E)</span>
+              <span className="payoff-explainer-value">
+                Electrical pressure pushing charge around the circuit.{" "}
+                {currentFlowPayoffVolts > 0
+                  ? `${currentFlowPayoffVolts.toFixed(1)} V supplied by the battery.`
+                  : "Add a battery to supply voltage."}
+              </span>
+            </div>
+            <div className="payoff-explainer-item">
+              <span className="payoff-explainer-label">🟢 Resistance (R)</span>
+              <span className="payoff-explainer-value">
+                Opposition to current. Higher resistance → less current.
+                Ohm's Law: <strong>E = I × R</strong>.
+              </span>
+            </div>
+            <div className="payoff-explainer-item">
+              <span className="payoff-explainer-label">🔵 Power (W)</span>
+              <span className="payoff-explainer-value">
+                Energy used per second.{" "}
+                <strong>P = E × I</strong>.{" "}
+                {currentFlowPayoffWatts > 0
+                  ? `${currentFlowPayoffWatts.toFixed(activeWireProfile ? 3 : 2)} W consumed now.`
+                  : "Appears once current flows."}
+              </span>
+            </div>
+          </div>
           <div className="current-flow-payoff-metrics">
             <span className="current-flow-payoff-metric">
               <strong>I</strong>{" "}

@@ -61,7 +61,7 @@ const CIRCUIT_FACTS = [
   },
   {
     fact: "Kirchhoff's Voltage Law: the sum of all voltage drops around any closed path equals zero.",
-    tip: "Trace a complete circuit in CircuiTry3D with the voltage inspector — the drops will always balance the supply.",
+    tip: "Trace a complete circuit path in CircuiTry3D with the voltage inspector — the drops will always balance the supply.",
   },
   {
     fact: "A short circuit provides a near-zero resistance path, causing dangerously high current.",

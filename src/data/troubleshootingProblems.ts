@@ -140,7 +140,7 @@ const troubleshootingProblems: TroubleshootingProblem[] = [
   },
   {
     id: "ts_missing_wire",
-    title: "Troubleshoot: Open Circuit",
+    title: "Troubleshoot: Broken Circuit",
     prompt:
       "The schematic looks almost right, but the circuit is open. Add the missing connection to restore current flow.",
     preset: "troubleshoot_missing_wire",
@@ -153,8 +153,8 @@ const troubleshootingProblems: TroubleshootingProblem[] = [
       placeholder: "Example: The return wire is missing and the circuit is open.",
       acceptedAnswers: [
         "missing wire",
-        "open circuit",
         "broken circuit",
+        "open circuit",
         "missing connection",
         "missing return path",
       ],

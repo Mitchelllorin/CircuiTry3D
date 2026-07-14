@@ -56,7 +56,7 @@ const GUIDE_WORKFLOWS: Record<GuideWorkflowId, GuideWorkflowConfig> = {
       },
       {
         id: "tutorial-build-circuit",
-        title: "Build and complete a circuit",
+        title: "Build and complete the circuit",
         detail:
           "Add the required parts and complete the circuit so the simulator reports a complete circuit.",
       },
@@ -79,7 +79,7 @@ const GUIDE_WORKFLOWS: Record<GuideWorkflowId, GuideWorkflowConfig> = {
     description:
       "W.I.R.E. = Watts (blue) · Current/Amps (yellow-orange) · Resistance/Ohms (green) · Voltage (red). These colors label the quantities in the UI panels. The animated particles in the 3D workspace use a separate color system showing current speed — those colors are unrelated. Use this checklist to solve one circuit at a time: identify the type, collapse any parallel groups to a simple series circuit, fill the W.I.R.E. table with known values, solve unknowns with formulas, then trace back through branches.",
     completionSummary:
-      "W.I.R.E. guide complete. Open Practice Worksheets and repeat the same solve-check cycle on new circuits.",
+      "W.I.R.E. guide complete. Open Practice Worksheets and repeat the collapse → fill table → solve → verify on new circuits.",
     workspaceSyncCopy:
       "These steps use the same W.I.R.E. values shown in the Insights bar and worksheet totals row.",
     steps: [
