@@ -5,6 +5,21 @@ command = "npm ci && npm run build"
 
 # SPA fallback
 [[redirects]]
-from = "/*"
-to = "/index.html"
-status = 200
+  from = "/"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/app/*"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/"
+  to = "/index.html"
+  status = 200
+
+[[headers]]
+  for = "/workspace.html"
+  [headers.values]
+    X-Frame-Options = "SAMEORIGIN"

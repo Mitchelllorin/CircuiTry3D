@@ -226,13 +226,18 @@ body.builder-body::before {
 
 .measurement-panel-float {
   position: fixed;
-  right: calc(16px + var(--builder-menu-toggle-hit-width));
-  bottom: calc(16px + var(--builder-safe-area-bottom));
-  z-index: 1700;
-  opacity: 0;
-  transform: translateY(12px);
-  pointer-events: none;
-  transition: opacity 0.2s ease, transform 0.2s ease;
+  background: var(--builder-overlay-soft);
+  border: 1px solid var(--builder-border);
+  border-radius: 18px;
+  box-shadow: 0 18px 36px var(--builder-shadow);
+  backdrop-filter: blur(16px);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 14px 12px;
+  color: inherit;
+  z-index: 840;
+  transition: transform 0.32s ease;
 }
 
 .measurement-panel-float.open {
@@ -476,8 +481,16 @@ body.builder-body::before {
   align-items: center;
   justify-content: center;
   border-radius: 999px;
-  padding: 6px;
-  gap: 2px;
+  border: 1px solid rgba(0, 255, 136, 0.38);
+  background: rgba(0, 255, 136, 0.1);
+  color: var(--builder-green);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  padding: 8px 0;
+  cursor: pointer;
+  transition: background 0.18s ease, transform 0.18s ease;
 }
 
 .builder-menu-toggle-left[aria-expanded="true"],
