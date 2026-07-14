@@ -52,20 +52,13 @@
             margin: 0;
         }
 
-        .logo-circui {
-            color: #00ff88;
-            text-shadow: 0 0 12px rgba(0, 255, 136, 0.6), 0 0 24px rgba(0, 136, 255, 0.22);
-        }
-
-        .logo-try {
-            color: #ff8800;
-            text-transform: uppercase;
-            text-shadow: 0 0 12px rgba(255, 136, 0, 0.6), 0 0 24px rgba(255, 255, 255, 0.2);
-        }
-
-        .logo-3d {
-            color: #2fb4ff;
-            text-shadow: 0 0 14px rgba(47, 180, 255, 0.7), 0 0 26px rgba(160, 230, 255, 0.55);
+        .landing-logo-image {
+            width: clamp(220px, 68vw, 360px);
+            aspect-ratio: 16 / 6;
+            border-radius: 28px;
+            display: block;
+            box-shadow: 0 0 16px rgba(0, 255, 136, 0.45), 0 0 32px rgba(0, 136, 255, 0.28);
+            overflow: hidden;
         }
 
         .logo-pulse {
@@ -104,8 +97,8 @@
         }
 
         .circuit-preview {
-            width: min(82vw, 340px);
-            aspect-ratio: 1 / 1;
+            width: min(82vw, 360px);
+            aspect-ratio: 16 / 9;
             border: 3px solid rgba(0, 255, 136, 0.85);
             border-radius: 28px;
             background: rgba(5, 14, 28, 0.7);
@@ -396,13 +389,19 @@
 </head>
 <body>
     <div class="landing-page">
-        <h1 class="landing-logo logo-pulse" aria-label="CircuiTry3D">
-            <span class="logo-circui">Circui</span><span class="logo-try">TRY</span><span class="logo-3d">3D</span>
+        <h1 class="landing-logo logo-pulse">
+            <span class="sr-only">CircuiTry3D</span>
+            <svg class="landing-logo-image" role="img" aria-hidden="true" viewBox="0 60 512 160" preserveAspectRatio="xMidYMid meet">
+                <use href="circuit-logo.svg#logo-wordmark" />
+            </svg>
         </h1>
         <p class="landing-subtitle">Professional Circuit Design</p>
 
         <div class="circuit-preview" aria-hidden="true">
-            <svg class="circuit-svg" viewBox="0 0 512 512" role="presentation" xmlns:xlink="http://www.w3.org/1999/xlink">
+            <svg class="square-logo" role="presentation" viewBox="0 180 512 248" preserveAspectRatio="xMidYMid meet">
+                <use href="circuit-logo.svg#circuit-panel" />
+            </svg>
+            <svg class="photon-overlay" viewBox="0 0 512 512" role="presentation" xmlns:xlink="http://www.w3.org/1999/xlink">
                 <defs>
                     <linearGradient id="frameGradient" x1="0%" y1="0%" x2="100%" y2="100%">
                         <stop offset="0%" stop-color="rgba(0, 255, 160, 0.14)" />

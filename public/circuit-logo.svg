@@ -2,227 +2,90 @@
      width="512" height="512" viewBox="0 0 512 512"
      role="img" aria-label="CircuiTry3D Logo - Series Circuit">
   <defs>
-    <linearGradient id="wireGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#00ff88;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#00ff88;stop-opacity:1" />
+    <linearGradient id="bg-grad" x1="96" y1="32" x2="416" y2="480" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#071535" />
+      <stop offset="0.52" stop-color="#0D1F46" />
+      <stop offset="1" stop-color="#030A1E" />
     </linearGradient>
-    <linearGradient id="componentGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" style="stop-color:#ff8844;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#ff8844;stop-opacity:1" />
+    <linearGradient id="title-grad" x1="152" y1="92" x2="360" y2="132" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#00FFAD" />
+      <stop offset="1" stop-color="#00C6FF" />
     </linearGradient>
-    <filter id="glow">
-      <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+    <filter id="title-glow" x="-50%" y="-50%" width="200%" height="200%" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="10" result="blur" />
       <feMerge>
         <feMergeNode in="blur"/>
         <feMergeNode in="SourceGraphic"/>
       </feMerge>
     </filter>
-
-    <!-- ── Photon glow + soft comet tail ── -->
-    <filter id="photonGlow" x="-80%" y="-80%" width="260%" height="260%">
-      <feGaussianBlur stdDeviation="4.5" result="blur"/>
-      <feColorMatrix in="blur" type="matrix"
-        values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 16 -3.5"
-        result="glow"/>
-      <feMerge>
-        <feMergeNode in="glow"/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
-    </filter>
-
-    <radialGradient id="photonFill" cx="35%" cy="35%" r="80%">
-      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:1"/>
-      <stop offset="46%" style="stop-color:#e8fffb;stop-opacity:1"/>
-      <stop offset="100%" style="stop-color:#00ff88;stop-opacity:1"/>
-    </radialGradient>
-
-    <!-- ── Arrowhead for 5A current-direction indicators ── -->
-    <marker id="arrowCurrent"
-            markerWidth="10" markerHeight="8" refX="9" refY="4"
-            orient="auto" markerUnits="userSpaceOnUse">
-      <path d="M0,0 L0,8 L10,4 Z" fill="#ffffff" opacity="0.9"/>
-    </marker>
-
-    <!--
-      Photon path: BL(56,414) → up left wire → TL(56,98) → R1 zigzag →
-      TR(456,98) → R2 zigzag → BR(456,414) → R3 zigzag → BL(56,414)
-    -->
-    <path id="photonPath"
-      d="M 56 414
-         L 56 98
-         L 152 98 L 180 98 L 197 63 L 232 133 L 266 63 L 301 133 L 318 98 L 360 98
-         L 456 98
-         L 456 182 L 456 202 L 481 214 L 431 239 L 481 263 L 431 288 L 456 300 L 456 330
-         L 456 414
-         L 360 414 L 318 414 L 301 449 L 266 379 L 232 449 L 197 379 L 180 414 L 152 414
-         L 56 414"/>
+    <style>
+      .brand-text { font-family: 'Poppins','Segoe UI','Roboto',sans-serif; font-weight: 700; }
+      .circuit-text { font-family: 'Poppins','Segoe UI','Roboto',sans-serif; font-weight: 600; letter-spacing: 0.18em; }
+    </style>
   </defs>
 
-  <!-- ── Background ── -->
-  <rect width="512" height="512" fill="url(#bg)"/>
-  <rect width="512" height="512" fill="url(#grid-coarse)"/>
+  <rect width="512" height="512" rx="64" fill="url(#bg-grad)" />
+  <rect x="24" y="24" width="464" height="464" rx="56" stroke="#102349" stroke-width="4" opacity="0.45" />
 
-    <!-- Wire from bottom junction to battery negative terminal -->
-    <line x1="55" y1="115" x2="55" y2="95" stroke="url(#wireGradient)" strokeWidth="3.5" />
+  <g id="logo-wordmark">
+    <text x="256" y="132" text-anchor="middle" font-size="92" class="brand-text" letter-spacing="1" filter="url(#title-glow)">
+      <tspan fill="url(#title-grad)">Circui</tspan>
+      <tspan fill="#FF8A3C">Try</tspan>
+      <tspan fill="url(#title-grad)">3D</tspan>
+    </text>
 
-    <!-- Battery connection stubs centered on left vertical wire -->
-    <line x1="55" y1="56" x2="42" y2="56" stroke="#00ff88" stroke-width="1.75" />
-    <line x1="55" y1="74" x2="42" y2="74" stroke="#00ff88" stroke-width="1.75" />
-
-    <!-- Polarity markers: + above battery, - below battery -->
-    <text x="70" y="62" fontSize="12" fill="#00ff88" fontWeight="bold" textAnchor="middle">+</text>
-    <text x="70" y="103" fontSize="12" fill="#ff6666" fontWeight="bold" textAnchor="middle">−</text>
-
-    <!-- Wire from battery positive terminal to top junction -->
-    <line x1="55" y1="65" x2="55" y2="50" stroke="url(#wireGradient)" strokeWidth="3.5" />
-
-    <line x1="55" y1="50" x2="100" y2="50" stroke="url(#wireGradient)" strokeWidth="3.5" />
-
-    <g transform="translate(130, 50)" stroke="url(#componentGradient)" strokeWidth="3.5" filter="url(#glow)">
-      <polyline points="-30,0 -22,0 -17,-10 -7,10 3,-10 13,10 18,0 30,0" />
-    </g>
-
-    <line x1="160" y1="50" x2="205" y2="50" stroke="url(#wireGradient)" strokeWidth="3.5" />
-
-    <line x1="205" y1="50" x2="205" y2="75" stroke="url(#wireGradient)" strokeWidth="3.5" />
-
-    <g transform="translate(205, 105) rotate(90)" stroke="url(#componentGradient)" strokeWidth="3.5" filter="url(#glow)">
-      <polyline points="-30,0 -22,0 -17,-10 -7,10 3,-10 13,10 18,0 30,0" />
-    </g>
-
-    <line x1="205" y1="135" x2="205" y2="150" stroke="url(#wireGradient)" strokeWidth="3.5" />
-
-    <line x1="205" y1="150" x2="155" y2="150" stroke="url(#wireGradient)" strokeWidth="3.5" />
-
-    <g transform="translate(125, 150)" stroke="url(#componentGradient)" strokeWidth="3.5" filter="url(#glow)">
-      <polyline points="-30,0 -22,0 -17,-10 -7,10 3,-10 13,10 18,0 30,0" />
-    </g>
-
-    <line x1="95" y1="150" x2="55" y2="150" stroke="url(#wireGradient)" strokeWidth="3.5" />
-
-    <line x1="55" y1="150" x2="55" y2="115" stroke="url(#wireGradient)" strokeWidth="3.5" />
-
-    <g stroke="#00ff88" strokeWidth="1.2" opacity="0.9">
-      <line x1="55" y1="115" x2="55" y2="95" />
-      <line x1="55" y1="65" x2="55" y2="50" />
-      <line x1="55" y1="50" x2="100" y2="50" />
-      <line x1="160" y1="50" x2="205" y2="50" />
-      <line x1="205" y1="50" x2="205" y2="75" />
-      <line x1="205" y1="135" x2="205" y2="150" />
-      <line x1="205" y1="150" x2="155" y2="150" />
-      <line x1="95" y1="150" x2="55" y2="150" />
-      <line x1="55" y1="150" x2="55" y2="115" />
-    </g>
-
-    <!-- Junction nodes at battery wire connections -->
-    <circle cx="55" cy="55" r="2.5" fill="#00ff88" stroke="#0f172a" stroke-width="1" />
-    <circle cx="55" cy="72" r="2.5" fill="#00ff88" stroke="#0f172a" stroke-width="1" />
-
-    <!-- Node number labels -->
-    <text x="42" y="14" font-size="8" fill="#94a3b8" font-weight="bold">1</text>
-    <text x="218" y="14" font-size="8" fill="#94a3b8" font-weight="bold">2</text>
-    <text x="218" y="122" font-size="8" fill="#94a3b8" font-weight="bold">3</text>
-    <text x="42" y="122" font-size="8" fill="#94a3b8" font-weight="bold">4</text>
+    <text x="256" y="180" text-anchor="middle" font-size="18" class="circuit-text" fill="#9CB9FF" fill-opacity="0.8">PROFESSIONAL CIRCUIT DESIGN</text>
   </g>
 
-  <!-- Battery schematic symbol - red standard 2D symbol on left side -->
-  <g>
-    <!-- Positive plate (longer line, top) -->
-    <line x1="24" y1="56" x2="42" y2="56" stroke="#ff2b2b" stroke-width="3.5" stroke-linecap="round" filter="url(#glow)" />
-    <!-- Negative plate (shorter line, bottom) -->
-    <line x1="29" y1="74" x2="42" y2="74" stroke="#ff2b2b" stroke-width="2.6" stroke-linecap="round" filter="url(#glow)" />
-  </g>
-  <!-- Polarity marker + above positive plate -->
-  <text x="33" y="48" font-size="10" fill="#ff6b6b" font-weight="bold" text-anchor="middle">+</text>
-  <!-- 9V label to the left of the battery -->
-  <text x="12" y="67" font-size="10" fill="#88ccff" font-weight="bold" text-anchor="middle">9V</text>
-  <!-- Polarity marker - below negative plate -->
-  <text x="33" y="88" font-size="10" fill="#ff6b6b" font-weight="bold" text-anchor="middle">−</text>
+  <g id="circuit-panel">
+    <rect x="88" y="180" width="336" height="248" rx="38" fill="#07132B" fill-opacity="0.82" stroke="#00FFAA" stroke-width="6" />
 
-  <!-- Component labels -->
-  <g font-family="system-ui, -apple-system, sans-serif" font-size="9" fill="#88ccff" text-anchor="middle" font-weight="600" stroke="#050b1f" stroke-width="2" paint-order="stroke fill">
-    <text x="140" y="5">R₁ = 3 kΩ</text>
-    <text x="236" y="77">R₂</text>
-    <text x="140" y="129">R₃ = 5 kΩ</text>
-  </g>
+    <g stroke="#00FFAA" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none">
+      <!-- Top wire and resistor -->
+      <line x1="144" y1="192" x2="192" y2="192" />
+      <rect x="192" y="176" width="88" height="32" rx="6" ry="6" fill="#0A1F3F" fill-opacity="0.6" stroke="#00FFAA" />
+      <line x1="280" y1="192" x2="368" y2="192" />
 
-  <!-- Animated photons (two bright particles with comet tails) -->
-  <g aria-hidden="true" filter="url(#photonGlow)">
-    <!-- Photon A -->
-    <g>
-      <circle r="7" fill="url(#photonFill)" opacity="1">
-        <animateMotion dur="4.2s" repeatCount="indefinite" rotate="auto">
-          <mpath href="#photonPath" xlink:href="#photonPath"/>
-        </animateMotion>
-      </circle>
-      <circle r="5.6" fill="url(#photonFill)" opacity="0.55">
-        <animateMotion dur="4.2s" repeatCount="indefinite" rotate="auto" begin="-0.17s">
-          <mpath href="#photonPath" xlink:href="#photonPath"/>
-        </animateMotion>
-      </circle>
-      <circle r="4.4" fill="url(#photonFill)" opacity="0.32">
-        <animateMotion dur="4.2s" repeatCount="indefinite" rotate="auto" begin="-0.34s">
-          <mpath href="#photonPath" xlink:href="#photonPath"/>
-        </animateMotion>
-      </circle>
-      <circle r="3.5" fill="url(#photonFill)" opacity="0.2">
-        <animateMotion dur="4.2s" repeatCount="indefinite" rotate="auto" begin="-0.51s">
-          <mpath href="#photonPath" xlink:href="#photonPath"/>
-        </animateMotion>
-      </circle>
-      <circle r="2.8" fill="url(#photonFill)" opacity="0.12">
-        <animateMotion dur="4.2s" repeatCount="indefinite" rotate="auto" begin="-0.68s">
-          <mpath href="#photonPath" xlink:href="#photonPath"/>
-        </animateMotion>
-      </circle>
-      <circle r="2.2" fill="url(#photonFill)" opacity="0.08">
-        <animateMotion dur="4.2s" repeatCount="indefinite" rotate="auto" begin="-0.85s">
-          <mpath href="#photonPath" xlink:href="#photonPath"/>
-        </animateMotion>
-      </circle>
-      <circle r="1.8" fill="url(#photonFill)" opacity="0.06">
-        <animateMotion dur="4.2s" repeatCount="indefinite" rotate="auto" begin="-1.02s">
-          <mpath href="#photonPath" xlink:href="#photonPath"/>
-        </animateMotion>
-      </circle>
+      <!-- Right vertical wire with LED -->
+      <line x1="368" y1="192" x2="368" y2="244" />
+      <g transform="translate(368 304) rotate(90)">
+        <line x1="-60" y1="0" x2="-28" y2="0" />
+        <path d="M-28 -26 L 6 0 L -28 26 Z" />
+        <line x1="6" y1="-24" x2="6" y2="24" />
+        <line x1="6" y1="0" x2="46" y2="0" />
+        <path d="M20 -12 L38 -30" />
+        <path d="M28 -4 L46 -22" />
+        <path d="M20 12 L38 30" />
+        <path d="M28 4 L46 22" />
+      </g>
+      <line x1="368" y1="350" x2="368" y2="416" />
+
+      <!-- Bottom wire and switch -->
+      <line x1="368" y1="416" x2="320" y2="416" />
+      <circle cx="312" cy="416" r="8" />
+      <line x1="304" y1="410" x2="268" y2="388" />
+      <circle cx="260" cy="416" r="8" />
+      <line x1="252" y1="416" x2="144" y2="416" />
+
+      <!-- Left wire and battery -->
+      <line x1="144" y1="416" x2="144" y2="372" />
+      <line x1="136" y1="372" x2="152" y2="372" />
+      <line x1="144" y1="340" x2="144" y2="192" />
+      <line x1="128" y1="340" x2="160" y2="340" />
     </g>
-    <!-- Photon B (phase offset) -->
-    <g>
-      <circle r="7" fill="url(#photonFill)" opacity="1">
-        <animateMotion dur="4.2s" repeatCount="indefinite" rotate="auto" begin="-2.1s">
-          <mpath href="#photonPath" xlink:href="#photonPath"/>
-        </animateMotion>
-      </circle>
-      <circle r="5.6" fill="url(#photonFill)" opacity="0.55">
-        <animateMotion dur="4.2s" repeatCount="indefinite" rotate="auto" begin="-2.27s">
-          <mpath href="#photonPath" xlink:href="#photonPath"/>
-        </animateMotion>
-      </circle>
-      <circle r="4.4" fill="url(#photonFill)" opacity="0.32">
-        <animateMotion dur="4.2s" repeatCount="indefinite" rotate="auto" begin="-2.44s">
-          <mpath href="#photonPath" xlink:href="#photonPath"/>
-        </animateMotion>
-      </circle>
-      <circle r="3.5" fill="url(#photonFill)" opacity="0.2">
-        <animateMotion dur="4.2s" repeatCount="indefinite" rotate="auto" begin="-2.61s">
-          <mpath href="#photonPath" xlink:href="#photonPath"/>
-        </animateMotion>
-      </circle>
-      <circle r="2.8" fill="url(#photonFill)" opacity="0.12">
-        <animateMotion dur="4.2s" repeatCount="indefinite" rotate="auto" begin="-2.78s">
-          <mpath href="#photonPath" xlink:href="#photonPath"/>
-        </animateMotion>
-      </circle>
-      <circle r="2.2" fill="url(#photonFill)" opacity="0.08">
-        <animateMotion dur="4.2s" repeatCount="indefinite" rotate="auto" begin="-2.95s">
-          <mpath href="#photonPath" xlink:href="#photonPath"/>
-        </animateMotion>
-      </circle>
-      <circle r="1.8" fill="url(#photonFill)" opacity="0.06">
-        <animateMotion dur="4.2s" repeatCount="indefinite" rotate="auto" begin="-3.12s">
-          <mpath href="#photonPath" xlink:href="#photonPath"/>
-        </animateMotion>
-      </circle>
+
+    <g fill="#00FFAA">
+      <circle cx="144" cy="192" r="6" />
+      <circle cx="368" cy="192" r="6" />
+      <circle cx="368" cy="416" r="6" />
+      <circle cx="144" cy="416" r="6" />
     </g>
+
+    <text x="236" y="195" text-anchor="middle" font-size="18" class="brand-text" fill="#00FFAA">R1</text>
+    <text x="368" y="296" text-anchor="middle" font-size="16" class="brand-text" fill="#00FFAA">LED</text>
+    <text x="256" y="432" text-anchor="middle" font-size="16" class="brand-text" fill="#00FFAA">SW</text>
+    <text x="120" y="320" text-anchor="end" font-size="16" class="brand-text" fill="#00FFAA">BAT</text>
+    <text x="166" y="336" font-size="16" class="brand-text" fill="#00FFAA">+</text>
+    <text x="166" y="376" font-size="16" class="brand-text" fill="#00FFAA">−</text>
   </g>
 </svg>
