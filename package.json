@@ -19,6 +19,7 @@
     "generate-screenshots": "node scripts/generate-screenshots.js",
     "generate-screenshots:local": "node scripts/generate-screenshots.js --local",
     "capture-pr-portrait": "node scripts/capture-pr-portrait.js",
+    "capture-pr-portrait:local": "node scripts/capture-pr-portrait.js --base-url http://localhost:4173",
     "circuit-bot": "node scripts/circuit-bot.js",
     "circuit-bot:local": "node scripts/circuit-bot.js --local",
     "circuit-bot:portrait": "node scripts/circuit-bot.js --portrait",

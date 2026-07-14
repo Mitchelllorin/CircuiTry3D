@@ -72,28 +72,48 @@ jobs:
       - name: Comment PR with preview URL
         uses: actions/github-script@v7
         with:
-          script: |
-            const url = '${{ steps.deploy.outputs.url }}';
-            const marker = '<!-- vercel-preview -->';
-            const body = `${marker}\n### 🔍 Vercel Preview Deployment\n\nYour preview is ready: ${url}`;
-            const { data: comments } = await github.rest.issues.listComments({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-            });
-            const existing = comments.find(c => c.body.includes(marker));
-            if (existing) {
-              await github.rest.issues.updateComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                comment_id: existing.id,
-                body,
-              });
-            } else {
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: context.issue.number,
-                body,
-              });
-            }
+          source-dir: ./dist
+          preview-branch: gh-pages
+          umbrella-dir: pr-preview
+          action: auto
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      # ── Portrait screenshots ──────────────────────────────────────────────
+      # CircuiTry3D was designed in portrait orientation. Capture portrait
+      # phone screenshots (412×915 px) from the local preview so the owner
+      # can evaluate every PR in the canonical review viewport.
+
+      - name: Install Playwright browser
+        if: github.event.action != 'closed'
+        run: npx playwright install chromium --with-deps
+
+      - name: Start preview server
+        if: github.event.action != 'closed'
+        run: npm run preview &
+
+      - name: Wait for preview server
+        if: github.event.action != 'closed'
+        run: |
+          echo "Waiting for preview server on port 4173..."
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:4173 >/dev/null 2>&1; then
+              echo "Server is ready."
+              exit 0
+            fi
+            echo "  attempt $i/30…"
+            sleep 2
+          done
+          echo "::error::Preview server did not become ready after 60 seconds."
+          exit 1
+
+      - name: Capture portrait screenshots
+        if: github.event.action != 'closed'
+        run: npm run capture-pr-portrait:local
+
+      - name: Upload portrait screenshots
+        if: github.event.action != 'closed'
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr-${{ github.event.pull_request.number }}-portrait-preview
+          path: pr-portrait-screenshots/
+          if-no-files-found: warn
