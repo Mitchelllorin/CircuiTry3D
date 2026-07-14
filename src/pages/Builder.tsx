@@ -2451,103 +2451,23 @@ export default function Builder() {
         ? "Complete the active challenge to unlock editing"
         : undefined;
 
-  const activeTroubleshootProblem = useMemo(() => {
-    if (!activeTroubleshootId) return null;
-    return (
-      troubleshootingProblems.find((problem) => problem.id === activeTroubleshootId) ??
-      null
-    );
-  }, [activeTroubleshootId]);
-  const activeTroubleshootAnswer = useMemo(() => {
-    if (!activeTroubleshootProblem) return "";
-    return troubleshootAnswerByProblemId[activeTroubleshootProblem.id] ?? "";
-  }, [activeTroubleshootProblem, troubleshootAnswerByProblemId]);
-  const isActiveTroubleshootDiagnosisAccepted = Boolean(
-    activeTroubleshootProblem &&
-      troubleshootDiagnosedIds.includes(activeTroubleshootProblem.id),
-  );
-  const isActiveTroubleshootSolved = Boolean(
-    activeTroubleshootProblem &&
-      troubleshootSolvedIds.includes(activeTroubleshootProblem.id),
-  );
-  const isCurrentTroubleshootFixVerified = Boolean(
-    troubleshootStatus?.trim().toLowerCase().startsWith("solved"),
-  );
-
-  useEffect(() => {
-    try {
-      window.localStorage.setItem(
-        "circuitry3d.troubleshoot.solved",
-        JSON.stringify(troubleshootSolvedIds),
-      );
-    } catch {
-      // ignore write failures (private mode / storage blocked)
-    }
-  }, [troubleshootSolvedIds]);
-
-  useEffect(() => {
-    // If the user changes problems mid-check, cancel the in-flight check so the UI doesn't get stuck.
-    if (!isTroubleshootCheckPending) {
-      return;
-    }
-    setTroubleshootCheckPending(false);
-    setTroubleshootPendingCheckProblemId(null);
-  }, [activeTroubleshootId, isTroubleshootCheckPending]);
-
-  useEffect(() => {
-    if (!isTroubleshootCheckPending) return;
-    if (!lastSimulation) return;
-    if (!activeTroubleshootProblem) {
-      setTroubleshootCheckPending(false);
-      setTroubleshootPendingCheckProblemId(null);
-      return;
+    const problem = findPracticeProblemById(currentId);
+    if (!problem) {
+      return "Select a practice problem to start the guided worksheet.";
     }
 
-    if (
-      troubleshootPendingCheckProblemId &&
-      troubleshootPendingCheckProblemId !== activeTroubleshootProblem.id
-    ) {
-      // Problem changed while a sim was running; cancel this check.
-      setTroubleshootCheckPending(false);
-      setTroubleshootPendingCheckProblemId(null);
-      return;
+    if (practiceWorksheetState?.problemId === problem.id && practiceWorksheetState.complete) {
+      return `Worksheet complete for ${problem.title}. Tap Next Problem to load the next circuit.`;
     }
 
-    setTroubleshootCheckPending(false);
-    setTroubleshootPendingCheckProblemId(null);
+    return `Complete the worksheet for ${problem.title} to unlock the next challenge.`;
+  }, [activePracticeProblemId, practiceWorksheetState]);
 
-    const solved = isTroubleshootingSolved(
-      activeTroubleshootProblem,
-      lastSimulation,
-    );
-    if (solved) {
-      setCircuitLocked(false);
-      setTroubleshootStatus("Solved! Current is flowing. Circuit unlocked for editing.");
-      setTroubleshootSolvedIds((previous) => {
-        if (previous.includes(activeTroubleshootProblem.id)) return previous;
-        return [...previous, activeTroubleshootProblem.id];
-      });
-      return;
-    }
+  const isArenaSyncing = arenaExportStatus === "exporting";
+  const canOpenLastArena = Boolean(lastArenaExport?.sessionId);
 
-    setCircuitLocked(false);
-    const analyzeResult = getAnalyzeCircuitResult(lastSimulation);
-    const reason = analyzeResult?.flow?.reason;
-    if (reason === "polarity") {
-      setTroubleshootStatus("Not solved yet: polarity mismatch is blocking flow.");
-    } else if (reason === "short") {
-      setTroubleshootStatus("Not solved yet: there’s a short circuit path.");
-    } else if (reason === "no-source") {
-      setTroubleshootStatus("Not solved yet: add a power source (battery).");
-    } else {
-      setTroubleshootStatus("Not solved yet: circuit still has no current flow.");
-    }
-  }, [
-    activeTroubleshootProblem,
-    isTroubleshootCheckPending,
-    lastSimulation,
-    troubleshootPendingCheckProblemId,
-  ]);
+  const controlsDisabled = !isFrameReady;
+  const controlDisabledTitle = controlsDisabled ? "Workspace is still loading" : undefined;
   const builderFrameSrc = useMemo(() => {
     const baseUrl = import.meta.env.BASE_URL ?? "/";
     const normalizedBase = baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
@@ -4079,6 +3999,50 @@ export default function Builder() {
           src={builderFrameSrc}
           sandbox="allow-scripts allow-same-origin allow-popups"
         />
+      </div>
+
+        <div className="builder-floating-controls" role="group" aria-label="Workspace actions">
+        <button
+          type="button"
+          className="builder-floating-button"
+          data-variant="clear"
+          onClick={handleClearWorkspace}
+          disabled={controlsDisabled}
+          aria-disabled={controlsDisabled}
+          title={controlsDisabled ? controlDisabledTitle : "Clear all components, wires, and analysis data"}
+        >
+          Clear Workspace
+        </button>
+        <button
+          type="button"
+          className="builder-floating-button"
+          data-variant="simulate"
+          onClick={handleRunSimulationClick}
+          disabled={controlsDisabled}
+          aria-disabled={controlsDisabled}
+          data-pulse={isSimulatePulsing ? "true" : undefined}
+          title={controlsDisabled ? controlDisabledTitle : "Run the current circuit simulation"}
+        >
+          Run Simulation
+        </button>
+      </div>
+
+      <div ref={floatingLogoRef} className="builder-floating-logo" aria-hidden="true">
+        <span className="builder-logo-circui">Circui</span>
+        <span className="builder-logo-try">Try</span>
+        <span className="builder-logo-3d">3D</span>
+      </div>
+
+      <div className={`builder-logo-controls${isLogoSettingsOpen ? " open" : ""}`}>
+        <button
+          type="button"
+          className={`logo-controls-toggle${isLogoSettingsOpen ? " active" : ""}`}
+          onClick={toggleLogoSettingsPanel}
+          aria-expanded={isLogoSettingsOpen}
+          aria-controls="builder-logo-motion-panel"
+        >
+          Logo Motion
+        </button>
         <div
           className="builder-workspace-skin-layer"
           aria-hidden="true"

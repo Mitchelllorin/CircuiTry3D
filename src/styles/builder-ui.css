@@ -3016,236 +3016,36 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
   filter: brightness(1.08) contrast(1.07) saturate(1.08);
 }
 
-.builder-workspace-skin-layer {
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  pointer-events: none;
-  background-position: center;
-  background-repeat: no-repeat;
-  background-size: cover;
-  opacity: 0;
-  mix-blend-mode: normal;
-  transition: opacity 0.28s ease;
-}
-
-/* Transparent guard shown over the workspace while the current-flow payoff demo
-   plays. Captures all pointer input so the preset circuit can't be accidentally
-   edited; sits above the iframe but well below the payoff banner (z-index 1100),
-   so the banner's Edit/× controls stay clickable. */
-/* Small top-centre "tap to edit" pill. The showcase is kept view-only by the
-   circuit EDIT-LOCK (so components can't be dragged) — this pill no longer covers
-   the workspace, so the camera stays free to zoom/orbit the locked demo. */
-.builder-payoff-guard {
-  position: absolute;
-  top: 12px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 3;
-  pointer-events: auto;
-  background: transparent;
-  border: 0;
-  margin: 0;
-  padding: 0;
-  width: auto;
-  height: auto;
-  cursor: pointer;
-}
-/* Small "tap to edit" badge so the lock is obvious but doesn't hide the circuit. */
-.builder-payoff-guard__hint {
-  margin-top: 14px;
-  padding: 6px 14px;
-  border-radius: 999px;
-  background: rgba(12, 10, 36, 0.82);
-  border: 1px solid var(--builder-border);
-  color: var(--builder-cyan);
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  box-shadow: 0 2px 12px var(--builder-shadow);
-  backdrop-filter: blur(6px);
-  pointer-events: none;
-}
-
-.builder-arena-workspace {
+.builder-floating-controls {
   position: fixed;
-  inset: 0;
-  z-index: var(--z-builder-widget);
+  top: calc(76px + var(--builder-safe-area-top));
+  left: 0;
+  right: 0;
   display: flex;
-  justify-content: flex-end;
-  align-items: stretch;
-  padding:
-    calc(84px + var(--builder-safe-area-top))
-    clamp(10px, 2vw, 22px)
-    calc(14px + var(--builder-safe-area-bottom));
-  background: linear-gradient(
-    90deg,
-    rgba(4, 12, 26, 0.04) 0%,
-    rgba(4, 12, 26, 0.14) 34%,
-    rgba(4, 12, 26, 0.46) 58%,
-    rgba(4, 12, 26, 0.78) 100%
-  );
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 0 clamp(16px, 4vw, 48px);
+  z-index: 880;
   pointer-events: none;
-}
-
-.builder-arena-shell {
-  pointer-events: auto;
-  width: clamp(520px, 58vw, 980px);
-  max-width: calc(100vw - 20px);
-  height: 100%;
-  border-radius: 20px;
-  border: 1px solid rgba(168, 216, 255, 0.3);
-  background: linear-gradient(
-    180deg,
-    rgba(8, 20, 40, 0.92) 0%,
-    rgba(5, 12, 24, 0.95) 100%
-  );
-  box-shadow:
-    0 24px 68px rgba(2, 8, 20, 0.68),
-    inset 0 0 0 1px rgba(168, 216, 255, 0.08);
-  overflow: hidden;
-  backdrop-filter: blur(10px);
-  display: flex;
-  flex-direction: column;
-}
-
-@media (max-width: 1100px) {
-  .builder-arena-shell {
-    width: clamp(440px, 64vw, 860px);
-  }
-}
-
-@media (max-width: 900px) {
-  .builder-arena-workspace {
-    justify-content: stretch;
-    align-items: flex-end;
-    padding:
-      calc(84px + var(--builder-safe-area-top))
-      clamp(8px, 3vw, 14px)
-      calc(8px + var(--builder-safe-area-bottom));
-    background: linear-gradient(
-      180deg,
-      rgba(4, 12, 26, 0.04) 0%,
-      rgba(4, 12, 26, 0.2) 36%,
-      rgba(4, 12, 26, 0.72) 100%
-    );
-  }
-
-  .builder-arena-shell {
-    width: 100%;
-    height: min(74vh, 780px);
-    border-radius: 18px;
-  }
-}
-
-@media (max-width: 640px) {
-  .builder-arena-workspace {
-    padding-top: calc(70px + var(--builder-safe-area-top));
-  }
-
-  .builder-arena-shell {
-    height: min(78vh, 760px);
-    border-radius: 14px;
-  }
-}
-
-.builder-workspace-lock {
-  position: absolute;
-  inset: 0;
-  background:
-    linear-gradient(180deg, rgba(5, 12, 30, 0.92), rgba(7, 16, 32, 0.86)),
-    radial-gradient(circle at 30% 20%, rgba(168, 216, 255, 0.22), transparent 55%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: clamp(16px, 4vw, 48px);
-  pointer-events: auto;
-  z-index: var(--z-dropdown-overlay);
-}
-
-.builder-workspace-lock-card {
-  background: rgba(6, 14, 30, 0.92);
-  border: 1px solid rgba(168, 216, 255, 0.45);
-  border-radius: 20px;
-  padding: clamp(20px, 5vw, 40px);
-  max-width: 440px;
-  text-align: center;
-  box-shadow:
-    0 20px 60px rgba(0, 0, 0, 0.55),
-    0 0 30px rgba(168, 216, 255, 0.25);
-}
-
-.builder-workspace-lock-card strong {
-  display: block;
-  font-size: 20px;
-  color: rgba(168, 216, 255, 0.95);
-  margin-bottom: 12px;
-}
-
-.builder-workspace-lock-card p {
-  margin: 0 0 18px;
-  color: rgba(228, 241, 255, 0.85);
-  line-height: 1.6;
-  font-size: 14px;
-}
-
-.builder-workspace-lock-btn {
-  border: none;
-  border-radius: 999px;
-  padding: 10px 22px;
-  font-size: 14px;
-  font-weight: 700;
-  cursor: pointer;
-  color: #041225;
-  background: linear-gradient(135deg, rgba(168, 216, 255, 1), rgba(0, 255, 176, 0.85));
-  box-shadow: 0 12px 24px rgba(0, 255, 176, 0.25);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.builder-workspace-lock-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 18px 34px rgba(0, 255, 176, 0.35);
-}
-
-.builder-floating-action {
-  position: fixed;
-  top: auto;
-  bottom: calc(var(--builder-floating-action-offset) + var(--builder-safe-area-bottom));
-  z-index: var(--z-builder-scene);
-  pointer-events: none;
-  display: flex;
-}
-
-.builder-floating-action--left {
-  justify-content: flex-start;
-}
-
-.builder-floating-action--right {
-  justify-content: flex-end;
+  transition: top 0.32s ease;
 }
 
 .builder-floating-button {
   pointer-events: auto;
-  width: var(--builder-floating-button-size);
-  height: var(--builder-floating-button-size);
-  border-radius: 999px;
-  border: 1px solid rgba(168, 216, 255, 0.38);
-  background: rgba(14, 32, 64, 0.92);
+  border-radius: 12px;
+  border: 1px solid rgba(136, 204, 255, 0.35);
+  background: rgba(14, 32, 64, 0.9);
   color: var(--builder-text);
   font: inherit;
-  padding: 0;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  padding: 10px 18px;
   cursor: pointer;
-  display: grid;
-  place-items: center;
-  opacity: 0.72;
-  box-shadow: 0 10px 18px var(--builder-shadow);
-  transition:
-    transform 0.2s ease,
-    opacity 0.2s ease,
-    box-shadow 0.2s ease,
-    border-color 0.2s ease,
-    background 0.2s ease,
-    color 0.2s ease;
+  box-shadow: 0 12px 28px var(--builder-shadow);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
 }
 
 .builder-floating-button:hover:not([disabled]) {
@@ -3270,11 +3070,11 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
   );
   border-color: rgba(255, 142, 86, 0.55);
   color: #0a1a2f;
-  box-shadow: 0 16px 30px rgba(255, 86, 86, 0.24);
+  box-shadow: 0 14px 28px rgba(255, 86, 86, 0.22);
 }
 
 .builder-floating-button[data-variant="clear"]:hover:not([disabled]) {
-  box-shadow: 0 22px 44px rgba(255, 86, 86, 0.32);
+  box-shadow: 0 20px 40px rgba(255, 86, 86, 0.32);
 }
 
 .builder-floating-button[data-variant="simulate"] {
@@ -3285,11 +3085,11 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
   );
   border-color: rgba(136, 255, 220, 0.56);
   color: #02131f;
-  box-shadow: 0 16px 30px rgba(0, 204, 255, 0.26);
+  box-shadow: 0 14px 28px rgba(0, 204, 255, 0.24);
 }
 
 .builder-floating-button[data-variant="simulate"]:hover:not([disabled]) {
-  box-shadow: 0 22px 44px rgba(0, 204, 255, 0.32);
+  box-shadow: 0 20px 40px rgba(0, 204, 255, 0.32);
 }
 
 .builder-floating-button[data-pulse="true"] {
@@ -3307,13 +3107,21 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
 }
 
 @media (max-width: 720px) {
-  .builder-floating-action {
-    bottom: calc(var(--builder-floating-action-offset) + var(--builder-safe-area-bottom));
+  .builder-floating-controls {
+    top: calc(64px + var(--builder-safe-area-top));
+    left: auto;
+    right: calc(12px + env(safe-area-inset-right, 0px));
+    padding: 0;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: flex-start;
+    gap: 8px;
   }
 
   .builder-floating-button {
-    width: var(--builder-floating-button-size);
-    height: var(--builder-floating-button-size);
+    width: max-content;
+    padding: 9px 16px;
+    font-size: 9.5px;
   }
 
   .builder-floating-icon {
