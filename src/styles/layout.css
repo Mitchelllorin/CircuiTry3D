@@ -271,66 +271,8 @@ body {
 }
 
 .app-shell.is-landing .app-content {
+  padding: 0;
   overflow: visible;
-}
-
-.app-shell.is-landing .app-content > * {
-  padding: 0;
-  overflow: hidden;
-}
-
-.app-shell.is-landing .home-page {
-  min-height: 100vh;
-  min-height: 100dvh;
-  padding: 0;
-}
-
-.app-shell.is-landing .home-page iframe {
-  height: 100vh;
-  height: 100dvh;
-}
-
-/* Arena page gets full-viewport treatment — no mode bar / ticker / footer */
-.app-shell.is-arena .app-content {
-  overflow: hidden;
-  padding: 0;
-}
-
-.app-shell.is-arena .app-content > * {
-  padding: 0;
-  overflow: hidden;
-}
-
-/* Promo page — full-screen, no chrome, mirrors arena layout treatment */
-.app-shell.is-promo .app-content {
-  overflow: hidden;
-  padding: 0;
-}
-
-.app-shell.is-promo .app-content > * {
-  padding: 0;
-  overflow: hidden;
-}
-
-.app-shell.is-promo2 .app-content {
-  overflow: hidden;
-  padding: 0;
-}
-
-.app-shell.is-promo2 .app-content > * {
-  padding: 0;
-  overflow: hidden;
-}
-
-.arena-page-wrapper {
-  flex: 1;
-  display: flex;
-  height: 100vh;
-  height: 100dvh;
-}
-
-.arena-page-wrapper iframe {
-  flex: 1;
 }
 
 @media (max-width: 960px) {
