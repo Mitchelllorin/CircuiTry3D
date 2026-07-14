@@ -910,26 +910,34 @@ export const WireDrawer: React.FC<WireDrawerProps> = ({
       return;
     }
 
-    const deviceRatio = typeof window !== 'undefined' && window.devicePixelRatio ? Math.min(window.devicePixelRatio, 2) : 1;
-    const displayWidth = width;
-    const displayHeight = height;
-    const scaledWidth = Math.round(displayWidth * deviceRatio);
-    const scaledHeight = Math.round(displayHeight * deviceRatio);
+    let animationFrameId: number | null = null;
+    let isRendering = false;
 
-    if (canvas.width !== scaledWidth || canvas.height !== scaledHeight) {
-      canvas.width = scaledWidth;
-      canvas.height = scaledHeight;
-    }
+    const render = () => {
+      if (isRendering) return;
+      isRendering = true;
 
-    // Set CSS size explicitly (keeps crispness and prevents layout thrash)
-    canvas.style.width = `${displayWidth}px`;
-    canvas.style.height = `${displayHeight}px`;
+      const deviceRatio = typeof window !== 'undefined' && window.devicePixelRatio ? window.devicePixelRatio : 1;
+      const displayWidth = width;
+      const displayHeight = height;
+      const scaledWidth = Math.round(displayWidth * deviceRatio);
+      const scaledHeight = Math.round(displayHeight * deviceRatio);
 
-    ctx.save();
-    ctx.setTransform(deviceRatio, 0, 0, deviceRatio, 0, 0);
-    ctx.clearRect(0, 0, displayWidth, displayHeight);
-    ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = 'high';
+      if (canvas.width !== scaledWidth || canvas.height !== scaledHeight) {
+        canvas.width = scaledWidth;
+        canvas.height = scaledHeight;
+      }
+
+      if (canvas.style.width !== `${displayWidth}px`) {
+        canvas.style.width = `${displayWidth}px`;
+      }
+      if (canvas.style.height !== `${displayHeight}px`) {
+        canvas.style.height = `${displayHeight}px`;
+      }
+
+      ctx.save();
+      ctx.setTransform(deviceRatio, 0, 0, deviceRatio, 0, 0);
+      ctx.clearRect(0, 0, displayWidth, displayHeight);
 
     const getWirePath = (wireId: string, points: Vec2[]) => {
       const key = points.map((p) => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join('|');
@@ -1274,64 +1282,28 @@ export const WireDrawer: React.FC<WireDrawerProps> = ({
       ctx.restore();
     };
 
-    drawBackground();
+      drawBackground();
 
-    for (const wire of wires) {
-      drawWire(wire, hoveredWireInfo?.wireId === wire.id);
-    }
+      for (const wire of wires) {
+        drawWire(wire, hoveredWireInfo?.wireId === wire.id);
+      }
 
-    for (const node of nodes) {
-      drawNode(node);
-    }
+      for (const node of nodes) {
+        drawNode(node);
+      }
 
-    drawActiveWire();
-    drawHoveredWireCue();
+      drawActiveWire();
+      drawHoveredWireCue();
 
-    ctx.restore();
-    // If the hover pulse is active, keep repainting at the display refresh rate.
-    // We avoid React state updates; redraw is local to this effect.
-    let raf: number | null = null;
-    if (hoveredWireInfo) {
-      // Throttle animation to 30fps on mobile to save battery/CPU
-      const isMobile = isTouchDevice();
-      const targetInterval = isMobile ? 33 : 16; // 30fps on mobile, 60fps on desktop
-      let lastFrameTime = 0;
+      ctx.restore();
+      isRendering = false;
+    };
 
-      const repaint = (now: number) => {
-        // Throttle frame rate
-        if (now - lastFrameTime < targetInterval) {
-          raf = requestAnimationFrame(repaint);
-          return;
-        }
-        lastFrameTime = now;
-
-        // Re-run this effect's drawing logic by triggering a manual redraw:
-        // we do it by re-entering the body via requestAnimationFrame closure.
-        ctx.save();
-        ctx.setTransform(deviceRatio, 0, 0, deviceRatio, 0, 0);
-        ctx.clearRect(0, 0, displayWidth, displayHeight);
-        ctx.imageSmoothingEnabled = true;
-        ctx.imageSmoothingQuality = 'high';
-
-        drawBackground();
-        for (const wire of wires) {
-          drawWire(wire, hoveredWireInfo?.wireId === wire.id);
-        }
-        for (const node of nodes) {
-          drawNode(node);
-        }
-        drawActiveWire();
-        drawHoveredWireCue();
-        ctx.restore();
-
-        raf = requestAnimationFrame(repaint);
-      };
-      raf = requestAnimationFrame(repaint);
-    }
+    animationFrameId = requestAnimationFrame(render);
 
     return () => {
-      if (raf !== null) {
-        cancelAnimationFrame(raf);
+      if (animationFrameId !== null) {
+        cancelAnimationFrame(animationFrameId);
       }
     };
   }, [wires, nodes, currentWire, isDrawing, hoveredNode, hoveredWireInfo, width, height, snapTarget]);

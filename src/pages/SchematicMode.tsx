@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, startTransition } from "react";
 import "../styles/schematic.css";
 import "../styles/practice.css";
 import {
@@ -474,24 +474,22 @@ function PracticeModeView({ symbolStandard }: { symbolStandard: SymbolStandard }
   }, [expectedValues, tableRows]);
 
   useEffect(() => {
-    if (!selectedProblem) {
-      setWorksheetEntries({});
+    // Wrap worksheet and UI state resets in startTransition to prevent blocking the 3D viewport render
+    // This fixes flickering/glitching when switching to parallel circuits
+    startTransition(() => {
+      setWorksheetEntries(baselineWorksheet);
       setWorksheetComplete(false);
       setTableRevealed(false);
       setStepsVisible(false);
       setAnswerRevealed(false);
-      return;
-    }
-    setWorksheetEntries(baselineWorksheet);
-    setWorksheetComplete(false);
-    setTableRevealed(false);
-    setStepsVisible(false);
-    setAnswerRevealed(false);
-  }, [baselineWorksheet, selectedProblem?.id]);
+    });
+  }, [baselineWorksheet, selectedProblem.id]);
 
   useEffect(() => {
     if (worksheetComplete && !answerRevealed) {
-      setAnswerRevealed(true);
+      startTransition(() => {
+        setAnswerRevealed(true);
+      });
     }
   }, [worksheetComplete, answerRevealed]);
 
@@ -2722,89 +2720,22 @@ export function PracticeViewport({ problem, symbolStandard }: PracticeViewportPr
         renderer.domElement.addEventListener("contextmenu", handleContextMenu);
 
         let circuitGroup: any = null;
-        let flowAnimationSystem: CurrentFlowAnimationSystem | null = null;
+        let isRebuilding = false;
 
-        const setCircuit = (practiceProblem: PracticeProblem, activeStandard: SymbolStandard) => {
+          const setCircuit = (practiceProblem: PracticeProblem, activeStandard: SymbolStandard) => {
+          isRebuilding = true;
           if (circuitGroup) {
             scene.remove(circuitGroup);
             disposeThreeObject(circuitGroup);
             circuitGroup = null;
           }
-          if (flowAnimationSystem) {
-            flowAnimationSystem.dispose();
-            flowAnimationSystem = null;
-          }
-          circuitGroup = buildPracticeCircuit(three, practiceProblem, activeStandard);
-          scene.add(circuitGroup);
 
-          // Initialize current flow animation - add particles to circuitGroup so they move with the circuit
-          flowAnimationSystem = new CurrentFlowAnimationSystem(three, circuitGroup);
-          flowAnimationSystem.setFlowMode("electron");
-
-          // Solve the circuit to get current values
-          const solutionResult = trySolvePracticeProblem(practiceProblem);
-          const solution = solutionResult.ok ? solutionResult.data : null;
-          const elements = buildPracticeCircuitElements(practiceProblem);
-          const dcSolution = solveDCCircuit(elements);
-
-          // Circuit is "closed" for animation only if the DC solver can actually solve it.
-          flowAnimationSystem.setCircuitClosed(dcSolution.status === "solved");
-
-          // Set current intensity based on solved circuit current
-          if (solution?.totals.current !== undefined) {
-            flowAnimationSystem.setCurrentIntensity(solution.totals.current);
-          } else {
-            flowAnimationSystem.setCurrentIntensity(0);
-          }
-
-          // Drive particle speed/density from Kirchhoff + Ohm (via DC solver).
-          // This makes parallel branches visibly differ: low resistance branch carries more current,
-          // so flow is faster/denser there.
-          if (dcSolution.status === "solved") {
-            // 1) Animate wires using per-segment solved currents.
-            const wirePathMap = new Map<string, Vec2[]>();
-            for (const el of elements) {
-              if (el.kind === "wire") {
-                wirePathMap.set(el.id, el.path);
-              }
-            }
-            flowAnimationSystem.addFlowPathsFromSolver(dcSolution.wireSegmentCurrents, wirePathMap);
-
-            // 2) Animate two-terminal components (resistors, batteries, etc.) along their rendered conductor path.
-            for (const el of elements) {
-              if (el.kind === "wire") continue;
-              if (!("start" in el) || !("end" in el)) continue;
-
-              const solved = dcSolution.elementCurrents.get(el.id);
-              if (!solved) continue;
-
-              const path = buildElementConductorPath(el, activeStandard);
-              if (!path || path.length < 2) continue;
-
-              const currentAmps = Math.abs(solved.amps);
-              if (currentAmps <= 0) continue;
-
-              const resistanceOhms = getElementResistanceOhms(el);
-              const powerWatts =
-                resistanceOhms && resistanceOhms > 0
-                  ? currentAmps * currentAmps * resistanceOhms
-                  : undefined;
-              const flowsForward =
-                solved.direction === "start->end"
-                  ? true
-                  : solved.direction === "end->start"
-                    ? false
-                    : solved.amps >= 0;
-
-              flowAnimationSystem.addFlowPath({
-                path,
-                currentAmps,
-                flowsForward,
-                resistanceOhms,
-                powerWatts,
-              });
-            }
-          }
+          // Use requestAnimationFrame to ensure rebuild happens in sync with render cycle
+          window.requestAnimationFrame(() => {
+            circuitGroup = buildPracticeCircuit(three, practiceProblem, activeStandard);
+            scene.add(circuitGroup);
+            isRebuilding = false;
+          });
         };
 
         applyProblemRef.current = setCircuit;
@@ -2834,7 +2765,8 @@ export function PracticeViewport({ problem, symbolStandard }: PracticeViewportPr
           const elapsed = clock.getElapsedTime();
           const deltaTime = clock.getDelta();
           updateCamera(false, three, camera);
-          if (circuitGroup) {
+          // Only animate circuit if it exists and we're not rebuilding
+          if (circuitGroup && !isRebuilding) {
             const wobble = Math.sin(elapsed * 0.35) * 0.12;
             circuitGroup.rotation.y = wobble;
             circuitGroup.position.y = Math.sin(elapsed * 0.45) * 0.04;
@@ -2893,9 +2825,14 @@ export function PracticeViewport({ problem, symbolStandard }: PracticeViewportPr
     }, [CAMERA_DEFAULT_POSITION, CAMERA_DEFAULT_TARGET, CAMERA_RADIUS_LIMITS, CAMERA_PAN_LIMITS, CAMERA_PHI_LIMITS, normalizeAzimuth, updateCamera, applyPan]);
 
     useEffect(() => {
-      if (applyProblemRef.current) {
-        applyProblemRef.current(problem, symbolStandard);
-      }
+      // Debounce problem changes to prevent rapid-fire rebuilds
+      const debounceTimeout = setTimeout(() => {
+        if (applyProblemRef.current) {
+          applyProblemRef.current(problem, symbolStandard);
+        }
+      }, 50);
+
+      return () => clearTimeout(debounceTimeout);
     }, [problem, symbolStandard]);
 
   return (

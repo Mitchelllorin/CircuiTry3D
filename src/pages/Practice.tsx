@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, startTransition } from "react";
 import type { ReactNode } from "react";
 import { createPortal } from "react-dom";
 import practiceProblems, {
@@ -674,65 +674,19 @@ export default function Practice({
   }, [expectedValues, tableRows]);
 
   useEffect(() => {
-    setWorksheetEntries(baselineWorksheet);
-    setWorksheetComplete(false);
-  }, [baselineWorksheet, selectedProblem?.id]);
-
-  useEffect(() => {
-    if (!sprintActive || worksheetComplete || !sprintStartRef.current) {
-      return;
-    }
-    const interval = window.setInterval(() => {
-      if (sprintStartRef.current) {
-        setSprintElapsedMs(Date.now() - sprintStartRef.current);
-      }
-    }, 1000);
-    return () => window.clearInterval(interval);
-  }, [sprintActive, worksheetComplete]);
-
-  useEffect(() => {
-    if (!selectedProblem) {
-      return;
-    }
-    const currentProblemId = selectedProblem.id;
-    const previous = lastChallengeReport.current;
-
-    if (!worksheetComplete) {
-      if (!previous || previous.problemId !== currentProblemId || previous.complete) {
-        lastChallengeReport.current = {
-          problemId: currentProblemId,
-          complete: false,
-        };
-      }
-      return;
-    }
-
-    if (previous && previous.problemId === currentProblemId && previous.complete) {
-      return;
-    }
-
-    let elapsedMs: number | undefined;
-    if (sprintStartRef.current) {
-      elapsedMs = Date.now() - sprintStartRef.current;
-      sprintStartRef.current = null;
-      setSprintActive(false);
-      setSprintElapsedMs(elapsedMs);
-      setSprintLastMs(elapsedMs);
-    }
-
-    recordCompletion(selectedProblem, {
-      usedAssist: assistUsed,
-      elapsedMs,
+    // Wrap worksheet reset in startTransition to prevent blocking the 3D viewport render
+    // This fixes flickering/glitching when switching to parallel circuits
+    startTransition(() => {
+      setWorksheetEntries(baselineWorksheet);
+      setWorksheetComplete(false);
     });
-    lastChallengeReport.current = {
-      problemId: currentProblemId,
-      complete: true,
-    };
-  }, [assistUsed, recordCompletion, selectedProblem, worksheetComplete]);
+  }, [baselineWorksheet, selectedProblem.id]);
 
   useEffect(() => {
     if (worksheetComplete && !answerRevealed) {
-      setAnswerRevealed(true);
+      startTransition(() => {
+        setAnswerRevealed(true);
+      });
     }
   }, [worksheetComplete, answerRevealed]);
 

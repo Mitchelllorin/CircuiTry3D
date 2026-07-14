@@ -2145,42 +2145,15 @@ export default function ArenaView({ variant = "page", onOpenBuilder }: ArenaView
     setBattleState("battling");
     setBattleWinner(null);
     
-    const results = new Map<string, {winner: "left" | "right" | "tie", advantage: number}>();
-    
-    if (selectedMetrics.includes("all")) {
-      showdownScore.rounds.forEach(round => {
-        results.set(round.key, {
-          winner: round.winner,
-          advantage: round.advantageScore
-        });
-      });
-    } else {
-      selectedMetrics.forEach(metricKey => {
-        const round = showdownScore.rounds.find(r => r.key === metricKey);
-        if (round) {
-          results.set(metricKey, {
-            winner: round.winner,
-            advantage: round.advantageScore
-          });
-        }
-      });
-    }
-    
-    setTimeout(() => {
-      setMetricResults(results);
-      
-      let leftWins = 0;
-      let rightWins = 0;
-      results.forEach(result => {
-        if (result.winner === "left") leftWins++;
-        if (result.winner === "right") rightWins++;
-      });
-      
-      const overallWinner = leftWins > rightWins ? "left" : rightWins > leftWins ? "right" : "tie";
-      setBattleWinner(overallWinner);
+    const timeoutId = setTimeout(() => {
+      if (showdownWinner) {
+        setBattleWinner(showdownWinner);
+      }
       setBattleState("complete");
     }, 3000);
-  }, [battleState, componentATelemetry, componentBTelemetry, selectedMetrics, showdownScore]);
+
+    return () => clearTimeout(timeoutId);
+  }, [battleState, componentATelemetry, componentBTelemetry, showdownWinner]);
 
   const handleResetBattle = useCallback(() => {
     setBattleState("idle");

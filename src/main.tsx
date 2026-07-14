@@ -167,23 +167,13 @@ try {
   }
 
   createRoot(container).render(
-    <React.StrictMode>
-      <HashRouter>
-        <DemoModeProvider>
-          <AuthProvider>
-            <EngagementProvider>
-              <CircuitStorageProvider>
-                <GamificationProvider>
-                  <ClassroomProvider>
-                    <App />
-                  </ClassroomProvider>
-                </GamificationProvider>
-              </CircuitStorageProvider>
-            </EngagementProvider>
-          </AuthProvider>
-        </DemoModeProvider>
-      </HashRouter>
-    </React.StrictMode>
+    <HashRouter>
+      <AuthProvider>
+        <EngagementProvider>
+          <App />
+        </EngagementProvider>
+      </AuthProvider>
+    </HashRouter>
   );
 
   // Signal the inline fallback script (index.html) that the module bundle
