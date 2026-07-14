@@ -1,3 +1,10 @@
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import "../styles/builder-ui.css";
+import "../styles/schematic.css";
+import ArenaView from "../components/arena/ArenaView";
+import Practice from "./Practice";
+import BuilderWorkspace from "../components/schematic/BuilderWorkspace";
+import { DEFAULT_SYMBOL_STANDARD, SYMBOL_STANDARD_OPTIONS, SymbolStandard } from "../schematic/standards";
 import {
   Fragment,
   useCallback,
@@ -1441,14 +1448,15 @@ export default function Builder() {
   const [activeBuilderTool, setActiveBuilderTool] =
     useState<BuilderToolId>("select");
   const [isSimulatePulsing, setSimulatePulsing] = useState(false);
-  const [activeWorkspacePanelMode, setActiveWorkspacePanelMode] =
-    useState<WorkspacePanelMode | null>(null);
-  const [isWorkspacePanelOpen, setWorkspacePanelOpen] = useState(false);
-  const [workspaceMode, setWorkspaceMode] = useState<WorkspaceMode>("build");
-  const [isTroubleshootPanelOpen, setTroubleshootPanelOpen] = useState(false);
-  const pendingTroubleshootPresetRef = useRef<string | null>(null);
-  const [activeTroubleshootId, setActiveTroubleshootId] = useState<string | null>(
-    troubleshootingProblems[0]?.id ?? null,
+  const [arenaExportStatus, setArenaExportStatus] = useState<ArenaExportStatus>("idle");
+  const [arenaExportError, setArenaExportError] = useState<string | null>(null);
+  const [lastArenaExport, setLastArenaExport] = useState<ArenaExportSummary | null>(null);
+  const [isArenaPanelOpen, setArenaPanelOpen] = useState(false);
+  const [isPracticePanelOpen, setPracticePanelOpen] = useState(false);
+  const [isSchematicPanelOpen, setSchematicPanelOpen] = useState(false);
+  const [schematicSymbolStandard, setSchematicSymbolStandard] = useState<SymbolStandard>(DEFAULT_SYMBOL_STANDARD);
+  const [activePracticeProblemId, setActivePracticeProblemId] = useState<string | null>(
+    DEFAULT_PRACTICE_PROBLEM?.id ?? null
   );
   const [troubleshootSolvedIds, setTroubleshootSolvedIds] = useState<string[]>(
     () => {
@@ -1931,12 +1939,53 @@ export default function Builder() {
         return;
       }
 
-      // Ctrl+S or Cmd+S for Save
-      if ((event.ctrlKey || event.metaKey) && event.key === "s") {
-        event.preventDefault();
-        if (isFeatureLocked("save")) {
-          showUpgradePrompt("save");
-          return;
+    const handleCompactScreen = (event: MediaQueryListEvent) => {
+      if (event.matches) {
+        setLeftMenuOpen(false);
+      }
+    };
+
+    if (compactScreenQuery.matches) {
+      setLeftMenuOpen(false);
+    } else if (largeScreenQuery.matches) {
+      setLeftMenuOpen(true);
+    }
+
+    const detachLargeScreen = subscribeToMediaQuery(largeScreenQuery, handleLargeScreen);
+    const detachCompactScreen = subscribeToMediaQuery(compactScreenQuery, handleCompactScreen);
+
+    return () => {
+      detachLargeScreen();
+      detachCompactScreen();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isHelpOpen) {
+      return;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setHelpOpen(false);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isHelpOpen]);
+
+  useEffect(() => {
+    if (!isArenaPanelOpen && !isPracticePanelOpen && !isSchematicPanelOpen) {
+      return;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        if (isArenaPanelOpen) {
+          setArenaPanelOpen(false);
         }
         if (circuitStorage.currentCircuit) {
           // Quick save if circuit already exists
@@ -1944,38 +1993,159 @@ export default function Builder() {
         } else {
           setIsSaveModalOpen(true);
         }
-        return;
-      }
-
-      // Ctrl+O or Cmd+O for Open/Load
-      if ((event.ctrlKey || event.metaKey) && event.key === "o") {
-        event.preventDefault();
-        if (isFeatureLocked("load")) {
-          showUpgradePrompt("load");
-          return;
+        if (isSchematicPanelOpen) {
+          setSchematicPanelOpen(false);
         }
-        setIsLoadModalOpen(true);
-        return;
-      }
-
-      // Ctrl+N or Cmd+N for New
-      if ((event.ctrlKey || event.metaKey) && event.key === "n") {
-        event.preventDefault();
-        if (circuitStorage.hasUnsavedChanges) {
-          const proceed = window.confirm(
-            "You have unsaved changes. Create a new circuit anyway?"
-          );
-          if (!proceed) return;
-        }
-        circuitStorage.clearCurrentCircuit();
-        triggerBuilderAction("clear-workspace");
-        return;
       }
     };
 
-    window.addEventListener("keydown", handleGlobalKeyDown);
-    return () => window.removeEventListener("keydown", handleGlobalKeyDown);
-  }, [circuitStorage, currentCircuitState, triggerBuilderAction]);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isArenaPanelOpen, isPracticePanelOpen, isSchematicPanelOpen]);
+
+  useEffect(() => {
+    if (!isHelpOpen || helpView !== "overview" || !requestedHelpSection) {
+      return;
+    }
+
+    const target = helpSectionRefs.current[requestedHelpSection];
+    if (target) {
+      target.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+    setRequestedHelpSection(null);
+  }, [helpView, isHelpOpen, requestedHelpSection]);
+
+  useEffect(() => {
+    helpSectionRefs.current = {};
+  }, [helpView]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const element = floatingLogoRef.current;
+    if (!element) {
+      return;
+    }
+
+    if (floatingLogoAnimationRef.current !== null) {
+      cancelAnimationFrame(floatingLogoAnimationRef.current);
+      floatingLogoAnimationRef.current = null;
+    }
+
+    const normalizedOpacity = clamp(logoSettings.opacity, 0, 100) / 100;
+
+    if (!logoSettings.isVisible || normalizedOpacity <= 0) {
+      element.style.display = "none";
+      element.style.opacity = "0";
+      element.style.textShadow = "none";
+      element.style.transform = "translateX(-50%) translateY(-50%)";
+      return;
+    }
+
+    element.style.display = "";
+    element.style.opacity = normalizedOpacity.toFixed(2);
+
+    if (prefersReducedMotion) {
+      const staticPrimary = 0.38 * normalizedOpacity;
+      const staticSecondary = 0.24 * normalizedOpacity;
+      element.style.transform = "translateX(-50%) translateY(-50%)";
+      element.style.textShadow = `0 0 44px rgba(0, 255, 136, ${Math.max(0, staticPrimary).toFixed(2)}), 0 0 68px rgba(136, 204, 255, ${Math.max(
+        0,
+        staticSecondary
+      ).toFixed(2)})`;
+      return;
+    }
+
+    let frameId: number;
+    let previousTimestamp: number | null = null;
+    let angle = 0;
+
+    const animate = (timestamp: number) => {
+      if (previousTimestamp === null) {
+        previousTimestamp = timestamp;
+      }
+
+      const deltaSeconds = (timestamp - previousTimestamp) / 1000;
+      previousTimestamp = timestamp;
+
+      const orbitDuration = Math.max(logoSettings.speed, 4);
+      angle = (angle + (deltaSeconds * (Math.PI * 2)) / orbitDuration) % (Math.PI * 2);
+
+      const viewportWidth = window.innerWidth || 1440;
+      const viewportHeight = window.innerHeight || 900;
+
+      const horizontalMargin = 160;
+      const verticalMargin = 200;
+
+      const maxHorizontal = Math.max(0, (viewportWidth - horizontalMargin * 2) / 2);
+      const maxVertical = Math.max(0, (viewportHeight - verticalMargin * 2) / 2);
+
+      const amplitudeX = maxHorizontal * (clamp(logoSettings.travelX, 10, 100) / 100);
+      const amplitudeY = maxVertical * (clamp(logoSettings.travelY, 10, 100) / 100);
+
+      const orbitX = Math.cos(angle) * amplitudeX;
+      const orbitY = Math.sin(angle) * amplitudeY;
+
+      const bounceStrength = clamp(logoSettings.bounce, 0, 120);
+      const bounceWave = Math.sin(angle * 2);
+      const bounceOffset = bounceWave * bounceStrength;
+      const tilt = bounceWave * 5.8;
+      const scale = 1 + bounceWave * (bounceStrength / 360);
+
+      const translateX = orbitX;
+      const translateY = orbitY + bounceOffset;
+
+      element.style.transform = `translateX(calc(-50% + ${translateX.toFixed(1)}px)) translateY(calc(-50% + ${translateY.toFixed(
+        1
+      )}px)) rotate(${tilt.toFixed(2)}deg) scale(${scale.toFixed(3)})`;
+
+      const glowPrimary = (0.34 + Math.sin(angle * 1.7) * 0.12) * normalizedOpacity;
+      const glowSecondary = (0.2 + Math.sin(angle * 2.3 + Math.PI / 4) * 0.08) * normalizedOpacity;
+      element.style.textShadow = `0 0 44px rgba(0, 255, 136, ${Math.max(0, glowPrimary).toFixed(2)}), 0 0 68px rgba(136, 204, 255, ${Math.max(
+        0,
+        glowSecondary
+      ).toFixed(2)})`;
+
+      frameId = window.requestAnimationFrame(animate);
+      floatingLogoAnimationRef.current = frameId;
+    };
+
+    frameId = window.requestAnimationFrame(animate);
+
+    return () => {
+      if (frameId) {
+        cancelAnimationFrame(frameId);
+      }
+      floatingLogoAnimationRef.current = null;
+    };
+  }, [logoSettings, prefersReducedMotion]);
+
+  const postToBuilder = useCallback(
+    (message: BuilderMessage, options: { allowQueue?: boolean } = {}) => {
+      const { allowQueue = true } = options;
+      const frameWindow = iframeRef.current?.contentWindow;
+
+      if (!frameWindow || !isFrameReady) {
+        if (allowQueue) {
+          pendingMessages.current.push(message);
+        }
+        return false;
+      }
+
+      try {
+        frameWindow.postMessage(message, "*");
+        return true;
+      } catch {
+        if (allowQueue) {
+          pendingMessages.current.push(message);
+        }
+        return false;
+      }
+    },
+    [isFrameReady]
+  );
 
   // Sync circuit lock state to the iframe
   useEffect(() => {
@@ -2013,24 +2183,21 @@ export default function Builder() {
       });
       practiceProblemRef.current = problem.id;
 
-      const presetKey = presetOverride ?? problem.presetHint;
-      if (presetKey) {
-        triggerBuilderAction("load-preset", { preset: presetKey });
-      }
-    },
-    [triggerBuilderAction],
-  );
+  const openPracticePanel = useCallback(() => {
+    setSchematicPanelOpen(false);
+    setPracticePanelOpen(true);
+  }, []);
 
-  const openPracticeWorkspace = useCallback(
-    (problemOverride?: PracticeProblem | null, presetOverride?: string) => {
-      const nextProblem =
-        problemOverride ??
-        findPracticeProblemById(activePracticeProblemId) ??
-        DEFAULT_PRACTICE_PROBLEM ??
-        practiceProblems[0] ??
-        null;
+  const openSchematicPanel = useCallback(() => {
+    setPracticePanelOpen(false);
+    setSchematicPanelOpen(true);
+  }, []);
 
-      if (!nextProblem) {
+  const handlePracticeAction = useCallback(
+    (action: PanelAction) => {
+      if (action.action === "open-arena") {
+        setArenaPanelOpen(true);
+        handleArenaSync({ openWindow: false, sessionName: "Builder Hand-off" });
         return;
       }
       if (action.action === "practice-help") {
@@ -2052,17 +2219,13 @@ export default function Builder() {
               preset: randomProblem.presetHint,
             });
           }
-          setPracticePanelOpen(true);
+          openPracticePanel();
         }
         return;
       }
       triggerBuilderAction(action.action, action.data);
     },
-    [
-      activePracticeProblemId,
-      assignPracticeProblem,
-      setArenaPanelOpen,
-    ],
+    [handleArenaSync, openHelpCenter, triggerBuilderAction, openPracticePanel]
   );
 
   // Deep link support: open practice problem from URL (used by Classroom student view)
@@ -3660,42 +3823,50 @@ export default function Builder() {
                 <button
                   type="button"
                   className="slider-chip"
-                  onClick={() => openPracticeWorkspace()}
+                  onClick={openPracticePanel}
                   title={practiceWorksheetMessage}
                   data-complete={isPracticeWorksheetComplete ? "true" : undefined}
                 >
                   <span className="slider-chip-label">Practice Worksheets</span>
                 </button>
-                {PRACTICE_SCENARIOS.map((scenario, index) => {
-                  const isLockedScenario = isDemoMode && index > 0;
-                  return (
-                    <button
-                      key={scenario.id}
-                      type="button"
-                      className={`slider-chip${isLockedScenario ? " slider-chip--locked" : ""}`}
-                      onClick={() => {
-                        if (isLockedScenario) {
-                          showUpgradePrompt("advanced-practice");
-                          return;
-                        }
-                        const problem = scenario.problemId
-                          ? findPracticeProblemById(scenario.problemId)
-                          : findPracticeProblemByPreset(scenario.preset);
-                        openPracticeWorkspace(problem, scenario.preset);
-                      }}
-                      disabled={controlsDisabled}
-                      aria-disabled={controlsDisabled || isLockedScenario}
-                      title={
-                        isLockedScenario
-                          ? `${scenario.label} — Full Version`
-                          : controlsDisabled ? controlDisabledTitle : scenario.question
+                <button
+                  type="button"
+                  className="slider-chip"
+                  onClick={openSchematicPanel}
+                  disabled={controlsDisabled}
+                  aria-disabled={controlsDisabled}
+                  title={
+                    controlsDisabled
+                      ? controlDisabledTitle
+                      : "Open the 3D schematic builder overlay"
+                  }
+                >
+                  <span className="slider-chip-label">3D Schematic Builder</span>
+                </button>
+                {PRACTICE_SCENARIOS.map((scenario) => (
+                  <button
+                    key={scenario.id}
+                    type="button"
+                    className="slider-chip"
+                    onClick={() => {
+                      triggerBuilderAction("load-preset", { preset: scenario.preset });
+                      const problem = scenario.problemId
+                        ? findPracticeProblemById(scenario.problemId)
+                        : findPracticeProblemByPreset(scenario.preset);
+                      if (problem) {
+                        practiceProblemRef.current = problem.id;
+                        setActivePracticeProblemId(problem.id);
+                        setPracticeWorksheetState({ problemId: problem.id, complete: false });
                       }
-                    >
-                      <span className="slider-chip-label">{scenario.label}</span>
-                      {isLockedScenario && <span className="slider-chip-lock" aria-hidden="true">🔒</span>}
-                    </button>
-                  );
-                })}
+                      openPracticePanel();
+                    }}
+                    disabled={controlsDisabled}
+                    aria-disabled={controlsDisabled}
+                    title={controlsDisabled ? controlDisabledTitle : scenario.question}
+                  >
+                    <span className="slider-chip-label">{scenario.label}</span>
+                  </button>
+                ))}
                 <button
                   type="button"
                   className="slider-chip"
@@ -4056,11 +4227,195 @@ export default function Builder() {
           Logo Motion
         </button>
         <div
-          className="builder-workspace-skin-layer"
-          aria-hidden="true"
-          style={workspaceSkinStyle}
-        />
-        {(isCurrentFlowPayoffLocking || isShowcaseLocked) && (
+          id="builder-logo-motion-panel"
+          className="builder-logo-settings-panel"
+          aria-hidden={!isLogoSettingsOpen}
+        >
+          <h3>Logo Motion</h3>
+          <p className="builder-logo-settings-description">Fine-tune how the logo drifts across the workspace.</p>
+          <div className="builder-logo-setting">
+            <label id="builder-logo-visible-label" htmlFor="builder-logo-visible">
+              Display logo
+            </label>
+            <div className="setting-input">
+              <button
+                type="button"
+                id="builder-logo-visible"
+                className={`setting-switch${logoSettings.isVisible ? " on" : ""}`}
+                role="switch"
+                aria-checked={logoSettings.isVisible}
+                aria-labelledby="builder-logo-visible-label"
+                onClick={() => setLogoVisibility(!logoSettings.isVisible)}
+                tabIndex={isLogoSettingsOpen ? 0 : -1}
+              >
+                <span className="setting-switch-handle" aria-hidden="true" />
+              </button>
+              <span className="setting-value">{logoSettings.isVisible ? "On" : "Off"}</span>
+            </div>
+          </div>
+          <div className="builder-logo-setting">
+            <label htmlFor="builder-logo-opacity">Opacity</label>
+            <div className="setting-input">
+              <input
+                id="builder-logo-opacity"
+                type="range"
+                min={0}
+                max={100}
+                step={1}
+                value={logoSettings.opacity}
+                onChange={(event) => updateLogoSetting("opacity", Number(event.target.value))}
+                disabled={prefersReducedMotion}
+                tabIndex={isLogoSettingsOpen ? 0 : -1}
+                aria-valuetext={`${Math.round(logoSettings.opacity)} percent opacity`}
+              />
+              <span className="setting-value">{Math.round(logoSettings.opacity)}%</span>
+            </div>
+          </div>
+          <div className="builder-logo-setting">
+            <label htmlFor="builder-logo-speed">Orbit duration</label>
+            <div className="setting-input">
+              <input
+                id="builder-logo-speed"
+                type="range"
+                min={6}
+                max={60}
+                step={1}
+                value={logoSettings.speed}
+                onChange={(event) => updateLogoSetting("speed", Number(event.target.value))}
+                disabled={prefersReducedMotion}
+                tabIndex={isLogoSettingsOpen ? 0 : -1}
+                aria-valuetext={`${Math.round(logoSettings.speed)} second cycle`}
+              />
+              <span className="setting-value">{Math.round(logoSettings.speed)}s</span>
+            </div>
+          </div>
+          <div className="builder-logo-setting">
+            <label htmlFor="builder-logo-travel-x">Horizontal travel</label>
+            <div className="setting-input">
+              <input
+                id="builder-logo-travel-x"
+                type="range"
+                min={10}
+                max={100}
+                step={1}
+                value={logoSettings.travelX}
+                onChange={(event) => updateLogoSetting("travelX", Number(event.target.value))}
+                disabled={prefersReducedMotion}
+                tabIndex={isLogoSettingsOpen ? 0 : -1}
+                aria-valuetext={`${Math.round(logoSettings.travelX)} percent width`}
+              />
+              <span className="setting-value">{Math.round(logoSettings.travelX)}%</span>
+            </div>
+          </div>
+          <div className="builder-logo-setting">
+            <label htmlFor="builder-logo-travel-y">Vertical travel</label>
+            <div className="setting-input">
+              <input
+                id="builder-logo-travel-y"
+                type="range"
+                min={10}
+                max={100}
+                step={1}
+                value={logoSettings.travelY}
+                onChange={(event) => updateLogoSetting("travelY", Number(event.target.value))}
+                disabled={prefersReducedMotion}
+                tabIndex={isLogoSettingsOpen ? 0 : -1}
+                aria-valuetext={`${Math.round(logoSettings.travelY)} percent height`}
+              />
+              <span className="setting-value">{Math.round(logoSettings.travelY)}%</span>
+            </div>
+          </div>
+          <div className="builder-logo-setting">
+            <label htmlFor="builder-logo-bounce">Bounce intensity</label>
+            <div className="setting-input">
+              <input
+                id="builder-logo-bounce"
+                type="range"
+                min={0}
+                max={120}
+                step={1}
+                value={logoSettings.bounce}
+                onChange={(event) => updateLogoSetting("bounce", Number(event.target.value))}
+                disabled={prefersReducedMotion}
+                tabIndex={isLogoSettingsOpen ? 0 : -1}
+                aria-valuetext={`${Math.round(logoSettings.bounce)} pixel bounce`}
+              />
+              <span className="setting-value">{Math.round(logoSettings.bounce)}px</span>
+            </div>
+          </div>
+          {prefersReducedMotion ? (
+            <p className="builder-logo-settings-note">Motion is paused because your system prefers reduced motion.</p>
+          ) : null}
+          <div className="builder-logo-settings-actions">
+            <button
+              type="button"
+              className="logo-settings-reset"
+              onClick={resetLogoSettings}
+              tabIndex={isLogoSettingsOpen ? 0 : -1}
+            >
+              Reset defaults
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div
+        className={`builder-panel-overlay builder-panel-overlay--schematic${isSchematicPanelOpen ? " open" : ""}`}
+        role="dialog"
+        aria-modal="true"
+        aria-hidden={!isSchematicPanelOpen}
+        onClick={() => setSchematicPanelOpen(false)}
+      >
+        <div
+          className="builder-panel-shell builder-panel-shell--schematic"
+          onClick={(event) => event.stopPropagation()}
+        >
+          <button
+            type="button"
+            className="builder-panel-close"
+            onClick={() => setSchematicPanelOpen(false)}
+            aria-label="Close schematic builder"
+          >
+            X
+          </button>
+          <div className="builder-panel-body builder-panel-body--schematic">
+            <div
+              className="schematic-standard-control"
+              role="group"
+              aria-label="Schematic symbol standard"
+            >
+              <span className="schematic-standard-label">Symbol Standard</span>
+              <div className="schematic-standard-buttons">
+                {SYMBOL_STANDARD_OPTIONS.map((option) => (
+                  <button
+                    key={option.key}
+                    type="button"
+                    className={
+                      schematicSymbolStandard === option.key
+                        ? "schematic-standard-button is-active"
+                        : "schematic-standard-button"
+                    }
+                    onClick={() => setSchematicSymbolStandard(option.key)}
+                    title={option.description}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <BuilderWorkspace symbolStandard={schematicSymbolStandard} />
+          </div>
+        </div>
+      </div>
+
+      <div
+        className={`builder-panel-overlay${isPracticePanelOpen ? " open" : ""}`}
+        role="dialog"
+        aria-modal="true"
+        aria-hidden={!isPracticePanelOpen}
+        onClick={() => setPracticePanelOpen(false)}
+      >
+        <div className="builder-panel-shell builder-panel-shell--practice" onClick={(event) => event.stopPropagation()}>
           <button
             type="button"
             className="builder-payoff-guard"

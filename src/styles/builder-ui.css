@@ -853,6 +853,11 @@ body.ct-opaque-menus {
   border-color: rgba(45, 212, 191, 0.3);
 }
 
+.builder-panel-shell--schematic {
+  width: min(98vw, 1340px);
+  max-height: 92vh;
+}
+
 .builder-panel-close {
   position: absolute;
   top: 16px;
@@ -958,53 +963,12 @@ body.ct-opaque-menus {
 }
 
 .builder-panel-body--schematic {
-  overflow: hidden;
-  padding: 24px 28px;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  background: linear-gradient(
-    160deg,
-    rgba(6, 16, 34, 0.96),
-    rgba(2, 8, 18, 0.94)
-  );
+  overflow: auto;
+  padding: 16px;
+  background: rgba(8, 20, 44, 0.92);
 }
 
-.builder-panel-body--schematic .schematic-workspace {
-  flex: 1 1 auto;
-  min-height: 0;
-}
-
-.schematic-overlay-header {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 18px;
-}
-
-.schematic-overlay-header h2 {
-  margin: 0 0 6px;
-  font-size: 1.6rem;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: #c8e8ff;
-}
-
-.schematic-overlay-header p {
-  margin: 0;
-  color: rgba(188, 224, 255, 0.72);
-  max-width: 520px;
-  line-height: 1.5;
-}
-
-.schematic-overlay-header .schematic-standard-control {
-  align-items: flex-end;
-  gap: 8px;
-}
-
-.builder-panel-overlay--arena .arena-page,
-body.builder-body .builder-panel-overlay--arena .arena-page {
+.builder-panel-overlay--arena .arena-page {
   height: 100%;
   max-height: none;
   display: flex;

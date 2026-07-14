@@ -46,6 +46,10 @@ import WireLibrary from "../components/practice/WireLibrary";
 import BrandSignature from "../components/BrandSignature";
 import "../styles/practice.css";
 import "../styles/schematic.css";
+import PracticeViewport from "../components/schematic/PracticeViewport";
+import ComponentDrawer from "../components/schematic/ComponentDrawer";
+import { COMPONENT_CATALOG } from "../schematic/catalog";
+import { DEFAULT_SYMBOL_STANDARD, SYMBOL_STANDARD_OPTIONS, SymbolStandard } from "../schematic/standards";
 
 type ElectricalFormula = {
   id: string;
@@ -431,20 +435,10 @@ export default function Practice({
   const [visualMode, setVisualMode] = useState<"2d" | "3d" | "both">("2d");
   const [worksheetEntries, setWorksheetEntries] = useState<WorksheetState>({});
   const [worksheetComplete, setWorksheetComplete] = useState(false);
-  const [assistUsed, setAssistUsed] = useState(false);
-  const [sprintActive, setSprintActive] = useState(false);
-  const [sprintElapsedMs, setSprintElapsedMs] = useState(0);
-  const [sprintLastMs, setSprintLastMs] = useState<number | null>(null);
-  const [activeHint, setActiveHint] = useState<"target" | "worksheet" | null>(
-    null,
-  );
-  const [symbolStandard, setSymbolStandard] = useState<SymbolStandard>(
-    DEFAULT_SYMBOL_STANDARD,
-  );
-  const { recordCompletion, state: gamificationState } = useGamification();
-  const lastControlledProblemId = useRef<string | null | undefined>(
-    selectedProblemId,
-  );
+  const [activeHint, setActiveHint] = useState<"target" | "worksheet" | null>(null);
+  const [visualMode, setVisualMode] = useState<"diagram" | "schematic">("diagram");
+  const [symbolStandard, setSymbolStandard] = useState<SymbolStandard>(DEFAULT_SYMBOL_STANDARD);
+  const [drawerSelection, setDrawerSelection] = useState<string | null>(null);
   const lastReportedProblemId = useRef<string | null>(null);
   const lastWorksheetReport = useRef<{
     problemId: string;
@@ -471,6 +465,12 @@ export default function Practice({
   }, [resetSprint]);
 
   useEffect(() => {
+    if (visualMode === "schematic" && !drawerSelection) {
+      setDrawerSelection(COMPONENT_CATALOG[0]?.id ?? null);
+    }
+  }, [visualMode, drawerSelection]);
+
+  useEffect(() => {
     if (selectedProblemId === undefined) {
       lastControlledProblemId.current = undefined;
       return;
@@ -494,9 +494,17 @@ export default function Practice({
   }, [internalProblemId, resetArcade, selectedProblemId]);
 
   const grouped = useMemo(() => groupProblems(practiceProblems), []);
-  const selectedProblem = useMemo(
-    () => findProblem(internalProblemId),
-    [internalProblemId],
+  const selectedProblem = useMemo(() => findProblem(internalProblemId), [internalProblemId]);
+
+  const solution = useMemo(() => solvePracticeProblem(selectedProblem), [selectedProblem]);
+  const tableRows = useMemo(() => buildTableRows(selectedProblem, solution), [selectedProblem, solution]);
+  const selectedCatalogEntry = useMemo(
+    () => COMPONENT_CATALOG.find((entry) => entry.id === drawerSelection) ?? null,
+    [drawerSelection]
+  );
+  const stepPresentations = useMemo(
+    () => buildStepPresentations(selectedProblem, solution),
+    [selectedProblem, solution]
   );
 
   const solutionResult = useMemo(
@@ -1337,6 +1345,83 @@ export default function Practice({
                 Next Problem
               </button>
             </div>
+
+              <div className="practice-visualization">
+                <div className="practice-visual-toggle" role="tablist" aria-label="Visualization mode">
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={visualMode === "diagram"}
+                    className={visualMode === "diagram" ? "practice-visual-button is-active" : "practice-visual-button"}
+                    onClick={() => setVisualMode("diagram")}
+                  >
+                    Diagram
+                  </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={visualMode === "schematic"}
+                    className={
+                      visualMode === "schematic" ? "practice-visual-button is-active" : "practice-visual-button"
+                    }
+                    onClick={() => setVisualMode("schematic")}
+                  >
+                    3D Schematic
+                  </button>
+                </div>
+
+                {visualMode === "schematic" ? (
+                  <div className="practice-schematic-container">
+                    <div className="practice-schematic-toolbar">
+                      <div
+                        className="schematic-standard-control"
+                        role="group"
+                        aria-label="Schematic symbol standard"
+                      >
+                        <span className="schematic-standard-label">Symbol Standard</span>
+                        <div className="schematic-standard-buttons">
+                          {SYMBOL_STANDARD_OPTIONS.map((option) => (
+                            <button
+                              key={option.key}
+                              type="button"
+                              className={
+                                symbolStandard === option.key
+                                  ? "schematic-standard-button is-active"
+                                  : "schematic-standard-button"
+                              }
+                              onClick={() => setSymbolStandard(option.key)}
+                              title={option.description}
+                            >
+                              {option.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      {selectedCatalogEntry ? (
+                        <div className="practice-catalog-note">
+                          <strong>{selectedCatalogEntry.name}</strong>
+                          <span>{selectedCatalogEntry.description}</span>
+                        </div>
+                      ) : null}
+                    </div>
+
+                    <div className="practice-schematic-stage">
+                      <ComponentDrawer
+                        entries={COMPONENT_CATALOG}
+                        selectedId={drawerSelection}
+                        onSelect={(entry) => setDrawerSelection(entry.id)}
+                        placement="right"
+                        defaultOpen
+                      />
+                      <div className="schematic-stage">
+                        <PracticeViewport problem={selectedProblem} symbolStandard={symbolStandard} />
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <CircuitDiagram problem={selectedProblem} />
+                )}
+              </div>
 
             <div
               className="worksheet-status-banner"
