@@ -5684,43 +5684,43 @@ body.android-optimized .zoom-btn {
         };
 
         // Wire energy-glow overlay (additive blending, all tiers)
-        const WIRE_GLOW_RADIUS        = 0.32;   // tube radius (world units)
-        const WIRE_GLOW_BASE_OPACITY  = 0.075;  // resting opacity (subtle energized haze)
-        const WIRE_GLOW_PULSE_AMP     = 0.06;   // opacity added by sine pulse
+        const WIRE_GLOW_RADIUS        = 0.35;   // tube radius (world units)
+        const WIRE_GLOW_BASE_OPACITY  = 0.13;   // resting opacity
+        const WIRE_GLOW_PULSE_AMP     = 0.11;   // opacity added by sine pulse
         const WIRE_GLOW_RADIAL_SEGS   = 7;      // cylinder sides (low-poly for performance)
-        const WIRE_GLOW_SPEED_SCALE   = 2.2;    // opacity boost at max current speed
+        const WIRE_GLOW_SPEED_SCALE   = 3.5;    // opacity boost at max current speed
 
         // Particle pulsation (all tiers)
-        const PULSE_SPEED             = 0.055;  // radians per globalFlowTime tick
-        const PULSE_OPACITY_AMP       = 0.16;   // opacity swing amplitude
-        const PULSE_SCALE_AMP         = 0.08;   // scale swing amplitude
+        const PULSE_SPEED             = 0.072;  // radians per globalFlowTime tick
+        const PULSE_OPACITY_AMP       = 0.25;   // opacity swing amplitude
+        const PULSE_SCALE_AMP         = 0.11;   // scale swing amplitude
 
         // Activation flash (circuit-complete event)
-        const ACTIVATION_FLASH_MS     = 800;    // duration of flash in ms
-        const ACTIVATION_FLASH_PEAK   = 3.5;    // emissive multiplier peak
+        const ACTIVATION_FLASH_MS     = 1400;   // duration of flash in ms
+        const ACTIVATION_FLASH_PEAK   = 6.0;    // emissive multiplier peak
 
         // Comet trails (close + atomic zoom, d < CLOSE_ZOOM_THRESHOLD)
-        const TRAIL_COUNT             = 3;       // trail segments behind each electron
-        const TRAIL_STEP             = 0.025;   // progress gap between trail segments
-        const TRAIL_SIZE_RATIO        = 0.58;   // each segment shrinks by this factor
-        const TRAIL_OPACITY_BASE      = 0.30;   // first trail segment opacity
-        const TRAIL_OPACITY_RATIO     = 0.50;   // each segment fades by this factor
+        const TRAIL_COUNT             = 5;       // trail segments behind each electron
+        const TRAIL_STEP             = 0.020;   // progress gap between trail segments
+        const TRAIL_SIZE_RATIO        = 0.65;   // each segment shrinks by this factor
+        const TRAIL_OPACITY_BASE      = 0.44;   // first trail segment opacity
+        const TRAIL_OPACITY_RATIO     = 0.55;   // each segment fades by this factor
 
         // Speed-based elongation (close + atomic zoom)
-        const ELONGATION_MAX          = 3.8;    // max scale along direction of travel
-        const ELONGATION_SPEED_NORM   = 0.18;   // speed at which elongation saturates
+        const ELONGATION_MAX          = 6.5;    // max scale along direction of travel
+        const ELONGATION_SPEED_NORM   = 0.13;   // speed at which elongation saturates
 
         // Copper lattice atoms (atomic zoom only, d < ATOMIC_ZOOM_THRESHOLD)
         const LATTICE_SPACING         = 0.38;   // scene units between Cu⁺ ions (FCC lattice parameter)
         const LATTICE_ATOM_RADIUS     = 0.11;   // ion sphere radius
         const LATTICE_MAX_ATOMS       = isMobile ? 52 : 104; // cap for performance (multiple of 13 per A/B pair)
-        const LATTICE_HEAT_THRESHOLD  = 0.05;   // current (A) above which ions glow
-        const LATTICE_BOND_OPACITY    = 0.32;   // base opacity of inter-atom bond lines
+        const LATTICE_HEAT_THRESHOLD  = 0.03;   // current (A) above which ions glow
+        const LATTICE_BOND_OPACITY    = 0.36;   // base opacity of inter-atom bond lines
         const LATTICE_BOND_TOLERANCE  = 1.05;   // nearest-neighbour distance = LATTICE_SPACING × this factor
 
         // Thermal jitter on electrons (atomic zoom)
-        const THERMAL_JITTER          = 0.018;  // max random displacement per axis
-        const THERMAL_JITTER_SPEED    = 0.095;  // coherent jitter oscillation speed
+        const THERMAL_JITTER          = 0.036;  // max random displacement — increased for Drude-model chaos
+        const THERMAL_JITTER_SPEED    = 0.145;  // coherent jitter oscillation speed
         // Harmonic blend ratio between primary and secondary oscillators (70/30 tuned visually).
         const THERMAL_JITTER_AXIS_BLEND_PRIMARY = 0.70;
         const THERMAL_JITTER_AXIS_BLEND_SECONDARY = 0.30;
@@ -5738,13 +5738,13 @@ body.android-optimized .zoom-btn {
         const PROXIMITY_FADE_END      = 1.45;   // fully hidden at 145% of attention radius
 
         // Electron probability-cloud (deep atomic zoom, d < ZOOM_DEEP_ATOMIC)
-        const PROB_CLOUD_RADIUS       = 0.22;   // haze cylinder radius
-        const PROB_CLOUD_OPACITY      = 0.06;   // base opacity of probability haze
+        const PROB_CLOUD_RADIUS       = 0.28;   // haze cylinder radius
+        const PROB_CLOUD_OPACITY      = 0.095;  // base opacity of probability haze
         // p-orbital dumbbell lobes rendered at each lattice site in deep-atomic zoom
         const PROB_LOBE_RADIUS        = 0.15;   // radius of each ellipsoidal p-orbital lobe
         const PROB_LOBE_ELONGATION    = 1.8;    // stretch factor along lobe axis
         const PROB_LOBE_OFFSET        = 0.16;   // offset of lobe centre from wire axis
-        const PROB_LOBE_OPACITY       = 0.11;   // opacity of lobe (slightly higher than haze)
+        const PROB_LOBE_OPACITY       = 0.18;   // opacity of lobe (slightly higher than haze)
         const PROB_LOBE_SPACING       = 0.38;   // one lobe pair per lattice spacing
         const PROB_LOBE_SEG_W         = isMobile ? 5 : 7;  // widthSegments for lobe sphere
         const PROB_LOBE_SEG_H         = isMobile ? 3 : 5;  // heightSegments for lobe sphere
@@ -5752,9 +5752,9 @@ body.android-optimized .zoom-btn {
         // Lattice ion thermal vibration — phonon simulation (Tier 2 only)
         // Lattice ions vibrate around their FCC equilibrium positions due to thermal energy.
         // Amplitude scales with current (Joule heating raises lattice temperature).
-        const LATTICE_ION_JITTER       = 0.013;  // base vibration amplitude at room temperature (world units)
+        const LATTICE_ION_JITTER       = 0.018;  // base vibration amplitude at room temperature (world units)
         const LATTICE_JITTER_SPEED     = 0.042;  // phonon oscillation speed (rad per globalFlowTime tick)
-        const LATTICE_JITTER_HEAT_MULT = 3.5;    // amplitude multiplier at maximum current/heat
+        const LATTICE_JITTER_HEAT_MULT = 5.0;    // amplitude multiplier at maximum current/heat
         // Phonon oscillator axis-frequency ratios — irrational values prevent visible periodicity.
         // Y-axis uses 0.79 (≈ 4/5) and Z-axis uses 1.13 (≈ 9/8 × 1) relative to the X-axis base.
         // Phase offsets spread each atom's oscillation uniquely around the 2π cycle.
@@ -5768,35 +5768,35 @@ body.android-optimized .zoom-btn {
         const LATTICE_ATOM_PHASE_SPREAD = 2.399;
 
         // Free-electron gas cloud: blend ratio between free-electron blue and ion copper colour.
-        // 0.25 gives a bluish-copper hue that reads as "sea of delocalized electrons" while
+        // 0.15 gives a more vivid blue hue emphasising the delocalized electron sea while
         // still being visually tied to the copper conductor colour.
-        const FREE_ELEC_COLOR_BLEND    = 0.25;   // lerp weight toward ionColor from electron blue
+        const FREE_ELEC_COLOR_BLEND    = 0.15;   // lerp weight toward ionColor from electron blue
 
         // Quantum probability cloud pulsation (Tier 1 only)
         // The ψ² probability density oscillates in time, representing the time-dependent
         // Schrödinger equation and the inherent uncertainty of electron position.
-        const QUANTUM_PULSE_SPEED      = 0.028;  // probability density oscillation rate
-        const QUANTUM_PULSE_AMP        = 0.032;  // opacity swing amplitude
-        const QUANTUM_LOBE_PULSE_AMP   = 0.022;  // opacity swing for p-orbital lobes (smaller = subtler)
+        const QUANTUM_PULSE_SPEED      = 0.042;  // probability density oscillation rate
+        const QUANTUM_PULSE_AMP        = 0.058;  // opacity swing amplitude
+        const QUANTUM_LOBE_PULSE_AMP   = 0.040;  // opacity swing for p-orbital lobes (smaller = subtler)
 
         // Insulator cladding visualization (Tier 2, atomic lattice zoom)
         // Wire insulation (e.g. PVC/polyethylene) is a covalent material with bound electrons
         // that cannot drift freely — shown as a faint outer shell to contrast with the
         // conducting copper core.
         const INSULATOR_SHELL_RADIUS   = 0.54;   // outer insulation cylinder radius
-        const INSULATOR_SHELL_OPACITY  = 0.07;   // very faint — just a visual boundary cue
-        const INSULATOR_BOUND_COUNT    = isMobile ? 6 : 12; // static bound-electron indicators per wire length
+        const INSULATOR_SHELL_OPACITY  = 0.10;   // more visible for better conductor vs. insulator contrast
+        const INSULATOR_BOUND_COUNT    = isMobile ? 8 : 16; // static bound-electron indicators per wire length
 
         // Streaming flow — organic lateral oscillation (applied at all zoom tiers).
         // Three frequencies are chosen to have no small-integer ratios between them,
         // producing a long aperiodic beat that avoids obvious looping and looks natural.
-        const STREAM_WIGGLE_AMP    = 0.052;  // peak lateral displacement from wire axis (world units)
+        const STREAM_WIGGLE_AMP    = 0.075;  // peak lateral displacement — increased for more organic drift
         const STREAM_WIGGLE_SPEED  = 0.078;  // primary oscillation speed (rad per globalFlowTime tick)
         const STREAM_WIGGLE_SPEED2 = 0.029;  // secondary — ratio 0.029/0.078 ≈ 0.372 (no simple fraction)
         const STREAM_WIGGLE_SPEED3 = 0.051;  // tertiary  — ratio 0.051/0.078 ≈ 0.654 (no simple fraction)
         // Wire energy-stream inner-core tube (tight glowing channel added alongside the outer haze)
-        const WIRE_STREAM_CORE_RADIUS  = 0.13;  // inner-core tube radius
-        const WIRE_STREAM_CORE_OPACITY = 0.165; // inner-core base opacity (energized channel)
+        const WIRE_STREAM_CORE_RADIUS  = 0.14;  // inner-core tube radius
+        const WIRE_STREAM_CORE_OPACITY = 0.26;  // inner-core base opacity (brighter than haze)
         const WIRE_STREAM_PATH_SEGS    = isMobile ? 14 : 26; // curve samples for TubeGeometry
 
         // ── Lightning flow mode ─────────────────────────────────────────────
@@ -9376,7 +9376,7 @@ body.android-optimized .zoom-btn {
                     const labelRow = document.createElement('div');
                     labelRow.style.cssText = 'display:flex;align-items:baseline;gap:7px;flex-wrap:wrap';
                     const labelSpan = document.createElement('span');
-                    labelSpan.style.cssText = 'color:' + tierData.hex + ';font-weight:700;font-size:11px';
+                    labelSpan.style.cssText = 'color:' + tierData.hex + ';font-weight:700;font-size:11px;text-shadow:0 0 8px ' + tierData.hex + '99';
                     labelSpan.textContent = tierData.label;
                     labelRow.appendChild(labelSpan);
                     hud.appendChild(labelRow);
@@ -19477,18 +19477,18 @@ Made with ? for visual learners everywhere!
         // visualization and is completely independent from the W.I.R.E. label colors defined in
         // the CSS variables (--wire-w, --wire-i, --wire-r, --wire-e) used in the React UI.
         const FLOW_SPECTRUM_COLORS = {
-            dullRed:   new THREE.Color('#8b0000'),
+            dullRed:   new THREE.Color('#b02020'),
             orange:    new THREE.Color('#ff6600'),
             yellow:    new THREE.Color('#ffff00'),
             cyan:      new THREE.Color('#00ddff'),
-            blueWhite: new THREE.Color('#aaddff'),
+            blueWhite: new THREE.Color('#d0eeff'),
             white:     new THREE.Color('#ffffff')
         };
 
         // Constants for the current-flow color and speed calculations.
         // SPEED_SQRT_MULTIPLIER: tuned so ~0.001 A yields barely-visible drift (~0.003 speed)
         //   and ~2 A yields the maximum capped speed (0.22), giving ~73× range.
-        const SPEED_SQRT_MULTIPLIER = 40;
+        const SPEED_SQRT_MULTIPLIER = 48;
         // CURRENT_COLOR_SATURATION_THRESHOLD: current (A) at which the global-current color
         //   contribution fully saturates to blue-white.  2 A covers the full practical range
         //   of hobby/educational circuits (typically 0.01–1 A).
@@ -19500,7 +19500,7 @@ Made with ? for visual learners everywhere!
         const COLOR_RESISTANCE_WEIGHT = 0.55;
         const COLOR_CURRENT_WEIGHT = 0.45;
         // Emissive strength multiplier for particle glow — increased for richer atomic visuals.
-        const PARTICLE_EMISSIVE_MULTIPLIER = 0.85;
+        const PARTICLE_EMISSIVE_MULTIPLIER = 1.10;
 
         // ── Android-specific rendering constants ────────────────────────────────
         // Android System WebView runs on various GPU drivers (Adreno, Mali, PowerVR)
@@ -19622,16 +19622,10 @@ Made with ? for visual learners everywhere!
 
             if (!segments.length) return;
 
-            // PAYOFF_FLOW_SPEED_SCALE slows the payoff demo ~25% overall so the energized
-            // current is calm and easy to watch; user-built circuits run at full speed
-            // (gated on isPayoffCircuit). payoffFlowDegrade stays as a secondary hook.
-            const payoffSpeedScale = isPayoffCircuit ? PAYOFF_FLOW_SPEED_SCALE : 1;
-            const baseSpeed        = calculateFlowSpeed(currentValue) * payoffFlowDegrade * payoffSpeedScale * userFlowSpeedScale;
-            // Denser stream floor so even low-current showcase circuits read as a
-            // continuous energized current rather than a few sparse dots.
-            const baseParticleCount = isMobile ? 11 : 18;
-            const maxParticles      = isMobile ? 28 : 50;
-            const inAtomicZoom      = AUTO_ATOMIC_DESCENT && cameraDistance < ATOMIC_ZOOM_THRESHOLD;
+            const baseSpeed        = calculateFlowSpeed(currentValue);
+            const baseParticleCount = isMobile ? 6 : 12;
+            const maxParticles      = isMobile ? 22 : 48;
+            const inAtomicZoom      = cameraDistance < ATOMIC_ZOOM_THRESHOLD;
             const inCloseZoom       = cameraDistance < CLOSE_ZOOM_THRESHOLD;
             const inDeepAtomic      = AUTO_ATOMIC_DESCENT && cameraDistance < ZOOM_DEEP_ATOMIC;
             const inComponentView   = cameraDistance < ZOOM_COMPONENT_VIEW;
@@ -19768,10 +19762,9 @@ Made with ? for visual learners everywhere!
                         const isMisty = currentFlowStyle === 'misty';
                         // Lower per-particle opacity compensates for more particles + additive
                         // blending: individually dim particles accumulate into a bright stream.
-                        const baseOpacity   = (isMisty ? 0.32 + intensity * 0.22
-                                                       : 0.50 + intensity * 0.22) * (FLOW_STREAM_MODE ? 0.5 : 1);
-                        // payoffFlowDegrade dims the glow ~25% once a F.U.S.E. branch fails.
-                        const baseEmissive  = (isMisty ? 0.95 : 1.45) * payoffFlowDegrade;
+                        const baseOpacity   = isMisty ? 0.36 + intensity * 0.28
+                                                       : 0.54 + intensity * 0.28;
+                        const baseEmissive  = isMisty ? 1.15 : 1.75;
                         // On Android boost emissive intensity to guarantee particles glow
                         // even when the GPU's colour-space conversion compresses bright values.
                         const effectiveEmissive = isAndroid ? Math.min(ANDROID_MAX_EMISSIVE, baseEmissive * ANDROID_EMISSIVE_MULTIPLIER) : baseEmissive;
@@ -20110,7 +20103,7 @@ Made with ? for visual learners everywhere!
                     const freeElecMat = new THREE.MeshBasicMaterial({
                         color:       new THREE.Color(0x88ccff).lerp(ionColor, FREE_ELEC_COLOR_BLEND).getHex(),
                         transparent: true,
-                        opacity:     0.035 + heatT * 0.018,
+                        opacity:     0.055 + heatT * 0.030,
                         blending:    THREE.AdditiveBlending,
                         depthWrite:  false,
                         side:        THREE.BackSide
@@ -20343,7 +20336,7 @@ Made with ? for visual learners everywhere!
             }
 
             if (currentFlowStyle === 'misty') {
-                displayColor.lerp(FLOW_SPECTRUM_COLORS.white, 0.15);
+                displayColor.lerp(FLOW_SPECTRUM_COLORS.white, 0.22);
             }
 
             // Stronger emissive for a vivid glow effect
