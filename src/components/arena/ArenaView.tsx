@@ -324,63 +324,33 @@ export default function ArenaView({
 
   return (
     <section className={containerClassName}>
-      <div className="arena-workspace-shell">
-        <iframe
-          key={`${activeSessionId ?? EMPTY_ARENA_SESSION_KEY}-${reloadToken}`}
-          className={`arena-workspace-iframe${isLoaded ? " is-loaded" : ""}`}
-          src={arenaSrc}
-          title="CircuiTry3D Arena"
-          loading="eager"
-          onLoad={() => {
-            setIsLoaded(true);
-            setHasError(false);
-          }}
-          onError={() => {
-            setHasError(true);
-            setIsLoaded(false);
-          }}
-          allow="fullscreen; autoplay; clipboard-read; clipboard-write"
-          sandbox="allow-scripts allow-same-origin allow-popups"
-        />
-
-        {!isLoaded && (
-          <div className="arena-workspace-status" role="status" aria-live="polite">
-            Loading arena systems...
-          </div>
-        )}
-
-        {hasError && (
-          <div className="arena-workspace-status arena-workspace-status--error" role="alert">
-            Arena failed to load. Try reloading.
-          </div>
-        )}
-
-        <div className="arena-workspace-controls">
-          <button
-            type="button"
-            className="arena-button arena-button--ghost"
-            onClick={handleExitComplete}
-          >
-            Return to Workspace
-          </button>
-          {showOpenBuilderButton ? (
-            <button
-              type="button"
-              className="arena-button arena-button--secondary"
-              onClick={onOpenBuilder}
-            >
-              Open Builder
-            </button>
-          ) : null}
-          <button
-            type="button"
-            className="arena-button arena-button--secondary"
-            onClick={handleReloadArena}
-          >
-            Reload Arena
-          </button>
-        </div>
-      </div>
+      <ArenaScene
+        agents={agents}
+        activeAgentId={currentTurnAgentId}
+        highlight={highlight}
+        fuseResults={fuseResults}
+        winnerId={winnerId}
+        transitionPhase={transitionPhase}
+        variant={variant}
+        onExitTransitionComplete={handleExitComplete}
+      />
+      <ArenaOverlay
+        agents={agents}
+        battleLog={battleLog}
+        currentTurnAgentId={currentTurnAgentId}
+        environment={environment}
+        fuseResults={fuseResults}
+        onEnvironmentChange={setEnvironment}
+        onLoadCatalogComponent={handleLoadCatalogComponent}
+        onResetBattle={resetBattle}
+        onReturnToWorkspace={handleReturnToWorkspace}
+        onOpenBuilder={showOpenBuilderButton ? onOpenBuilder : undefined}
+        round={round}
+        sessionLabel={sessionPayload?.sessionName ?? "CircuiTry3D Arena"}
+        status={status}
+        transitionPhase={transitionPhase}
+        winnerName={winnerName}
+      />
     </section>
   );
 }
