@@ -2163,10 +2163,50 @@ export default function Builder() {
     setHelpOpen(false);
   }, [setHelpOpen]);
 
-  const closeArenaWorkspace = useCallback(() => {
-    resetWorkspaceSurfaces();
-    setWorkspaceModeWithGlobalSync("build");
-  }, [resetWorkspaceSurfaces, setWorkspaceModeWithGlobalSync]);
+  const assignPracticeProblem = useCallback(
+    (problem: PracticeProblem, presetOverride?: string) => {
+      setActivePracticeProblemId(problem.id);
+      setPracticeWorksheetState({
+        problemId: problem.id,
+        complete: false,
+      });
+      practiceProblemRef.current = problem.id;
+
+      const presetKey = presetOverride ?? problem.presetHint;
+      if (presetKey) {
+        triggerBuilderAction("load-preset", { preset: presetKey });
+      }
+    },
+    [triggerBuilderAction],
+  );
+
+  const openPracticeWorkspace = useCallback(
+    (problemOverride?: PracticeProblem | null, presetOverride?: string) => {
+      const nextProblem =
+        problemOverride ??
+        findPracticeProblemById(activePracticeProblemId) ??
+        DEFAULT_PRACTICE_PROBLEM ??
+        practiceProblems[0] ??
+        null;
+
+      if (!nextProblem) {
+        return;
+      }
+
+      assignPracticeProblem(nextProblem, presetOverride);
+      setWorkspaceMode("practice");
+      setPracticeWorkspaceMode(true);
+      setCompactWorksheetOpen(true);
+      setCircuitLocked(true);
+      setArenaPanelOpen(false);
+    },
+    [
+      activePracticeProblemId,
+      assignPracticeProblem,
+      setArenaPanelOpen,
+    ],
+  );
+
 
   const openWorkspacePanelMode = useCallback(
     (mode: WorkspacePanelMode) => {
@@ -2210,233 +2250,7 @@ export default function Builder() {
     [openGuidesWorkspace, openHelpWithView],
   );
 
-  const assignPracticeProblem = useCallback(
-    (problem: PracticeProblem, presetOverride?: string) => {
-      setActivePracticeProblemId(problem.id);
-      setPracticeWorksheetState({
-        problemId: problem.id,
-        complete: false,
-      });
-      practiceProblemRef.current = problem.id;
-
-      const presetKey = presetOverride ?? problem.presetHint;
-      if (presetKey) {
-        triggerBuilderAction("load-preset", { preset: presetKey });
-      }
-    },
-    [triggerBuilderAction],
-  );
-
-  const openPracticeWorkspace = useCallback(
-    (problemOverride?: PracticeProblem | null, presetOverride?: string) => {
-      const nextProblem =
-        problemOverride ??
-        findPracticeProblemById(activePracticeProblemId) ??
-        DEFAULT_PRACTICE_PROBLEM ??
-        practiceProblems[0] ??
-        null;
-
-      if (!nextProblem) {
-        return;
-      }
-
-      assignPracticeProblem(nextProblem, presetOverride);
-      setWorkspaceModeWithGlobalSync("practice");
-      resetWorkspaceSurfaces();
-      setPracticeWorkspaceMode(true);
-      setCompactWorksheetOpen(true);
-      setCircuitLocked(true);
-    },
-    [
-      activePracticeProblemId,
-      assignPracticeProblem,
-      resetWorkspaceSurfaces,
-      setWorkspaceModeWithGlobalSync,
-    ],
-  );
-
-  const openTroubleshootWorkspace = useCallback(
-    (problemOverride?: TroubleshootingProblem | null) => {
-      const nextProblem =
-        problemOverride ??
-        troubleshootingProblems.find((problem) => problem.id === activeTroubleshootId) ??
-        troubleshootingProblems[0] ??
-        null;
-
-      if (!nextProblem) {
-        return;
-      }
-
-      if (nextProblem.id !== activeTroubleshootId) {
-        setActiveTroubleshootId(nextProblem.id);
-      }
-
-      setWorkspaceModeWithGlobalSync("troubleshoot");
-      resetWorkspaceSurfaces();
-      setTroubleshootWorkspaceMode(true);
-      setTroubleshootPanelOpen(true);
-      setTroubleshootStatus(null);
-      setTroubleshootCheckPending(false);
-      setTroubleshootPendingCheckProblemId(null);
-      setCircuitLocked(false);
-      triggerBuilderAction("load-preset", { preset: nextProblem.preset });
-    },
-    [
-      activeTroubleshootId,
-      resetWorkspaceSurfaces,
-      setWorkspaceModeWithGlobalSync,
-      triggerBuilderAction,
-    ],
-  );
-
-  // Process pending global mode changes after all handlers are ready
-  useEffect(() => {
-    const pendingMode = pendingModeChangeRef.current;
-    if (pendingMode && pendingMode !== workspaceMode) {
-      pendingModeChangeRef.current = null;
-
-      if (pendingMode === "build") {
-        setWorkspaceMode("build");
-        resetWorkspaceSurfaces();
-      } else if (pendingMode === "practice") {
-        openPracticeWorkspace();
-      } else if (pendingMode === "arena") {
-        openArenaWorkspace({ forceSync: true });
-      } else if (pendingMode === "help") {
-        openGuidesWorkspace("tutorial");
-      } else if (pendingMode === "wire-guide") {
-        openWorkspacePanelMode("wire-guide");
-      } else if (
-        pendingMode === "arcade" ||
-        pendingMode === "classroom" ||
-        pendingMode === "community" ||
-        pendingMode === "gallery" ||
-        pendingMode === "account" ||
-        pendingMode === "pricing" ||
-        pendingMode === "textbook" ||
-        pendingMode === "settings"
-      ) {
-        openWorkspacePanelMode(pendingMode);
-      } else if (pendingMode === "troubleshoot") {
-        openTroubleshootWorkspace();
-      }
-
-      // Sync back to global context
-      globalModeContext.setWorkspaceMode(pendingMode);
-    }
-  }, [
-    globalModeContext.workspaceMode,
-    workspaceMode,
-    openPracticeWorkspace,
-    openTroubleshootWorkspace,
-    openArenaWorkspace,
-    openWorkspacePanelMode,
-    openGuidesWorkspace,
-    resetWorkspaceSurfaces,
-    globalModeContext,
-  ]);
-  
-  const handlePracticeAction = useCallback(
-    (action: PanelAction) => {
-      if (action.action === "open-arena") {
-        openArenaWorkspace({
-          sessionName: "Builder Hand-off",
-          forceSync: true,
-        });
-        return;
-      }
-      if (action.action === "practice-help") {
-        openHelpCenter("wire-guide");
-        return;
-      }
-      if (action.action === "generate-practice") {
-        triggerBuilderAction(action.action, action.data);
-        const randomProblem = getRandomPracticeProblem();
-        if (randomProblem) {
-          openPracticeWorkspace(randomProblem);
-        }
-        return;
-      }
-      triggerBuilderAction(action.action, action.data);
-    },
-    [
-      openHelpCenter,
-      openArenaWorkspace,
-      openPracticeWorkspace,
-      triggerBuilderAction,
-    ],
-  );
-
-  const openLastArenaSession = useCallback(() => {
-    if (!lastArenaExport?.sessionId) {
-      return;
-    }
-    openArenaWorkspace();
-  }, [lastArenaExport, openArenaWorkspace]);
-  const handleEnvironmentChange = useCallback((scenario: EnvironmentalScenario) => {
-    setActiveEnvironment(scenario);
-  }, []);
-
-  const resetLogoSettings = useCallback(() => {
-    handleLogoSettingChange("speed", DEFAULT_LOGO_SETTINGS.speed);
-    handleLogoSettingChange("travelX", DEFAULT_LOGO_SETTINGS.travelX);
-    handleLogoSettingChange("travelY", DEFAULT_LOGO_SETTINGS.travelY);
-    handleLogoSettingChange("bounce", DEFAULT_LOGO_SETTINGS.bounce);
-    handleLogoSettingChange("opacity", DEFAULT_LOGO_SETTINGS.opacity);
-  }, [handleLogoSettingChange]);
-
-  const handleComponentAction = useCallback(
-    (component: ComponentAction) => {
-      console.log("[CT3D-REACT] handleComponentAction:", component?.id, component?.builderType, "locked:", isCircuitLocked, "frameReady:", isFrameReady);
-      if (!component) {
-        return;
-      }
-
-      if (component.action === "junction") {
-        postToBuilder({ type: "builder:add-junction" });
-        // Show the junction info tip the first time the user places a junction.
-        // The ref guards against re-showing within the same session even if
-        // localStorage is unavailable, while the storage key prevents it on
-        // subsequent visits.
-        if (!junctionTipTriggeredRef.current) {
-          junctionTipTriggeredRef.current = true;
-          try {
-            if (window.localStorage.getItem(JUNCTION_TIP_STORAGE_KEY) !== "1") {
-              setJunctionTipVisible(true);
-              // Auto-dismiss after 12 seconds as safety net
-              setTimeout(() => {
-                setJunctionTipVisible(false);
-                try { window.localStorage.setItem(JUNCTION_TIP_STORAGE_KEY, "1"); } catch {}
-              }, 12000);
-            }
-          } catch {
-            // ignore storage read failures — ref prevents repeat triggers
-          }
-        }
-        return;
-      }
-
-      if (!component.builderType) {
-        console.warn(`Missing builder mapping for component '${component.id}'`);
-        console.log("[CT3D-REACT] BLOCKED: no builderType for", component.id);
-        return;
-      }
-      console.log("[CT3D-REACT] Sending add-component:", component.builderType);
-
-      postToBuilder({
-        type: "builder:add-component",
-        payload: {
-          componentType: component.builderType,
-          // Branded/real-world cards carry preset spec values (e.g. 9V, 330Ω);
-          // generic cards leave this undefined and use the builder defaults.
-          initialProperties: component.initialProperties,
-        },
-      });
-    },
-    [postToBuilder],
-  );
-
-  const handleAdvancePracticeProblem = useCallback((currentProblemId?: string) => {
+  const handleAdvancePracticeProblem = useCallback(() => {
     const currentId =
       currentProblemId ??
       practiceProblemRef.current ??
