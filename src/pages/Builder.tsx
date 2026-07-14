@@ -4001,7 +4001,7 @@ export default function Builder() {
         />
       </div>
 
-        <div className="builder-floating-controls" role="group" aria-label="Workspace actions">
+      <div className="builder-floating-controls" role="group" aria-label="Workspace actions">
         <button
           type="button"
           className="builder-floating-button"
