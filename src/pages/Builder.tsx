@@ -4403,6 +4403,35 @@ export default function Builder() {
       </div>
 
       <div
+        className={`builder-panel-overlay builder-panel-overlay--workspace-section${activeWorkspaceSection ? " open" : ""}`}
+        role="dialog"
+        aria-modal="true"
+        aria-hidden={!activeWorkspaceSection}
+        onClick={closeWorkspaceSectionOverlay}
+      >
+        <div
+          className="builder-panel-shell builder-panel-shell--workspace-section"
+          onClick={(event) => event.stopPropagation()}
+        >
+          <button
+            type="button"
+            className="builder-panel-close"
+            onClick={closeWorkspaceSectionOverlay}
+            aria-label={
+              activeWorkspaceSectionTitle
+                ? `Close ${activeWorkspaceSectionTitle}`
+                : "Close workspace section"
+            }
+          >
+            X
+          </button>
+          <div className="builder-panel-body builder-panel-body--workspace-section">
+            {activeWorkspaceSectionContent}
+          </div>
+        </div>
+      </div>
+
+      <div
         className={`builder-help-modal ${isHelpOpen ? "open" : ""}`}
         role="dialog"
         aria-modal="true"

@@ -117,6 +117,16 @@ export function GlobalModeBar() {
     [navigate, setWireLibraryPanelOpen, setWorkspaceMode],
   );
 
+  const handleWorkspaceSectionClick = useCallback(
+    (section: WorkspaceSectionId) => {
+      // Keep a single, unified workflow: open all major sections inside /app.
+      setWireLibraryPanelOpen(false);
+      setWorkspaceMode("build");
+      navigate(`/app?section=${section}`);
+    },
+    [navigate, setWireLibraryPanelOpen, setWorkspaceMode],
+  );
+
   const handleBuildClick = useCallback(() => {
     handleModeClick("build");
   }, [handleModeClick]);
@@ -145,11 +155,6 @@ export function GlobalModeBar() {
     navigate,
     setWireLibraryPanelOpen,
   ]);
-
-  const isTroubleshootLocked = isDemoMode && !DEMO_WORKSPACE_MODES.has("troubleshoot");
-  const isArcadeLocked = isDemoMode;
-  const isClassroomLocked = isDemoMode;
-  const isCommunityLocked = isDemoMode;
 
   return (
     <>
