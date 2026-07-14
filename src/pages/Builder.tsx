@@ -1864,6 +1864,13 @@ export default function Builder() {
 
   return (
     <div className={`builder-shell${isBottomOpen ? " bottom-open" : ""}`} style={shellStyle}>
+      <div className="builder-logo-header">
+        <div className="builder-logo-text" aria-label="CircuiTry3D">
+          <span className="logo-circui">Circui</span>
+          <span className="logo-try">Try</span>
+          <span className="logo-3d">3D</span>
+        </div>
+      </div>
 
       <nav
         id="builder-menu-left"

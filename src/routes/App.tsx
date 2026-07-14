@@ -1,6 +1,4 @@
-import { lazy, Suspense, useLayoutEffect, useRef } from "react";
-import { Routes, Route, Link, Outlet, useLocation, Navigate } from "react-router-dom";
-import { useTranslation } from "react-i18next";
+import { Routes, Route, Link } from "react-router-dom";
 import Home from "../pages/Home";
 import Builder from "../pages/Builder";
 import Pricing from "../pages/Pricing";
@@ -30,21 +28,13 @@ const Arcade = lazy(() => import("../pages/Arcade"));
 function PageFallback() {
   const { t } = useTranslation();
   return (
-    <WorkspaceModeProvider>
-      <Routes>
-        <Route element={<AppLayout />}>
-          <Route path="/" element={<Home />} />
-          <Route path="/app" element={<Builder />} />
-          <Route path="/practice" element={<Practice />} />
-          <Route path="/schematic" element={<SchematicMode />} />
-          <Route path="/pricing" element={<Pricing />} />
-          <Route path="/community" element={<Community />} />
-          <Route path="/account" element={<Account />} />
-          <Route path="/classroom" element={<Classroom />} />
-        </Route>
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </WorkspaceModeProvider>
+    <Routes>
+      <Route path="/" element={<Home />} />
+      <Route path="/app" element={<Builder />} />
+      <Route path="/arena" element={<Arena />} />
+      <Route path="/wire-demo" element={<WireDemo />} />
+      <Route path="*" element={<NotFound />} />
+    </Routes>
   );
 }
 
