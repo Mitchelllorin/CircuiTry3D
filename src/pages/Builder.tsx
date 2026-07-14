@@ -267,7 +267,7 @@ const TUTORIAL_SECTIONS: HelpSection[] = [
     ],
   },
   {
-    title: "Saving Your Work",
+    title: "Settings",
     paragraphs: [
       "Save your circuits locally or to cloud storage at any time. Circuits are automatically backed up to prevent data loss.",
     ],
@@ -279,10 +279,12 @@ const TUTORIAL_SECTIONS: HelpSection[] = [
     ],
   },
   {
-    title: "Interactive Tutorial",
-    paragraphs: [
-      "For hands-on guided instruction, try the Interactive Tutorial from the Practice mode. This step-by-step walkthrough covers building your first working circuit.",
-      "A comprehensive Classroom section with structured lessons and learning paths is coming soon.",
+    title: "View Settings & Tips",
+    paragraphs: ["Keep the scene readable while you iterate on designs."],
+    bullets: [
+      "Reset View recentres the camera; Fit to Screen frames the active circuit.",
+      "Toggle Grid and Toggle Labels for precision placement or a cleaner screenshot.",
+      "Complete the circuit loop, use junctions for parallel runs, and experiment with routing modes for tidy builds.",
     ],
   },
 ];
@@ -3179,22 +3181,22 @@ export default function Builder() {
           aria-expanded={isRightMenuOpen}
           aria-label={
             isRightMenuOpen
-              ? "Collapse mode and view controls"
-              : "Expand mode and view controls"
+              ? "Collapse settings"
+              : "Expand settings"
           }
           title={
             isRightMenuOpen
-              ? "Collapse mode and view controls"
-              : "Expand mode and view controls"
+              ? "Collapse settings"
+              : "Expand settings"
           }
         >
-          <span className="toggle-icon">{isRightMenuOpen ? <IconChevronRight className="toggle-chevron" /> : <IconChevronLeft className="toggle-chevron" />}</span>
-          <span className="toggle-text">Controls</span>
+          <span className="toggle-icon">{isRightMenuOpen ? "▶" : "◀"}</span>
+          <span className="toggle-text">Settings</span>
         </button>
         <nav
           className="builder-menu builder-menu-right"
           role="complementary"
-          aria-label="Mode and view controls"
+          aria-label="Settings"
         >
           {!rightPanelDrag.isFloating && (
             <PanelDragHandle
@@ -3401,6 +3403,44 @@ export default function Builder() {
                 </div>
               </div>
             </div>
+            <div className="slider-section">
+              <span className="slider-heading">Settings</span>
+              <div className="slider-stack">
+                {SETTINGS_ITEMS.map((setting) => {
+                  const description = setting.getDescription(modeState, {
+                    currentFlowLabel,
+                  });
+                  const isActive = setting.isActive?.(modeState) ?? false;
+                  return (
+                    <button
+                      key={setting.id}
+                      type="button"
+                      className="slider-btn slider-btn-stacked"
+                      onClick={() => {
+                        if (setting.action === "open-logo-settings") {
+                          setLogoSettingsOpen(!isLogoSettingsOpen);
+                        } else {
+                          triggerBuilderAction(setting.action, setting.data);
+                        }
+                      }}
+                      disabled={controlsDisabled}
+                      aria-disabled={controlsDisabled}
+                      aria-pressed={setting.isActive ? isActive : undefined}
+                      data-active={
+                        setting.isActive && isActive ? "true" : undefined
+                      }
+                      title={
+                        controlsDisabled ? controlDisabledTitle : description
+                      }
+                      data-intent="settings"
+                    >
+                      <span className="slider-label">{setting.label}</span>
+                      <span className="slider-description">{description}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         </nav>
       </div>
@@ -3602,82 +3642,115 @@ export default function Builder() {
               </div>
             </div>
             <div className="slider-section">
-              <span className="slider-heading">Settings</span>
-              <div className="slider-stack">
-                {SETTINGS_ITEMS.filter((setting) =>
-                  ![
-                    "toggle-current-flow",
-                    "toggle-polarity",
-                    "toggle-grid",
-                    "toggle-labels",
-                  ].includes(setting.action),
-                ).map((setting) => {
-                  const description = setting.getDescription(modeState, {
-                    currentFlowLabel,
-                  });
-                  const isSettingPanelTabActive =
-                    isSettingsPanelOpen &&
-                    ((setting.action === "open-logo-settings" &&
-                      activeSettingsPanelTab === "logo-motion") ||
-                      (setting.action === "open-workspace-skins" &&
-                        activeSettingsPanelTab === "workspace-skins"));
-                  const isActive =
-                    (setting.isActive?.(modeState) ?? false) || isSettingPanelTabActive;
-                  return (
-                    <button
-                      key={setting.id}
-                      type="button"
-                      className="slider-btn slider-btn-stacked"
-                      onClick={() => {
-                        if (setting.action === "open-logo-settings") {
-                          setActiveSettingsPanelTab("logo-motion");
-                          setSettingsPanelOpen(true);
-                          setRightMenuOpen(true);
-                        } else if (setting.action === "open-workspace-skins") {
-                          setActiveSettingsPanelTab("workspace-skins");
-                          setSettingsPanelOpen(true);
-                          setRightMenuOpen(true);
-                        } else {
-                          triggerBuilderAction(setting.action, setting.data);
-                        }
-                      }}
-                      disabled={controlsDisabled}
-                      aria-disabled={controlsDisabled}
-                      aria-pressed={isActive}
-                      data-active={
-                        isActive ? "true" : undefined
-                      }
-                      title={
-                        controlsDisabled ? controlDisabledTitle : description
-                      }
-                      data-intent="settings"
-                    >
-                      <span className="slider-label">{setting.label}</span>
-                      <span className="slider-description">{description}</span>
-                    </button>
-                  );
-                })}
-                {/* React-only toggle: plain-language descriptors under the
-                    component thumbnails in the quick-add bar. */}
+              <span className="slider-heading">Practice</span>
+              <div className="menu-track menu-track-chips">
+                <div
+                  role="status"
+                  style={{
+                    fontSize: "11px",
+                    color: "rgba(136, 204, 255, 0.78)",
+                    textAlign: "center",
+                    padding: "8px 12px",
+                    borderRadius: "10px",
+                    border: "1px solid rgba(136, 204, 255, 0.22)",
+                    background: "rgba(14, 30, 58, 0.48)",
+                  }}
+                >
+                  {practiceWorksheetMessage}
+                </div>
+                {PRACTICE_ACTIONS.map((action) => (
+                  <button
+                    key={action.id}
+                    type="button"
+                    className="slider-chip"
+                    onClick={() => handlePracticeAction(action)}
+                    disabled={
+                      controlsDisabled ||
+                      (action.action === "open-arena" && isArenaSyncing)
+                    }
+                    aria-disabled={
+                      controlsDisabled ||
+                      (action.action === "open-arena" && isArenaSyncing)
+                    }
+                    title={
+                      controlsDisabled
+                        ? controlDisabledTitle
+                        : action.action === "open-arena" && isArenaSyncing
+                          ? "Preparing Component Arena export?"
+                          : action.description
+                    }
+                  >
+                    <span className="slider-chip-label">{action.label}</span>
+                  </button>
+                ))}
                 <button
                   type="button"
-                  className="slider-btn slider-btn-stacked"
-                  onClick={() => setShowThumbDescriptors((v) => !v)}
-                  aria-pressed={showThumbDescriptors}
-                  data-active={showThumbDescriptors ? "true" : undefined}
-                  title={
-                    showThumbDescriptors
-                      ? "Hide plain-language descriptions under component icons"
-                      : "Show plain-language descriptions under component icons"
+                  className="slider-chip"
+                  onClick={() => setPracticePanelOpen(true)}
+                  title={practiceWorksheetMessage}
+                  data-complete={
+                    practiceWorksheetState &&
+                    activePracticeProblemId &&
+                    practiceWorksheetState.problemId ===
+                      activePracticeProblemId &&
+                    practiceWorksheetState.complete
+                      ? "true"
+                      : undefined
                   }
-                  data-intent="settings"
                 >
-                  <span className="slider-label">Component Descriptors</span>
-                  <span className="slider-description">
-                    {showThumbDescriptors
-                      ? "Descriptions shown under icons"
-                      : "Descriptions hidden"}
-                  </span>
+                  <span className="slider-chip-label">Practice Worksheets</span>
+                </button>
+                {PRACTICE_SCENARIOS.map((scenario) => (
+                  <button
+                    key={scenario.id}
+                    type="button"
+                    className="slider-chip"
+                    onClick={() => {
+                      const problem = scenario.problemId
+                        ? findPracticeProblemById(scenario.problemId)
+                        : findPracticeProblemByPreset(scenario.preset);
+
+                      if (isPracticeWorkspaceMode && problem) {
+                        handlePracticeWorkspaceProblemChange(problem.id);
+                      } else {
+                        triggerBuilderAction("load-preset", {
+                          preset: scenario.preset,
+                        });
+                        if (problem) {
+                          practiceProblemRef.current = problem.id;
+                          setActivePracticeProblemId(problem.id);
+                          setPracticeWorksheetState({
+                            problemId: problem.id,
+                            complete: false,
+                          });
+                        }
+                        setPracticePanelOpen(true);
+                      }
+                    }}
+                    disabled={controlsDisabled}
+                    aria-disabled={controlsDisabled}
+                    title={
+                      controlsDisabled
+                        ? controlDisabledTitle
+                        : scenario.question
+                    }
+                  >
+                    <span className="slider-chip-label">{scenario.label}</span>
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  className="slider-chip"
+                  onClick={openLastArenaSession}
+                  disabled={!canOpenLastArena}
+                  aria-disabled={!canOpenLastArena}
+                  title={
+                    canOpenLastArena
+                      ? "Open the most recent Component Arena export"
+                      : "Run a Component Arena export first"
+                  }
+                >
+                  <span className="slider-chip-label">Open Last Arena Run</span>
                 </button>
               </div>
             </div>
