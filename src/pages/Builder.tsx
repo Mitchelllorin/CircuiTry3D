@@ -6,6 +6,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { useLocation } from "react-router-dom";
 import { useBuilderFrame } from "../hooks/builder/useBuilderFrame";
 import { useLogoAnimation } from "../hooks/builder/useLogoAnimation";
 import { useHelpModal } from "../hooks/builder/useHelpModal";
@@ -140,7 +141,26 @@ const JUNCTION_TIP_STORAGE_KEY = "circuitry3d:junction-tip-dismissed:v1";
 // auto-opens on launch (still re-launchable from the Guides menu).
 const TOUR_DISMISSED_KEY = "circuitry3d:onboarding:tour-dismissed:v1";
 const ACTION_BAR_MODE_STORAGE_KEY = "ct3d.actionbar.mode";
-const THUMB_DESCRIPTORS_STORAGE_KEY = "ct3d.actionbar.descriptors";
+const WORKSPACE_QUERY_MODE_MAP: Record<string, WorkspaceMode> = {
+  build: "build",
+  practice: "practice",
+  troubleshoot: "troubleshoot",
+  arena: "arena",
+  help: "help",
+  "wire-guide": "wire-guide",
+  wireguide: "wire-guide",
+  arcade: "arcade",
+  classroom: "classroom",
+  community: "community",
+  account: "account",
+  pricing: "pricing",
+  textbook: "textbook",
+  gallery: "gallery",
+  "home-circuit": "home-circuit",
+  homecircuit: "home-circuit",
+  "car-circuit": "car-circuit",
+  carcircuit: "car-circuit",
+};
 
 type ActionBarMode = "full" | "tools" | "hidden";
 
@@ -1349,6 +1369,7 @@ function PanelDragHandle({
 }
 
 export default function Builder() {
+  const location = useLocation();
   const practiceProblemRef = useRef<string | null>(
     DEFAULT_PRACTICE_PROBLEM?.id ?? null,
   );
@@ -1505,6 +1526,20 @@ export default function Builder() {
       globalModeContext.setWorkspaceMode(mode);
     }
   }, [globalModeContext]);
+
+  useEffect(() => {
+    const requestedMode = new URLSearchParams(location.search).get("mode");
+    if (!requestedMode) {
+      return;
+    }
+
+    const mappedMode = WORKSPACE_QUERY_MODE_MAP[requestedMode.trim().toLowerCase()];
+    if (!mappedMode || mappedMode === workspaceMode) {
+      return;
+    }
+
+    setWorkspaceModeWithGlobalSync(mappedMode);
+  }, [location.search, setWorkspaceModeWithGlobalSync, workspaceMode]);
   const handleModeStateChange = useCallback((next: Partial<LegacyModeState>) => {
     const nextLabelVisibilityLevel =
       typeof next.labelVisibilityLevel === "number"

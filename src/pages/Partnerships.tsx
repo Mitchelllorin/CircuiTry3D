@@ -309,9 +309,9 @@ export default function Partnerships() {
       </div>
 
       <div style={styles.footer}>
-        <Link to="/pricing" style={styles.footerLink}>Pricing</Link>
+        <Link to="/app?mode=pricing" style={styles.footerLink}>Pricing</Link>
         <span style={styles.sep}>·</span>
-        <Link to="/app" style={styles.footerLink}>Component Arena</Link>
+        <Link to="/app?mode=arena" style={styles.footerLink}>Component Arena</Link>
         <span style={styles.sep}>·</span>
         <Link to="/" style={styles.footerLink}>Home</Link>
       </div>

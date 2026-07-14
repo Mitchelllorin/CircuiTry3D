@@ -78,11 +78,6 @@ export function GlobalModeBar() {
   const handleModeClick = useCallback(
     (mode: WorkspaceMode) => {
       setWorkspaceMode(mode);
-      // Gallery has its own standalone page; navigate directly.
-      if (mode === "gallery") {
-        navigate("/gallery");
-        return;
-      }
       // Keep all top-nav workflows anchored to the main workspace shell.
       if (!isWorkspacePage) {
         navigate("/app");
