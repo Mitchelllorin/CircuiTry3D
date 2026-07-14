@@ -3850,11 +3850,8 @@
         let scopeBuffer = [];
         const SCOPE_BUFFER_SIZE = 220;
         let isDragging = false, selectedComponent = null;
-        // True while a freshly-added part is a "held ghost" waiting to be dropped
-        // (from the library). In this state a single tap/click anywhere on the grid
-        // snaps the part under the pointer and drops it there — one-tap placement.
-        // Cleared the moment the part is placed (handleRelease).
-        let isPlacing = false;
+        /** The push-button component currently being held down (null if none). */
+        let _pressedButtonComponent = null;
         let _nodeHighlightTimer = null; // Auto-dim timer for lit terminal nodes after wire-placement procedure
         let currentFlowParticles = [];
         let currentWireGlows    = []; // additive-blended glow tubes around active wires
@@ -3929,6 +3926,14 @@
         let globalFlowTime      = 0;  // monotonic per-frame counter for animation phases
         let menuVisible = isEmbedded ? false : true;
         let analysisVisible = isEmbedded ? false : true;
+
+        // Push-button 3D mesh constants
+        /** Y-position of the button dome cap when pressed (depressed into housing). */
+        const BUTTON_CAP_PRESSED_Y = 0.20;
+        /** Y-position of the button dome cap when resting/open (raised above housing). */
+        const BUTTON_CAP_RELEASED_Y = 0.28;
+        /** Duration (ms) of the brief press pulse triggered by a fast tap on the button. */
+        const BUTTON_BRIEF_PRESS_DURATION_MS = 300;
 
         const isAndroidDevice =
             (typeof navigator !== "undefined" && /Android/i.test(navigator.userAgent || "")) ||
@@ -4917,6 +4922,12 @@ body.android-optimized .zoom-btn {
                     descriptor.aria = `${baseId} switch ${state}`;
                     break;
                 }
+                case "button": {
+                    const pbState = props.isOn ? "pressed" : "open";
+                    descriptor.display = `${baseId} - push button (${pbState})`;
+                    descriptor.aria = `${baseId} push button ${pbState}`;
+                    break;
+                }
                 default:
                     break;
             }
@@ -4959,6 +4970,16 @@ body.android-optimized .zoom-btn {
                         return { type: "given", value: "open" };
                     }
                     const resistance = Number(props.resistance ?? props.onResistance);
+                    if (isFinite(resistance)) {
+                        return { type: "given", value: formatResistance(resistance) };
+                    }
+                }
+
+                if (spec?.type === "button") {
+                    if (!props.isOn) {
+                        return { type: "given", value: "open" };
+                    }
+                    const resistance = Number(props.resistance);
                     if (isFinite(resistance)) {
                         return { type: "given", value: formatResistance(resistance) };
                     }
@@ -5500,6 +5521,7 @@ body.android-optimized .zoom-btn {
             resistor: 0,
             led: 0,
             switch: 0,
+            button: 0,
             capacitor: 0,
             'capacitor-ceramic': 0,
             inductor: 0,
@@ -6275,6 +6297,7 @@ body.android-optimized .zoom-btn {
                     case 'resistor': return { resistance: 100 };
                     case 'led': return { resistance: 10 };
                     case 'switch': return { resistance: 0.1, isOn: true };
+                    case 'button': return { resistance: 0.1, isOn: false };
                     case 'capacitor': return { capacitance: 100 }; // μF
                     case 'capacitor-ceramic': return { capacitance: 0.1 }; // μF (typical decoupling)
                     case 'inductor': return { inductance: 10 }; // mH
@@ -6324,6 +6347,7 @@ body.android-optimized .zoom-btn {
                     case 'resistor': return `R${this.componentNumber}`;
                     case 'led': return `LED${this.componentNumber}`;
                     case 'switch': return `SW${this.componentNumber}`;
+                    case 'button': return `PB${this.componentNumber}`;
                     case 'capacitor': return `C${this.componentNumber}`;
                     case 'capacitor-ceramic': return `C${this.componentNumber}`;
                     case 'inductor': return `L${this.componentNumber}`;
@@ -6390,6 +6414,11 @@ body.android-optimized .zoom-btn {
                         return {
                             text: state,
                             color: this.properties.isOn ? '#44ff44' : '#ff4444'
+                        };
+                    case 'button':
+                        return {
+                            text: this.properties.isOn ? 'HELD' : 'OPEN',
+                            color: this.properties.isOn ? '#44ff44' : '#ff8844'
                         };
                     case 'capacitor':
                         return {
@@ -6659,6 +6688,9 @@ body.android-optimized .zoom-btn {
                         break;
                     case 'switch':
                         this.createSwitchMesh(group);
+                        break;
+                    case 'button':
+                        this.createButtonMesh(group);
                         break;
                     case 'capacitor':
                         this.createCapacitorMesh(group);
@@ -7006,6 +7038,39 @@ body.android-optimized .zoom-btn {
 
                 this.leverMesh = toggle;         // rotation target
                 this.switchStatusMesh = status;  // colour target
+
+                this.addLeads(group);
+            }
+
+            createButtonMesh(group) {
+                const segments = isMobile ? 10 : 16;
+                // Housing base — rectangular, same footprint as switch for wire alignment
+                const baseGeometry = new THREE.BoxGeometry(0.8, 0.22, 0.4);
+                const baseMaterial = new THREE.MeshStandardMaterial({ color: 0x444455, metalness: 0.35, roughness: 0.6 });
+                const base = new THREE.Mesh(baseGeometry, baseMaterial);
+                group.add(base);
+
+                // Metal collar around cap
+                const collarGeometry = new THREE.CylinderGeometry(0.18, 0.18, 0.1, segments);
+                const collarMaterial = new THREE.MeshStandardMaterial({ color: 0x888899, metalness: 0.7, roughness: 0.3 });
+                const collar = new THREE.Mesh(collarGeometry, collarMaterial);
+                collar.position.y = 0.16;
+                group.add(collar);
+
+                // Tactile cap — dome-shaped, normally orange (open/resting state)
+                const capGeometry = new THREE.SphereGeometry(0.16, segments, segments, 0, Math.PI * 2, 0, Math.PI / 2);
+                const capColor = this.properties.isOn ? 0x00ee44 : 0xff7722;
+                const capMaterial = new THREE.MeshStandardMaterial({
+                    color: capColor,
+                    metalness: 0.05,
+                    roughness: 0.45,
+                    emissive: this.properties.isOn ? 0x003300 : 0x000000,
+                    emissiveIntensity: this.properties.isOn ? 0.4 : 0
+                });
+                const cap = new THREE.Mesh(capGeometry, capMaterial);
+                cap.position.y = this.properties.isOn ? BUTTON_CAP_PRESSED_Y : BUTTON_CAP_RELEASED_Y;
+                group.add(cap);
+                this.buttonCapMesh = cap;
 
                 this.addLeads(group);
             }
@@ -8350,6 +8415,12 @@ body.android-optimized .zoom-btn {
                     this.colorBandMeshes.forEach((band, i) => {
                         band.material.color.setHex(bandColors[i]);
                     });
+                }
+                if (this.type === 'button' && this.buttonCapMesh) {
+                    this.buttonCapMesh.material.color.setHex(this.properties.isOn ? 0x00ee44 : 0xff7722);
+                    this.buttonCapMesh.material.emissive.setHex(this.properties.isOn ? 0x003300 : 0x000000);
+                    this.buttonCapMesh.material.emissiveIntensity = this.properties.isOn ? 0.4 : 0;
+                    this.buttonCapMesh.position.y = this.properties.isOn ? BUTTON_CAP_PRESSED_Y : BUTTON_CAP_RELEASED_Y;
                 }
                 
                 // Update the labels with new values
@@ -10518,6 +10589,11 @@ body.android-optimized .zoom-btn {
                 // This allows camera rotation to start if the user moves before long-press completes
                 const hitComponent = checkComponentHit(touch.clientX, touch.clientY);
 
+                // Immediately press a push-button on touch-down so current flows while held
+                if (hitComponent && hitComponent.type === 'button' && !isWireMode && !isRotateMode) {
+                    pressButton(hitComponent);
+                }
+
                 // Enable rotation for empty space touches
                 // For component touches, rotation will be enabled in touchmove if not dragging
                 if (!hitComponent) {
@@ -10645,6 +10721,8 @@ body.android-optimized .zoom-btn {
         function handleTouchEnd(e) {
             e.preventDefault();
             cancelLongPress();
+            // Release any held push-button when finger is lifted
+            releaseAllButtons();
 
             if (isDragging) {
                 handleRelease();
@@ -10725,6 +10803,11 @@ body.android-optimized .zoom-btn {
                 // Check if clicking on a component first
                 const hitComponent = checkComponentHit(e.clientX, e.clientY);
 
+                // Immediately press a push-button on pointer-down so current flows while held
+                if (hitComponent && hitComponent.type === 'button' && !isWireMode && !isRotateMode) {
+                    pressButton(hitComponent);
+                }
+
                 // If no component hit and not dragging, enable camera rotation
                 if (!hitComponent && !isDragging) {
                     isRotating = true;
@@ -10778,6 +10861,8 @@ body.android-optimized .zoom-btn {
             isRotating = false;
             isPanning = false;
             cancelLongPress();
+            // Release any held push-button when mouse is lifted
+            releaseAllButtons();
             if (isDragging) {
                 handleRelease();
             }
@@ -13147,6 +13232,18 @@ body.android-optimized .zoom-btn {
                         </div>
                     `;
                     break;
+
+                case 'button':
+                    formHTML = `
+                        <div class="edit-row">
+                            <label>🔘 Contact Resistance (Ω)</label>
+                            <input type="number" id="edit-resistance" value="${component.properties.resistance}" min="0.01" max="10" step="0.01">
+                        </div>
+                        <div class="edit-row" style="opacity:0.7;font-size:0.85em;">
+                            <span>Normally-open: hold to close, release to open</span>
+                        </div>
+                    `;
+                    break;
                     
                 case 'flux-capacitor':
                     formHTML = `
@@ -13208,14 +13305,10 @@ body.android-optimized .zoom-btn {
                     }
                     break;
 
-                case 'flux-capacitor':
-                    const timeCircuitsSelect = document.getElementById('edit-time-circuits');
-                    const jigawattsInput = document.getElementById('edit-jigawatts');
-                    if (timeCircuitsSelect) {
-                        newProperties.timeCircuitsOn = timeCircuitsSelect.value === 'true';
-                    }
-                    if (jigawattsInput) {
-                        newProperties.jigawatts = parseFloat(jigawattsInput.value) || 1.21;
+                case 'button':
+                    const buttonResistanceInput = document.getElementById('edit-resistance');
+                    if (buttonResistanceInput) {
+                        newProperties.resistance = parseFloat(buttonResistanceInput.value) || 0.1;
                     }
                     break;
             }
@@ -13703,6 +13796,34 @@ body.android-optimized .zoom-btn {
             }
         }
 
+        function pressButton(component) {
+            if (!component || component.type !== 'button' || component.properties?.isOn) return;
+            component.properties.isOn = true;
+            component.updateProperties({ isOn: true });
+            _pressedButtonComponent = component;
+            setStatus('⚡ Push button held — circuit closed, current flowing');
+            analyzeCircuit();
+        }
+
+        function releaseButton(component) {
+            if (!component || component.type !== 'button' || !component.properties?.isOn) return;
+            component.properties.isOn = false;
+            component.updateProperties({ isOn: false });
+            if (_pressedButtonComponent === component) _pressedButtonComponent = null;
+            setStatus('⚡ Push button released — circuit open, no current');
+            analyzeCircuit();
+        }
+
+        function releaseAllButtons() {
+            if (_pressedButtonComponent) {
+                releaseButton(_pressedButtonComponent);
+            }
+            // Safety sweep in case _pressedButtonComponent got out of sync
+            components.forEach(c => {
+                if (c.type === 'button' && c.properties?.isOn) releaseButton(c);
+            });
+        }
+
         function handleComponentClick(component) {
             hideComponentContextMenu();
 
@@ -13724,6 +13845,14 @@ body.android-optimized .zoom-btn {
                 const state = component.properties.isOn ? 'ON' : 'OFF';
                 setStatus(`⚡  Switch ${state} - circuit updated`);
                 analyzeCircuit();
+            } else if (component.type === 'button' && !isWireMode) {
+                // Button is momentary — press/release is handled by mousedown/touchstart and
+                // mouseup/touchend respectively.  A bare "click" (very fast tap with no hold)
+                // still gives feedback via a brief press pulse so the user can see current flow.
+                if (!_pressedButtonComponent) {
+                    pressButton(component);
+                    setTimeout(() => releaseButton(component), BUTTON_BRIEF_PRESS_DURATION_MS);
+                }
             } else if (!isWireMode && !isDragging) {
                 selectComponent(component, { startDragging: false });
             }
@@ -13850,6 +13979,7 @@ body.android-optimized .zoom-btn {
             'resistor': 'Limits current flow and drops voltage. Dissipates energy as heat — fundamental to Ohm\'s law.',
             'led': 'Light Emitting Diode — glows when current flows in the correct forward direction.',
             'switch': 'Opens or closes the circuit path on demand. Controls when current can flow through.',
+            'button': 'Normally-open push button — closes the circuit and allows current to flow only while held. Release to open the circuit. Obeys Kirchhoff\'s laws: current flows only in a complete closed loop.',
             'capacitor': 'Stores electrical charge temporarily. Blocks DC, passes AC — used for filtering and timing.',
             'capacitor-ceramic': 'Non-polarized ceramic disc capacitor. Small value, used for decoupling and high-frequency filtering.',
             'inductor': 'Resists changes in current using a magnetic field. Stores energy magnetically — used in filters and oscillators.',
@@ -16609,8 +16739,7 @@ Made with ? for visual learners everywhere!
                     return;
                 }
 
-                // ── Solver unavailable → graceful fallback ──
-                if (component.type === 'switch' && component.properties?.isOn) {
+                if ((component.type === 'switch' || component.type === 'button') && component.properties?.isOn) {
                     metricsByComponentId.set(component.id, {
                         state: 'live',
                         role: 'control',
@@ -17059,6 +17188,7 @@ Made with ? for visual learners everywhere!
                 case 'resistor':
                 case 'led':
                 case 'switch':
+                case 'button':
                 case 'capacitor':
                 case 'capacitor-ceramic':
                 case 'inductor':
@@ -17109,6 +17239,13 @@ Made with ? for visual learners everywhere!
                     return Infinity;
                 }
                 return Number(component.properties?.resistance) || Number(component.properties?.onResistance) || 0.05;
+            }
+
+            if (component.type === 'button') {
+                if (!component.properties?.isOn) {
+                    return Infinity;
+                }
+                return Number(component.properties?.resistance) || 0.05;
             }
 
             if (component.type === 'thermistor') {
@@ -17662,7 +17799,7 @@ Made with ? for visual learners everywhere!
 
                 const sides = getComponentTerminals(comp);
                 if (!Array.isArray(sides) || sides.length !== 2) return;
-                if (comp.type === 'switch' && comp.properties?.isOn === false) {
+                if ((comp.type === 'switch' || comp.type === 'button') && comp.properties?.isOn === false) {
                     return; // open circuit
                 }
 
@@ -18330,9 +18467,11 @@ Made with ? for visual learners everywhere!
             const batteries = components.filter(c => c.type === 'battery');
             const resistors = components.filter(c => c.type === 'resistor' || c.type === 'led');
             const switches = components.filter(c => c.type === 'switch');
-            
+            const buttons = components.filter(c => c.type === 'button');
+
             const openSwitches = switches.filter(sw => !sw.properties.isOn);
-            if (openSwitches.length > 0) {
+            const openButtons = buttons.filter(pb => !pb.properties.isOn);
+            if (openSwitches.length > 0 || openButtons.length > 0) {
                 const totalVoltage = batteries.reduce((sum, bat) => sum + bat.properties.voltage, 0);
                 updateTopologyDisplay('Open Circuit');
                 const flowResult = {
@@ -19103,11 +19242,11 @@ Made with ? for visual learners everywhere!
             // - 'positive'/'negative' (polarity-based)
             // - 'left'/'right' (position-based)
             // We create internal paths for ALL terminal pairs to handle both conventions.
-            const conductingTypes = ['resistor', 'led', 'switch', 'lamp', 'inductor', 'capacitor', 'capacitor-ceramic', 'fuse', 'thermistor', 'diode', 'zener-diode', 'photodiode', 'motor', 'speaker', 'relay', 'voltage-regulator'];
+            const conductingTypes = ['resistor', 'led', 'switch', 'button', 'lamp', 'inductor', 'capacitor', 'capacitor-ceramic', 'fuse', 'thermistor', 'diode', 'zener-diode', 'photodiode', 'motor', 'speaker', 'relay', 'voltage-regulator'];
             allComponents.forEach(comp => {
                 if (conductingTypes.includes(comp.type)) {
-                    // Only conduct if switch is ON
-                    if (comp.type === 'switch' && !comp.properties?.isOn) return;
+                    // Only conduct if switch or button is ON
+                    if ((comp.type === 'switch' || comp.type === 'button') && !comp.properties?.isOn) return;
 
                     // Failed components act as open circuits — no current flows through them.
                     if (workspaceFailureState.get(comp.id)?.failed) return;
@@ -19310,9 +19449,13 @@ Made with ? for visual learners everywhere!
             } else if (resistance === Infinity) {
                 const switches = components.filter(c => c.type === 'switch');
                 const openSwitch = switches.find(sw => !sw.properties.isOn);
-                
+                const buttons = components.filter(c => c.type === 'button');
+                const openButton = buttons.find(pb => !pb.properties.isOn);
+
                 if (openSwitch) {
                     setStatus(`⚡  OPEN CIRCUIT: Switch is OFF - touch it to complete W.I.R.E. analysis!`);
+                } else if (openButton) {
+                    setStatus(`⚡  OPEN CIRCUIT: Push button is open — hold it down to close the circuit!`);
                 } else {
                     setStatus(`⚡  INCOMPLETE CIRCUIT: Connect components to enable W.I.R.E. calculations`);
                 }
@@ -20451,6 +20594,20 @@ Made with ? for visual learners everywhere!
                 `;
                 componentList.appendChild(item);
             });
+
+            // Add push buttons
+            components.filter(c => c.type === 'button').forEach(pb => {
+                const item = document.createElement('div');
+                item.className = 'component-item';
+                item.style.borderColor = pb.properties.isOn ? '#44ff88' : '#ff8844';
+                item.innerHTML = `
+                    <div class="component-label">PB${pb.componentNumber}</div>
+                    <div class="component-value" style="color: ${pb.properties.isOn ? '#44ff88' : '#ff8844'};">
+                        ${pb.properties.isOn ? pb.properties.resistance + 'Ω' : 'OPEN'}
+                    </div>
+                `;
+                componentList.appendChild(item);
+            });
             
             // Update calculation formulas
             updateCalculationFormulas();
@@ -20460,17 +20617,19 @@ Made with ? for visual learners everywhere!
             const resistors = components.filter(c => c.type === 'resistor' || c.type === 'led');
             const batteries = components.filter(c => c.type === 'battery');
             const switches = components.filter(c => c.type === 'switch' && c.properties.isOn);
-            
+            const pressedButtons = components.filter(c => c.type === 'button' && c.properties.isOn);
+
             // Update resistance formula
             const resistanceFormula = document.getElementById('resistance-formula');
             if (resistanceFormula) {
                 let formula = 'R_total = ';
-                const allResistors = [...resistors, ...switches];
+                const allResistors = [...resistors, ...switches, ...pressedButtons];
                 if (allResistors.length > 0) {
                     formula += allResistors.map(r => {
                         if (r.type === 'resistor') return `R${r.componentNumber}`;
                         if (r.type === 'led') return `LED${r.componentNumber}`;
                         if (r.type === 'switch') return `SW${r.componentNumber}`;
+                        if (r.type === 'button') return `PB${r.componentNumber}`;
                         return 'X';
                     }).join(' + ');
                 } else {
@@ -21750,6 +21909,7 @@ Made with ? for visual learners everywhere!
                 resistor: 0,
                 led: 0,
                 switch: 0,
+                button: 0,
                 capacitor: 0,
                 'capacitor-ceramic': 0,
                 inductor: 0,
