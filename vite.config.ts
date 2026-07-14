@@ -1,29 +1,34 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
-// https://vitejs.dev/config/
-export default defineConfig(({ mode }) => {
-  const sanitizedEnvBasePath = (process.env.VITE_BASE_PATH ?? '').trim();
-  const webBasePath = sanitizedEnvBasePath || '/';
+function normalizeBasePath(value?: string): string {
+  const trimmed = value?.trim();
+  if (!trimmed) {
+    return '/CircuiTry3D/';
+  }
 
-  return {
-    // Capacitor Android serves bundled files from app assets (no sub-path), so
-    // use relative URLs in capacitor mode to avoid startup hangs on the loader.
-    base: mode === 'capacitor' ? './' : webBasePath,
-    plugins: [react()],
-    build: {
-      outDir: 'dist',
-      sourcemap: false,
-      // Three.js core is intentionally large for the 3D workspace.
-      // Raise the warning threshold so expected chunk sizes don't trigger noise.
-      chunkSizeWarningLimit: 800,
-      rollupOptions: {
-        output: {
-          manualChunks: {
-            'react-vendor': ['react', 'react-dom'],
-            'router': ['react-router-dom'],
-            'three-vendor': ['three']
-          }
+  const withLeadingSlash = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+  return withLeadingSlash.endsWith('/') ? withLeadingSlash : `${withLeadingSlash}/`;
+}
+
+// https://vitejs.dev/config/
+export default defineConfig(() => ({
+  // Default to the repository Pages path, but allow CI to override it for
+  // custom domains and PR preview subpaths.
+  base: normalizeBasePath(process.env.VITE_BASE_PATH),
+  plugins: [react()],
+  build: {
+    outDir: 'dist',
+    sourcemap: false,
+    // Three.js core is intentionally large for the 3D workspace.
+    // Raise the warning threshold so expected chunk sizes don't trigger noise.
+    chunkSizeWarningLimit: 800,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom'],
+          'router': ['react-router-dom'],
+          'three-vendor': ['three']
         }
       }
     },

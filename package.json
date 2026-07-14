@@ -24,9 +24,7 @@
     "circuit-bot:portrait": "node scripts/circuit-bot.js --portrait",
     "circuit-bot:portrait:local": "node scripts/circuit-bot.js --local --portrait",
     "component-showcase": "node scripts/capture-component-showcase.js",
-    "component-showcase:local": "node scripts/capture-component-showcase.js --local",
-    "predeploy": "npm run build",
-    "deploy": "gh-pages -d dist"
+    "component-showcase:local": "node scripts/capture-component-showcase.js --local"
   },
   "repository": {
     "type": "git",
