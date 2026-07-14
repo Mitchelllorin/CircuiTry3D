@@ -6290,16 +6290,12 @@ body.android-optimized .zoom-btn {
             createMesh() {
                 const group = new THREE.Group();
                 
-                // Solder junction node — a compact, energized connection bead.
-                // (Previously a Saturn-like sphere + flat ring that read as a planet;
-                //  redesigned to look like a glowing solder node where wires meet.)
-                const bodyGeometry = new THREE.SphereGeometry(0.2, isMobile ? 12 : 16, isMobile ? 8 : 12);
-                const bodyMaterial = new THREE.MeshStandardMaterial({
-                    color: 0xe6f4ff,           // bright chrome-blue solder bead
-                    emissive: 0x4aa8ff,        // electric-blue glow
-                    emissiveIntensity: 1.0,
-                    metalness: 0.6,
-                    roughness: 0.2
+                // Main purple sphere
+                const bodyGeometry = new THREE.SphereGeometry(0.20, isMobile ? 12 : 16, isMobile ? 8 : 12);
+                const bodyMaterial = new THREE.MeshPhongMaterial({ 
+                    color: 0x8844ff,
+                    emissive: 0x221188,
+                    shininess: 100
                 });
                 const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
                 group.add(body);
@@ -6340,8 +6336,8 @@ body.android-optimized .zoom-btn {
             }
 
             createConnectionPoint() {
-                const pointGeometry = new THREE.SphereGeometry(0.08, isMobile ? 8 : 16, isMobile ? 6 : 12);
-                const pointMaterial = new THREE.MeshStandardMaterial({ 
+                const pointGeometry = new THREE.SphereGeometry(0.11, isMobile ? 12 : 16, isMobile ? 8 : 12);
+                const pointMaterial = new THREE.MeshPhongMaterial({ 
                     color: 0x00ffff,
                     emissive: 0x007777,
                     emissiveIntensity: 0.2,
@@ -8095,7 +8091,7 @@ body.android-optimized .zoom-btn {
             createConnectionPoints() {
                 this.connectionPoints = [];
 
-                const pointGeometry = new THREE.SphereGeometry(0.07, isMobile ? 8 : 16, isMobile ? 6 : 12);
+                const pointGeometry = new THREE.SphereGeometry(0.12, isMobile ? 16 : 20, isMobile ? 12 : 16);
                 const leftPos = new THREE.Vector3(-1.2, 0, 0);
                 const rightPos = new THREE.Vector3(1.2, 0, 0);
                 const centerPos = new THREE.Vector3(0, 0, 0);
@@ -13858,8 +13854,7 @@ body.android-optimized .zoom-btn {
             if (highlight) {
                 connectionPoint.material.color.setRGB(1.0, 1.0, 0.0);
                 connectionPoint.material.emissive.setRGB(0.8, 0.8, 0.0);
-                connectionPoint.material.opacity = 1.0;
-                connectionPoint.scale.setScalar(1.4);
+                connectionPoint.scale.setScalar(1.2);
             } else {
                 if (pointData.junction) {
                     connectionPoint.material.color.setRGB(0.0, 1.0, 1.0);
