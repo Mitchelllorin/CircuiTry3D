@@ -47,7 +47,7 @@
     }
 
     .arena-brand {
-      font-size: clamp(13px, 2vw, 17px);
+      font-size: clamp(14px, 2.5vw, 20px);
       font-weight: 900;
       letter-spacing: -0.015em;
       display: inline-flex;
@@ -2845,40 +2845,14 @@ html.is-embedded .lib-toggle {
             ⚙️ Go to Test tab →
           </button>
         </div>
-        <section class="panel-section">
-          <div class="section-heading" id="metrics-heading-a">Component A — Metrics<span class="live-badge hidden-badge" id="live-badge-a" aria-label="Metrics updating live">Live</span></div>
-          <div class="abs-max-banner" id="abs-max-banner-a" role="alert">⚠ Absolute Maximum Rating exceeded</div>
-          <div id="metrics-a" class="metric-grid" aria-live="polite" aria-label="Component A metrics"></div>
-        </section>
-        <section class="panel-section compare-only">
-          <div class="section-heading" id="metrics-heading-b">Component B — Metrics<span class="live-badge hidden-badge" id="live-badge-b" aria-label="Metrics updating live">Live</span></div>
-          <div class="abs-max-banner" id="abs-max-banner-b" role="alert">⚠ Absolute Maximum Rating exceeded</div>
-          <div id="metrics-b" class="metric-grid" aria-live="polite" aria-label="Component B metrics"></div>
-        </section>
-        <section class="panel-section compare-only">
-          <div class="section-heading">Relative Delta</div>
-          <div id="metrics-delta" class="metric-grid" aria-live="polite" aria-label="Delta metrics A vs B"></div>
-        </section>
-
-        <!-- ── Run History ───────────────────────────────────────── -->
-        <section class="panel-section" id="history-section">
-          <div class="panel-header">
-            <div class="section-heading">📋 Run History</div>
-            <button class="history-clear-btn" id="btn-clear-history" aria-label="Clear run history">Clear</button>
-          </div>
-          <div class="run-history-list" id="run-history-list" aria-label="Test run history" aria-live="polite"></div>
-        </section>
-      </div>
-
-      <!-- ── Tab: FUSE ───────────────────────────────── -->
-      <div class="panel-tab-pane" id="tab-fuse" role="tabpanel">
-        <!-- Severity legend — always visible -->
-        <div class="fuse-legend" role="note" aria-label="FUSE severity levels">
-          <div class="fuse-legend-item l-safe"      title="Safe — operating within all ratings. No risk detected.">🟢 Safe</div>
-          <div class="fuse-legend-item l-stressed"  title="Stressed — exceeding comfortable operating margins. Consider derating.">🟡 Stressed</div>
-          <div class="fuse-legend-item l-warning"   title="Warning — significant overstress. Risk of accelerated degradation.">🟠 Warning</div>
-          <div class="fuse-legend-item l-critical"  title="Critical — severe overstress. Failure imminent or in progress.">🔴 Critical</div>
-          <div class="fuse-legend-item l-destroyed" title="Destroyed — component has been simulated to failure. Replace it.">💀 Destroyed</div>
+        <div id="import-status" class="import-status panel-subtext">Using reference component library.</div>
+        <div class="import-tags" id="import-tags"></div>
+        <div class="row">
+          <label for="mode">Mode</label>
+          <select id="mode">
+            <option value="single">Single Component</option>
+            <option value="compare">Compare (A vs B)</option>
+          </select>
         </div>
 
         <!-- Empty state before first run -->

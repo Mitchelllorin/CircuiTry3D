@@ -2887,6 +2887,42 @@ export default function Builder() {
     applyWireProfileToLegacy(activeWireProfilePayload, { runSimulation: false });
   }, [activeWireProfilePayload, applyWireProfileToLegacy, isFrameReady]);
 
+  const arenaStatusMessage = useMemo(() => {
+    switch (arenaExportStatus) {
+      case "exporting":
+        return "Loading current build into Component Arena...";
+      case "ready": {
+        if (!lastArenaExport) {
+          return "Component Arena is ready.";
+        }
+        const exportedTime = lastArenaExport.exportedAt
+          ? new Date(lastArenaExport.exportedAt)
+          : null;
+        const formattedTime =
+          exportedTime && !Number.isNaN(exportedTime.getTime())
+            ? exportedTime.toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              })
+            : null;
+        const componentLabel =
+          typeof lastArenaExport.componentCount === "number"
+            ? `${lastArenaExport.componentCount} component${lastArenaExport.componentCount === 1 ? "" : "s"}`
+            : null;
+        if (componentLabel && formattedTime) {
+          return `Last loaded: ${componentLabel} - ${formattedTime}`;
+        }
+        if (componentLabel) {
+          return `Last loaded: ${componentLabel}`;
+        }
+        return "Component Arena is ready.";
+      }
+      case "error":
+        return arenaExportError ?? "Component Arena failed to load.";
+      default:
+        return "Send this build to the Component Arena for advanced testing.";
+    }
+  }, [arenaExportStatus, arenaExportError, lastArenaExport]);
 
   const isWorksheetVisible = isPracticeWorkspaceMode && isCompactWorksheetOpen;
   const isTroubleshootVisible =
