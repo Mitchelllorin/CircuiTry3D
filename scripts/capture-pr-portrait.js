@@ -35,8 +35,13 @@ const OUTPUT_FILE = process.env.OUTPUT_FILE || join(ROOT, 'dist', 'pr-portrait.p
 const VIEWPORT = { width: 412, height: 915 };
 
 async function main() {
-  const url = `${BASE_URL}${BASE_PATH}`;
-  console.log(`📸  Capturing PR portrait screenshot from ${url}`);
+  // Navigate directly to legacy.html (the 3-D circuit builder) so the WebGL
+  // canvas renders fully in the headless Chromium process without the extra
+  // React → Builder.tsx → iframe indirection that produces a blank canvas.
+  // BASE_PATH ends with '/', so strip a leading '/' from 'legacy.html' to
+  // avoid a double-slash.
+  const builderUrl = `${BASE_URL}${BASE_PATH}legacy.html`;
+  console.log(`📸  Capturing PR portrait screenshot from ${builderUrl}`);
 
   await mkdir(dirname(OUTPUT_FILE), { recursive: true });
 

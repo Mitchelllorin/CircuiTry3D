@@ -2676,132 +2676,270 @@
         }
 
         /* ── W.I.R.E. Measurement / Meter panel ─────────────────────────── */
+
+        /* Mode selector – pill-style segmented control */
         .meter-mode-buttons {
-            display: flex;
-            gap: 6px;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 4px;
             margin-bottom: 10px;
-            flex-wrap: wrap;
+            background: rgba(0,0,0,0.35);
+            border-radius: 10px;
+            padding: 4px;
+            border: 1px solid rgba(255,255,255,0.07);
         }
 
         .meter-mode-btn {
-            flex: 1;
-            padding: 8px 4px;
-            background: rgba(255,255,255,0.1);
-            border: 1px solid rgba(255,255,255,0.3);
-            color: #ccc;
-            border-radius: 6px;
-            font-size: 11px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            min-width: 56px;
-            text-align: center;
-        }
-
-        .meter-mode-btn.secondary {
-            background: rgba(255,255,255,0.07);
-            color: #888;
-        }
-
-        .meter-mode-btn:not(.secondary) {
-            background: #00ff88;
-            border-color: #00ff88;
-            color: #000;
-        }
-
-        .meter-probe-row {
             display: flex;
-            gap: 8px;
-            margin-bottom: 8px;
-            font-size: 12px;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 3px;
+            padding: 7px 2px;
+            background: transparent;
+            border: 1px solid transparent;
+            color: #666;
+            border-radius: 7px;
+            font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+            cursor: pointer;
+            transition: all 0.18s ease;
+            text-align: center;
+            line-height: 1;
         }
 
-        .meter-probe-label {
+        .meter-mode-btn:hover {
+            background: rgba(255,255,255,0.07);
+            color: #bbb;
+        }
+
+        /* Active mode button */
+        .meter-mode-btn:not(.secondary) {
+            background: rgba(0,255,136,0.14);
+            border-color: rgba(0,255,136,0.45);
+            color: #00ff88;
+        }
+
+        .meter-mode-icon {
+            font-size: 15px;
+            display: block;
+        }
+
+        .meter-mode-label {
+            font-size: 9px;
             font-weight: 700;
-            min-width: 52px;
-            flex-shrink: 0;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            display: block;
         }
 
-        .meter-probe-label.probe-a { color: #ff4444; }
-        .meter-probe-label.probe-b { color: #333; background: #ccc; border-radius: 4px; padding: 0 4px; }
+        /* Instructions bar */
+        .meter-instructions-text {
+            font-size: 11px;
+            color: #99b4cc;
+            margin-bottom: 10px;
+            text-align: center;
+            line-height: 1.45;
+            background: rgba(136,204,255,0.06);
+            border-radius: 7px;
+            padding: 6px 8px;
+            border: 1px solid rgba(136,204,255,0.12);
+        }
+
+        /* Probe A / B cards */
+        .meter-probe-section {
+            display: flex;
+            align-items: stretch;
+            gap: 6px;
+            margin-bottom: 10px;
+        }
+
+        .meter-probe-card {
+            flex: 1;
+            background: rgba(0,0,0,0.3);
+            border-radius: 8px;
+            padding: 7px 9px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            border: 1px solid rgba(255,255,255,0.09);
+            min-width: 0;
+        }
+
+        .meter-probe-card.probe-a-card { border-color: rgba(255,80,80,0.3); }
+        .meter-probe-card.probe-b-card { border-color: rgba(170,170,190,0.2); }
+
+        .meter-probe-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            border-radius: 100px;
+            padding: 1px 7px;
+            font-size: 9px;
+            font-weight: 800;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            width: fit-content;
+        }
+
+        .probe-a-pill {
+            background: rgba(255,70,70,0.18);
+            color: #ff6666;
+            border: 1px solid rgba(255,70,70,0.38);
+        }
+
+        .probe-b-pill {
+            background: rgba(160,160,180,0.12);
+            color: #aaa;
+            border: 1px solid rgba(160,160,180,0.28);
+        }
 
         .meter-probe-value {
-            color: #ccc;
-            font-family: monospace;
-            font-size: 11px;
-            word-break: break-all;
+            color: #bbb;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 10px;
+            word-break: break-word;
+            line-height: 1.3;
+            min-height: 13px;
         }
 
+        .meter-probe-arrow {
+            display: flex;
+            align-items: center;
+            color: rgba(255,255,255,0.18);
+            font-size: 16px;
+            flex-shrink: 0;
+            padding-top: 10px;
+        }
+
+        /* Main reading display */
         .meter-reading-box {
-            background: rgba(0,0,0,0.5);
-            border: 2px solid rgba(0,255,136,0.5);
-            border-radius: 10px;
-            padding: 12px 16px;
-            margin: 10px 0;
+            background: rgba(0,0,0,0.38);
+            border: 1.5px solid rgba(0,255,136,0.35);
+            border-radius: 12px;
+            padding: 12px 16px 9px;
+            margin: 0 0 10px;
             text-align: center;
+        }
+
+        .meter-reading-inner {
+            display: flex;
+            align-items: baseline;
+            justify-content: center;
+            gap: 6px;
         }
 
         .meter-reading-value {
-            font-size: 28px;
+            font-size: 34px;
             font-weight: 800;
             color: #00ff88;
             font-family: 'Consolas', 'Monaco', monospace;
-            letter-spacing: 0.04em;
+            letter-spacing: 0.02em;
+            line-height: 1;
+        }
+
+        .meter-unit-badge {
+            font-size: 17px;
+            font-weight: 700;
+            color: rgba(0,255,136,0.55);
+            font-family: 'Inter', system-ui, sans-serif;
+            letter-spacing: 0.02em;
+            padding-bottom: 2px;
         }
 
         .meter-subreading {
             font-size: 10px;
-            color: #888;
-            margin-top: 4px;
-            min-height: 14px;
+            color: #555;
+            margin-top: 5px;
+            min-height: 13px;
+            font-family: 'Consolas', 'Monaco', monospace;
         }
 
-        .meter-instructions-text {
-            font-size: 11px;
-            color: #aaa;
-            margin-bottom: 10px;
-            text-align: center;
-            line-height: 1.4;
-        }
-
+        /* Action buttons */
         .meter-action-row {
             display: flex;
-            gap: 8px;
-            margin-top: 10px;
+            gap: 7px;
+            margin-top: 4px;
         }
 
         .meter-action-btn {
             flex: 1;
-            padding: 8px;
-            background: rgba(255,255,255,0.08);
-            border: 1px solid rgba(255,255,255,0.2);
-            color: #ccc;
-            border-radius: 6px;
+            padding: 9px 8px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.13);
+            color: #aaa;
+            border-radius: 8px;
             font-size: 11px;
+            font-weight: 600;
             cursor: pointer;
-            transition: background 0.2s;
+            transition: all 0.18s ease;
+            font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+            letter-spacing: 0.02em;
         }
 
-        .meter-action-btn:hover { background: rgba(255,255,255,0.15); }
+        .meter-action-btn:hover { background: rgba(255,255,255,0.1); color: #ddd; }
 
+        .meter-armed-btn {
+            background: rgba(0,255,136,0.1);
+            border-color: rgba(0,255,136,0.32);
+            color: #00ff88;
+        }
+
+        .meter-armed-btn:hover {
+            background: rgba(0,255,136,0.18);
+        }
+
+        .meter-armed-btn.is-armed {
+            background: rgba(255,120,50,0.13);
+            border-color: rgba(255,120,50,0.38);
+            color: #ff8844;
+        }
+
+        .meter-armed-btn.is-armed:hover {
+            background: rgba(255,120,50,0.2);
+        }
+
+        .meter-clear-btn {
+            flex: 0 0 auto;
+            min-width: 68px;
+        }
+
+        /* Oscilloscope panel */
         .scope-panel-inner {
-            margin-top: 8px;
+            margin: 0 0 10px;
+            background: rgba(0,0,0,0.32);
+            border-radius: 10px;
+            border: 1px solid rgba(136,204,255,0.18);
+            overflow: hidden;
+        }
+
+        .scope-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 5px 10px 4px;
+        }
+
+        .scope-label {
+            font-size: 9px;
+            font-weight: 800;
+            color: #6ba8d8;
+            letter-spacing: 0.07em;
+            text-transform: uppercase;
+            font-family: 'Inter', system-ui, sans-serif;
         }
 
         #scope-canvas {
             width: 100%;
-            height: 100px;
-            border-radius: 6px;
+            height: 120px;
             display: block;
-            border: 1px solid rgba(136, 204, 255, 0.25);
+            border-top: 1px solid rgba(136,204,255,0.1);
         }
 
         .scope-readout-text {
             font-size: 11px;
             color: #8bc7ff;
-            text-align: right;
-            margin-top: 4px;
-            font-family: monospace;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-weight: 600;
         }
 
         /* Analysis panel toggle strip */
@@ -14820,7 +14958,10 @@ body.android-optimized .zoom-btn {
             });
             const armedBtn = document.getElementById('meter-toggle-armed');
             if (armedBtn) {
-                armedBtn.textContent = meterArmed ? 'Disable probes' : 'Enable probes';
+                armedBtn.classList.toggle('is-armed', meterArmed);
+                const label = meterArmed ? '⊘ Disable Probes' : '⚡ Enable Probes';
+                armedBtn.textContent = label;
+                armedBtn.setAttribute('aria-label', meterArmed ? 'Disable measurement probes' : 'Enable measurement probes');
             }
         }
 
@@ -14828,10 +14969,18 @@ body.android-optimized .zoom-btn {
             if (!pointData) return '—';
             const obj = pointData.component || pointData.junction;
             if (!obj) return '—';
-            const type = pointData.component ? String(pointData.component.type || 'component') : 'junction';
-            const id = obj.id || '';
-            const side = String(pointData.side || 'center');
-            return `${type}:${id}:${side}`;
+            if (pointData.junction) {
+                return `Junction ${String(obj.id || '').toUpperCase()}`;
+            }
+            const typeName = _capitalizeFirst(String(pointData.component.type || 'Component'));
+            const id = String(obj.id || '').toUpperCase();
+            const side = String(pointData.side || '');
+            return side ? `${typeName} ${id} · ${side}` : `${typeName} ${id}`;
+        }
+
+        /** Capitalize the first character of a string. */
+        function _capitalizeFirst(s) {
+            return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
         }
 
         function getPointTerminalKey(pointData) {
@@ -15052,25 +15201,49 @@ body.android-optimized .zoom-btn {
             const readingEl = document.getElementById('meter-reading');
             const subEl = document.getElementById('meter-subreading');
             const scopePanel = document.getElementById('scope-panel');
+            const unitBadge = document.getElementById('meter-unit-badge');
+            const probeSection = document.getElementById('meter-probe-section');
 
             if (probeAEl) probeAEl.textContent = describeTerminal(meterProbeA);
             if (probeBEl) probeBEl.textContent = describeTerminal(meterProbeB);
+
+            // Probe section not needed in current mode (click a component instead)
+            if (probeSection) {
+                probeSection.style.display = meterMode === 'current' ? 'none' : 'flex';
+            }
 
             if (scopePanel) {
                 scopePanel.style.display = meterMode === 'scope' ? 'block' : 'none';
             }
 
+            // Unit badge reflects the current measurement mode
+            const unitMap = { voltage: 'V', current: 'A', resistance: 'Ω', scope: 'V' };
+            if (unitBadge) unitBadge.textContent = unitMap[meterMode] || '';
+
+            // Context-aware instruction text
             if (instructions) {
                 if (!meterArmed) {
-                    instructions.textContent = 'Enable probes to begin measuring.';
+                    instructions.textContent = 'Tap ⚡ Enable Probes, then click circuit terminals to measure.';
                 } else if (meterMode === 'voltage') {
-                    instructions.textContent = 'Click two terminals to measure voltage (red minus black).';
+                    instructions.textContent = meterProbeA && meterProbeB
+                        ? 'Reading voltage A − B.'
+                        : meterProbeA
+                            ? 'Probe A placed. Click a second terminal for probe B.'
+                            : 'Click a terminal to place the red (+) probe A.';
                 } else if (meterMode === 'resistance') {
-                    instructions.textContent = 'Click two terminals to estimate equivalent resistance (sources disabled).';
+                    instructions.textContent = meterProbeA && meterProbeB
+                        ? 'Reading equivalent resistance A to B.'
+                        : meterProbeA
+                            ? 'Probe A placed. Click a second terminal for probe B.'
+                            : 'Click a terminal to place probe A.';
                 } else if (meterMode === 'current') {
-                    instructions.textContent = 'Click a component to read its DC current.';
+                    instructions.textContent = meterCurrentTarget
+                        ? `Reading current through ${_capitalizeFirst(meterCurrentTarget.type || 'component')} ${String(meterCurrentTarget.id || '').toUpperCase()}.`
+                        : 'Click any component to read its DC current (amps).';
                 } else if (meterMode === 'scope') {
-                    instructions.textContent = 'Click a terminal to probe. Black probe is reference if set; otherwise battery negative.';
+                    instructions.textContent = meterProbeA
+                        ? 'Probing voltage over time. Black probe = reference (or GND).'
+                        : 'Click a terminal to start the oscilloscope trace.';
                 }
             }
 
@@ -15105,7 +15278,7 @@ body.android-optimized .zoom-btn {
 
             if (meterMode === 'scope') {
                 if (!meterProbeA) {
-                    if (readingEl) readingEl.textContent = 'Pick a terminal…';
+                    if (readingEl) readingEl.textContent = '—';
                     stopScope();
                     notifyParentMeterState();
                     return;
@@ -15113,7 +15286,7 @@ body.android-optimized .zoom-btn {
                 startScope();
                 if (readingEl) {
                     const latest = scopeBuffer.length ? scopeBuffer[scopeBuffer.length - 1] : null;
-                    readingEl.textContent = Number.isFinite(latest) ? `${latest.toFixed(3)} V` : '—';
+                    readingEl.textContent = Number.isFinite(latest) ? latest.toFixed(3) : '—';
                 }
                 notifyParentMeterState();
                 return;
@@ -15127,7 +15300,7 @@ body.android-optimized .zoom-btn {
 
             if (meterMode === 'voltage') {
                 const dv = getVoltageBetweenProbes(meterProbeA, meterProbeB, lastDCSolution);
-                if (readingEl) readingEl.textContent = Number.isFinite(dv) ? `${dv.toFixed(3)} V` : '—';
+                if (readingEl) readingEl.textContent = Number.isFinite(dv) ? dv.toFixed(3) : '—';
                 if (subEl && lastDCSolution?.status && lastDCSolution.status !== 'solved') {
                     subEl.textContent = `Solver: ${lastDCSolution.status}${lastDCSolution.reason ? ' — ' + lastDCSolution.reason : ''}`;
                 }
@@ -15138,8 +15311,8 @@ body.android-optimized .zoom-btn {
             if (meterMode === 'resistance') {
                 const ohms = getEquivalentResistanceBetweenProbes(meterProbeA, meterProbeB);
                 if (readingEl) {
-                    if (ohms === Infinity) readingEl.textContent = '∞ Ω';
-                    else readingEl.textContent = Number.isFinite(ohms) ? `${ohms.toFixed(2)} Ω` : '—';
+                    if (ohms === Infinity) readingEl.textContent = '∞';
+                    else readingEl.textContent = Number.isFinite(ohms) ? ohms.toFixed(2) : '—';
                 }
             }
 
