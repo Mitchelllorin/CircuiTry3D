@@ -1259,8 +1259,133 @@
   font-weight: 700;
   line-height: 1.2;
 }
-.arena-podium__step-score {
-  font-size: 1.1rem;
+
+.nameplate-metric-trend {
+  font-size: 0.74rem;
+  font-weight: 800;
+}
+
+.nameplate-metric-trend-up {
+  color: rgba(74, 222, 128, 0.92);
+}
+
+.nameplate-metric-trend-down {
+  color: rgba(248, 113, 113, 0.94);
+}
+
+.nameplate-metric-trend-steady {
+  color: rgba(148, 163, 184, 0.88);
+}
+
+.arena-nameplate-empty {
+  margin: 10px 0 0;
+  font-size: 0.75rem;
+  color: rgba(148, 163, 184, 0.78);
+}
+
+.arena-nameplate-badge {
+  margin-top: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--brand-primary-dim);
+  background: var(--brand-primary-dim);
+  color: rgba(209, 250, 229, 0.96);
+  font-size: 0.64rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.arena-nameplate-badge.neutral {
+  border-color: rgba(148, 163, 184, 0.45);
+  background: rgba(100, 116, 139, 0.2);
+  color: rgba(203, 213, 225, 0.95);
+}
+
+.arena-battle-tagline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.arena-battle-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  pointer-events: none;
+}
+
+.arena-battle-overlay > * {
+  pointer-events: auto;
+}
+
+.arena-toggle-controls {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: rgba(8, 18, 30, 0.72);
+  border: 1px solid rgba(0, 245, 255, 0.2);
+  backdrop-filter: blur(8px);
+}
+
+@media (max-width: 600px) {
+  .arena-component-nameplate {
+    margin: 6px 0 10px;
+    padding: 9px 8px;
+  }
+
+  .arena-nameplate-name {
+    font-size: 0.9rem;
+  }
+
+  .arena-nameplate-metric {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 6px;
+    padding: 6px 7px;
+  }
+
+  .nameplate-metric-label {
+    font-size: 0.62rem;
+  }
+
+  .nameplate-metric-value {
+    font-size: 0.74rem;
+  }
+
+  .nameplate-metric-trend {
+    display: none;
+  }
+}
+
+.arena-battle-versus {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.arena-battle-btn {
+  padding: 18px 56px;
+  border-radius: 999px;
+  border: 3px solid var(--arena-neon-green);
+  background: linear-gradient(135deg, var(--arena-neon-green) 0%, rgba(0, 200, 100, 0.85) 100%);
+  font-family: var(--arena-font-display);
+  font-size: 1.4rem;
   font-weight: 900;
   font-variant-numeric: tabular-nums;
 }

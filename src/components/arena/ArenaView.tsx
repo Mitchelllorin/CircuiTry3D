@@ -323,34 +323,377 @@ export default function ArenaView({
     typeof onOpenBuilder === "function" && variant !== "workspace";
 
   return (
-    <section className={containerClassName}>
-      <ArenaScene
-        agents={agents}
-        activeAgentId={currentTurnAgentId}
-        highlight={highlight}
-        fuseResults={fuseResults}
-        winnerId={winnerId}
-        transitionPhase={transitionPhase}
-        variant={variant}
-        onExitTransitionComplete={handleExitComplete}
-      />
-      <ArenaOverlay
-        agents={agents}
-        battleLog={battleLog}
-        currentTurnAgentId={currentTurnAgentId}
-        environment={environment}
-        fuseResults={fuseResults}
-        onEnvironmentChange={setEnvironment}
-        onLoadCatalogComponent={handleLoadCatalogComponent}
-        onResetBattle={resetBattle}
-        onReturnToWorkspace={handleReturnToWorkspace}
-        onOpenBuilder={showOpenBuilderButton ? onOpenBuilder : undefined}
-        round={round}
-        sessionLabel={sessionPayload?.sessionName ?? "CircuiTry3D Arena"}
-        status={status}
-        transitionPhase={transitionPhase}
-        winnerName={winnerName}
-      />
-    </section>
+    <div
+      className={`arena-page${isEmbedded ? " arena-page--embedded" : ""}${isWorkspace ? " arena-page--workspace" : ""}`}
+    >
+      <header className="arena-header">
+        <div className="arena-header-left">
+          {!isEmbedded && !isWorkspace && (
+            <button className="arena-btn ghost" type="button" onClick={handleBackClick}>
+              ← Back
+            </button>
+          )}
+          <WordMark size="md" decorative />
+          <div className="arena-title-group">
+            <h1>Component Arena</h1>
+            <p>Test and compare components side-by-side</p>
+          </div>
+        </div>
+        <div className="arena-header-right">
+          {showOpenBuilderButton ? (
+            <button className="arena-btn outline" type="button" onClick={handleOpenBuilderClick}>
+              Open Builder
+            </button>
+          ) : null}
+        </div>
+      </header>
+
+      <div className={`arena-body${isWorkspace ? " arena-body--workspace-split" : ""}`}>
+
+        <section className="arena-import-section">
+          <div className="arena-card">
+            <div className="arena-card-header">
+              <h2>Import Components</h2>
+            </div>
+            <div style={{display: 'flex', gap: '12px', flexWrap: 'wrap'}}>
+              <button className="arena-btn solid" type="button" onClick={handleSyncFromStorage} disabled={importPending}>
+                Pull from Builder
+              </button>
+              <button className="arena-btn outline" type="button" onClick={handleClipboardImport} disabled={importPending}>
+                Paste from Clipboard
+              </button>
+              {sampleImports.map((sample) => (
+                <button
+                  key={sample.id}
+                  className="arena-btn ghost"
+                  type="button"
+                  onClick={() => handleSampleImport(sample.payload)}
+                  disabled={importPending}
+                >
+                  {sample.label}
+                </button>
+              ))}
+            </div>
+            {importError && <p className="arena-status-text arena-status-error" style={{marginTop: '12px'}}>{importError}</p>}
+            {recentImportSource && (
+              <p style={{marginTop: '12px', fontSize: '0.85rem', color: 'rgba(148, 163, 184, 0.9)'}}>Loaded: {recentImportSource}</p>
+            )}
+          </div>
+        </section>
+
+        <section className="arena-selectors-section">
+          <div className="arena-card">
+            <div className="arena-card-header">
+              <h2>Select Components for Testing</h2>
+            </div>
+            {componentProfiles.length > 0 ? (
+              <div className="arena-showdown-selects">
+                <label className="arena-showdown-select">
+                  <span className="arena-showdown-select-label">Component A</span>
+                  <select
+                    aria-label="Component A selection"
+                    value={componentAProfile?.uid ?? showdownSelection.left ?? ""}
+                    onChange={(event) =>
+                      setShowdownSelection((prev) => ({
+                        left: event.target.value || null,
+                        right: prev.right
+                      }))
+                    }
+                  >
+                    <option value="" disabled>
+                      {componentProfiles.length ? "Select component" : "No components"}
+                    </option>
+                    {componentOptions.map((option) => (
+                      <option key={option.uid} value={option.uid}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="arena-showdown-select">
+                  <span className="arena-showdown-select-label">Component B</span>
+                  <select
+                    aria-label="Component B selection"
+                    value={showdownSelection.right ?? ""}
+                    onChange={(event) =>
+                      setShowdownSelection((prev) => ({
+                        left: prev.left,
+                        right: event.target.value || null
+                      }))
+                    }
+                  >
+                    <option value="">Select component</option>
+                    {componentOptions.map((option) => (
+                      <option key={option.uid} value={option.uid}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+            ) : (
+              <p className="arena-empty">No components loaded. Use the import section above to load components.</p>
+            )}
+          </div>
+        </section>
+
+        <section className="arena-metrics-selector-section">
+          <div className="arena-card">
+            <div className="arena-card-header">
+              <h2>⚔️ Battle Metrics Selection</h2>
+              <p style={{fontSize: '0.85rem', color: 'rgba(148, 163, 184, 0.85)', margin: '8px 0 0 0'}}>
+                Choose which metrics to test in battle
+              </p>
+            </div>
+            <div className="arena-metric-toggles">
+              <button
+                className={`arena-metric-toggle${selectedMetrics.has("all") ? " active" : ""}`}
+                onClick={() => handleMetricToggle("all")}
+                type="button"
+              >
+                <span className="toggle-icon">✨</span>
+                <span className="toggle-label">ALL METRICS</span>
+              </button>
+              {TELEMETRY_PRESETS.map((preset) => (
+                <button
+                  key={preset.id}
+                  className={`arena-metric-toggle${selectedMetrics.has(preset.id) ? " active" : ""}`}
+                  onClick={() => handleMetricToggle(preset.id)}
+                  type="button"
+                >
+                  <span className="toggle-icon">{preset.icon}</span>
+                  <span className="toggle-label">{preset.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="arena-scenario-selector-section">
+          <div className="arena-card">
+            <div className="arena-card-header">
+              <h2>🌍 Environmental Test Scenario</h2>
+              <p style={{fontSize: '0.85rem', color: 'rgba(148, 163, 184, 0.85)', margin: '8px 0 0 0'}}>
+                Select environmental conditions to test components under different operating scenarios
+              </p>
+            </div>
+            <div className="arena-scenario-grid">
+              {ENVIRONMENTAL_SCENARIOS.map((scenario) => (
+                <button
+                  key={scenario.id}
+                  className={`arena-scenario-card${selectedScenario === scenario.id ? " active" : ""}`}
+                  onClick={() => setSelectedScenario(scenario.id)}
+                  type="button"
+                >
+                  <div className="scenario-icon">{scenario.icon}</div>
+                  <div className="scenario-name">{scenario.name}</div>
+                  <div className="scenario-description">{scenario.description}</div>
+                  <div className="scenario-conditions">
+                    {scenario.conditions.temperature !== undefined && (
+                      <span className="condition-badge">🌡️ {scenario.conditions.temperature}°C</span>
+                    )}
+                    {scenario.conditions.voltage !== undefined && (
+                      <span className="condition-badge">⚡ {scenario.conditions.voltage}%</span>
+                    )}
+                    {scenario.conditions.load !== undefined && (
+                      <span className="condition-badge">💪 {scenario.conditions.load}%</span>
+                    )}
+                  </div>
+                </button>
+              ))}
+            </div>
+            {selectedScenario !== "standard" && (
+              <div className="arena-scenario-active-notice">
+                <div className="notice-icon">{currentScenario.icon}</div>
+                <div className="notice-content">
+                  <div className="notice-title">Active Scenario: {currentScenario.name}</div>
+                  <div className="notice-description">{currentScenario.description}</div>
+                </div>
+              </div>
+            )}
+          </div>
+        </section>
+
+        <section className="arena-battle-section">
+          <div className="arena-card">
+            <div className="arena-card-header">
+              <h2>Battle Stats</h2>
+            </div>
+            {battleState === "complete" && battleScore && battleScore.totalRounds > 0 ? (
+              <div style={{display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', fontSize: '0.9rem'}}>
+                <div>
+                  <div style={{color: 'rgba(148, 163, 184, 0.8)', fontSize: '0.75rem', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.1em'}}>Battle Result (A)</div>
+                  <div style={{fontSize: '1.5rem', fontWeight: '600'}}>{formatShowdownRecord(battleScore.leftWins, battleScore.rightWins, battleScore.ties)}</div>
+                </div>
+                <div>
+                  <div style={{color: 'rgba(148, 163, 184, 0.8)', fontSize: '0.75rem', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.1em'}}>Total Rounds</div>
+                  <div style={{fontSize: '1.5rem', fontWeight: '600'}}>{battleScore.totalRounds}</div>
+                </div>
+                <div>
+                  <div style={{color: 'rgba(148, 163, 184, 0.8)', fontSize: '0.75rem', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.1em'}}>Battle Result (B)</div>
+                  <div style={{fontSize: '1.5rem', fontWeight: '600'}}>{formatShowdownRecord(battleScore.rightWins, battleScore.leftWins, battleScore.ties)}</div>
+                </div>
+              </div>
+            ) : hasShowdown ? (
+              <div style={{display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', fontSize: '0.9rem'}}>
+                <div>
+                  <div style={{color: 'rgba(148, 163, 184, 0.8)', fontSize: '0.75rem', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.1em'}}>Component A Record</div>
+                  <div style={{fontSize: '1.5rem', fontWeight: '600'}}>{leftRecord}</div>
+                </div>
+                <div>
+                  <div style={{color: 'rgba(148, 163, 184, 0.8)', fontSize: '0.75rem', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.1em'}}>Total Rounds</div>
+                  <div style={{fontSize: '1.5rem', fontWeight: '600'}}>{showdownScore.totalRounds}</div>
+                </div>
+                <div>
+                  <div style={{color: 'rgba(148, 163, 184, 0.8)', fontSize: '0.75rem', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.1em'}}>Component B Record</div>
+                  <div style={{fontSize: '1.5rem', fontWeight: '600'}}>{rightRecord}</div>
+                </div>
+              </div>
+            ) : (
+              <p className="arena-empty">Select two components above to see battle stats</p>
+            )}
+          </div>
+
+          <div className={`arena-battle-stage${battleState === "battling" ? " battling" : ""}${battleState === "complete" ? " battle-complete" : ""}`}>
+            {/* Battle Effects Overlay - Lightning, Sparks, Energy Waves */}
+            <div className="arena-battle-effects">
+              {/* Lightning Bolts */}
+              <div className="arena-lightning-container">
+                <svg className="arena-lightning-bolt bolt-1" viewBox="0 0 100 100" preserveAspectRatio="none">
+                  <path d="M45 5 L42 25 L48 28 L35 50 L43 52 L25 95" />
+                </svg>
+                <svg className="arena-lightning-bolt bolt-2" viewBox="0 0 100 100" preserveAspectRatio="none">
+                  <path d="M55 10 L58 30 L52 33 L65 55 L57 58 L75 90" />
+                </svg>
+                <svg className="arena-lightning-bolt bolt-3" viewBox="0 0 100 100" preserveAspectRatio="none">
+                  <path d="M50 0 L47 20 L53 22 L45 45 L52 47 L48 70 L55 72 L50 100" />
+                </svg>
+              </div>
+
+              {/* Electrical Arc along center divider */}
+              <div className="arena-electrical-arc" />
+
+              {/* Spark Particles */}
+              <div className="arena-sparks-container">
+                <div className="arena-spark" />
+                <div className="arena-spark" />
+                <div className="arena-spark" />
+                <div className="arena-spark" />
+                <div className="arena-spark" />
+                <div className="arena-spark" />
+                <div className="arena-spark" />
+                <div className="arena-spark" />
+              </div>
+
+              {/* Energy Wave Pulses */}
+              <div className="arena-energy-waves">
+                <div className="arena-energy-wave" />
+                <div className="arena-energy-wave" />
+                <div className="arena-energy-wave" />
+              </div>
+
+              {/* Screen Flash */}
+              <div className="arena-battle-flash" />
+
+              {/* Electric Crackle at top and bottom */}
+              <div className="arena-electric-crackle top">
+                <svg viewBox="0 0 100 40" preserveAspectRatio="none">
+                  <path d="M30 0 L35 15 L45 10 L50 25 L55 15 L65 20 L70 0" />
+                </svg>
+              </div>
+              <div className="arena-electric-crackle bottom">
+                <svg viewBox="0 0 100 40" preserveAspectRatio="none">
+                  <path d="M30 0 L35 15 L45 10 L50 25 L55 15 L65 20 L70 0" />
+                </svg>
+              </div>
+            </div>
+
+            {renderBattlePanel("left", {
+              profile: componentAProfile,
+              telemetry: componentATelemetry,
+              warnings: componentAWarnings,
+              highlightMetrics: leftHighlightMetrics,
+              opponentMetricMap: componentBMetricMap,
+              record: hasShowdown ? leftRecord : null,
+              isChampion: teamAChampion,
+              isTie: showdownTie,
+              tag: "Component A"
+            })}
+
+            <div className="arena-battle-overlay">
+              <div className="arena-toggle-controls">
+                <button
+                  className="arena-btn ghost small"
+                  type="button"
+                  onClick={() => setRotationEnabled((prev) => !prev)}
+                  title={rotationEnabled ? "Stop component rotation" : "Enable component rotation"}
+                >
+                  {rotationEnabled ? "Rotation: On" : "Rotation: Off"}
+                </button>
+                <button
+                  className="arena-btn ghost small"
+                  type="button"
+                  onClick={() => setVarianceEnabled((prev) => !prev)}
+                  title={varianceEnabled ? "Disable randomness (more repeatable)" : "Enable variance (more realistic)"}
+                >
+                  {varianceEnabled ? "Variance: On" : "Variance: Off"}
+                </button>
+              </div>
+              <button 
+                className={`arena-battle-btn${battleState === "battling" ? " battling" : ""}${battleState === "complete" ? " complete" : ""}`}
+                onClick={handleBattle}
+                disabled={battleState === "battling" || !componentAProfile || !componentBProfile}
+                type="button"
+              >
+                {battleState === "idle" ? "⚔️ BATTLE" : battleState === "battling" ? "TESTING..." : "BATTLE COMPLETE"}
+              </button>
+              
+              {battleState === "complete" && battleWinner && (
+                <div className="arena-winner-banner">
+                  <div className="winner-label">🏆 WINNER 🏆</div>
+                  <div className="winner-name">
+                    {battleWinner === "left" ? componentAProfile?.name : battleWinner === "right" ? componentBProfile?.name : "TIE"}
+                  </div>
+                  {battleScore && battleScore.totalRounds > 0 ? (
+                    <div style={{ fontSize: "0.8rem", color: "rgba(226, 232, 240, 0.9)", letterSpacing: "0.08em", textTransform: "uppercase" }}>
+                      {battleScore.leftWins}-{battleScore.rightWins}{battleScore.ties > 0 ? `-${battleScore.ties}` : ""} · {battleScore.totalRounds} metric{battleScore.totalRounds === 1 ? "" : "s"}
+                    </div>
+                  ) : null}
+                  <button className="arena-btn ghost small" onClick={handleResetBattle} type="button">Reset Battle</button>
+                </div>
+              )}
+            </div>
+
+            {renderBattlePanel("right", {
+              profile: componentBProfile,
+              telemetry: componentBTelemetry,
+              warnings: componentBWarnings,
+              highlightMetrics: rightHighlightMetrics,
+              opponentMetricMap: componentAMetricMap,
+              record: hasShowdown ? rightRecord : null,
+              isChampion: teamBChampion,
+              isTie: showdownTie,
+              tag: "Component B"
+            })}
+          </div>
+        </section>
+      </div>
+
+      <div className="arena-frame-wrapper" style={{display: 'none'}}>
+        <iframe
+          ref={iframeRef}
+          className="arena-frame"
+          title="Component Arena"
+          src="arena.html"
+          sandbox="allow-scripts allow-same-origin allow-popups"
+          onLoad={() => {
+            setFrameReady(true);
+            if (importPayload) {
+              sendArenaMessage({ type: "arena:import", payload: importPayload });
+            }
+          }}
+        />
+      </div>
+    </div>
   );
 }
