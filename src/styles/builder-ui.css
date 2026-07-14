@@ -1208,10 +1208,10 @@ body.builder-body::before {
   gap: 2px;
   min-width: 44px;
   padding: 4px 8px;
-  background: rgba(168, 216, 255, 0.1);
-  border: 1px solid var(--builder-border, rgba(168, 216, 255, 0.28));
-  border-radius: 16px;
-  color: var(--builder-text, #ecf4ff);
+  background: transparent;
+  border: none;
+  border-radius: 12px;
+  color: var(--builder-text, #e8f6ff);
   cursor: pointer;
   font-family: inherit;
   font-size: 10px;
@@ -1219,15 +1219,13 @@ body.builder-body::before {
   letter-spacing: 0.03em;
   transition:
     background 0.16s ease,
-    border-color 0.16s ease,
-    transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1),
+    transform 0.12s ease,
     box-shadow 0.16s ease;
   white-space: nowrap;
 }
 
 .quick-add-btn:hover:not(:disabled) {
-  background: rgba(168, 216, 255, 0.22);
-  border-color: var(--builder-border-strong, rgba(168, 216, 255, 0.45));
+  background: rgba(136, 204, 255, 0.15);
   transform: scale(1.06);
   box-shadow: 0 0 8px rgba(168, 216, 255, 0.2);
 }
@@ -1248,16 +1246,51 @@ body.builder-body::before {
 }
 
 .quick-add-btn--active {
-  background: rgba(168, 216, 255, 0.22);
-  border-color: var(--builder-cyan, #a8d8ff);
-  color: var(--builder-cyan, #a8d8ff);
-  box-shadow: 0 0 10px rgba(168, 216, 255, 0.28);
+  background: rgba(136, 204, 255, 0.18);
+  color: var(--builder-cyan, #88ccff);
+  box-shadow: 0 0 10px rgba(136, 204, 255, 0.28);
 }
 
 .quick-add-btn--active:hover:not(:disabled) {
-  background: rgba(168, 216, 255, 0.32);
-  border-color: var(--builder-cyan, #a8d8ff);
+  background: rgba(136, 204, 255, 0.28);
   color: #fff;
+}
+
+/* ── Junction quick-add button — visually prominent amber/yellow ─────────
+   The junction button gets a distinctive amber style so it stands out as
+   a critical circuit-building tool. A keyframe pulse draws the eye to it
+   and the bright colour matches the 3D junction sphere in the workspace. */
+.quick-add-btn--junction {
+  background: rgba(255, 170, 0, 0.14);
+  color: #ffe566;
+  animation: junction-btn-glow 2.8s ease-in-out infinite;
+}
+
+.quick-add-btn--junction .quick-add-btn-symbol {
+  /* symbol inherits transparent style */
+}
+
+.quick-add-btn--junction .quick-add-btn-label {
+  color: rgba(255, 220, 80, 0.9);
+}
+
+.quick-add-btn--junction:hover:not(:disabled) {
+  background: rgba(255, 190, 0, 0.28);
+  color: #fff8c0;
+  box-shadow: 0 0 20px rgba(255, 200, 0, 0.5);
+  animation: none;
+  transform: scale(1.08);
+}
+
+@keyframes junction-btn-glow {
+  0%, 100% {
+    box-shadow: 0 0 6px rgba(255, 190, 0, 0.2);
+    border-color: rgba(255, 200, 0, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 16px rgba(255, 210, 0, 0.5);
+    border-color: rgba(255, 220, 0, 0.85);
+  }
 }
 
 /* ── Junction info tip strip ─────────────────────────────────────────────
@@ -1389,8 +1422,6 @@ body.builder-body::before {
   height: 24px;
   flex-shrink: 0;
   overflow: hidden;
-  background: transparent;
-  border: none;
 }
 
 .quick-add-btn-symbol-svg {
