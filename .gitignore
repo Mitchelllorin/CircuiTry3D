@@ -47,12 +47,24 @@ promo-footage/
 # Environment files
 *.env
 *.env.*
-
-# Coverage reports
-coverage/
-
-# Claude Code private working notes (not app code)
-memory/
-
-# Local probe/screenshot scratch scripts
-/_*.mjs
+-e 
+# Environment files
+*.env
+*.env.*
+-e 
+# Environment files
+*.env
+*.env.*
+-e 
+# Environment files
+*.env
+*.env.*
+-e 
+# Environment and credential files
+.env
+.env.*
+*.env
+credentials.json
+*.pem
+*.key
+.credentials
