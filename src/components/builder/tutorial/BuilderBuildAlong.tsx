@@ -22,7 +22,8 @@ type AnimationType = "tap" | "long-press" | "drag" | "info";
 type BuildStep = {
   id: string;
   text: string;
-  cta?: string;
+  ctaLabel?: string;
+  ctaIcon?: string;
   animationType?: AnimationType;
   // CSS selector for the control this step is about — spotlit (blur everything
   // else) and ringed while the step is active.
@@ -55,13 +56,15 @@ const PAD = 8;
 const BUILD_STEPS: BuildStep[] = [
   {
     id: "intro",
-    cta: "🧭 Drag to look around",
+    ctaIcon: "🧭",
+    ctaLabel: "Drag to look around",
     animationType: "drag",
     text: "Now build one yourself — I'll guide every step. Drag the canvas any time to look around.",
   },
   {
     id: "battery",
-    cta: "👆 Tap Battery",
+    ctaIcon: "👆",
+    ctaLabel: "Tap Battery",
     animationType: "tap",
     text: "Tap Battery once to pick it up — it follows you as a ghost. Tap the grid to drop it. Now it's real.",
     target: '[data-tutorial-id="tutorial-add-battery"]',
@@ -70,19 +73,22 @@ const BUILD_STEPS: BuildStep[] = [
   },
   {
     id: "edit",
-    cta: "✋ Long press Battery",
+    ctaIcon: "✋",
+    ctaLabel: "Long press Battery",
     animationType: "long-press",
     text: "Long-press the battery to open its editor — change its voltage, and more.",
   },
   {
     id: "rotate",
-    cta: "↔ Drag + long press to rotate",
+    ctaIcon: "↔",
+    ctaLabel: "Drag + long press to rotate",
     animationType: "drag",
     text: "Drag a part to move it. Long-press and rotate to line its two terminals up with your layout.",
   },
   {
     id: "resistor",
-    cta: "👆 Tap Resistor",
+    ctaIcon: "👆",
+    ctaLabel: "Tap Resistor",
     animationType: "tap",
     text: "Same two taps: pick up a Resistor, then tap the grid. It limits how much current can flow.",
     target: '[data-tutorial-id="tutorial-add-resistor"]',
@@ -91,7 +97,8 @@ const BUILD_STEPS: BuildStep[] = [
   },
   {
     id: "lamp",
-    cta: "👆 Tap Light",
+    ctaIcon: "👆",
+    ctaLabel: "Tap Light",
     animationType: "tap",
     text: "Add a Light — it shows the power being used; it glows when current flows.",
     target: '[data-tutorial-id="tutorial-add-lamp"]',
@@ -100,7 +107,8 @@ const BUILD_STEPS: BuildStep[] = [
   },
   {
     id: "switch",
-    cta: "👆 Tap Switch",
+    ctaIcon: "👆",
+    ctaLabel: "Tap Switch",
     animationType: "tap",
     text: "Add a Switch — it opens and closes the circuit, like a tap on the current.",
     target: '[data-tutorial-id="tutorial-add-switch"]',
@@ -109,7 +117,8 @@ const BUILD_STEPS: BuildStep[] = [
   },
   {
     id: "wire",
-    cta: "👆 Tap Wire Tool",
+    ctaIcon: "👆",
+    ctaLabel: "Tap Wire Tool",
     animationType: "tap",
     text: "Tap the Wire tool, then connect the parts end to end into one complete circuit.",
     target: '[data-tutorial-id="tutorial-enable-wire"]',
@@ -117,21 +126,24 @@ const BUILD_STEPS: BuildStep[] = [
   },
   {
     id: "flow",
-    cta: "✅ Read W.I.R.E. metrics",
+    ctaIcon: "✅",
+    ctaLabel: "Read W.I.R.E. metrics",
     animationType: "info",
     text: "It's alive — current is flowing. Up top are the W.I.R.E. metrics: Watts, Amps, Ohms, Volts.",
     target: ".ticker-wire-fixed",
   },
   {
     id: "junction-intro",
-    cta: "👆 Tap Junction",
+    ctaIcon: "👆",
+    ctaLabel: "Tap Junction",
     animationType: "tap",
     text: "One part left to meet: the Junction ─●─. It's a solder node — the one place three or more wires can meet.",
     target: '[data-component-action="junction"]',
   },
   {
     id: "junction-place",
-    cta: "👆 Tap Junction, then split a wire",
+    ctaIcon: "👆",
+    ctaLabel: "Tap Junction, then split a wire",
     animationType: "tap",
     text: "Add a Junction, then tap a wire to split it. Current can now take two paths at once — that's a parallel circuit.",
     target: '[data-component-action="junction"]',
@@ -140,13 +152,15 @@ const BUILD_STEPS: BuildStep[] = [
   },
   {
     id: "junction-kcl",
-    cta: "✅ Understand the split",
+    ctaIcon: "✅",
+    ctaLabel: "Understand the split",
     animationType: "info",
     text: "Every amp that flows into a junction flows back out. Nothing is lost there — that's the law that makes parallel circuits solvable.",
   },
   {
     id: "done",
-    cta: "🎉 Go build freely",
+    ctaIcon: "🎉",
+    ctaLabel: "Go build freely",
     animationType: "info",
     text: "You built a working circuit. Next we'll cover the W.I.R.E. solving method and F.U.S.E. — but first, go play.",
   },
@@ -345,7 +359,16 @@ export function BuilderBuildAlong({
           </div>
         </div>
         <div className="builder-tutorial-body">
-          {current.cta && <div className="tutorial-cta-chip">{current.cta}</div>}
+          {current.ctaLabel && (
+            <div className="tutorial-cta-chip">
+              {current.ctaIcon && (
+                <span className="tutorial-cta-chip-icon" aria-hidden="true">
+                  {current.ctaIcon}
+                </span>
+              )}
+              <span>{current.ctaLabel}</span>
+            </div>
+          )}
           <p className="builder-tutorial-text">{current.text}</p>
         </div>
         {isLast ? (
