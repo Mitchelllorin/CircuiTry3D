@@ -26,6 +26,8 @@ import { CompactTroubleshootPanel } from "../components/builder/panels/CompactTr
 import { CompactGuidesPanel } from "../components/builder/panels/CompactGuidesPanel";
 import { WorkspaceModePanel } from "../components/builder/panels/WorkspaceModePanel";
 import { EnvironmentalPanel } from "../components/builder/panels/EnvironmentalPanel";
+import { TroubleshootPanel } from "../components/builder/panels/TroubleshootPanel";
+import { WireLibraryPanel } from "../components/builder/panels/WireLibraryPanel";
 import {
   type EnvironmentalScenario,
   getDefaultScenario,
@@ -56,6 +58,7 @@ import practiceProblems, {
   getRandomPracticeProblem,
 } from "../data/practiceProblems";
 import troubleshootingProblems, {
+  type TroubleshootingProblem,
   getAnalyzeCircuitResult,
   isTroubleshootingDiagnosisCorrect,
   isTroubleshootingSolved,
@@ -1023,6 +1026,7 @@ export default function Builder() {
   const [isWorkspacePanelOpen, setWorkspacePanelOpen] = useState(false);
   const [workspaceMode, setWorkspaceMode] = useState<WorkspaceMode>("build");
   const [isTroubleshootPanelOpen, setTroubleshootPanelOpen] = useState(false);
+  const pendingTroubleshootPresetRef = useRef<string | null>(null);
   const [activeTroubleshootId, setActiveTroubleshootId] = useState<string | null>(
     troubleshootingProblems[0]?.id ?? null,
   );
@@ -1284,91 +1288,62 @@ export default function Builder() {
     onCinematicVideo: handleCinematicVideo,
   });
 
-  // Push live scene-appearance settings (background, grid, current-flow speed)
-  // from the app Settings page into the 3D builder iframe. Fires whenever the
-  // relevant settings change or the iframe (re)becomes ready, so the scene always
-  // reflects the user's preferences.
-  const { settings: appSettings } = useAppSettings();
-  const appWorkspaceSettings = appSettings.workspace;
-  const appCurrentFlowSpeed = appSettings.simulation.currentFlowSpeed;
-  useEffect(() => {
-    if (!isFrameReady) {
-      return;
-    }
-    triggerBuilderAction("apply-scene-settings", {
-      bgBrightness: appWorkspaceSettings.bgBrightness,
-      bgHue: appWorkspaceSettings.bgHue,
-      gridBrightness: appWorkspaceSettings.gridBrightness,
-      gridLineWidth: appWorkspaceSettings.gridLineWidth,
-      gridHue: appWorkspaceSettings.gridHue,
-      // Map 0–100 → 0.3×–2.0× particle speed (50 = default 1.0×).
-      flowSpeedScale: 0.3 + (appCurrentFlowSpeed / 100) * 1.7,
-      translucentMenus: appWorkspaceSettings.translucentMenus,
-    });
-  }, [
-    isFrameReady,
-    appWorkspaceSettings,
-    appCurrentFlowSpeed,
-    triggerBuilderAction,
-  ]);
-
-  // See-through menus setting drives the React-side coach cards too (the iframe
-  // menus are handled via the apply-scene-settings bridge above). A body class
-  // keeps the CSS simple and applies regardless of where the card is portalled.
-  useEffect(() => {
-    document.body.classList.toggle(
-      "ct-opaque-menus",
-      !appWorkspaceSettings.translucentMenus,
-    );
-    return () => document.body.classList.remove("ct-opaque-menus");
-  }, [appWorkspaceSettings.translucentMenus]);
-
-  // Handle cinematic state updates from legacy.html (playing/recording status, waypoint count)
-  useEffect(() => {
-    const handleMessage = (event: MessageEvent) => {
-      if (!event.data || typeof event.data !== "object") return;
-      const { type, payload } = event.data as { type?: string; payload?: Record<string, unknown> };
-      if (type !== "legacy:cinematic-state" || !payload) return;
-      if (typeof payload.playing === "boolean") setCinematicIsPlaying(payload.playing);
-      if (typeof payload.recording === "boolean") setCinematicIsRecording(payload.recording);
-      if (typeof payload.keyframes === "number") setCinematicWaypointCount(payload.keyframes);
-      if (typeof payload.recordError === "string") {
-        setCinematicRecordError(payload.recordError);
-        // Auto-clear after 6 s so the error doesn't linger forever
-        setTimeout(() => setCinematicRecordError(null), 6000);
+  const queueOrLoadTroubleshootPreset = useCallback(
+    (preset: string) => {
+      if (!preset) return;
+      if (isFrameReady) {
+        triggerBuilderAction("load-preset", { preset });
+        return;
       }
-    };
-    window.addEventListener("message", handleMessage);
-    return () => window.removeEventListener("message", handleMessage);
-  }, []);
-
-  const openArenaWorkspace = useCallback(
-    (options?: { sessionName?: string; forceSync?: boolean }) => {
-      setWorkspaceModeWithGlobalSync("arena");
-      setPracticeWorkspaceMode(false);
-      setTroubleshootWorkspaceMode(false);
-      setTroubleshootPanelOpen(false);
-      setCompactWorksheetOpen(false);
-      setGuidesWorkspaceMode(false);
-      setGuidesPanelOpen(false);
-      setTroubleshootStatus(null);
-      setTroubleshootCheckPending(false);
-      setTroubleshootPendingCheckProblemId(null);
-      setCircuitLocked(false);
-      setEnvironmentalPanelOpen(false);
-      setActiveWorkspacePanelMode("arena");
-      setWorkspacePanelOpen(true);
-
-      const shouldSync =
-        options?.forceSync === true || arenaExportStatus !== "ready";
-      if (shouldSync) {
-        handleArenaSync({
-          openWindow: false,
-          sessionName: options?.sessionName,
-        });
-      }
+      pendingTroubleshootPresetRef.current = preset;
     },
-    [arenaExportStatus, handleArenaSync, setWorkspaceModeWithGlobalSync],
+    [isFrameReady, triggerBuilderAction],
+  );
+
+  useEffect(() => {
+    if (!isFrameReady) return;
+    const pendingPreset = pendingTroubleshootPresetRef.current;
+    if (!pendingPreset) return;
+    pendingTroubleshootPresetRef.current = null;
+    triggerBuilderAction("load-preset", { preset: pendingPreset });
+  }, [isFrameReady, triggerBuilderAction]);
+
+  const openTroubleshootProblem = useCallback(
+    (problem: TroubleshootingProblem) => {
+      setActiveTroubleshootId(problem.id);
+      setTroubleshootStatus(null);
+      queueOrLoadTroubleshootPreset(problem.preset);
+      setWorkspaceModeWithGlobalSync("troubleshoot");
+      setTroubleshootPanelOpen(true);
+      setCircuitLocked(false);
+      setPracticeWorkspaceMode(false);
+      setCompactWorksheetOpen(false);
+      setArenaPanelOpen(false);
+    },
+    [queueOrLoadTroubleshootPreset, setWorkspaceModeWithGlobalSync],
+  );
+
+  const enterTroubleshootMode = useCallback(
+    (problemOverride?: TroubleshootingProblem | null) => {
+      const fallbackProblem =
+        troubleshootingProblems.find((p) => p.id === activeTroubleshootId) ??
+        troubleshootingProblems[0] ??
+        null;
+      const targetProblem = problemOverride ?? fallbackProblem;
+
+      if (targetProblem) {
+        openTroubleshootProblem(targetProblem);
+        return;
+      }
+
+      setWorkspaceModeWithGlobalSync("troubleshoot");
+      setTroubleshootPanelOpen(true);
+      setCircuitLocked(false);
+      setPracticeWorkspaceMode(false);
+      setCompactWorksheetOpen(false);
+      setArenaPanelOpen(false);
+    },
+    [activeTroubleshootId, openTroubleshootProblem, setWorkspaceModeWithGlobalSync],
   );
 
   useEffect(() => {
@@ -1812,6 +1787,21 @@ export default function Builder() {
     };
   }, [setLeftMenuOpen, setRightMenuOpen, setBottomMenuOpen]);
 
+  useEffect(() => {
+    if (!isTroubleshootPanelOpen) {
+      return;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && isTroubleshootPanelOpen) {
+        exitTroubleshootMode();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [exitTroubleshootMode, isTroubleshootPanelOpen]);
+
   // Sync circuit lock state to the iframe
   useEffect(() => {
     if (!isFrameReady) {
@@ -1897,6 +1887,8 @@ export default function Builder() {
         setArenaPanelOpen(false);
         setTroubleshootPanelOpen(false);
       } else if (pendingMode === "practice") {
+        setTroubleshootPanelOpen(false);
+        setTroubleshootStatus(null);
         openPracticeWorkspace();
       } else if (pendingMode === "arena") {
         setWorkspaceMode("arena");
@@ -1910,41 +1902,22 @@ export default function Builder() {
         setTroubleshootPanelOpen(false);
         openHelpCenter("overview");
       } else if (pendingMode === "troubleshoot") {
-        setWorkspaceMode("troubleshoot");
-        setTroubleshootPanelOpen(true);
+        enterTroubleshootMode();
       }
 
       // Sync back to global context
       globalModeContext.setWorkspaceMode(pendingMode);
     }
-    const params = new URLSearchParams(window.location.search);
-    const assignmentType = params.get("assignmentType");
-    if (assignmentType === "circuit") {
-      try {
-        const raw = window.localStorage.getItem("circuiTry3d.pendingCircuitAssignment.v1");
-        if (raw) {
-          const parsed = JSON.parse(raw) as { template?: { state?: unknown } } | null;
-          const state = parsed?.template?.state;
-          if (state && typeof state === "object") {
-            triggerBuilderAction("load-circuit-state", { state });
-            return;
-          }
-        }
-      } catch {
-        // ignore
-      }
-      return;
-    }
-    const practiceProblemId = params.get("practiceProblemId");
-    if (!practiceProblemId) {
-      return;
-    }
-    const problem = findPracticeProblemById(practiceProblemId);
-    if (!problem) {
-      return;
-    }
-    openPracticeWorkspace(problem);
-  }, [isFrameReady, openPracticeWorkspace, triggerBuilderAction]);
+  }, [
+    globalModeContext.workspaceMode,
+    workspaceMode,
+    openPracticeWorkspace,
+    handleArenaSync,
+    openHelpCenter,
+    arenaExportStatus,
+    enterTroubleshootMode,
+    globalModeContext,
+  ]);
 
   const handlePracticeAction = useCallback(
     (action: PanelAction) => {
@@ -4581,30 +4554,95 @@ export default function Builder() {
         </div>
       </div>
 
-      {isSettingsPanelOpen && (
-        <CompactSettingsPanel
-          isOpen={isSettingsPanelOpen}
-          activeTab={activeSettingsPanelTab}
-          onToggle={() => setSettingsPanelOpen(false)}
-          onChangeTab={setActiveSettingsPanelTab}
-          logoSettings={logoSettings}
-          prefersReducedMotion={prefersReducedMotion}
-          onLogoSettingChange={handleLogoSettingChange}
-          onToggleLogoVisibility={toggleLogoVisibility}
-          onResetLogoSettings={resetLogoSettings}
-          skinOptions={workspaceSkinOptions}
-          activeSkinId={activeWorkspaceSkinId}
-          hasCustomSkin={hasCustomWorkspaceSkin}
-          customSkinName={customWorkspaceSkinName}
-          customSkinOpacity={customWorkspaceSkinOpacity}
-          workspaceSkinError={workspaceSkinError}
-          onSelectSkin={selectWorkspaceSkin}
-          onImportCustomSkin={importWorkspaceSkinFromFile}
-          onCustomSkinOpacityChange={setCustomWorkspaceSkinOpacity}
-          onClearCustomSkin={clearCustomWorkspaceSkin}
-          onResetWorkspaceSkin={resetWorkspaceSkin}
-        />
-      )}
+      <TroubleshootPanel
+        isOpen={isTroubleshootPanelOpen}
+        onClose={exitTroubleshootMode}
+        problems={troubleshootingProblems}
+        activeProblemId={activeTroubleshootId}
+        onChangeProblemId={(nextId) => {
+          if (!nextId) {
+            setActiveTroubleshootId(null);
+            setTroubleshootStatus(null);
+            return;
+          }
+          const next =
+            troubleshootingProblems.find((problem) => problem.id === nextId) ??
+            null;
+          if (next) {
+            openTroubleshootProblem(next);
+          }
+        }}
+        solvedIds={troubleshootSolvedIds}
+        status={troubleshootStatus}
+        isChecking={isTroubleshootCheckPending}
+        isFrameReady={isFrameReady}
+        onReset={() => {
+          if (!activeTroubleshootProblem) return;
+          queueOrLoadTroubleshootPreset(activeTroubleshootProblem.preset);
+          setCircuitLocked(false);
+          setTroubleshootStatus(
+            "Reset loaded. Fix the fault, then tap Check Fix.",
+          );
+        }}
+        onCheckFix={() => {
+          if (!activeTroubleshootProblem) return;
+          setTroubleshootStatus("Checking…");
+          setTroubleshootPendingCheckProblemId(activeTroubleshootProblem.id);
+          setTroubleshootCheckPending(true);
+          triggerBuilderAction("run-simulation");
+        }}
+        onNextProblem={() => {
+          if (!troubleshootingProblems.length) return;
+          const index = activeTroubleshootProblem
+            ? troubleshootingProblems.findIndex(
+                (p) => p.id === activeTroubleshootProblem.id,
+              )
+            : -1;
+          const next =
+            troubleshootingProblems[
+              (index + 1 + troubleshootingProblems.length) %
+                troubleshootingProblems.length
+            ] ??
+            troubleshootingProblems[0] ??
+            null;
+          if (!next) return;
+          openTroubleshootProblem(next);
+        }}
+      />
+
+      <div
+        className={`builder-panel-overlay builder-panel-overlay--logo-settings${isLogoSettingsOpen ? " open" : ""}`}
+        role="dialog"
+        aria-modal="true"
+        aria-hidden={!isLogoSettingsOpen}
+        onClick={() => setLogoSettingsOpen(false)}
+      >
+        <div
+          className="builder-panel builder-panel--logo-settings"
+          onClick={(event) => event.stopPropagation()}
+        >
+          <div className="builder-panel-brand" aria-hidden="true">
+            <BrandMark size="sm" decorative />
+          </div>
+          <button
+            type="button"
+            className="builder-panel-close"
+            onClick={() => setLogoSettingsOpen(false)}
+            aria-label="Close logo motion settings"
+          >
+            ×
+          </button>
+          <LogoSettingsModal
+            isOpen={isLogoSettingsOpen}
+            onToggle={() => setLogoSettingsOpen(!isLogoSettingsOpen)}
+            logoSettings={logoSettings}
+            prefersReducedMotion={prefersReducedMotion}
+            onLogoSettingChange={handleLogoSettingChange}
+            onToggleLogoVisibility={toggleLogoVisibility}
+            onResetLogoSettings={resetLogoSettings}
+          />
+        </div>
+      </div>
 
       {isPracticeWorkspaceMode && activePracticeProblemId && (
         <CompactWorksheetPanel
