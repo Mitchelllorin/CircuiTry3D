@@ -1,0 +1,1 @@
+web: cd backend && ./mvnw -Dmaven.multiModuleProjectDirectory=$PWD spring-boot:run
