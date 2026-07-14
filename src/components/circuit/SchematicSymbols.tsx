@@ -725,9 +725,11 @@ export const TransistorNPNSymbol: FC<SchematicSymbolProps> = ({
       <line x1={BJT_GEOMETRY.emitterBranchJoint.x} y1={BJT_GEOMETRY.emitterBranchJoint.y} x2={BJT_GEOMETRY.emitterLeadEnd.x} y2={BJT_GEOMETRY.emitterLeadEnd.y} stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
 
       <polygon
-        points={arrowPoints}
+        points="10,20 4,20 8,14"
         fill={color}
-        stroke="none"
+        stroke={color}
+        strokeWidth={strokeWidth * 0.5}
+        strokeLinejoin="round"
       />
 
       {showLabel && label && (
@@ -788,9 +790,11 @@ export const TransistorPNPSymbol: FC<SchematicSymbolProps> = ({
 
       {/* PNP arrow points inward (toward base/emitter junction) */}
       <polygon
-        points={arrowPoints}
+        points="-3,11 0,17 4,12"
         fill={color}
-        stroke="none"
+        stroke={color}
+        strokeWidth={strokeWidth * 0.5}
+        strokeLinejoin="round"
       />
 
       {showLabel && label && (
@@ -915,12 +919,11 @@ export const InductorSymbol: FC<SchematicSymbolProps> = ({
     <g transform={transform}>
       <line x1="-30" y1="0" x2="-24" y2="0" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
       <path
-        d="M-24,0 Q-21,-10 -18,0 Q-15,10 -12,0 Q-9,-10 -6,0 Q-3,10 0,0 Q3,-10 6,0 Q9,10 12,0 Q15,-10 18,0 Q21,10 24,0"
+        d="M-24,0 Q-20,-10 -16,0 Q-12,10 -8,0 Q-4,-10 0,0 Q4,10 8,0 Q12,-10 16,0 Q20,10 24,0"
         stroke={color}
         strokeWidth={strokeWidth}
         fill="none"
         strokeLinecap="round"
-        strokeLinejoin="round"
       />
       <line x1="24" y1="0" x2="30" y2="0" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
       {showLabel && label && (
