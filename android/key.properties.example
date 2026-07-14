@@ -1,17 +1,25 @@
-# Android signing configuration — DO NOT commit the real file to git (it is in .gitignore).
-# Copy this file to android/key.properties and fill in your actual values.
+## Android release signing configuration (EXAMPLE)
+#
+# Copy this file to `android/key.properties` (which is gitignored) and fill
+# in your real values.
+#
+# IMPORTANT:
+# - Never commit `android/key.properties`
+# - Never commit your `.keystore` / `.jks` file
+# - Prefer injecting these via CI secrets / environment variables for builds
+#
+# See also: `android/app/build.gradle` for supported environment variables.
 
-# Password that protects the .jks keystore file
-storePassword=your-store-password
+# Password used to protect the keystore file:
+storePassword=REPLACE_ME
 
-# Password that protects the specific key inside the keystore
-# (usually the same as storePassword for upload keys)
-keyPassword=your-key-password
+# Password used to protect the private key within the keystore:
+keyPassword=REPLACE_ME
 
-# The alias name of the key inside the keystore
-# The committed new-upload-key.jks uses: circuitry3d-upload-reset
-keyAlias=circuitry3d-upload-reset
+# Alias name for the key within the keystore:
+keyAlias=REPLACE_ME
 
-# Path to the keystore file, relative to android/app/
-# Copy new-upload-key.jks (repo root) to android/app/keystore/upload-key.jks
-storeFile=keystore/upload-key.jks
+# Path to the keystore file (relative to android/app, or absolute):
+# Example: keystore/my-release-key.keystore
+storeFile=keystore/REPLACE_ME.keystore
+

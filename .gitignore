@@ -21,11 +21,9 @@ android/.idea/
 *.aab
 circuitry3d-release.aab
 
-# Android signing (never commit)
+# Android signing (never commit signing keys/credentials)
+android/app/keystore/
 android/key.properties
-android/app/keystore/*.keystore
-android/app/keystore/*.jks
-android/app/keystore/*.p12
 
 # Keystore and signing secrets (never commit)
 *.jks
