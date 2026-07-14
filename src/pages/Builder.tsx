@@ -1,4 +1,4 @@
-import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type FocusEvent } from "react";
 import "../styles/builder-ui.css";
 import "../styles/schematic.css";
 import ArenaView from "../components/arena/ArenaView";
@@ -1309,14 +1309,67 @@ export default function Builder() {
   const [isFrameReady, setFrameReady] = useState(false);
   const [bottomPanelHeight, setBottomPanelHeight] = useState(0);
   const [viewportHeight, setViewportHeight] = useState(() => (typeof window !== "undefined" ? window.innerHeight : 0));
-  const [isLeftOpen, setLeftOpen] = useState(false);
+  const [isComponentRailPinned, setComponentRailPinned] = useState(false);
+  const [isComponentRailPeeked, setComponentRailPeeked] = useState(false);
   const [isRightOpen, setRightOpen] = useState(false);
   const [isBottomOpen, setBottomOpen] = useState(false);
   const [isHelpOpen, setHelpOpen] = useState(false);
   const [requestedHelpSection, setRequestedHelpSection] = useState<string | null>(null);
-  const [isLeftMenuOpen, setLeftMenuOpen] = useState(false);
-  const [isRightMenuOpen, setRightMenuOpen] = useState(false);
-  const [isBottomMenuOpen, setBottomMenuOpen] = useState(false);
+  const hasShownInitialRailPeek = useRef(false);
+  useEffect(() => {
+    if (typeof window === "undefined" || isComponentRailPinned || hasShownInitialRailPeek.current) {
+      return;
+    }
+
+    hasShownInitialRailPeek.current = true;
+    setComponentRailPeeked(true);
+
+    const timeout = window.setTimeout(() => {
+      setComponentRailPeeked(false);
+    }, 1600);
+
+    return () => window.clearTimeout(timeout);
+  }, [isComponentRailPinned]);
+
+  const handleComponentRailFocus = useCallback(() => {
+    if (isComponentRailPinned) {
+      return;
+    }
+
+    setComponentRailPeeked(true);
+  }, [isComponentRailPinned]);
+
+  const handleComponentRailPointerEnter = useCallback(() => {
+    if (isComponentRailPinned) {
+      return;
+    }
+
+    setComponentRailPeeked(true);
+  }, [isComponentRailPinned]);
+
+  const handleComponentRailPointerLeave = useCallback(() => {
+    if (isComponentRailPinned) {
+      return;
+    }
+
+    setComponentRailPeeked(false);
+  }, [isComponentRailPinned]);
+
+  const handleComponentRailBlur = useCallback(
+    (event: FocusEvent<HTMLElement>) => {
+      if (isComponentRailPinned) {
+        return;
+      }
+
+      const nextFocus = event.relatedTarget as Node | null;
+      if (!event.currentTarget.contains(nextFocus)) {
+        setComponentRailPeeked(false);
+      }
+    },
+    [isComponentRailPinned]
+  );
+
+  const isComponentRailOpen = isComponentRailPinned || isComponentRailPeeked;
 
   useEffect(() => {
     try {
@@ -1872,16 +1925,44 @@ export default function Builder() {
         </div>
       </div>
 
-      <nav
-        id="builder-menu-left"
-        className={`builder-menu builder-menu-left ${isLeftMenuOpen ? "open" : "collapsed"}`}
-        role="navigation"
-        aria-label="Component and wiring controls"
+      <aside
+        className={[
+          "builder-panel",
+          "panel-left",
+          "rail",
+          isComponentRailPinned ? "pinned" : "peek",
+          isComponentRailOpen ? "open" : "",
+        ]
+          .filter(Boolean)
+          .join(" ")}
+        aria-hidden={false}
+        aria-expanded={isComponentRailOpen}
+        onPointerEnter={handleComponentRailPointerEnter}
+        onPointerLeave={handleComponentRailPointerLeave}
+        onFocusCapture={handleComponentRailFocus}
+        onBlurCapture={handleComponentRailBlur}
       >
-        <div className="builder-menu-scroll" aria-hidden={!isLeftMenuOpen}>
-          <div className="slider-section">
-            <span className="slider-heading">Parts</span>
-            <div className="slider-stack">
+        <div className="panel-content">
+          <div className="panel-header">
+            <div className="panel-header-top">
+              <span className="panel-title">Component Library</span>
+              <button
+                type="button"
+                className="panel-pin-btn"
+                aria-pressed={isComponentRailPinned}
+                onClick={() => {
+                  setComponentRailPinned((prev) => !prev);
+                  setComponentRailPeeked(true);
+                }}
+                title={isComponentRailPinned ? "Unpin component rail" : "Pin component rail"}
+              >
+                {isComponentRailPinned ? "Unpin" : "Pin"}
+              </button>
+            </div>
+            <p className="panel-subtitle">Tap to add parts directly into the workspace.</p>
+          </div>
+          <div className="panel-section component-section">
+            <div className="component-grid">
               {COMPONENT_ACTIONS.map((component) => (
                 <button
                   key={component.id}
@@ -1890,6 +1971,7 @@ export default function Builder() {
                   onClick={() => handleComponentAction(component)}
                   disabled={controlsDisabled}
                   aria-disabled={controlsDisabled}
+                  aria-label={component.label}
                   title={controlsDisabled ? controlDisabledTitle : component.label}
                   data-component-action={component.action}
                   tabIndex={isLeftMenuOpen ? 0 : -1}
@@ -2472,7 +2554,62 @@ export default function Builder() {
               </div>
             </div>
           </div>
-        </nav>
+          <div className="panel-section">
+            <p className="section-title">Help &amp; Guides</p>
+            <div className="tool-buttons">
+              {LEGACY_HELP_ACTIONS.map((action) => (
+                <button
+                  key={action.id}
+                  type="button"
+                  className="tool-btn"
+                  onClick={() => triggerLegacyAction(action.action, action.data)}
+                  disabled={controlsDisabled}
+                  aria-disabled={controlsDisabled}
+                  title={controlsDisabled ? controlDisabledTitle : action.description}
+                >
+                  <span className="tool-label">{action.label}</span>
+                  <span className="tool-description">{action.description}</span>
+                </button>
+              ))}
+            </div>
+            <div className="help-shortcut-grid">
+              {HELP_SHORTCUTS.map((shortcut) => (
+                <button
+                  key={shortcut.id}
+                  type="button"
+                  className="help-shortcut"
+                  onClick={() => openHelpSection(shortcut.title)}
+                >
+                  <span className="help-shortcut-title">{shortcut.title}</span>
+                  <span className="help-shortcut-summary">{shortcut.summary}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <button
+        type="button"
+        className="builder-panel-toggle toggle-right"
+        aria-label="Toggle properties panel"
+        onClick={() => setRightOpen((prev) => !prev)}
+      >
+        {isRightOpen ? ">" : "<"}
+      </button>
+
+      <button
+        type="button"
+        className="builder-panel-toggle toggle-bottom"
+        aria-label="Toggle analysis panel"
+        onClick={() => setBottomOpen((prev) => !prev)}
+      >
+        {isBottomOpen ? "v" : "^"}
+      </button>
+
+      <div className="builder-status-bar">
+        <span className="status-indicator" aria-hidden="true" />
+        {isFrameReady ? "Workspace ready?tap and drag to build." : "Loading workspace?"}
       </div>
 
       <div className="builder-quick-slider builder-quick-slider-bottom" role="group" aria-label="Quick analysis and practice controls">
