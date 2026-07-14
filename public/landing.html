@@ -383,8 +383,33 @@
       gap: 6px;
       filter: drop-shadow(0 0 22px rgba(40,255,190,0.4));
     }
-    .zoom-label {
-      font-size: clamp(0.55rem, 1.4vw, 0.72rem);
+    .wordmark span { display: inline-block; }
+    .wordmark .brand-blue {
+      color: #88ccff;
+      text-shadow: 0 0 18px rgba(136, 204, 255, 0.7), 0 0 34px rgba(136, 204, 255, 0.55);
+    }
+    .wordmark .brand-orange {
+      color: #ff8844;
+      text-shadow: 0 0 16px rgba(255, 136, 68, 0.65), 0 0 30px rgba(255, 136, 68, 0.55);
+    }
+    .wordmark .brand-green {
+      color: #00ff88;
+      text-shadow: 0 0 18px rgba(0, 255, 136, 0.7), 0 0 34px rgba(0, 255, 136, 0.55);
+    }
+    .logo-mark {
+      width: clamp(280px, 56vw, 480px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      filter: drop-shadow(0 0 18px rgba(0, 255, 136, 0.45));
+    }
+    .logo-mark img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+    .subtitle {
+      color: #9db8ff;
       font-weight: 700;
       letter-spacing: 0.1em;
       text-transform: uppercase;

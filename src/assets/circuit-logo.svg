@@ -2,25 +2,16 @@
      width="512" height="512" viewBox="0 0 512 512"
      role="img" aria-label="CircuiTry3D Logo - Series Circuit">
   <defs>
-    <!-- ── Background gradient ── -->
-    <radialGradient id="bg" cx="50%" cy="50%" r="64%">
-      <stop offset="0%" stop-color="#1e293b"/>
-      <stop offset="100%" stop-color="#0f172a"/>
-    </radialGradient>
-
-    <!-- ── Workspace grid overlay ── -->
-    <pattern id="grid-fine" width="16" height="16" patternUnits="userSpaceOnUse">
-      <path d="M 16 0 L 0 0 0 16" fill="none" stroke="#0a0a1a" stroke-width="0.5"/>
-    </pattern>
-    <pattern id="grid-coarse" width="32" height="32" patternUnits="userSpaceOnUse">
-      <rect width="32" height="32" fill="url(#grid-fine)"/>
-      <path d="M 32 0 L 0 0 0 32" fill="none" stroke="#111122" stroke-width="1"/>
-    </pattern>
-
-    <!-- ── Circuit glow ── -->
-    <filter id="circuitGlow" x="0" y="0" width="512" height="512"
-            filterUnits="userSpaceOnUse">
-      <feGaussianBlur stdDeviation="4" result="blur"/>
+    <linearGradient id="wireGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#00ff88;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#00ff88;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="componentGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#ff8844;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#ff8844;stop-opacity:1" />
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
       <feMerge>
         <feMergeNode in="blur"/>
         <feMergeNode in="SourceGraphic"/>
@@ -71,72 +62,27 @@
   <rect width="512" height="512" fill="url(#bg)"/>
   <rect width="512" height="512" fill="url(#grid-coarse)"/>
 
-  <!-- ── WIRES ── -->
-  <!-- TOP: left lead (TL → R1 start) -->
-  <line x1="56" y1="98" x2="152" y2="98"
-        stroke="#00ff88" stroke-width="6" stroke-linecap="round"
-        filter="url(#circuitGlow)"/>
-  <!-- TOP: right lead (R1 end → TR) -->
-  <line x1="360" y1="98" x2="456" y2="98"
-        stroke="#00ff88" stroke-width="6" stroke-linecap="round"
-        filter="url(#circuitGlow)"/>
-  <!-- RIGHT: top lead (TR → R2 start) -->
-  <line x1="456" y1="98" x2="456" y2="182"
-        stroke="#00ff88" stroke-width="6" stroke-linecap="round"
-        filter="url(#circuitGlow)"/>
-  <!-- RIGHT: bottom lead (R2 end → BR) -->
-  <line x1="456" y1="330" x2="456" y2="414"
-        stroke="#00ff88" stroke-width="6" stroke-linecap="round"
-        filter="url(#circuitGlow)"/>
-  <!-- BOTTOM: right lead (BR → R3 start) -->
-  <line x1="456" y1="414" x2="360" y2="414"
-        stroke="#00ff88" stroke-width="6" stroke-linecap="round"
-        filter="url(#circuitGlow)"/>
-  <!-- BOTTOM: left lead (R3 end → BL) -->
-  <line x1="152" y1="414" x2="56" y2="414"
-        stroke="#00ff88" stroke-width="6" stroke-linecap="round"
-        filter="url(#circuitGlow)"/>
-  <!-- LEFT: upper wire (TL → battery + plate) -->
-  <line x1="56" y1="98" x2="56" y2="244"
-        stroke="#00ff88" stroke-width="6" stroke-linecap="round"
-        filter="url(#circuitGlow)"/>
-  <!-- LEFT: lower wire (battery − plate → BL) -->
-  <line x1="56" y1="268" x2="56" y2="414"
-        stroke="#00ff88" stroke-width="6" stroke-linecap="round"
-        filter="url(#circuitGlow)"/>
+    <!-- Wire from bottom junction to battery negative terminal -->
+    <line x1="55" y1="115" x2="55" y2="95" stroke="url(#wireGradient)" strokeWidth="3.5" />
 
-    <!-- Battery symbol and polarity markers are brand-critical; do not remove without explicit instruction. -->
-    <g transform="translate(55, 80)" data-battery="true" data-polarity="true">
-      <line x1="-18" y1="-12" x2="18" y2="-12" stroke="url(#componentGradient)" strokeWidth="4" />
-      <line x1="-12" y1="12" x2="12" y2="12" stroke="url(#componentGradient)" strokeWidth="2.8" />
-      <g stroke="#00ff88" strokeWidth="2.4" strokeLinecap="round">
-        <line x1="-36" y1="-12" x2="-20" y2="-12" />
-        <line x1="-28" y1="-20" x2="-28" y2="-4" />
-      </g>
-      <g stroke="#88ccff" strokeWidth="2.4" strokeLinecap="round">
-        <line x1="-36" y1="12" x2="-20" y2="12" />
-      </g>
+    <!-- Standard two-line battery symbol (vertical orientation) -->
+    <!-- Positive terminal (longer line) on top, negative (shorter line) on bottom -->
+    <g transform="translate(55, 80)">
+      <!-- Positive plate (longer line at top) -->
+      <line x1="-12" y1="-8" x2="12" y2="-8" stroke="url(#componentGradient)" strokeWidth="3.5" />
+      <!-- Negative plate (shorter line at bottom) -->
+      <line x1="-7" y1="8" x2="7" y2="8" stroke="url(#componentGradient)" strokeWidth="2.5" />
+      <!-- Vertical connection lines (battery body) -->
+      <line x1="0" y1="-8" x2="0" y2="-15" stroke="url(#wireGradient)" strokeWidth="3.5" />
+      <line x1="0" y1="8" x2="0" y2="15" stroke="url(#wireGradient)" strokeWidth="3.5" />
     </g>
 
-  <!-- ── BATTERY ── -->
-  <!-- + plate (wide) -->
-  <line x1="33" y1="244" x2="79" y2="244"
-        stroke="#ff2b2b" stroke-width="13" stroke-linecap="square"/>
-  <!-- − plate (narrow) -->
-  <line x1="43" y1="268" x2="69" y2="268"
-        stroke="#ff2b2b" stroke-width="7" stroke-linecap="square"/>
-  <!-- Polarity markers -->
-  <text x="20" y="248" text-anchor="middle"
-        font-family="sans-serif" font-size="20" font-weight="700"
-        fill="#ff6b6b">+</text>
-  <text x="20" y="274" text-anchor="middle"
-        font-family="sans-serif" font-size="20" font-weight="700"
-        fill="#ff6b6b">−</text>
-  <!-- Voltage label -->
-  <text x="80" y="274" text-anchor="start"
-        font-family="system-ui, -apple-system, sans-serif" font-size="18" font-weight="700"
-        fill="#ff2b2b"
-        stroke="#050b1f" stroke-width="1.5" paint-order="stroke fill">12V</text>
+    <!-- Polarity markers: + above battery, - below battery -->
+    <text x="70" y="62" fontSize="12" fill="#00ff88" fontWeight="bold" textAnchor="middle">+</text>
+    <text x="70" y="103" fontSize="12" fill="#ff6666" fontWeight="bold" textAnchor="middle">−</text>
+
+    <!-- Wire from battery positive terminal to top junction -->
+    <line x1="55" y1="65" x2="55" y2="50" stroke="url(#wireGradient)" strokeWidth="3.5" />
 
     <line x1="55" y1="50" x2="100" y2="50" stroke="url(#wireGradient)" strokeWidth="3.5" />
 
@@ -192,25 +138,12 @@
         fill="#ff2b2b" font-weight="800" text-anchor="start"
         stroke="#050b1f" stroke-width="1.5" paint-order="stroke fill">?</text>
 
-  <!-- ── CURRENT INDICATORS ── -->
-  <!-- Top-left 5A -->
-  <path d="M 91,157 L 91,115 L 137,115"
-        fill="none" stroke="#ffffff" stroke-width="2.5"
-        stroke-linecap="round" stroke-linejoin="round"
-        marker-end="url(#arrowCurrent)"/>
-  <text x="99" y="149"
-        font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="700"
-        fill="#ffffff"
-        stroke="#050b1f" stroke-width="1.5" paint-order="stroke fill">5A</text>
-  <!-- Bottom-right 5A -->
-  <path d="M 421,360 L 421,403 L 374,403"
-        fill="none" stroke="#ffffff" stroke-width="2.5"
-        stroke-linecap="round" stroke-linejoin="round"
-        marker-end="url(#arrowCurrent)"/>
-  <text x="381" y="382"
-        font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="700"
-        fill="#ffffff"
-        stroke="#050b1f" stroke-width="1.5" paint-order="stroke fill">5A</text>
+  <g fontFamily="system-ui, -apple-system, sans-serif" fontSize="9" fill="#88ccff" textAnchor="middle" fontWeight="600">
+    <text x="30" y="83">9V</text>
+    <text x="130" y="35">R₁ = 3 kΩ</text>
+    <text x="225" y="105">R₂ = 10 kΩ</text>
+    <text x="125" y="172">R₃ = ? kΩ</text>
+  </g>
 
   <!-- ── ANIMATED PHOTONS (two particles with comet tails) ── -->
   <g aria-hidden="true" filter="url(#photonGlow)">
