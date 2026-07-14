@@ -152,6 +152,17 @@ npm test
 npm run test:watch
 ```
 
+### Maintenance automation commands
+
+```bash
+# Regenerate screenshots + component shots + promo footage locally
+# (requires npm run preview running at http://localhost:4173)
+npm run content:refresh:local
+
+# Run visual smoke checks against key routes
+SMOKE_OUTPUT_DIR=/tmp/ct3d-visual-smoke npm run smoke:visual
+```
+
 ---
 
 ## 🔐 Environment Variables
