@@ -183,10 +183,10 @@ jobs:
       - name: Ensure Gradle wrapper executable
         run: chmod +x android/gradlew
 
-      - name: Build Android Release (AAB)
+      - name: Build Android Release (AAB + APK)
         run: |
           cd android
-          ./gradlew clean bundleRelease -PversionCode="${{ env.VERSION_CODE }}" -PversionName="${{ env.VERSION_NAME }}" --stacktrace --no-build-cache --no-configuration-cache
+          ./gradlew clean bundleRelease assembleRelease -PversionCode="${{ env.VERSION_CODE }}" -PversionName="${{ env.VERSION_NAME }}" --stacktrace --no-build-cache --no-configuration-cache
 
       - name: Collect build outputs into release folder
         shell: bash
@@ -196,6 +196,13 @@ jobs:
           mkdir -p "${RELEASE_DIR}"
           cp android/app/build/outputs/bundle/release/app-release.aab \
              "${RELEASE_DIR}/CircuiTry3D-v${{ env.VERSION_NAME }}.aab"
+          RELEASE_APK="android/app/build/outputs/apk/release/app-release.apk"
+          if [ ! -f "${RELEASE_APK}" ]; then
+            echo "::warning::Signed release APK not found; falling back to unsigned APK artifact."
+            RELEASE_APK="android/app/build/outputs/apk/release/app-release-unsigned.apk"
+          fi
+          cp "${RELEASE_APK}" \
+             "${RELEASE_DIR}/CircuiTry3D-v${{ env.VERSION_NAME }}.apk"
           cp android/app/build/outputs/mapping/release/mapping.txt \
              "${RELEASE_DIR}/mapping.txt" \
              || echo "::warning::Mapping file not found — skipping"
