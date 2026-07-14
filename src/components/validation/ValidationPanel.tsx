@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import type { ValidationResult, ValidationIssue, ValidationSeverity } from '../../sim/circuitValidator';
+import type { ValidationResult, ValidationIssue } from '../../sim/circuitValidator';
 import { getSeverityIcon, getSeverityLabel, getValidationSummary } from '../../sim/circuitValidator';
 import './ValidationPanel.css';
 

@@ -37,7 +37,6 @@ import ResistorColorCode from "../components/practice/ResistorColorCode";
 import { ProgressDashboard } from "../components/gamification/ProgressDashboard";
 import CircuitGamesPanel from "../components/gamification/CircuitGamesPanel";
 import { useGamification } from "../context/GamificationContext";
-import { PracticeViewport } from "./SchematicMode";
 import { useAdaptivePractice } from "../hooks/practice/useAdaptivePractice";
 import {
   DEFAULT_SYMBOL_STANDARD,

@@ -68,7 +68,6 @@ import troubleshootingProblems, {
 import type { WireSpec } from "../data/wireLibrary";
 import type { PracticeProblem } from "../model/practice";
 import type {
-  BuilderInvokeAction,
   ComponentAction,
   BuilderToolId,
   WorkspaceMode,
@@ -78,8 +77,7 @@ import type {
   QuickAction,
   HelpSection,
   HelpModalView,
-  SettingsItem,
-  LogoNumericSettingKey,
+  PanelAction,
   PracticeWorksheetStatus,
   PanelAction,
 } from "../components/builder/types";
@@ -108,80 +106,7 @@ import {
 import { IS_DEMO_MODE, DEMO_COMPONENT_IDS } from "../utils/demoMode";
 import { isAndroidApp } from "../utils/playStoreBilling";
 import { useComponent3DThumbnail } from "../components/builder/toolbars/useComponent3DThumbnail";
-import wireStrippersIcon from "../assets/wire-strippers-icon.svg";
-import PricingSection from "../components/PricingSection";
-import SubscriptionSection from "../components/SubscriptionSection";
-import Community from "./Community";
-import Gallery from "./Gallery";
-import Account from "./Account";
-import Classroom from "./Classroom";
-import Arcade from "./Arcade";
-import Settings from "./Settings";
-import Textbook from "./Textbook";
-import WireLibrary from "../components/practice/WireLibrary";
-import { AIHelperPanel } from "../components/builder/AIHelperPanel";
-import { CircuitExplainPanel } from "../components/builder/CircuitExplainPanel";
-import { CinematicPanel } from "../components/builder/panels/CinematicPanel";
-import type { CinematicPreset } from "../components/builder/panels/CinematicPanel";
-import { useGallery } from "../context/GalleryContext";
-import { useAppSettings } from "../context/AppSettingsContext";
-import type { CinematicFramePayload, CinematicVideoPayload } from "../hooks/builder/useBuilderFrame";
-import "../styles/cinematic.css";
-import "../styles/circuit-explain.css";
-import "../styles/scroller-menu.css";
-import { ScrollerMenu } from "../components/builder/ScrollerMenu";
-import { InsightsFilmReel } from "../components/builder/InsightsFilmReel";
-import CurrentFlowAnimation from '../components/CurrentFlowAnimation';
-
-type WorkspacePanelMode =
-  | "arena"
-  | "arcade"
-  | "classroom"
-  | "community"
-  | "account"
-  | "pricing"
-  | "wire-guide"
-  | "textbook"
-  | "gallery"
-  | "settings";
-
-const DEFAULT_WIRE_SEGMENT_RESISTANCE_OHM = 0.01;
-
-const toWireProfileBridgePayload = (wireProfile: WireSpec | null) => {
-  if (!wireProfile) {
-    return null;
-  }
-
-  return {
-    id: wireProfile.id,
-    gaugeLabel: wireProfile.gaugeLabel,
-    // Conductor material ID (e.g. "annealedCopper", "nichrome80") — used by FUSE™ for
-    // material-aware failure detection (resistance vs. conductor category)
-    conductorMaterial: wireProfile.material,
-    materialLabel: wireProfile.materialLabel,
-    // Conductor thermal conductivity (W/m·K) — used in the FUSE™ thermal model to
-    // scale heat retention for low-conductivity resistance alloys vs. copper
-    conductorThermalConductivityWPerMK: wireProfile.thermalConductivityWPerMK,
-    insulationLabel: wireProfile.insulationLabel,
-    // Conductor bare diameter (mm) — drives 3D tube radius scaling
-    diameterMm: wireProfile.diameterMm,
-    // Insulation class ID (e.g. "pvc80", "xlpe125") — drives jacket color, thickness, FUSE thermal limit
-    insulationClass: wireProfile.insulationClass,
-    // Max continuous operating temperature from the insulation class (°C)
-    insulationMaxTempC: wireProfile.maxTemperatureC,
-    maxTemperatureC: wireProfile.maxTemperatureC,
-    resistanceOhmPerMeter: wireProfile.resistanceOhmPerMeter,
-    ampacityBundleA: wireProfile.ampacityBundleA,
-    ampacityChassisA: wireProfile.ampacityChassisA,
-    maxVoltageV: wireProfile.maxVoltageV,
-  };
-};
-
-const DEFAULT_WIRE_ID = "awg-18-cu-pvc105";
-const resolveInitialWireId = (): string =>
-  WIRE_LIBRARY.find((wire) => wire.id === DEFAULT_WIRE_ID)?.id ??
-  WIRE_LIBRARY[0]?.id ??
-  DEFAULT_WIRE_ID;
+import { useDemoMode } from "../context/DemoModeContext";
 
 const HELP_SECTIONS: HelpSection[] = [
   {
@@ -1091,8 +1016,7 @@ export default function Builder() {
   const [isEnvironmentalPanelOpen, setEnvironmentalPanelOpen] = useState(false);
   const [isMeasurementPanelOpen, setMeasurementPanelOpen] = useState(false);
   const [isWireLibraryPanelOpen, setWireLibraryPanelOpen] = useState(false);
-  const [selectedWireId, setSelectedWireId] = useState(resolveInitialWireId);
-  const [modeBarScrollState, setModeBarScrollState] = useState<{
+  const [_modeBarScrollState, setModeBarScrollState] = useState<{
     canScrollLeft: boolean;
     canScrollRight: boolean;
   }>({ canScrollLeft: false, canScrollRight: false });
@@ -1386,7 +1310,11 @@ export default function Builder() {
     helpSectionRefs,
     isHelpOpen,
     setHelpOpen,
+    requestedHelpSection: _requestedHelpSection,
+    setRequestedHelpSection: _setRequestedHelpSection,
     helpView,
+    setHelpView: _setHelpView,
+    openHelpWithSection,
     openHelpWithView,
   } = useHelpModal();
 
@@ -1476,72 +1404,9 @@ export default function Builder() {
   const [showGalleryToast, setShowGalleryToast] = useState(false);
   const galleryToastTimerRef = useRef<number | null>(null);
 
-  // "Center circuit in available space": measure the UI that occludes the canvas
-  // (top metrics ticker + the bottom-sheet workspace panel) and push CSS-px insets
-  // into the iframe so the 3D camera re-aims to keep the circuit centered in what's
-  // actually visible, not hidden behind an open panel. Off → send zero insets (the
-  // iframe treats all-zero as a no-op, restoring plain centering).
-  const centerInView = appWorkspaceSettings.centerInView;
-  useEffect(() => {
-    if (!isFrameReady) {
-      return;
-    }
-    if (!centerInView) {
-      triggerBuilderAction("set-view-insets", { top: 0, right: 0, bottom: 0, left: 0 });
-      return;
-    }
-    let raf = 0;
-    // Panels slide with a ~0.26s CSS transition; re-measure across a short window
-    // so the circuit tracks the panel as it animates, then settles.
-    const deadline =
-      (typeof performance !== "undefined" ? performance.now() : 0) + 500;
-    const send = () => {
-      const vh = window.innerHeight || 1;
-      let top = 0;
-      let bottom = 0;
-      const ticker = document.querySelector(".ticker-wire-fixed");
-      if (ticker) {
-        const r = ticker.getBoundingClientRect();
-        if (r.height > 0 && r.top < vh * 0.4) {
-          top = Math.min(vh * 0.4, Math.max(0, r.bottom));
-        }
-      }
-      // Only the non-modal bottom sheet occludes while you keep building; the
-      // full-screen `.builder-panel-overlay` modals cover everything, so there's
-      // nothing to re-center behind them.
-      document.querySelectorAll(".workspace-mode-panel.open").forEach((el) => {
-        const r = (el as HTMLElement).getBoundingClientRect();
-        if (r.height > 0 && r.width > 0) {
-          bottom = Math.max(bottom, vh - r.top);
-        }
-      });
-      bottom = Math.min(bottom, vh * 0.72);
-      triggerBuilderAction("set-view-insets", { top, right: 0, bottom, left: 0 });
-      const now = typeof performance !== "undefined" ? performance.now() : deadline;
-      if (now < deadline) {
-        raf = requestAnimationFrame(send);
-      }
-    };
-    send();
-    const onResize = () => send();
-    window.addEventListener("resize", onResize);
-    window.addEventListener("orientationchange", onResize);
-    return () => {
-      cancelAnimationFrame(raf);
-      window.removeEventListener("resize", onResize);
-      window.removeEventListener("orientationchange", onResize);
-    };
-  }, [
-    isFrameReady,
-    centerInView,
-    triggerBuilderAction,
-    isWorkspacePanelOpen,
-    isTroubleshootPanelOpen,
-    isGuidesPanelOpen,
-    isEnvironmentalPanelOpen,
-    isSettingsPanelOpen,
-    isExplainPanelOpen,
-  ]);
+  // Demo/Full mode feature gating
+  const { isDemoMode, isFeatureLocked, showUpgradePrompt } = useDemoMode();
+
   // Create a mock circuit state for demo (in production, extract from iframe)
   const currentCircuitState = useMemo(() => ({
     nodes: [],
@@ -1598,6 +1463,10 @@ export default function Builder() {
       // Ctrl+S or Cmd+S for Save
       if ((event.ctrlKey || event.metaKey) && event.key === "s") {
         event.preventDefault();
+        if (isFeatureLocked("save")) {
+          showUpgradePrompt("save");
+          return;
+        }
         if (circuitStorage.currentCircuit) {
           // Quick save if circuit already exists
           circuitStorage.updateCurrentCircuit(currentCircuitState);
@@ -1610,6 +1479,10 @@ export default function Builder() {
       // Ctrl+O or Cmd+O for Open/Load
       if ((event.ctrlKey || event.metaKey) && event.key === "o") {
         event.preventDefault();
+        if (isFeatureLocked("load")) {
+          showUpgradePrompt("load");
+          return;
+        }
         setIsLoadModalOpen(true);
         return;
       }
@@ -1921,6 +1794,10 @@ export default function Builder() {
         return;
       }
       if (action.action === "generate-practice") {
+        if (isDemoMode) {
+          showUpgradePrompt("advanced-practice");
+          return;
+        }
         triggerBuilderAction(action.action, action.data);
         const randomProblem = getRandomPracticeProblem();
         if (randomProblem) {
@@ -1936,6 +1813,8 @@ export default function Builder() {
       openPracticeWorkspace,
       setArenaPanelOpen,
       triggerBuilderAction,
+      isDemoMode,
+      showUpgradePrompt,
     ],
   );
 
@@ -2161,181 +2040,8 @@ export default function Builder() {
     triggerSimulationPulse();
   }, [triggerBuilderAction, triggerSimulationPulse]);
 
-  const clearCurrentFlowPayoffTimers = useCallback(() => {
-    currentFlowPayoffTimersRef.current.forEach((timerId) => {
-      window.clearTimeout(timerId);
-    });
-    currentFlowPayoffTimersRef.current = [];
-  }, []);
-
-  const runCurrentFlowPayoffSequence = useCallback(
-    (
-      options: {
-        reloadPreset?: boolean;
-        revealBanner?: boolean;
-      } = {},
-    ) => {
-      if (!isFrameReady) {
-        // Iframe not ready yet — mark as pending so Effect 2 picks it up.
-        pendingPayoffRef.current = true;
-        return;
-      }
-
-      const { revealBanner = true } = options;
-
-      clearCurrentFlowPayoffTimers();
-      setCurrentFlowPayoffRunning(true);
-
-      if (reloadPreset) {
-        triggerBuilderAction("load-preset", { preset: "welcome_demo" });
-      }
-
-      // Step 2: After the 3D scene has had time to render the first frame,
-      // fire run-payoff-flow as a reliability retry to ensure particles are
-      // visible even if the first analyzeCircuit() fired before wires were
-      // fully in the scene graph.
-      const retryTimer = window.setTimeout(() => {
-        triggerBuilderAction("run-payoff-flow");
-        triggerSimulationPulse();
-        if (revealBanner) {
-          setCurrentFlowPayoffVisible(true);
-        }
-      }, PAYOFF_FIRST_RETRY_MS);
-
-      // Step 3: Second retry at 1.2 s catches slow devices / first-load jank.
-      const followupTimer = window.setTimeout(() => {
-        triggerBuilderAction("run-payoff-flow");
-        triggerSimulationPulse();
-        setCurrentFlowPayoffRunning(false);
-      }, PAYOFF_SECOND_RETRY_MS);
-
-      // Step 4: Third retry only on Android — the Capacitor WebView can be slow
-      // to stabilise GPU state on the very first launch, so particles may not
-      // appear after the first two retries on cold-start.
-      const thirdRetryTimer = isAndroidApp()
-        ? window.setTimeout(() => {
-            triggerBuilderAction("run-payoff-flow");
-          }, PAYOFF_THIRD_RETRY_MS_ANDROID)
-        : null;
-
-      currentFlowPayoffTimersRef.current.push(
-        retryTimer,
-        followupTimer,
-        ...(thirdRetryTimer !== null ? [thirdRetryTimer] : []),
-      );
-    },
-    [
-      clearCurrentFlowPayoffTimers,
-      isFrameReady,
-      triggerBuilderAction,
-      triggerSimulationPulse,
-    ],
-  );
-
-  const handleReplayCurrentFlowPayoff = useCallback(() => {
-    setBottomMenuOpen(true);
-    runCurrentFlowPayoffSequence({ revealBanner: true });
-  }, [runCurrentFlowPayoffSequence, setBottomMenuOpen]);
-
-  // Replay the full first-run onboarding on demand: re-show the welcome intro,
-  // which auto-dismisses into the current-flow payoff demo (banner + tips).
-  // The "seen" flags stay set, so this only fires when the user asks for it.
-  const handleReplayOnboarding = useCallback(() => {
-    setIntroDialogVisible(true);
-    setCircuitLocked(true);
-  }, [setCircuitLocked]);
-
-  const handleDismissIntroDialog = useCallback(() => {
-    setIntroDialogVisible(false);
-
-    firstRunPayoffTriggeredRef.current = true;
-
-    setBottomMenuOpen(true);
-    runCurrentFlowPayoffSequence({ reloadPreset: true, revealBanner: true });
-  }, [isFrameReady, runCurrentFlowPayoffSequence, setBottomMenuOpen]);
-
-  useEffect(() => {
-    if (!isCurrentFlowPayoffVisible) {
-      return;
-    }
-
-    const timer = window.setTimeout(() => {
-      // Hide the payoff banner when it expires. The circuit stays locked
-      // (isOnboardingLocked) so the user can't accidentally move components;
-      // a "tap to edit" chip appears instead, requiring an explicit tap to
-      // begin editing. Long enough to read a few of the slow-rotating tips and
-      // act on the "zoom in" prompt.
-      setCurrentFlowPayoffVisible(false);
-    }, 30000);
-
-    return () => {
-      window.clearTimeout(timer);
-    };
-  }, [isCurrentFlowPayoffVisible]);
-
-  // Safety net: auto-unlock if the onboarding lock persists for more than 25s
-  // after the payoff banner has been dismissed.  This prevents users from
-  // getting permanently stuck if the "Start Editing" chip is not visible or
-  // tappable for any reason (CSS conflict, z-index overlap, etc.).
-  useEffect(() => {
-    if (
-      !isOnboardingLocked ||
-      isCurrentFlowPayoffVisible ||
-      isIntroDialogVisible
-    ) {
-      return;
-    }
-
-    const safetyTimer = window.setTimeout(() => {
-      setOnboardingLocked(false);
-      setCircuitLocked(false);
-    }, 5000);
-
-    return () => {
-      window.clearTimeout(safetyTimer);
-    };
-  }, [isOnboardingLocked, isCurrentFlowPayoffVisible, isIntroDialogVisible]);
-
-  const activeWireProfilePayload = useMemo(
-    () => toWireProfileBridgePayload(activeWireProfile),
-    [activeWireProfile],
-  );
-  const activeWireSegmentResistance =
-    activeWireProfile?.resistanceOhmPerMeter ??
-    DEFAULT_WIRE_SEGMENT_RESISTANCE_OHM;
-  const applyWireProfileToLegacy = useCallback(
-    (
-      payload: ReturnType<typeof toWireProfileBridgePayload>,
-      options: { runSimulation?: boolean } = {},
-    ) => {
-      triggerBuilderAction("set-wire-profile", { wireProfile: payload });
-      if (options.runSimulation !== false) {
-        triggerBuilderAction("run-simulation");
-        triggerSimulationPulse();
-      }
-    },
-    [triggerBuilderAction, triggerSimulationPulse],
-  );
-  const handleApplyWireProfile = useCallback(
-    (wireProfile: WireSpec) => {
-      setActiveWireProfile(wireProfile);
-      applyWireProfileToLegacy(toWireProfileBridgePayload(wireProfile));
-    },
-    [applyWireProfileToLegacy],
-  );
-  const handleClearWireProfile = useCallback(() => {
-    setActiveWireProfile(null);
-    applyWireProfileToLegacy(null);
-  }, [applyWireProfileToLegacy]);
-
-  useEffect(() => {
-    if (!isFrameReady || !activeWireProfilePayload) {
-      return;
-    }
-    applyWireProfileToLegacy(activeWireProfilePayload, { runSimulation: false });
-  }, [activeWireProfilePayload, applyWireProfileToLegacy, isFrameReady]);
-
-  const arenaStatusMessage = useMemo(() => {
+  // @ts-expect-error TS6133: declared but value is never read
+  const _arenaStatusMessage = useMemo(() => {
     switch (arenaExportStatus) {
       case "exporting":
         return "Loading current build into Component Arena...";
@@ -2568,54 +2274,15 @@ export default function Builder() {
     getLabelVisibilityDescription(labelVisibilityLevel);
   const labelToggleTitle = getNextLabelToggleTitle(labelVisibilityLevel);
   const isWireToolActive = modeState.isWireMode;
-  const wireRoutingTitle = isWireToolActive
+  const isCurrentFlowSolid = modeState.currentFlowStyle === "solid";
+  // @ts-expect-error TS6133: declared but value is never read
+  const _wireRoutingTitle = isWireToolActive
     ? `Wire tool active - routing style set to ${wireRoutingLabel}.`
     : `Wire tool inactive - routing preset is ${wireRoutingLabel}.`;
-
-  const liveWireMetricsSnapshot = useMemo(
-    () => ({
-      voltage: circuitState?.metrics.voltage ?? circuitBaseMetrics.voltage,
-      current: circuitState?.metrics.current ?? circuitBaseMetrics.current,
-      power: circuitState?.metrics.power ?? circuitBaseMetrics.watts,
-      resistance:
-        circuitState?.metrics.resistance ?? circuitBaseMetrics.resistance,
-      isOpenCircuit: circuitState?.metrics.resistance === null,
-      wireCount: circuitState?.counts.wires ?? 0,
-      wirePathResistance:
-        circuitState?.metrics.wirePathResistance ??
-        circuitState?.metrics.flow?.wirePathResistance ??
-        null,
-      wireLengthMeters:
-        circuitState?.metrics.wireLengthMeters ??
-        circuitState?.metrics.flow?.wirePathLengthMeters ??
-        null,
-      wireResistanceReferenceMeters:
-        circuitState?.metrics.wireResistanceReferenceMeters ??
-        circuitState?.metrics.flow?.wireResistanceReferenceMeters ??
-        10,
-      wireAmpacityLimitA:
-        circuitState?.metrics.wireAmpacityLimitA ??
-        circuitState?.metrics.flow?.ampacityLimitA ??
-        null,
-      wireAmpacityUtilization:
-        circuitState?.metrics.wireAmpacityUtilization ??
-        circuitState?.metrics.flow?.ampacityUtilization ??
-        null,
-      wireVoltageLimitV:
-        circuitState?.metrics.wireVoltageLimitV ??
-        circuitState?.metrics.flow?.voltageLimitV ??
-        null,
-      wireVoltageUtilization:
-        circuitState?.metrics.wireVoltageUtilization ??
-        circuitState?.metrics.flow?.voltageUtilization ??
-        null,
-      wireWarning:
-        circuitState?.metrics.wireWarning ??
-        circuitState?.metrics.flow?.warning ??
-        null,
-    }),
-    [circuitBaseMetrics, circuitState],
-  );
+  // @ts-expect-error TS6133: declared but value is never read
+  const _currentFlowTitle = isCurrentFlowSolid
+    ? "Current flow visualisation active."
+    : "Electron flow visualisation active.";
 
   const wireMetrics = useMemo(() => {
     const volts = liveWireMetricsSnapshot.voltage;
@@ -3013,7 +2680,79 @@ export default function Builder() {
               ))}
             </div>
 
-            <span className="unified-action-divider" aria-hidden="true" />
+      {shouldShowEdgeActions && (
+        <Fragment>
+          {/* Workspace Quick Action Buttons - History/File actions on right edge */}
+          <div className="workspace-edge-actions workspace-edge-actions--right" aria-label="History and file actions">
+            <button
+              type="button"
+              className="edge-action-btn edge-action-btn--simulate"
+              onClick={handleRunSimulationClick}
+              disabled={controlsDisabled}
+              aria-disabled={controlsDisabled}
+              data-pulse={isSimulatePulsing ? "true" : undefined}
+              aria-label="Run simulation"
+              title="Run the current circuit simulation"
+            >
+              <IconPlay className="edge-action-icon-svg" />
+            </button>
+            <button
+              type="button"
+              className="edge-action-btn"
+              onClick={() => triggerBuilderAction("undo")}
+              disabled={controlsDisabled}
+              aria-disabled={controlsDisabled}
+              aria-label="Undo last change"
+              title="Undo (Ctrl+Z)"
+            >
+              <span className="edge-action-icon" aria-hidden="true">↺</span>
+            </button>
+            <button
+              type="button"
+              className="edge-action-btn"
+              onClick={() => triggerBuilderAction("redo")}
+              disabled={controlsDisabled}
+              aria-disabled={controlsDisabled}
+              aria-label="Redo previous change"
+              title="Redo (Ctrl+Shift+Z)"
+            >
+              <span className="edge-action-icon" aria-hidden="true">↻</span>
+            </button>
+            <button
+              type="button"
+              className="edge-action-btn"
+              onClick={() => {
+                if (isFeatureLocked("load")) {
+                  showUpgradePrompt("load");
+                } else {
+                  setIsLoadModalOpen(true);
+                }
+              }}
+              aria-label="Open circuit"
+              title={isDemoMode ? "Open circuit — Full Version" : "Open saved circuit (Ctrl+O)"}
+            >
+              <span className="edge-action-icon" aria-hidden="true">📂</span>
+              {isDemoMode && <span className="locked-indicator" aria-hidden="true">🔒</span>}
+            </button>
+            <button
+              type="button"
+              className="edge-action-btn"
+              onClick={() => {
+                if (isFeatureLocked("save")) {
+                  showUpgradePrompt("save");
+                } else {
+                  setIsSaveModalOpen(true);
+                }
+              }}
+              aria-label="Save circuit"
+              title={isDemoMode ? "Save circuit — Full Version" : "Save circuit (Ctrl+S)"}
+            >
+              <span className="edge-action-icon" aria-hidden="true">💾</span>
+              {circuitStorage.hasUnsavedChanges && (
+                <span className="unsaved-dot" aria-label="Unsaved changes" />
+              )}
+            </button>
+          </div>
 
             {/* Tool actions (formerly left edge) */}
             <button
@@ -4110,7 +3849,103 @@ export default function Builder() {
               </div>
             </div>
             <div className="slider-section">
-              <span className="slider-heading">Environment</span>
+              <span className="slider-heading">Practice</span>
+              <div className="menu-track menu-track-chips">
+                <div
+                  role="status"
+                  style={{
+                    fontSize: "11px",
+                    color: "rgba(136, 204, 255, 0.78)",
+                    textAlign: "center",
+                    padding: "8px 12px",
+                    borderRadius: "10px",
+                    border: "1px solid rgba(136, 204, 255, 0.22)",
+                    background: "rgba(14, 30, 58, 0.48)",
+                  }}
+                >
+                  {practiceWorksheetMessage}
+                </div>
+                {PRACTICE_ACTIONS.map((action) => {
+                  const isOpenArenaAction = action.action === "open-arena";
+                  const actionDisabled =
+                    controlsDisabled ||
+                    (isOpenArenaAction && isArenaSyncing);
+                  const actionTitle = controlsDisabled
+                    ? controlDisabledTitle
+                    : isOpenArenaAction && isArenaSyncing
+                      ? "Preparing Component Arena export…"
+                      : action.description;
+                  return (
+                    <button
+                      key={action.id}
+                      type="button"
+                      className="slider-chip"
+                      onClick={() => handlePracticeAction(action)}
+                      disabled={actionDisabled}
+                      aria-disabled={actionDisabled}
+                      title={actionTitle}
+                    >
+                      <span className="slider-chip-label">{action.label}</span>
+                    </button>
+                  );
+                })}
+                <button
+                  type="button"
+                  className="slider-chip"
+                  onClick={() => openPracticeWorkspace()}
+                  title={practiceWorksheetMessage}
+                  data-complete={isPracticeWorksheetComplete ? "true" : undefined}
+                >
+                  <span className="slider-chip-label">Practice Worksheets</span>
+                </button>
+                {PRACTICE_SCENARIOS.map((scenario, index) => {
+                  const isLockedScenario = isDemoMode && index > 0;
+                  return (
+                    <button
+                      key={scenario.id}
+                      type="button"
+                      className={`slider-chip${isLockedScenario ? " slider-chip--locked" : ""}`}
+                      onClick={() => {
+                        if (isLockedScenario) {
+                          showUpgradePrompt("advanced-practice");
+                          return;
+                        }
+                        const problem = scenario.problemId
+                          ? findPracticeProblemById(scenario.problemId)
+                          : findPracticeProblemByPreset(scenario.preset);
+                        openPracticeWorkspace(problem, scenario.preset);
+                      }}
+                      disabled={controlsDisabled}
+                      aria-disabled={controlsDisabled || isLockedScenario}
+                      title={
+                        isLockedScenario
+                          ? `${scenario.label} — Full Version`
+                          : controlsDisabled ? controlDisabledTitle : scenario.question
+                      }
+                    >
+                      <span className="slider-chip-label">{scenario.label}</span>
+                      {isLockedScenario && <span className="slider-chip-lock" aria-hidden="true">🔒</span>}
+                    </button>
+                  );
+                })}
+                <button
+                  type="button"
+                  className="slider-chip"
+                  onClick={openLastArenaSession}
+                  disabled={!canOpenLastArena}
+                  aria-disabled={!canOpenLastArena}
+                  title={
+                    canOpenLastArena
+                      ? "Open the most recent Component Arena export"
+                      : "Run a Component Arena export first"
+                  }
+                >
+                  <span className="slider-chip-label">Open Last Arena Run</span>
+                </button>
+              </div>
+            </div>
+            <div className="slider-section">
+              <span className="slider-heading">Environmental Conditions</span>
               <div className="menu-track menu-track-chips">
                 <div
                   role="status"
@@ -4134,8 +3969,14 @@ export default function Builder() {
                 <button
                   type="button"
                   className="slider-chip"
-                  onClick={() => setEnvironmentalPanelOpen(true)}
-                  title="Open Environmental Conditions panel to simulate different operating environments"
+                  onClick={() => {
+                    if (isFeatureLocked("environmental-panel")) {
+                      showUpgradePrompt("environmental-panel");
+                    } else {
+                      setEnvironmentalPanelOpen(true);
+                    }
+                  }}
+                  title={isDemoMode ? "Environmental Conditions — Full Version" : "Open Environmental Conditions panel to simulate different operating environments"}
                   data-active={activeEnvironment.id !== "standard" ? "true" : undefined}
                 >
                   <span className="slider-chip-label">Configure Environment</span>
@@ -4823,8 +4664,20 @@ export default function Builder() {
         onDelete={(id) => circuitStorage.deleteCircuitById(id)}
         onDuplicate={(id) => circuitStorage.duplicateCircuitById(id)}
         onRename={(id, newName) => circuitStorage.renameCircuitById(id, newName)}
-        onExport={(format) => circuitStorage.exportCurrentCircuit(format)}
-        onImport={(file) => circuitStorage.importCircuitFile(file)}
+        onExport={(format) => {
+          if (isFeatureLocked("export")) {
+            showUpgradePrompt("export");
+            return { success: false, error: "Feature locked in Demo Mode" } as any;
+          }
+          return circuitStorage.exportCurrentCircuit(format);
+        }}
+        onImport={(file) => {
+          if (isFeatureLocked("import")) {
+            showUpgradePrompt("import");
+            return { success: false, error: "Feature locked in Demo Mode" } as any;
+          }
+          return circuitStorage.importCircuitFile(file);
+        }}
         onNewCircuit={() => {
           circuitStorage.clearCurrentCircuit();
           triggerBuilderAction("clear-workspace");

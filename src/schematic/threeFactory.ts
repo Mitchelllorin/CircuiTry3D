@@ -6,8 +6,6 @@ import {
   HEIGHT_LAYERS,
 } from "./visualConstants";
 
-const DEFAULT_PROFILE = STANDARD_PROFILES[DEFAULT_SYMBOL_STANDARD];
-
 // Use centralized visual constants for 3D rendering
 export const WIRE_RADIUS = THREE_STROKE_RADII.wire;
 export const RESISTOR_RADIUS = THREE_STROKE_RADII.resistor;
@@ -995,6 +993,7 @@ const buildDiodeElement = (three: any, element: TwoTerminalElement, options: Bui
 
   const bodyLength = Math.min(metrics.length * 0.6, 0.8);
   const leadLength = (metrics.length - bodyLength) / 2;
+  // @ts-expect-error TS6133
   const bodyRadius = wireRadius * 1.1;
 
   const bodyStart = metrics.offsetPoint(leadLength);
@@ -1002,6 +1001,7 @@ const buildDiodeElement = (three: any, element: TwoTerminalElement, options: Bui
 
   const triangleHeight = bodyLength * 0.7;
   const triangleWidth = bodyLength * 0.5;
+  // @ts-expect-error TS6133
   const cathodeBarWidth = triangleWidth;
 
   const triangleCenter = metrics.offsetPoint(leadLength + bodyLength * 0.4);
@@ -1810,7 +1810,7 @@ const buildOpampElement = (three: any, element: any, options: BuildOptions): Bui
   const wireRadius = 0.035;
 
   // Connect all terminals to center
-  terminals.forEach((terminal, index) => {
+  terminals.forEach((terminal, _index) => {
     const lead = cylinderBetween(
       three,
       toVec3(three, terminal, WIRE_HEIGHT),

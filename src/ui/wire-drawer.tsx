@@ -931,6 +931,7 @@ export const WireDrawer: React.FC<WireDrawerProps> = ({
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = 'high';
 
+    // @ts-expect-error TS6133
     const tracePolyline = (points: Vec2[]) => {
       if (points.length < 2) {
         return false;

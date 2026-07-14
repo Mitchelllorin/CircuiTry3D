@@ -126,10 +126,21 @@ export default function PricingSection() {
       setPurchaseError(detail?.error ?? null);
     };
 
-    window.addEventListener("circuitry3d:tierChanged", clearPurchaseState);
-    window.addEventListener("circuitry3d:premiumUnlocked", clearPurchaseState);
-    window.addEventListener("circuitry3d:proUnlocked", clearPurchaseState);
-    window.addEventListener("circuitry3d:purchaseFailed", handleFailedPurchase);
+type Plan = {
+  id: string;
+  name: string;
+  tagline?: string;
+  popular?: boolean;
+  price: PriceMap;
+  unit?: string;
+  features: string[];
+  renewal?: string;
+  cta: CallToAction;
+  bulk?: {
+    minimumSeats?: number;
+    notes?: string;
+  };
+};
 
     return () => {
       window.removeEventListener("circuitry3d:tierChanged", clearPurchaseState);
@@ -243,10 +254,40 @@ export default function PricingSection() {
     [entitlements]
   );
 
-  /** Render the CTA button for a consumer tier. */
-  const renderConsumerCTA = useCallback(
-    (tier: ConsumerTier) => {
-      if (tier.id === "free") {
+  const activeCycle = billingCycle;
+  const activeCycleMeta = pricingData.billingCycles.find((cycle) => normalizeCycle(cycle.id) === activeCycle);
+
+  const handleCycleChange = (cycle: BillingCycleId) => {
+    setBillingCycle(cycle);
+  };
+
+  const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
+
+  const handleStripeClick = async (sku: string) => {
+    setCheckoutLoading(sku);
+    try {
+      const res = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sku, billingCycle: activeCycle }),
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        window.alert?.(data.error ?? "Unable to start checkout. Please try again or contact us.");
+      }
+    } catch {
+      window.alert?.("Unable to connect to checkout. Please try again later or contact us at info@circuitry3d.net.");
+    } finally {
+      setCheckoutLoading(null);
+    }
+  };
+
+  const renderCTA = (cta: CallToAction) => {
+    if (cta.type === "link") {
+      const isInternal = cta.href.startsWith("/");
+      if (isInternal) {
         return (
           <Link className="pricing-cta" to="/app" data-cta-type="internal">
             Start Free
@@ -319,13 +360,15 @@ export default function PricingSection() {
   /** Render the CTA for an enterprise tier. */
   const renderEnterpriseCTA = useCallback((tier: EnterpriseTier) => {
     return (
-      <Link
-        className="pricing-cta pricing-cta--enterprise"
-        to={`/contact-sales?tier=${tier.id}`}
-        data-cta-type="internal"
+      <button
+        type="button"
+        className="pricing-cta"
+        data-cta-type="stripe"
+        disabled={checkoutLoading === cta.sku}
+        onClick={() => handleStripeClick(cta.sku)}
       >
-        Contact Sales
-      </Link>
+        {checkoutLoading === cta.sku ? "Redirecting..." : cta.label}
+      </button>
     );
   }, []);
 
@@ -359,7 +402,7 @@ export default function PricingSection() {
         <WordMark size="sm" decorative className="pricing-brand" />
         <h1 id="pricing-title">Plans &amp; Pricing</h1>
         <p className="pricing-subtitle">
-          Choose the plan that powers your circuits. Upgrade any time.
+          Whether you're learning on your own or teaching a class, there's a plan that fits. Upgrade any time as you grow.
         </p>
       </div>
 
@@ -470,17 +513,25 @@ export default function PricingSection() {
         </div>
       </div>
 
-      {/* ── Feature comparison table ── */}
-      <div className="pricing-comparison">
-        <h2 className="pricing-comparison-title">Feature Comparison</h2>
-        <div className="pricing-comparison-table" role="table" aria-label="Feature comparison">
-          {/* Header row */}
-          <div className="pricing-comparison-row pricing-comparison-row--header" role="row">
-            <div className="pricing-comparison-cell pricing-comparison-cell--label" role="columnheader">Feature</div>
-            {CONSUMER_TIERS.map((t) => (
-              <div key={t.id} className="pricing-comparison-cell pricing-comparison-cell--tier" role="columnheader">
-                <span className="pricing-comparison-tier-icon" aria-hidden="true">{t.icon}</span>
-                {t.name}
+      <div className="plan-grid">
+        {pricingData.plans.map((plan) => {
+          const amount = plan.price?.[activeCycle];
+          const priceLabel = formatPrice(amount, pricingData.currency);
+          const unit = getDisplayUnit(plan);
+          return (
+            <article key={plan.id} className={`plan-card plan-${plan.id}${plan.popular ? " plan-popular" : ""}`}>
+              <header className="plan-header">
+                {plan.popular && <span className="plan-popular-badge">Most Popular</span>}
+                <h2>{plan.name}</h2>
+                {plan.tagline && <p className="plan-tagline">{plan.tagline}</p>}
+              </header>
+              <div className="plan-price">
+                <span className="plan-price-amount">{priceLabel}</span>
+                {unit && <span className="plan-price-unit">{unit}</span>}
+                {amount && amount > 0 && (
+                  <span className="plan-price-cycle">per {activeCycle}</span>
+                )}
+                {plan.renewal && <p className="plan-renewal">{plan.renewal}</p>}
               </div>
             ))}
           </div>
@@ -575,37 +626,9 @@ export default function PricingSection() {
         </div>
       </div>
 
-      {/* ── Education license callout ── */}
-      <div className="pricing-section-group pricing-section-group--placement">
-        <div className="pricing-section-label">
-          <span className="pricing-section-kicker pricing-section-kicker--enterprise">Education Arena</span>
-          <h2 className="pricing-section-title">Education Licenses</h2>
-          <p className="pricing-section-desc">
-            Affordable licensing for teachers and schools. Plans start at <strong>$9 / mo</strong> for
-            a solo educator with up to 30 students — scaling to a full campus license at
-            <strong> $49 / mo</strong>. No overcharging, no hidden fees.
-          </p>
-        </div>
-        <div className="pricing-placement-callout">
-          <span className="pricing-placement-callout-icon" aria-hidden="true">🏫</span>
-          <div className="pricing-placement-callout-body">
-            <p className="pricing-placement-callout-text">
-              Educator Solo · Multi-Class · Campus License
-            </p>
-            <Link to="/partnerships#education" className="pricing-cta pricing-cta--enterprise">
-              View Education Plans →
-            </Link>
-          </div>
-        </div>
-      </div>
-
-      {/* ── Footer ── */}
       <footer className="pricing-footer">
         <p className="pricing-contact-help">
           Need a custom package? <a href="mailto:info@circuitry3d.net">Contact our team</a> for tailored pricing.
-          Have questions?{" "}
-          <a href="mailto:hello@circuitry3d.net">Contact our team</a> for
-          tailored pricing or enterprise onboarding.
         </p>
       </footer>
     </section>

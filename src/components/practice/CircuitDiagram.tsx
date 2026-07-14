@@ -5,7 +5,6 @@ import {
   SCHEMATIC_COLORS,
   STROKE_WIDTHS,
   NODE_DIMENSIONS,
-  LAYOUT_SPECS,
   LABEL_SPECS,
   RESISTOR_SPECS,
   SERIES_LAYOUT,
@@ -61,7 +60,8 @@ const getComponentLabelWithValue = (problem: PracticeProblem, componentId: strin
   return { label: componentId, value: null };
 };
 
-const getComponentLabel = (problem: PracticeProblem, componentId: string) => {
+// @ts-expect-error TS6133
+const _getComponentLabel = (problem: PracticeProblem, componentId: string) => {
   if (componentId === "totals") {
     return "Circuit Totals";
   }
@@ -706,6 +706,7 @@ function isDoubleParallelNetwork(network: PracticeProblem["network"]): boolean {
 
 // Render textbook double-parallel diagram: two parallel boxes stacked in series.
 function renderDoubleParallelDiagram(
+  _problem: PracticeProblem,
   sourceData: { label: string; value: string | null },
   componentData: Map<string, { label: string; value: string | null }>,
   componentIds: string[],

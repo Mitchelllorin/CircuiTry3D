@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../context/AuthContext";
-import WordMark from "../components/WordMark";
+import { useDemoMode } from "../context/DemoModeContext";
+import BrandSignature from "../components/BrandSignature";
 import type { FormEvent } from "react";
 import { isLifetimeTester } from "../utils/lifetimeTesterEmails";
 import "../styles/account.css";
@@ -43,7 +44,8 @@ function PinPad({ onDigit, onBackspace }: { onDigit: (d: string) => void; onBack
 }
 
 export default function Account() {
-  const { currentUser, lastSignedInUser, hasPIN, loading, users, signIn, signUp, signOut, updateProfile, resetPassword, changePassword, setPIN, clearPIN, signInWithPIN, deleteAccount } = useAuth();
+  const { currentUser, loading, signIn, signUp, signOut, updateProfile } = useAuth();
+  const { isDemoMode, upgradeToPremium } = useDemoMode();
   const [mode, setMode] = useState<Mode>(currentUser ? "profile" : "signin");
   const [signInForm, setSignInForm] = useState({ email: "", password: "" });
   const [signUpForm, setSignUpForm] = useState({ email: "", password: "", displayName: "", bio: "" });
@@ -55,30 +57,18 @@ export default function Account() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [deleteAccountOpen, setDeleteAccountOpen] = useState(false);
 
-  // PIN sign-in state
-  const [pinEntry, setPinEntry] = useState("");
-  const [pinShake, setPinShake] = useState(false);
-
-  // PIN setup state (in profile)
-  const [pinSetup, setPinSetupPhase] = useState<PinSetupPhase>({ active: false });
-  const [pinSetupEntry, setPinSetupEntry] = useState("");
-
-  const hasSetInitialModeRef = useRef(false);
-
-  // After loading, auto-switch to PIN mode if applicable
+  // Handle Stripe checkout success redirect
   useEffect(() => {
-    if (!loading && !hasSetInitialModeRef.current) {
-      hasSetInitialModeRef.current = true;
-      if (currentUser) {
-        setMode("profile");
-        setProfileForm({ displayName: currentUser.displayName, bio: currentUser.bio ?? "" });
-      } else if (hasPIN && lastSignedInUser) {
-        setMode("pin");
-      }
+    const params = new URLSearchParams(window.location.hash.split("?")[1] ?? "");
+    if (params.get("upgrade") === "success" && isDemoMode) {
+      upgradeToPremium();
+      setStatus({ type: "success", message: "Payment successful! Full version unlocked. All premium features are now available." });
+      // Clean the URL
+      const cleanHash = window.location.hash.split("?")[0];
+      window.history.replaceState(null, "", cleanHash);
     }
-  }, [loading, currentUser, hasPIN, lastSignedInUser]);
+  }, [isDemoMode, upgradeToPremium]);
 
-  // When user becomes authenticated, go to profile
   useEffect(() => {
     if (currentUser) {
       setMode("profile");

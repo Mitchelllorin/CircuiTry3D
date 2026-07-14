@@ -3,8 +3,6 @@ import { Routes, Route, Link, Outlet, useLocation, Navigate } from "react-router
 import { useTranslation } from "react-i18next";
 import Home from "../pages/Home";
 import Builder from "../pages/Builder";
-import Practice from "../pages/Practice";
-import SchematicMode from "../pages/SchematicMode";
 import Pricing from "../pages/Pricing";
 import Community from "../pages/Community";
 import Account from "../pages/Account";
@@ -15,7 +13,9 @@ import BrandSignature from "../components/BrandSignature";
 import GlobalModeBar from "../components/GlobalModeBar";
 import BuildStamp from "../components/BuildStamp";
 import { WorkspaceModeProvider } from "../context/WorkspaceModeContext";
+import { UpgradePromptModal } from "../components/builder/modals/UpgradePromptModal";
 import "../styles/layout.css";
+import "../styles/demo-mode.css";
 
 // Lazy-load heavy pages so they are code-split into separate chunks.
 // This drastically reduces the initial JS bundle size — the Builder page
@@ -136,7 +136,8 @@ function AppLayout() {
       <main className={contentClass}>
         <Outlet />
       </main>
-      {!isLanding && <BuildStamp />}
+      {/* Global upgrade prompt modal */}
+      <UpgradePromptModal />
     </div>
   );
 }

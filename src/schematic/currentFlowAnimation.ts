@@ -460,7 +460,6 @@ export class CurrentFlowAnimationSystem {
    * @param amps - Current in amperes
    */
   public setCurrentIntensity(amps: number): void {
-    const prevGlobal = this.globalCurrentAmps;
     this.globalCurrentAmps = Math.abs(amps);
     this.globalIntensity = this.calculateIntensity(amps);
 

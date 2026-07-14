@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useWorkspaceMode } from "../context/WorkspaceModeContext";
-import { useTheme } from "../context/ThemeContext";
+import { useDemoMode, DEMO_WORKSPACE_MODES } from "../context/DemoModeContext";
+import type { GatedFeature } from "../context/DemoModeContext";
 import type { WorkspaceMode } from "./builder/types";
 import BrandMark from "./BrandMark";
 import "../styles/builder-ui.css";
@@ -19,28 +20,18 @@ type ModeBarScrollState = {
   canScrollRight: boolean;
 };
 
-/* All navigation tabs rendered directly in the scrollable bar */
-const NAV_TABS: TabConfig[] = [
-  { mode: "build",        icon: "🔧", label: "Build",       title: "Component builder and circuit designer" },
-  { mode: "practice",     icon: "📝", label: "Practice",    title: "Guided worksheets and W.I.R.E. problems" },
-  { mode: "troubleshoot", icon: "🩺", label: "Troubleshoot",title: "Fix broken circuits and restore current flow" },
-  { mode: "arena",        icon: "⚡", label: "Arena",       title: "Component testing and advanced simulation" },
-  { mode: "help",         icon: "📚", label: "Help",        title: "Guides, tutorials, and support resources" },
-  { mode: "wire-guide",   icon: "",   label: "Wire Guide",  title: "Wire guide, formulas, and gauge recommendations" },
-  { mode: "textbook",     icon: "📖", label: "Textbook",    title: "Year 1 & Year 2 Electrical Studies Textbook" },
-  { mode: "pricing",      icon: "💳", label: "Pricing",     title: "Pricing" },
-  { mode: "arcade",       icon: "🎯", label: "Arcade",      title: "Circuit Arcade" },
-  { mode: "classroom",    icon: "🎓", label: "Classroom",   title: "Classroom" },
-  { mode: "community",    icon: "🌐", label: "Community",   title: "Community" },
-  { mode: "gallery",      icon: "🎬", label: "Gallery",     title: "Cinematic gallery — your captured shots and fly-throughs" },
-  { mode: "account",      icon: "👤", label: "Account",     title: "Account" },
-];
+/** Maps navigation paths to gated features for Demo Mode */
+const PATH_FEATURE_MAP: Record<string, GatedFeature> = {
+  "/arcade": "arcade",
+  "/classroom": "classroom",
+  "/community": "community",
+};
 
 export function GlobalModeBar() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { workspaceMode, setWorkspaceMode } = useWorkspaceMode();
-  const { theme, toggleTheme } = useTheme();
+  const { workspaceMode, setWorkspaceMode, isWireLibraryPanelOpen, setWireLibraryPanelOpen } = useWorkspaceMode();
+  const { isDemoMode, isFeatureLocked, showUpgradePrompt } = useDemoMode();
   const modeBarRef = useRef<HTMLDivElement>(null);
   const [modeBarScrollState, setModeBarScrollState] = useState<ModeBarScrollState>({
     canScrollLeft: false,
@@ -75,16 +66,30 @@ export function GlobalModeBar() {
     };
   }, [checkModeBarScroll]);
 
-  const handleModeClick = useCallback(
-    (mode: WorkspaceMode) => {
-      setWorkspaceMode(mode);
-      // Keep all top-nav workflows anchored to the main workspace shell.
-      if (!isWorkspacePage) {
-        navigate("/app");
-      }
-    },
-    [setWorkspaceMode, navigate, isWorkspacePage],
-  );
+  const handleModeClick = useCallback((mode: WorkspaceMode) => {
+    // In Demo Mode, gate the troubleshoot mode
+    if (isDemoMode && !DEMO_WORKSPACE_MODES.has(mode)) {
+      showUpgradePrompt("troubleshoot-mode");
+      return;
+    }
+    setWorkspaceMode(mode);
+    // Navigate to workspace if not already there
+    if (!isWorkspacePage) {
+      navigate("/app");
+    }
+  }, [setWorkspaceMode, navigate, isWorkspacePage, isDemoMode, showUpgradePrompt]);
+
+  const handleNavigateTo = useCallback((path: string) => {
+    // Check if this path is gated in Demo Mode
+    const gatedFeature = PATH_FEATURE_MAP[path];
+    if (gatedFeature && isFeatureLocked(gatedFeature)) {
+      showUpgradePrompt(gatedFeature);
+      return;
+    }
+    // If leaving the workspace, ensure any workspace-only panels don't stay "active".
+    setWireLibraryPanelOpen(false);
+    navigate(path);
+  }, [navigate, setWireLibraryPanelOpen, isFeatureLocked, showUpgradePrompt]);
 
   const handleBuildClick = useCallback(() => {
     handleModeClick("build");
@@ -110,6 +115,11 @@ export function GlobalModeBar() {
     }
   }, [setWireLibraryPanelOpen, navigate, isWorkspacePage]);
 
+  const isTroubleshootLocked = isDemoMode && !DEMO_WORKSPACE_MODES.has("troubleshoot");
+  const isArcadeLocked = isDemoMode;
+  const isClassroomLocked = isDemoMode;
+  const isCommunityLocked = isDemoMode;
+
   return (
     <>
       {modeBarScrollState.canScrollLeft && (
@@ -118,11 +128,18 @@ export function GlobalModeBar() {
         </div>
       )}
       <div className="workspace-mode-bar workspace-mode-bar--global" ref={modeBarRef}>
-        <Link
-          to="/"
-          className="mode-tab mode-tab--icon-only mode-tab--brand"
-          aria-label="CircuiTry3D – Home"
-          title="Home"
+        {isDemoMode && (
+          <span className="demo-mode-badge" title="Running in Demo Mode">
+            DEMO
+          </span>
+        )}
+        <button
+          type="button"
+          className="mode-tab mode-tab--icon-only"
+          data-active={isWorkspacePage ? "true" : undefined}
+          onClick={() => handleNavigateTo("/app")}
+          aria-label="Open workspace"
+          title="Workspace hub"
         >
           <BrandMark size="xs" decorative />
         </Link>
@@ -150,14 +167,15 @@ export function GlobalModeBar() {
         </button>
         <button
           type="button"
-          className="mode-tab"
+          className={`mode-tab${isTroubleshootLocked ? " mode-tab--locked" : ""}`}
           data-active={workspaceMode === "troubleshoot" ? "true" : undefined}
           onClick={handleTroubleshootClick}
           aria-label="Troubleshoot mode"
-          title="Fix broken circuits and restore current flow"
+          title={isTroubleshootLocked ? "Troubleshoot — Full Version" : "Fix broken circuits and restore current flow"}
         >
           <span className="mode-icon" aria-hidden="true">🩺</span>
           <span className="mode-label">Troubleshoot</span>
+          {isTroubleshootLocked && <span className="mode-lock" aria-hidden="true">🔒</span>}
         </button>
         <button
           type="button"
@@ -183,36 +201,39 @@ export function GlobalModeBar() {
         </button>
         <button
           type="button"
-          className="mode-tab"
-          data-active={workspaceMode === "arcade" ? "true" : undefined}
-          onClick={() => handleModeClick("arcade")}
+          className={`mode-tab${isArcadeLocked ? " mode-tab--locked" : ""}`}
+          data-active={isArcadePage ? "true" : undefined}
+          onClick={() => handleNavigateTo("/arcade")}
           aria-label="Arcade"
-          title="Circuit Arcade"
+          title={isArcadeLocked ? "Arcade — Full Version" : "Circuit Arcade"}
         >
           <span className="mode-icon" aria-hidden="true">🎯</span>
           <span className="mode-label">Arcade</span>
+          {isArcadeLocked && <span className="mode-lock" aria-hidden="true">🔒</span>}
         </button>
         <button
           type="button"
-          className="mode-tab"
-          data-active={workspaceMode === "classroom" ? "true" : undefined}
-          onClick={() => handleModeClick("classroom")}
+          className={`mode-tab${isClassroomLocked ? " mode-tab--locked" : ""}`}
+          data-active={isClassroomPage ? "true" : undefined}
+          onClick={() => handleNavigateTo("/classroom")}
           aria-label="Classroom"
-          title="Classroom"
+          title={isClassroomLocked ? "Classroom — Full Version" : "Classroom"}
         >
           <span className="mode-icon" aria-hidden="true">🎓</span>
           <span className="mode-label">Classroom</span>
+          {isClassroomLocked && <span className="mode-lock" aria-hidden="true">🔒</span>}
         </button>
         <button
           type="button"
-          className="mode-tab"
-          data-active={workspaceMode === "community" ? "true" : undefined}
-          onClick={() => handleModeClick("community")}
+          className={`mode-tab${isCommunityLocked ? " mode-tab--locked" : ""}`}
+          data-active={isCommunityPage ? "true" : undefined}
+          onClick={() => handleNavigateTo("/community")}
           aria-label="Community"
-          title="Community"
+          title={isCommunityLocked ? "Community — Full Version" : "Community"}
         >
           <span className="mode-icon" aria-hidden="true">🌐</span>
           <span className="mode-label">Community</span>
+          {isCommunityLocked && <span className="mode-lock" aria-hidden="true">🔒</span>}
         </button>
         <button
           type="button"
@@ -263,6 +284,18 @@ export function GlobalModeBar() {
           <span className="mode-icon" aria-hidden="true">📖</span>
           <span className="mode-label">Textbook</span>
         </button>
+        {isDemoMode && (
+          <button
+            type="button"
+            className="mode-tab mode-tab--upgrade"
+            onClick={() => showUpgradePrompt("advanced-components")}
+            aria-label="Upgrade to Full Version"
+            title="Upgrade to Full Version"
+          >
+            <span className="mode-icon" aria-hidden="true">⬆</span>
+            <span className="mode-label">Upgrade</span>
+          </button>
+        )}
         {modeBarScrollState.canScrollRight && (
           <div className="mode-bar-scroll-indicator mode-bar-scroll-indicator--inline" aria-hidden="true">
             <span className="scroll-indicator-arrow">›</span>

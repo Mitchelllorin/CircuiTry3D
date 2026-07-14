@@ -9,7 +9,19 @@ import { CircuitStorageProvider } from "./context/CircuitStorageContext";
 import { GamificationProvider } from "./context/GamificationContext";
 import { initializeAndroid, registerServiceWorker } from "./hooks/capacitor/useAndroidInit";
 import { ClassroomProvider } from "./context/ClassroomContext";
-import { TutorialProvider } from "./context/TutorialContext";
+import { DemoModeProvider } from "./context/DemoModeContext";
+
+function renderFatalOverlay(payload: {
+  title: string;
+  message: string;
+  stack?: string;
+  details?: string;
+}) {
+  // Avoid throwing while trying to render an error UI
+  try {
+    document.body.style.background = "#1a0000";
+    document.body.style.margin = "0";
+    document.body.style.padding = "0";
 
     const root = document.createElement("div");
     root.style.color = "white";
@@ -157,19 +169,19 @@ try {
   createRoot(container).render(
     <React.StrictMode>
       <HashRouter>
-        <AuthProvider>
-          <EngagementProvider>
-            <CircuitStorageProvider>
-              <GamificationProvider>
-                <ClassroomProvider>
-                  <TutorialProvider>
+        <DemoModeProvider>
+          <AuthProvider>
+            <EngagementProvider>
+              <CircuitStorageProvider>
+                <GamificationProvider>
+                  <ClassroomProvider>
                     <App />
-                  </TutorialProvider>
-                </ClassroomProvider>
-              </GamificationProvider>
-            </CircuitStorageProvider>
-          </EngagementProvider>
-        </AuthProvider>
+                  </ClassroomProvider>
+                </GamificationProvider>
+              </CircuitStorageProvider>
+            </EngagementProvider>
+          </AuthProvider>
+        </DemoModeProvider>
       </HashRouter>
     </React.StrictMode>
   );
