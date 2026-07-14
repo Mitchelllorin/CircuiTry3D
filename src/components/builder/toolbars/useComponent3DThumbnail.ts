@@ -279,47 +279,26 @@ function renderComponentThumbnail(
   // Creating too many WebGL contexts (one per thumbnail) will fail on many devices.
   // Reuse a single renderer/canvas for all thumbnails.
   if (!sharedRenderer) {
-    if (sharedRendererFailed) {
-      return "";
+    const canvas = document.createElement("canvas");
+    const renderer = new THREE.WebGLRenderer({
+      canvas,
+      alpha: true,
+      antialias: true,
+      preserveDrawingBuffer: true,
+    });
+    // Render thumbnails at a higher DPR for sharpness, while keeping the displayed
+    // CSS size small in the component library.
+    const dpr = Math.min((window.devicePixelRatio || 1), 2);
+    renderer.setPixelRatio(dpr);
+    renderer.setSize(THUMBNAIL_SIZE_PX, THUMBNAIL_SIZE_PX, false);
+    renderer.setClearColor(0x000000, 0);
+    // Keep colors consistent across Three versions.
+    if ((renderer as any).outputColorSpace && (THREE as any).SRGBColorSpace) {
+      (renderer as any).outputColorSpace = (THREE as any).SRGBColorSpace;
+    } else if ((renderer as any).outputEncoding && (THREE as any).sRGBEncoding) {
+      (renderer as any).outputEncoding = (THREE as any).sRGBEncoding;
     }
-    try {
-      const canvas = document.createElement("canvas");
-      canvas.width = thumbnailSize;
-      canvas.height = thumbnailSize;
-
-      // Enable antialiasing for smoother edges (even on lower-tier devices)
-      const useAntialias = true; // Always enable for visual quality
-
-      const renderer = new THREE.WebGLRenderer({
-        canvas,
-        alpha: true,
-        antialias: useAntialias,
-        preserveDrawingBuffer: true,
-        powerPreference: isMobile() ? 'low-power' : 'default',
-      });
-      const threeCompat = THREE as unknown as Record<string, unknown>;
-      const srgbColorSpace = threeCompat["SRGBColorSpace"];
-      const legacySrgbEncoding = threeCompat["sRGBEncoding"];
-      if ("outputColorSpace" in renderer && srgbColorSpace) {
-        (renderer as any).outputColorSpace = srgbColorSpace;
-      } else if ("outputEncoding" in renderer && legacySrgbEncoding) {
-        (renderer as any).outputEncoding = legacySrgbEncoding;
-      }
-      if ("toneMapping" in renderer && (THREE as any).ACESFilmicToneMapping) {
-        (renderer as any).toneMapping = (THREE as any).ACESFilmicToneMapping;
-        (renderer as any).toneMappingExposure = 1.15;
-      }
-      if ("physicallyCorrectLights" in renderer) {
-        (renderer as any).physicallyCorrectLights = true;
-      }
-      renderer.setSize(thumbnailSize, thumbnailSize, false);
-      renderer.setPixelRatio(1);
-      sharedRenderer = { canvas, renderer };
-    } catch (err) {
-      console.warn("[CT3D] 3D thumbnail renderer unavailable – falling back to SVG icons", err);
-      sharedRendererFailed = true;
-      return "";
-    }
+    sharedRenderer = { canvas, renderer };
   }
 
   const { canvas, renderer } = sharedRenderer;
@@ -361,9 +340,7 @@ function renderComponentThumbnail(
 
     // Fit camera to content.
     const box = new THREE.Box3().setFromObject(root);
-    const size = box.getSize(new THREE.Vector3());
     const center = box.getCenter(new THREE.Vector3());
-    const maxDim = Math.max(size.x, size.y, size.z, 0.001);
 
     pivot = new THREE.Group();
     pivot.name = `thumb-pivot-${kind}`;
@@ -373,11 +350,22 @@ function renderComponentThumbnail(
     scene.add(pivot);
 
     const camera = new THREE.PerspectiveCamera(32, 1, 0.01, 100);
-    const distance = maxDim * 2.35;
-    camera.position.set(distance, distance * 0.9, distance);
-    camera.lookAt(0, 0, 0);
+    const sphere = new THREE.Sphere();
+    box.getBoundingSphere(sphere);
+    const radius = Math.max(sphere.radius, 0.001);
+
+    // Compute a tight-but-safe distance so the object fills the thumbnail instead
+    // of looking tiny. For aspect=1, vertical/horizontal fit is symmetric.
+    const fovRad = THREE.MathUtils.degToRad(camera.fov);
+    const fitDistance = (radius / Math.sin(fovRad / 2)) * 1.12;
+    const viewDir = new THREE.Vector3(1, 0.85, 1).normalize();
+    camera.position.copy(center).addScaledVector(viewDir, fitDistance);
+    camera.near = Math.max(0.01, fitDistance - radius * 3);
+    camera.far = fitDistance + radius * 3;
+    camera.lookAt(center);
     camera.updateProjectionMatrix();
 
+    renderer.clear();
     renderer.render(scene, camera);
     return canvas.toDataURL("image/png");
   } finally {
