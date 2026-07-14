@@ -1797,7 +1797,6 @@ export default function Builder() {
   }, [circuitState]);
 
   const {
-    floatingLogoRef,
     logoSettings,
     prefersReducedMotion,
     handleLogoSettingChange,
@@ -4723,13 +4722,40 @@ export default function Builder() {
         )}
       </div>
 
-      <div
-        ref={floatingLogoRef}
-        className="builder-floating-logo builder-floating-logo--3d"
-        aria-hidden="true"
-      >
-        <WorkspaceLogo3D />
-      </div>
+      {isActiveCircuitBuildMode && !isOverlayActive && (
+        <div className="circuit-zoom-controls" aria-label="Zoom controls">
+          <button
+            type="button"
+            className="circuit-zoom-btn"
+            onClick={() => triggerBuilderAction("zoom-in")}
+            disabled={controlsDisabled}
+            aria-label="Zoom in"
+            title="Zoom in"
+          >
+            +
+          </button>
+          <button
+            type="button"
+            className="circuit-zoom-btn"
+            onClick={() => triggerBuilderAction("fit-screen")}
+            disabled={controlsDisabled}
+            aria-label="Fit circuit to screen"
+            title="Fit to screen"
+          >
+            ⊡
+          </button>
+          <button
+            type="button"
+            className="circuit-zoom-btn"
+            onClick={() => triggerBuilderAction("zoom-out")}
+            disabled={controlsDisabled}
+            aria-label="Zoom out"
+            title="Zoom out"
+          >
+            −
+          </button>
+        </div>
+      )}
 
       {activeWorkspacePanelMode && workspacePanelMeta && workspacePanelContent && (
         <WorkspaceModePanel
