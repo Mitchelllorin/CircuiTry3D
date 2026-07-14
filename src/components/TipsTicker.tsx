@@ -1,20 +1,22 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import CIRCUIT_TIPS_FACTS from "../data/circuitTipsFacts";
+import {
+  INTERACTIVE_TUTORIAL_DONE_STEP_INDEX,
+  INTERACTIVE_TUTORIAL_PROGRESS_STORAGE_KEY,
+} from "./builder/tutorial/BuilderInteractiveTutorial";
 import { AskAboutTip } from "./AskAboutTip";
 
 const ROTATION_INTERVAL_MS = 45000;
 const STARTUP_DELAY_MS = 90000;
+const ONBOARDING_CHECK_INTERVAL_MS = 10000;
 const DISMISSED_STORAGE_KEY = "circuitry3d:tips-ticker:dismissed:v1";
 const TOUR_DISMISSED_KEY = "circuitry3d:onboarding:tour-dismissed:v1";
-const INTERACTIVE_TUTORIAL_PROGRESS_KEY = "circuitry3d:tutorial:basic-circuits:v2";
-// "done" is the final step in BuilderInteractiveTutorial's current sequence.
-const INTERACTIVE_TUTORIAL_DONE_STEP_INDEX = 14;
 
 function hasCompletedOnboarding(): boolean {
   try {
     const tourDismissed = window.localStorage.getItem(TOUR_DISMISSED_KEY) === "1";
     const tutorialStepIndex = Number.parseInt(
-      window.localStorage.getItem(INTERACTIVE_TUTORIAL_PROGRESS_KEY) ?? "",
+      window.localStorage.getItem(INTERACTIVE_TUTORIAL_PROGRESS_STORAGE_KEY) ?? "",
       10,
     );
     const tutorialComplete =
@@ -73,7 +75,7 @@ export function TipsTicker() {
     document.addEventListener("visibilitychange", checkCompletion);
     const timer = setInterval(() => {
       checkCompletion();
-    }, 10000);
+    }, ONBOARDING_CHECK_INTERVAL_MS);
     return () => {
       clearInterval(timer);
       window.removeEventListener("storage", checkCompletion);
