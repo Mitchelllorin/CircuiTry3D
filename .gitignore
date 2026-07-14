@@ -3,7 +3,6 @@ node_modules
 npm-debug.log*
 *.log
 dist
-dist-electron
 previews
 preview-server/data
 .cache
