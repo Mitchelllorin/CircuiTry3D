@@ -3674,8 +3674,134 @@ export default function Builder() {
         </Fragment>
       )}
 
+      {isIntroDialogVisible && (
+        <div
+          className="builder-intro-dialog-backdrop"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="intro-dialog-title"
+          onClick={handleDismissIntroDialog}
+        >
+          <div className="builder-intro-dialog-card" onClick={(e) => e.stopPropagation()}>
+            <button
+              type="button"
+              className="builder-intro-dialog-close"
+              aria-label="Close introduction"
+              onClick={handleDismissIntroDialog}
+            >
+              ×
+            </button>
+
+            <div className="builder-intro-dialog-kicker">
+              CircuiTry3D · Introduction
+            </div>
+
+            <div
+              className="builder-intro-dialog-step-icon"
+              aria-hidden="true"
+            >
+              {INTRO_DIALOG_STEPS[introDialogStep].icon}
+            </div>
+            <h2
+              className="builder-intro-dialog-title"
+              id="intro-dialog-title"
+            >
+              {INTRO_DIALOG_STEPS[introDialogStep].title}
+            </h2>
+            <p className="builder-intro-dialog-body">
+              {INTRO_DIALOG_STEPS[introDialogStep].body}
+            </p>
+            <div className="builder-intro-dialog-extras">
+              {INTRO_DIALOG_STEPS[introDialogStep].formula && (
+                <div className="builder-intro-dialog-formula">
+                  {INTRO_DIALOG_STEPS[introDialogStep].formula}
+                </div>
+              )}
+              {INTRO_DIALOG_STEPS[introDialogStep].analogy && (
+                <div className="builder-intro-dialog-analogy">
+                  {INTRO_DIALOG_STEPS[introDialogStep].analogy}
+                </div>
+              )}
+            </div>
+
+            <div
+              className="builder-intro-dialog-dots"
+              aria-hidden="true"
+            >
+              {INTRO_DIALOG_STEPS.map((_, i) => (
+                <span
+                  key={i}
+                  className={`builder-intro-dialog-dot${i === introDialogStep ? " is-active" : ""}`}
+                />
+              ))}
+            </div>
+
+            <div className="builder-intro-dialog-progress">
+              <div className="builder-intro-dialog-progress-bar">
+                <div
+                  className="builder-intro-dialog-progress-fill"
+                  style={{
+                    width: `${Math.round(((introDialogStep + 1) / INTRO_DIALOG_STEPS.length) * 100)}%`,
+                  }}
+                />
+              </div>
+              <div className="builder-intro-dialog-progress-text">
+                {introDialogStep + 1} / {INTRO_DIALOG_STEPS.length}
+              </div>
+            </div>
+
+            <div className="builder-intro-dialog-actions">
+              <button
+                type="button"
+                className="builder-intro-dialog-btn builder-intro-dialog-btn--secondary"
+                style={{
+                  visibility: introDialogStep === 0 ? "hidden" : "visible",
+                }}
+                onClick={() =>
+                  setIntroDialogStep((s) => s - 1)
+                }
+              >
+                Back
+              </button>
+              <button
+                type="button"
+                className="builder-intro-dialog-btn builder-intro-dialog-btn--primary"
+                onClick={() => {
+                  if (introDialogStep < INTRO_DIALOG_STEPS.length - 1) {
+                    setIntroDialogStep((s) => s + 1);
+                  } else {
+                    handleDismissIntroDialog();
+                  }
+                }}
+              >
+                {introDialogStep === INTRO_DIALOG_STEPS.length - 1
+                  ? "Start Building →"
+                  : "Next"}
+              </button>
+              <button
+                type="button"
+                className="builder-intro-dialog-btn--skip"
+                onClick={handleDismissIntroDialog}
+              >
+                Skip intro
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {shouldShowCurrentFlowPayoffBanner && (
         <section className="current-flow-payoff-banner" role="status" aria-live="polite">
+          <button
+            type="button"
+            className="current-flow-payoff-close"
+            aria-label="Dismiss"
+            onClick={() => {
+              setCurrentFlowPayoffVisible(false);
+            }}
+          >
+            ×
+          </button>
           <div className="current-flow-payoff-kicker">Electricity in motion</div>
           <h2 className="current-flow-payoff-title">
             {currentFlowPayoffHasFlow

@@ -15749,114 +15749,20 @@ body.android-optimized .zoom-btn {
             }
         }
 
-?? GETTING STARTED:
-
-1?? ADD COMPONENTS (?? Components menu):
-   ? Battery (B key) - Power source
-   ? Resistor (R key) - Limit current
-   ? LED (L key) - Light indicator
-   ? Switch (S key) - Control flow
-   ? All components show real-time values
-
-2?? CONNECT WITH WIRES (??? Tools menu):
-   ? Click "?? Wire" button (or W key)
-   ? Touch component terminals to connect
-   ? Tap any existing wire run to drop a junction and start a branch
-   ? Complete the circuit for current flow
-
-3?? VIEW CALCULATIONS (panels on right):
-   ? ?? W.I.R.E. - Main electrical values
-   ? ?? EIR ? - Ohm's Law triangle
-   ? ? Power ? - Power calculations
-   ? ?? Worksheet - Step-by-step formulas
-   ? ? Solve - Check your answers
-
-???????????????????????????????????????
-
-?? VISUAL LEARNING:
-
-??? COLOR-CODED VALUES:
-   ?? Blue = Power (Watts)
-   ?? Orange = Current (Amps)
-   ?? Green = Resistance (Ohms)
-   ?? Red = Voltage (Volts)
-
-?? FLOW VISUALIZATION (View menu):
-   ? Electron Flow: Shows actual electron movement
-     (negative ? positive, semi-transparent particles)
-   ? Current Flow: Shows conventional direction
-     (positive ? negative, solid particles)
-   ? Toggle: View ? ?? Flow
-
-? POLARITY INDICATORS:
-   ? Red (+) and Blue (-) terminals
-   ? Prevents incorrect connections
-   ? Toggle: View ? ? Polarity
-
-???????????????????????????????????????
-
-?? ADVANCED FEATURES:
-
-?? ROUTING MODES (??? Tools menu):
-   ? Free-form: Natural connections
-   ? Manhattan: Textbook right-angles
-   ? Offset: Parallel detours
-   ? Arc: Smooth sweeps
-   ? Toggle: Tools ? ?? Route
-
-? JUNCTIONS (critical for parallel + series-parallel circuits):
-   ? In Wire Mode, tap/click any wire run to split it and drop a junction
-   ? The new junction becomes a live terminal so you can branch immediately
-   ? Use junction branches to apply KCL on every current split/recombine node
-
-?? AUTO-ARRANGE:
-   ? Tools ? ?? Auto-Arrange
-   ? Automatically creates textbook layouts
-   ? Perfect for practice problems
-
-?? LAYOUT MODES (View menu):
-   ? Free: Place anywhere
-   ? Square: Textbook style
-   ? Linear: Vertical tree
-   ? Toggle: View ? ?? Layout
-
-???????????????????????????????????????
-
-?? CONTROLS:
-
-MOUSE/TOUCH:
-   ? Drag: Move components
-   ? Long-press: Edit values/properties
-   ? Two-finger pinch: Zoom
-   ? Two-finger drag: Pan workspace
-
-KEYBOARD SHORTCUTS:
-   ? B = Battery, R = Resistor
-   ? L = LED, S = Switch, J = Junction
-   ? W = Wire Mode, T = Rotate Mode
-   ? Space = Toggle Menu
-
-VIEW CONTROLS (??? View menu):
-   ? Reset View: Center camera
-   ? Fit Screen: Auto-zoom to circuit
-   ? Toggle Grid: Show/hide snap grid
-   ? Labels: Show/hide component names
-
-???????????????????????????????????????
-
-?? TIPS:
-? Complete the circuit for current to flow
-? Open switches stop current flow
-? Use junctions for every parallel branch; that is where current splits/recombines
-? Long-press wires to add a branch junction, delete, or reroute
-? Try different routing modes for cleaner layouts
-
-Need more help? Check:
-? ?? W.I.R.E. Guide - Electrical concepts
-? ?? Shortcuts - Full keyboard reference
-? ?? About - Version info & features
-            `;
-            alert(tutorial);
+        function maybeAutoShowTutorial() {
+            // Skip the built-in tutorial when running inside the React
+            // wrapper's iframe — the React app has its own onboarding flow
+            // and the React UI elements (mode bar, panels) would render on
+            // top of this iframe's tutorial, obscuring its dismiss button.
+            if (window !== window.top) return;
+            try {
+                if (!localStorage.getItem(TUTORIAL_SEEN_KEY)) {
+                    showTutorial();
+                }
+            } catch(e) {
+                // localStorage unavailable — show anyway for new sessions
+                showTutorial();
+            }
         }
 
         function showWireGuide() {
