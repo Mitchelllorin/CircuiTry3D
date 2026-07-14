@@ -1791,6 +1791,69 @@ export default function Builder() {
     [postToBuilder],
   );
 
+  const handleClearWorkspace = useCallback(() => {
+    triggerBuilderAction("clear-workspace");
+  }, [triggerBuilderAction]);
+
+  const handleRunSimulationClick = useCallback(() => {
+    triggerBuilderAction("run-simulation");
+    triggerSimulationPulse();
+  }, [triggerBuilderAction, triggerSimulationPulse]);
+
+  const arenaStatusMessage = useMemo(() => {
+    switch (arenaExportStatus) {
+      case "exporting":
+        return "Exporting current build to Component Arena...";
+      case "ready": {
+        if (!lastArenaExport) {
+          return "Component Arena export is ready.";
+        }
+        const exportedTime = lastArenaExport.exportedAt ? new Date(lastArenaExport.exportedAt) : null;
+        const formattedTime = exportedTime && !Number.isNaN(exportedTime.getTime())
+          ? exportedTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+          : null;
+        const componentLabel = typeof lastArenaExport.componentCount === "number"
+          ? `${lastArenaExport.componentCount} component${lastArenaExport.componentCount === 1 ? "" : "s"}`
+          : null;
+        if (componentLabel && formattedTime) {
+          return `Last arena export: ${componentLabel} - ${formattedTime}`;
+        }
+        if (componentLabel) {
+          return `Last arena export: ${componentLabel}`;
+        }
+        return "Component Arena export is ready.";
+      }
+      case "error":
+        return arenaExportError ?? "Component Arena export failed.";
+      default:
+        return "Send this build to the Component Arena for advanced testing.";
+    }
+  }, [arenaExportStatus, arenaExportError, lastArenaExport]);
+
+  const practiceWorksheetMessage = useMemo(() => {
+    const currentId = activePracticeProblemId ?? DEFAULT_PRACTICE_PROBLEM?.id ?? null;
+    if (!currentId) {
+      return "Select a practice problem to start the guided worksheet.";
+    }
+
+    const problem = findPracticeProblemById(currentId);
+    if (!problem) {
+      return "Select a practice problem to start the guided worksheet.";
+    }
+
+    if (practiceWorksheetState?.problemId === problem.id && practiceWorksheetState.complete) {
+      return `Worksheet complete for ${problem.title}. Tap Next Problem to load the next circuit.`;
+    }
+
+    return `Complete the worksheet for ${problem.title} to unlock the next challenge.`;
+  }, [activePracticeProblemId, practiceWorksheetState]);
+
+  const isArenaSyncing = arenaExportStatus === "exporting";
+  const canOpenLastArena = Boolean(lastArenaExport?.sessionId);
+
+  const leftFloatingOffset = "calc(clamp(12px, 3vw, 32px) + env(safe-area-inset-left, 0px) + 48px + 12px)";
+  const rightFloatingOffset = "calc(clamp(12px, 3vw, 32px) + env(safe-area-inset-right, 0px) + 48px + 12px)";
+
   const controlsDisabled = !isFrameReady;
   const controlDisabledTitle = controlsDisabled ? "Workspace is still loading" : undefined;
   const builderFrameSrc = useMemo(() => {
@@ -3021,9 +3084,14 @@ export default function Builder() {
           onClick={handleClearWorkspace}
           disabled={controlsDisabled}
           aria-disabled={controlsDisabled}
+          aria-label="Clear workspace"
           title={controlsDisabled ? controlDisabledTitle : "Clear all components, wires, and analysis data"}
         >
-          Clear Workspace
+          <span className="builder-floating-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" focusable="false">
+              <path d="M9 3h6l1 2h4v2H4V5h4l1-2zm2 8v7h2v-7h-2zm-4 0v7h2v-7H7zm8 0v7h2v-7h-2z" />
+            </svg>
+          </span>
         </button>
         <button
           type="button"
@@ -3033,9 +3101,14 @@ export default function Builder() {
           disabled={controlsDisabled}
           aria-disabled={controlsDisabled}
           data-pulse={isSimulatePulsing ? "true" : undefined}
+          aria-label="Run simulation"
           title={controlsDisabled ? controlDisabledTitle : "Run the current circuit simulation"}
         >
-          Run Simulation
+          <span className="builder-floating-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" focusable="false">
+              <path d="M8 5v14l11-7z" />
+            </svg>
+          </span>
         </button>
       </div>
 
