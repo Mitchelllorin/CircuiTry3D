@@ -1,5 +1,7 @@
-import { GroundElement, SchematicElement, SymbolStandard, TwoTerminalElement, Vec2, WireElement } from "./types";
-import { DEFAULT_SYMBOL_STANDARD } from "./standards";
+import { DEFAULT_SYMBOL_STANDARD, STANDARD_PROFILES, SYMBOL_DIMENSIONS, SymbolStandard } from "./standards";
+import { GroundElement, Orientation, SchematicElement, TwoTerminalElement, Vec2, WireElement } from "./types";
+
+const DEFAULT_PROFILE = STANDARD_PROFILES[DEFAULT_SYMBOL_STANDARD];
 
 export const WIRE_RADIUS = SYMBOL_DIMENSIONS.wireRadius;
 export const RESISTOR_RADIUS = SYMBOL_DIMENSIONS.strokeRadius;
