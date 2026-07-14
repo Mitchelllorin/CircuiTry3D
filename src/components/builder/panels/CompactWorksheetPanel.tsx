@@ -626,9 +626,7 @@ export function CompactWorksheetPanel({
               </p>
             </div>
           )}
-          </>
-        )}
-        </div>
+        </>
       )}
     </div>
   )}

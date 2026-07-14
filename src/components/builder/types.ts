@@ -10,6 +10,10 @@ export type BuilderInvokeAction =
   | "toggle-polarity"
   | "cycle-layout"
   | "open-measurement-tools"
+  | "set-meter-mode"
+  | "toggle-meter-armed"
+  | "clear-meter-selection"
+  | "request-meter-state"
   | "cycle-wire-routing"
   | "set-wire-routing"
   | "toggle-grid"
@@ -222,6 +226,23 @@ export type LegacyModeState = {
   gridBrightness: number;
   gridLineWidth: number;
   gridHue: number;
+};
+
+export type MeterMode = "voltage" | "current" | "resistance" | "scope";
+
+export type LegacyMeterState = {
+  mode: MeterMode;
+  armed: boolean;
+  instructions: string;
+  probeA: string;
+  probeB: string;
+  reading: string;
+  subreading?: string;
+  scope?: {
+    readout: string;
+    buffer: number[];
+    active: boolean;
+  };
 };
 
 export type QuickAction = {

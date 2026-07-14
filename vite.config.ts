@@ -1,15 +1,19 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
-function normalizeBasePath(value?: string): string {
-  const trimmed = value?.trim();
-  if (!trimmed) {
-    return '/CircuiTry3D/';
-  }
-
-  const withLeadingSlash = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
-  return withLeadingSlash.endsWith('/') ? withLeadingSlash : `${withLeadingSlash}/`;
-}
+const buildSha =
+  process.env.VERCEL_GIT_COMMIT_SHA ??
+  process.env.GITHUB_SHA ??
+  process.env.CF_PAGES_COMMIT_SHA ??
+  process.env.COMMIT_SHA ??
+  'dev';
+const buildRef =
+  process.env.VERCEL_GIT_COMMIT_REF ??
+  process.env.GITHUB_REF_NAME ??
+  process.env.CF_PAGES_BRANCH ??
+  process.env.BRANCH_NAME ??
+  'local';
+const buildTime = process.env.VERCEL_BUILD_TIME ?? new Date().toISOString();
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
@@ -18,6 +22,11 @@ export default defineConfig(({ mode }) => ({
   // This prevents asset loading issues in both environments.
   base: mode === 'capacitor' ? './' : '/',
   plugins: [react()],
+  define: {
+    __BUILD_SHA__: JSON.stringify(buildSha),
+    __BUILD_REF__: JSON.stringify(buildRef),
+    __BUILD_TIME__: JSON.stringify(buildTime),
+  },
   build: {
     outDir: 'dist',
     sourcemap: false,

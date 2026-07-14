@@ -11,6 +11,10 @@ import Account from "../pages/Account";
 import Classroom from "../pages/Classroom";
 import StudentView from "../pages/StudentView";
 import UnifiedNav from "../components/UnifiedNav";
+import BrandSignature from "../components/BrandSignature";
+import GlobalModeBar from "../components/GlobalModeBar";
+import BuildStamp from "../components/BuildStamp";
+import { WorkspaceModeProvider } from "../context/WorkspaceModeContext";
 import "../styles/layout.css";
 
 // Lazy-load heavy pages so they are code-split into separate chunks.
@@ -132,28 +136,7 @@ function AppLayout() {
       <main className={contentClass}>
         <Outlet />
       </main>
-      {/* Tips & facts ticker - shown on all pages except landing and arena */}
-      {!isLanding && !isArena && <TipsTicker />}
-      {/* Site footer with legal links - shown on all pages except landing, workspace, and arena */}
-      {!isLanding && !isWorkspace && !isArena && (
-        <footer className="app-footer">
-          <Link to="/privacy" className="app-footer-link">{t("footer.privacyPolicy")}</Link>
-          <span className="app-footer-sep" aria-hidden="true">·</span>
-          <Link to="/data-safety" className="app-footer-link">{t("footer.dataSafety")}</Link>
-          <span className="app-footer-sep" aria-hidden="true">·</span>
-          <Link to="/settings" className="app-footer-link">Settings</Link>
-          <span className="app-footer-sep" aria-hidden="true">·</span>
-          <Link to="/app-access" className="app-footer-link">{t("footer.getTheApp")}</Link>
-          <span className="app-footer-sep" aria-hidden="true">·</span>
-          <Link to="/play-store" className="app-footer-link">{t("footer.playStoreCompliance")}</Link>
-          <span className="app-footer-sep" aria-hidden="true">·</span>
-          <Link to="/delete-account" className="app-footer-link">{t("footer.deleteAccount")}</Link>
-          <span className="app-footer-sep" aria-hidden="true">·</span>
-          <Link to="/partnerships" className="app-footer-link">{t("footer.partnerships")}</Link>
-          <span className="app-footer-sep" aria-hidden="true">·</span>
-          <Link to="/terms" className="app-footer-link">{t("footer.terms")}</Link>
-        </footer>
-      )}
+      {!isLanding && <BuildStamp />}
     </div>
   );
 }
