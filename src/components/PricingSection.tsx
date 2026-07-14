@@ -133,6 +133,7 @@ type Plan = {
   id: string;
   name: string;
   tagline?: string;
+  audience?: string;
   popular?: boolean;
   price: PriceMap;
   unit?: string;
@@ -153,7 +154,45 @@ type Plan = {
     };
   }, []);
 
-  // ── Price resolution helpers ───────────────────────────────────────────────
+type ManufacturerTier = {
+  id: string;
+  name: string;
+  tagline?: string;
+  priceRange: {
+    min: number;
+    max: number | null;
+  };
+  period: string;
+  features: string[];
+  popular?: boolean;
+};
+
+type ManufacturerPartnerships = {
+  title: string;
+  subtitle: string;
+  description: string;
+  tiers: ManufacturerTier[];
+  cta: {
+    label: string;
+    href: string;
+  };
+  factors: Array<{
+    title: string;
+    description: string;
+  }>;
+};
+
+type PricingData = {
+  currency: string;
+  billingCycles: BillingCycle[];
+  plans: Plan[];
+  addons?: AddOn[];
+  manufacturerPartnerships?: ManufacturerPartnerships;
+  stripe?: {
+    status: string;
+    note?: string;
+  };
+};
 
   /**
    * Return the display price for a consumer tier.
@@ -235,20 +274,26 @@ const PRICING_WORKFLOW_STEPS: SectionWorkflowStep[] = [
     }
   }, [handleWebPurchase]);
 
-  /** Handle a tap on the Pro Subscription buy button. */
-  const handlePurchasePro = useCallback(async () => {
-    setPurchaseStatus("purchasing");
-    setPurchaseError(null);
-    if (handleWebPurchase()) {
-      setPurchaseStatus("idle");
-      return;
-    }
-    const launched = await purchaseProSubscription(proCycle);
-    if (!launched) {
-      window.location.href =
-        "mailto:hello@circuitry3d.net?subject=Pro%20Subscription%20Purchase";
-    }
-  }, [handleWebPurchase, proCycle]);
+function formatPriceRange(min: number, max: number | null, currency: string): string {
+  const formatter = new Intl.NumberFormat(undefined, {
+    style: "currency",
+    currency,
+    minimumFractionDigits: 0,
+  });
+
+  if (max === null) {
+    return `${formatter.format(min)}+`;
+  }
+
+  return `${formatter.format(min)} – ${formatter.format(max)}`;
+}
+
+function getDisplayUnit(plan: Plan | AddOn): string | undefined {
+  if (plan.unit) {
+    return plan.unit;
+  }
+  return undefined;
+}
 
   /** Restore all consumer purchases (subscriptions + one-time). */
   const handleRestorePurchases = useCallback(async () => {
@@ -262,47 +307,43 @@ const PRICING_WORKFLOW_STEPS: SectionWorkflowStep[] = [
     setTimeout(() => setRestoreStatus("idle"), 3000);
   }, []);
 
-  // ── Render helpers ────────────────────────────────────────────────────────
+type AudienceTab = "all" | "students" | "educators" | "institutions" | "general";
 
-  /** Determine whether a consumer tier is currently active for the user. */
-  const isTierActive = useCallback(
-    (tierId: "free" | "premium" | "pro"): boolean => {
-      if (tierId === "free") return entitlements.tier === "free";
-      if (tierId === "premium") return entitlements.hasPremium && !entitlements.hasPro;
-      if (tierId === "pro") return entitlements.hasPro;
-      return false;
-    },
-    [entitlements]
-  );
+const AUDIENCE_TABS: { id: AudienceTab; label: string }[] = [
+  { id: "all", label: "All Plans" },
+  { id: "students", label: "Students" },
+  { id: "educators", label: "Educators" },
+  { id: "institutions", label: "Schools" },
+  { id: "general", label: "Makers" },
+];
+
+export default function PricingSection() {
+  const [billingCycle, setBillingCycle] = useState<BillingCycleId>(() => {
+    const preferred = normalizeCycle(pricingData.billingCycles?.[0]?.id);
+    return preferred ?? DEFAULT_CYCLE;
+  });
+
+  const [audienceFilter, setAudienceFilter] = useState<AudienceTab>("all");
+
+  const cycles = useMemo(() => pricingData.billingCycles.map((cycle) => normalizeCycle(cycle.id)), []);
 
   const activeCycle = billingCycle;
   const activeCycleMeta = pricingData.billingCycles.find((cycle) => normalizeCycle(cycle.id) === activeCycle);
+
+  const filteredPlans = useMemo(() => {
+    if (audienceFilter === "all") {
+      return pricingData.plans;
+    }
+    return pricingData.plans.filter((plan) => plan.audience === audienceFilter);
+  }, [audienceFilter]);
 
   const handleCycleChange = (cycle: BillingCycleId) => {
     setBillingCycle(cycle);
   };
 
-  const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
-
-  const handleStripeClick = async (sku: string) => {
-    setCheckoutLoading(sku);
-    try {
-      const res = await fetch("/api/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sku, billingCycle: activeCycle }),
-      });
-      const data = await res.json();
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        window.alert?.(data.error ?? "Unable to start checkout. Please try again or contact us.");
-      }
-    } catch {
-      window.alert?.("Unable to connect to checkout. Please try again later or contact us at info@circuitry3d.net.");
-    } finally {
-      setCheckoutLoading(null);
-    }
+  const handleStripeClick = (sku: string) => {
+    console.info("Stripe checkout pending integration", { sku });
+    window.alert?.("Stripe checkout coming soon. Contact us to activate your subscription.");
   };
 
   const renderCTA = (cta: CallToAction) => {
@@ -415,6 +456,8 @@ const PRICING_WORKFLOW_STEPS: SectionWorkflowStep[] = [
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
+  const manufacturerData = pricingData.manufacturerPartnerships;
+
   return (
     <section className="pricing-section" aria-labelledby="pricing-title">
       <SectionWorkflowStrip
@@ -423,63 +466,30 @@ const PRICING_WORKFLOW_STEPS: SectionWorkflowStep[] = [
       />
 
       <div className="pricing-hero">
-        <WordMark size="sm" decorative className="pricing-brand" />
-        <h1 id="pricing-title">Plans &amp; Pricing</h1>
+        <h1 id="pricing-title">Simple, Accessible Pricing</h1>
         <p className="pricing-subtitle">
-          Whether you're learning on your own or teaching a class, there's a plan that fits. Upgrade any time as you grow.
+          CircuiTry3D is free for students and makers. Educators get free tools too, with premium options for those who want more.
         </p>
-      </div>
 
-      {/* ── Consumer tiers ── */}
-      <div className="pricing-section-group">
-        <div className="pricing-section-label">
-          <span className="pricing-section-kicker">App Purchase</span>
-          <h2 className="pricing-section-title">Consumer Plans</h2>
-          <p className="pricing-section-desc">
-            One-time purchase or subscription — fully managed through Google Play.
-          </p>
-          {!onAndroid && !supportsDirectWebCheckout && (
-            <p className="pricing-purchase-status pricing-purchase-status--info">
-              Purchases complete in the Android app through Google Play.
-            </p>
-          )}
-          {purchaseStatus === "failed" && (
-            <p className="pricing-purchase-status pricing-purchase-status--error" role="alert">
-              {purchaseError
-                ? `Unable to start checkout: ${purchaseError}`
-                : "Unable to start checkout. Please try again."}
-            </p>
-          )}
-          {purchaseStatus === "cancelled" && (
-            <p className="pricing-purchase-status pricing-purchase-status--warning">
-              Purchase cancelled before checkout completed.
-            </p>
-          )}
-        </div>
-
-        {/* Pro cycle toggle — only visible above the Pro card */}
-        <div className="pricing-pro-cycle-toggle" role="group" aria-label="Pro billing cycle">
-          {(["monthly", "yearly"] as ProCycle[]).map((cycle) => (
+        <div className="audience-tabs" role="tablist" aria-label="Filter by audience">
+          {AUDIENCE_TABS.map((tab) => (
             <button
-              key={cycle}
+              key={tab.id}
               type="button"
-              className={`billing-toggle-btn${proCycle === cycle ? " active" : ""}`}
-              onClick={() => setProCycle(cycle)}
-              aria-pressed={proCycle === cycle}
+              role="tab"
+              className={`audience-tab${audienceFilter === tab.id ? " active" : ""}`}
+              onClick={() => setAudienceFilter(tab.id)}
+              aria-selected={audienceFilter === tab.id}
             >
-              <span className="billing-toggle-label">
-                {cycle.charAt(0).toUpperCase() + cycle.slice(1)}
-              </span>
-              {cycle === "yearly" && yearlyPriceNote && (
-                <span className="billing-toggle-note">{yearlyPriceNote}</span>
-              )}
+              {tab.label}
             </button>
           ))}
         </div>
 
-        <div className="plan-grid plan-grid--consumer">
-          {CONSUMER_TIERS.map((tier) => {
-            const active = isTierActive(tier.id);
+        <div className="billing-toggle" role="group" aria-label="Billing cycle selector">
+          {cycles.map((cycleId) => {
+            const meta = pricingData.billingCycles.find((cycle) => normalizeCycle(cycle.id) === cycleId);
+            const isActive = activeCycle === cycleId;
             return (
               <article
                 key={tier.id}
@@ -537,13 +547,19 @@ const PRICING_WORKFLOW_STEPS: SectionWorkflowStep[] = [
         </div>
       </div>
 
-      <div className="plan-grid">
-        {pricingData.plans.map((plan) => {
+      <div className="plan-grid" data-plan-count={filteredPlans.length}>
+        {filteredPlans.map((plan) => {
           const amount = plan.price?.[activeCycle];
           const priceLabel = formatPrice(amount, pricingData.currency);
           const unit = getDisplayUnit(plan);
+          const isFree = amount === 0;
           return (
-            <article key={plan.id} className={`plan-card plan-${plan.id}${plan.popular ? " plan-popular" : ""}`}>
+            <article
+              key={plan.id}
+              className={`plan-card plan-${plan.id}${plan.popular ? " plan-popular" : ""}${isFree ? " plan-free" : ""}`}
+            >
+              {plan.popular && <span className="plan-badge">Most Popular</span>}
+              {isFree && !plan.popular && <span className="plan-badge plan-badge-free">Free Forever</span>}
               <header className="plan-header">
                 {plan.popular && <span className="plan-popular-badge">Most Popular</span>}
                 <h2>{plan.name}</h2>
@@ -553,7 +569,7 @@ const PRICING_WORKFLOW_STEPS: SectionWorkflowStep[] = [
                 <span className="plan-price-amount">{priceLabel}</span>
                 {unit && <span className="plan-price-unit">{unit}</span>}
                 {amount && amount > 0 && (
-                  <span className="plan-price-cycle">per {activeCycle}</span>
+                  <span className="plan-price-cycle">per {activeCycle === "annual" ? "year" : "month"}</span>
                 )}
                 {plan.renewal && <p className="plan-renewal">{plan.renewal}</p>}
               </div>
@@ -584,75 +600,109 @@ const PRICING_WORKFLOW_STEPS: SectionWorkflowStep[] = [
         </div>
       </div>
 
-      {/* ── Enterprise tiers ── */}
-      <div className="pricing-section-group pricing-section-group--enterprise">
-        <div className="pricing-section-label">
-          <span className="pricing-section-kicker pricing-section-kicker--enterprise">Enterprise</span>
-          <h2 className="pricing-section-title">Arena Plans</h2>
-          <p className="pricing-section-desc">
-            Designed for manufacturers, educators, and enterprise teams. No in-app
-            purchase — contact our sales team to get started.
-          </p>
-        </div>
-
-        <div className="plan-grid plan-grid--enterprise">
-          {ENTERPRISE_TIERS.map((tier) => (
-            <article key={tier.id} className={`plan-card plan-card--enterprise plan-${tier.id}`}>
-              <header className="plan-header">
-                <span className="plan-badge plan-badge--enterprise">{tier.badge}</span>
-                <div className="plan-icon" aria-hidden="true">{tier.icon}</div>
-                <h3 className="plan-name">{tier.name}</h3>
-              </header>
-
-              <div className="plan-price">
-                {tier.startingPrice ? (
-                  <span className="plan-price-amount plan-price-amount--enterprise">
-                    {tier.startingPrice}
-                  </span>
-                ) : (
-                  <span className="plan-price-amount plan-price-amount--enterprise">Contact Sales</span>
-                )}
-              </div>
-
-              <ul className="plan-features">
-                {tier.description.map((f) => (
-                  <li key={f}>{f}</li>
-                ))}
-              </ul>
-
-              <div className="plan-cta-wrapper">{renderEnterpriseCTA(tier)}</div>
-            </article>
-          ))}
-        </div>
-      </div>
-
-      {/* ── Manufacturer placement callout ── */}
-      <div className="pricing-section-group pricing-section-group--placement">
-        <div className="pricing-section-label">
-          <span className="pricing-section-kicker pricing-section-kicker--placement">Component Arena</span>
-          <h2 className="pricing-section-title">Manufacturer Placement</h2>
-          <p className="pricing-section-desc">
-            Get your real components in front of students and educators running live FUSE™ stress
-            tests. Packages start at <strong>$149 / mo</strong> — from a basic catalog listing
-            to a sponsored top-of-panel spotlight.
-          </p>
-        </div>
-        <div className="pricing-placement-callout">
-          <span className="pricing-placement-callout-icon" aria-hidden="true">🏭</span>
-          <div className="pricing-placement-callout-body">
-            <p className="pricing-placement-callout-text">
-              Standard Listing · Featured Placement · Sponsored Spotlight
-            </p>
-            <Link to="/partnerships#placement" className="pricing-cta pricing-cta--placement">
-              View Placement Packages →
-            </Link>
+      {pricingData.addons && pricingData.addons.length > 0 && (
+        <div className="addon-section">
+          <h3>Add-Ons & Bundles</h3>
+          <div className="addon-grid">
+            {pricingData.addons.map((addon) => {
+              const amount = addon.price?.[activeCycle];
+              const priceLabel = formatPrice(amount, pricingData.currency);
+              const unit = getDisplayUnit(addon);
+              return (
+                <article key={addon.id} className="addon-card">
+                  <header className="addon-header">
+                    <h4>{addon.name}</h4>
+                    {addon.tagline && <p className="addon-tagline">{addon.tagline}</p>}
+                    {addon.availability && <span className="addon-availability">{addon.availability}</span>}
+                  </header>
+                  <div className="addon-price">
+                    <span className="addon-price-amount">{priceLabel}</span>
+                    {unit && <span className="addon-price-unit">{unit}</span>}
+                    {amount && amount > 0 && (
+                      <span className="addon-price-cycle">per {activeCycle}</span>
+                    )}
+                  </div>
+                  <ul className="addon-features">
+                    {addon.features.map((feature) => (
+                      <li key={feature}>{feature}</li>
+                    ))}
+                  </ul>
+                  <div className="addon-cta-wrapper">{renderCTA(addon.cta)}</div>
+                </article>
+              );
+            })}
           </div>
         </div>
       </div>
 
+      {manufacturerData && (
+        <div className="manufacturer-section" id="partnerships">
+          <div className="manufacturer-hero">
+            <span className="manufacturer-kicker">For Manufacturers</span>
+            <h2>{manufacturerData.title}</h2>
+            <p className="manufacturer-subtitle">{manufacturerData.subtitle}</p>
+            <p className="manufacturer-description">{manufacturerData.description}</p>
+          </div>
+
+          <div className="manufacturer-grid">
+            {manufacturerData.tiers.map((tier) => (
+              <article
+                key={tier.id}
+                className={`manufacturer-card${tier.popular ? " manufacturer-popular" : ""}`}
+              >
+                {tier.popular && <span className="plan-badge">Recommended</span>}
+                <header className="manufacturer-header">
+                  <h3>{tier.name}</h3>
+                  {tier.tagline && <p className="manufacturer-tagline">{tier.tagline}</p>}
+                </header>
+                <div className="manufacturer-price">
+                  <span className="manufacturer-price-range manufacturer-contact-sales">
+                    Contact Sales
+                  </span>
+                </div>
+                <ul className="manufacturer-features">
+                  {tier.features.map((feature) => (
+                    <li key={feature}>{feature}</li>
+                  ))}
+                </ul>
+              </article>
+            ))}
+          </div>
+
+          <div className="manufacturer-factors">
+            <h3>What Affects Partnership Pricing?</h3>
+            <div className="manufacturer-factors-grid">
+              {manufacturerData.factors.map((factor) => (
+                <div key={factor.title} className="manufacturer-factor">
+                  <h4>{factor.title}</h4>
+                  <p>{factor.description}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="manufacturer-cta-wrapper">
+            <a
+              className="manufacturer-cta"
+              href={manufacturerData.cta.href}
+            >
+              {manufacturerData.cta.label}
+            </a>
+            <p className="manufacturer-cta-note">
+              We'll discuss your goals and create a custom partnership package.
+            </p>
+          </div>
+        </div>
+      )}
+
       <footer className="pricing-footer">
+        {pricingData.stripe && pricingData.stripe.status !== "active" && (
+          <p className="pricing-stripe-note">
+            {pricingData.stripe.note ?? "Online payments launching soon."}
+          </p>
+        )}
         <p className="pricing-contact-help">
-          Need a custom package? <a href="mailto:info@circuitry3d.net">Contact our team</a> for tailored pricing.
+          Questions? <a href="mailto:info@circuitry3d.net">Reach out to our team</a> for help finding the right plan.
         </p>
       </footer>
     </section>
