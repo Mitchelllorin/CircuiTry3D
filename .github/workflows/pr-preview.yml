@@ -1,25 +1,16 @@
-# Builds and deploys a live preview of every PR to GitHub Pages, then posts
-# the URL as a PR comment.  Cleans up the preview when the PR is closed.
-#
-# Preview URL: https://<owner>.github.io/CircuiTry3D/pr-preview/pr-<number>/
-#
-# Required repo settings (one-time, done in GitHub UI):
-#   Settings → Pages → Source: "Deploy from a branch" → branch: gh-pages, folder: / (root)
-#   Settings → Actions → General → Workflow permissions: "Read and write permissions"
-
 name: PR Preview
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened, closed]
+    types: [opened, synchronize, reopened]
 
 permissions:
-  contents: write        # push to gh-pages branch
-  pull-requests: write   # post / update the preview comment
+  contents: read
+  pull-requests: write
 
 # Cancel any in-progress preview build for the same PR so the latest push wins.
 concurrency:
-  group: github-pages-preview-${{ github.event.pull_request.number }}
+  group: vercel-preview-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
 env:
@@ -34,10 +25,11 @@ jobs:
     if: github.event.action != 'closed'
 
     steps:
-      - name: Upsert PR preview button comment
-        uses: actions/github-script@v7
-        env:
-          MARKER: "<!-- pr-preview-button -->"
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
           script: |
             const owner = context.repo.owner;
@@ -61,120 +53,47 @@ jobs:
               }
             };
 
-            const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-            // Poll up to 3 minutes (18 x 10s) because external preview deployments
-            // can appear shortly after this workflow starts.
-            let previewUrl = null;
+      - name: Install dependencies
+        run: npm ci
 
-      - name: Compute preview settings
-        id: pages
-        env:
-          PAGES_BASE_PATH: ${{ vars.PAGES_BASE_PATH }}
-          PAGES_ORIGIN: ${{ vars.PAGES_ORIGIN }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-        run: |
-          set -euo pipefail
-          repo_name="${GITHUB_REPOSITORY#*/}"
-          owner_name="${GITHUB_REPOSITORY_OWNER}"
-          base_path="${PAGES_BASE_PATH:-/$repo_name/}"
-          case "$base_path" in
-            /*) ;;
-            *) base_path="/$base_path" ;;
-          esac
-          case "$base_path" in
-            */) ;;
-            *) base_path="$base_path/" ;;
-          esac
-          origin="${PAGES_ORIGIN:-https://$owner_name.github.io}"
-          origin="${origin%/}"
-          preview_dir="pr-preview/pr-${PR_NUMBER}"
-          preview_base_path="${base_path}${preview_dir}/"
-          echo "origin=$origin" >> "$GITHUB_OUTPUT"
-          echo "preview_dir=$preview_dir" >> "$GITHUB_OUTPUT"
-          echo "preview_base_path=$preview_base_path" >> "$GITHUB_OUTPUT"
-          echo "preview_url=${origin}${preview_base_path}" >> "$GITHUB_OUTPUT"
-
-      - name: Build (PR-scoped base path)
+      - name: Build
         run: npm run build
-        env:
-          VITE_BASE_PATH: /CircuiTry3D/pr-preview/pr-${{ env.PR_NUMBER }}/
 
-      - name: Deploy preview to gh-pages
-        uses: JamesIves/github-pages-deploy-action@v4
-        with:
-          branch: gh-pages
-          folder: dist
-          target-folder: pr-preview/pr-${{ env.PR_NUMBER }}
-          # Keep the rest of the gh-pages tree intact (production root + other PRs).
-          clean: false
-          single-commit: false
-
-      - name: Find existing preview comment
-        uses: peter-evans/find-comment@v3
-        id: find-comment
-        with:
-          issue-number: ${{ env.PR_NUMBER }}
-          comment-author: github-actions[bot]
-          body-includes: '<!-- circuitry3d-pr-preview -->'
-
-      - name: Post / update preview comment
-        uses: peter-evans/create-or-update-comment@v4
-        with:
-          comment-id: ${{ steps.find-comment.outputs.comment-id }}
-          issue-number: ${{ env.PR_NUMBER }}
-          edit-mode: replace
-          body: |
-            <!-- circuitry3d-pr-preview -->
-            ## 🔍 PR Preview deployed
-
-            | | |
-            |---|---|
-            | **Preview URL** | https://mitchelllorin.github.io/CircuiTry3D/pr-preview/pr-${{ env.PR_NUMBER }}/ |
-            | **Commit** | ${{ github.event.pull_request.head.sha }} |
-
-            > Preview updates automatically on every push to this PR.
-
-  # ── Clean up preview on close ─────────────────────────────────────────────
-  cleanup-preview:
-    name: Remove Preview
-    runs-on: ubuntu-latest
-    if: github.event.action == 'closed'
-
-    steps:
-      - name: Checkout gh-pages branch
-        uses: actions/checkout@v4
-        with:
-          ref: gh-pages
-
-      - name: Delete PR preview folder
+      - name: Deploy to Vercel (Preview)
+        id: deploy
         run: |
-          PREVIEW_DIR="pr-preview/pr-${{ env.PR_NUMBER }}"
-          if [ -d "$PREVIEW_DIR" ]; then
-            git config user.name "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
-            git rm -r "$PREVIEW_DIR"
-            git commit -m "chore: remove preview for PR ${{ env.PR_NUMBER }}"
-            git push
-          else
-            echo "No preview directory found for PR ${{ env.PR_NUMBER }}, nothing to clean up."
-          fi
+          OUTPUT=$(npx vercel --token ${{ secrets.VERCEL_TOKEN }} --yes --json 2>/dev/null || npx vercel --token ${{ secrets.VERCEL_TOKEN }} --yes 2>&1)
+          DEPLOY_URL=$(echo "$OUTPUT" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('url',''))" 2>/dev/null || echo "$OUTPUT" | grep -E '^https://' | tail -1)
+          echo "url=$DEPLOY_URL" >> $GITHUB_OUTPUT
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
-      - name: Find existing preview comment
-        uses: peter-evans/find-comment@v3
-        id: find-comment
+      - name: Comment PR with preview URL
+        uses: actions/github-script@v7
         with:
-          issue-number: ${{ env.PR_NUMBER }}
-          comment-author: github-actions[bot]
-          body-includes: '<!-- circuitry3d-pr-preview -->'
-
-      - name: Update comment to mark preview as removed
-        if: steps.find-comment.outputs.comment-id != ''
-        uses: peter-evans/create-or-update-comment@v4
-        with:
-          comment-id: ${{ steps.find-comment.outputs.comment-id }}
-          edit-mode: replace
-          body: |
-            <!-- circuitry3d-pr-preview -->
-            ## ~~🔍 PR Preview deployed~~
-
-            Preview has been removed — this PR is closed.
+          script: |
+            const url = '${{ steps.deploy.outputs.url }}';
+            const marker = '<!-- vercel-preview -->';
+            const body = `${marker}\n### 🔍 Vercel Preview Deployment\n\nYour preview is ready: ${url}`;
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            const existing = comments.find(c => c.body.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }

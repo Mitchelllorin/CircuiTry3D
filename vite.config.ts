@@ -13,10 +13,10 @@ function normalizeBasePath(value?: string): string {
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
-  // VITE_BASE_PATH is set by CI workflows so each deployment (production or
-  // PR preview) gets the correct sub-path. Defaults to root for the
-  // production custom domain (www.circuitry3d.net).
-  base: process.env.VITE_BASE_PATH ?? '/',
+  // Use relative paths only for Capacitor builds (app:// scheme).
+  // For web deployments (dev, preview, production), use absolute paths.
+  // This prevents asset loading issues in both environments.
+  base: mode === 'capacitor' ? './' : '/',
   plugins: [react()],
   build: {
     outDir: 'dist',

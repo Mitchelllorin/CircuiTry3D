@@ -1,10 +1,4 @@
-# Deploys the production build to GitHub Pages whenever a commit lands on main.
-#
-# One-time repo setup required (done once in GitHub UI, not repeated by CI):
-#   Settings → Pages → Source: "Deploy from a branch" → branch: gh-pages, folder: / (root)
-#   Settings → Actions → General → Workflow permissions: "Read and write permissions"
-
-name: Deploy to GitHub Pages
+name: Deploy to Vercel
 
 on:
   push:
@@ -12,11 +6,11 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write   # needed to push the gh-pages branch
+  contents: read
 
 concurrency:
-  group: pages-production
-  cancel-in-progress: true
+  group: vercel-production
+  cancel-in-progress: false
 
 jobs:
   deploy:
@@ -41,18 +35,9 @@ jobs:
 
       - name: Build
         run: npm run build
+
+      - name: Deploy to Vercel (Production)
+        run: npx vercel --prod --token ${{ secrets.VERCEL_TOKEN }} --yes
         env:
-          VITE_BASE_PATH: /
-
-      - name: Set custom domain
-        run: echo "www.circuitry3d.net" > dist/CNAME
-
-      - name: Deploy to gh-pages branch
-        uses: JamesIves/github-pages-deploy-action@v4
-        with:
-          branch: gh-pages
-          folder: dist
-          # Don't wipe PR-preview subdirectories that live alongside the root
-          # production deployment.
-          clean-exclude: pr-preview
-          single-commit: true
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
