@@ -2148,7 +2148,9 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
   flex-direction: column;
   gap: 14px;
   overflow-y: auto;
+  overflow-x: hidden;
   padding-right: 2px;
+  scroll-behavior: smooth;
 }
 
 /* CRITICAL: every section in the scrollable menu must keep its natural height and
@@ -2167,7 +2169,12 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
 }
 
 .builder-menu-scroll::-webkit-scrollbar-thumb {
-  background: rgba(0, 255, 136, 0.35);
+  background: rgba(0, 255, 136, 0.45);
+  border-radius: 999px;
+}
+
+.builder-menu-scroll::-webkit-scrollbar-track {
+  background: rgba(0, 255, 136, 0.08);
   border-radius: 999px;
 }
 
@@ -5082,11 +5089,26 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
   }
 }
 
-/* Touch / coarse-pointer: ensure minimum tap targets on side tabs */
-@media (pointer: coarse) {
-  .builder-menu-toggle {
-    min-width: 44px;
-    min-height: 44px;
+@media (max-width: 900px), (pointer: coarse) {
+  .builder-menu-stage-left {
+    top: calc(72px + var(--builder-safe-area-top));
+  }
+
+  .builder-menu-stage-left .builder-menu {
+    height: auto;
+    max-height: min(75vh, calc(100vh - 120px));
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .builder-menu-left .builder-menu-scroll {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+
+  .builder-menu-toggle-left {
+    padding: 14px 8px 12px;
   }
 
   .slider-btn,

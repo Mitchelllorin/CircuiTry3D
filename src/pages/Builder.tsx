@@ -83,35 +83,480 @@ import type {
   PanelAction,
 } from "../components/builder/types";
 import {
-  COMPONENT_ACTIONS,
-  QUICK_ADD_COMPONENTS,
-  WIRE_TOOL_ACTIONS,
-  CURRENT_MODE_ACTIONS,
-  VIEW_CONTROL_ACTIONS,
-  SETTINGS_ITEMS,
-  WIRE_LEGEND,
-  DEFAULT_LOGO_SETTINGS,
-  ENABLE_SCROLLER_MENU,
-} from "../components/builder/constants";
-import {
-  CATALOG_COMPONENTS,
-  builderTypeFor,
-  toWorkspaceProperties,
-} from "../data/componentCatalog";
-import {
-  clampLabelVisibilityLevel,
-  getLabelVisibilityDescription,
-  getNextLabelToggleTitle,
-  resolveLabelVisibilityLevel,
-} from "../components/builder/labelVisibility";
-import { IS_DEMO_MODE, DEMO_COMPONENT_IDS } from "../utils/demoMode";
-import { isAndroidApp } from "../utils/playStoreBilling";
-import { useComponent3DThumbnail } from "../components/builder/toolbars/useComponent3DThumbnail";
-import {
-  isWorkspaceSectionId,
-  type WorkspaceSectionId,
-} from "../components/workspaceSections";
-import wireStrippersIcon from "../assets/wire-strippers-icon.svg";
+  DEFAULT_SYMBOL_STANDARD,
+  SYMBOL_STANDARD_OPTIONS,
+  type SymbolStandard,
+} from "../schematic/standards";
+import { COMPONENT_CATALOG } from "../schematic/catalog";
+import type { CatalogEntry } from "../schematic/types";
+
+type BuilderInvokeAction =
+  | "toggle-wire-mode"
+  | "toggle-rotate-mode"
+  | "add-junction"
+  | "auto-arrange"
+  | "reset-camera"
+  | "fit-screen"
+  | "toggle-current-flow"
+  | "toggle-polarity"
+  | "cycle-layout"
+  | "toggle-grid"
+  | "toggle-labels"
+  | "load-preset"
+  | "generate-practice"
+  | "practice-help"
+  | "show-tutorial"
+  | "show-wire-guide"
+  | "show-shortcuts"
+  | "show-about"
+  | "open-arena"
+  | "set-tool"
+  | "clear-workspace"
+  | "run-simulation";
+
+type BuilderMessage =
+  | { type: "builder:add-component"; payload: { componentType: string } }
+  | { type: "builder:add-junction" }
+  | { type: "builder:set-analysis-open"; payload: { open: boolean } }
+  | {
+      type: "builder:invoke-action";
+      payload: { action: BuilderInvokeAction; data?: Record<string, unknown> };
+    }
+  | { type: "builder:request-mode-state" }
+  | {
+      type: "builder:export-arena";
+      payload?: {
+        requestId?: string;
+        openWindow?: boolean;
+        sessionName?: string;
+        testVariables?: Record<string, unknown>;
+      };
+    };
+
+type ComponentAction = {
+  id: string;
+  icon: string;
+  label: string;
+  action: "component" | "junction";
+  builderType?: "battery" | "resistor" | "led" | "switch";
+};
+
+type BuilderToolId = "select" | "wire" | "measure";
+
+type LegacyModeState = {
+  isWireMode: boolean;
+  isRotateMode: boolean;
+  isMeasureMode: boolean;
+  currentFlowStyle: string;
+  showPolarityIndicators: boolean;
+  layoutMode: string;
+  wireRoutingMode: string;
+  showGrid: boolean;
+  showLabels: boolean;
+};
+
+type QuickAction = {
+  id: string;
+  label: string;
+  description: string;
+  kind: "tool" | "action";
+  action: BuilderInvokeAction;
+  data?: Record<string, unknown>;
+  tool?: BuilderToolId;
+};
+
+type HelpSection = {
+  title: string;
+  paragraphs: string[];
+  bullets?: string[];
+};
+
+type HelpLegendItem = {
+  id: string;
+  letter: string;
+  label: string;
+};
+
+type HelpModalView =
+  | "overview"
+  | "tutorial"
+  | "wire-guide"
+  | "schematic"
+  | "practice"
+  | "shortcuts"
+  | "about";
+
+type HelpEntry = {
+  id: string;
+  label: string;
+  description: string;
+  view: HelpModalView;
+};
+
+const COMPONENT_ACTIONS: ComponentAction[] = [
+  {
+    id: "battery",
+    icon: "B",
+    label: "Battery",
+    action: "component",
+    builderType: "battery",
+  },
+  {
+    id: "resistor",
+    icon: "R",
+    label: "Resistor",
+    action: "component",
+    builderType: "resistor",
+  },
+  {
+    id: "led",
+    icon: "LED",
+    label: "LED",
+    action: "component",
+    builderType: "led",
+  },
+  {
+    id: "switch",
+    icon: "SW",
+    label: "Switch",
+    action: "component",
+    builderType: "switch",
+  },
+  { id: "junction", icon: "J", label: "Junction", action: "junction" },
+];
+
+const QUICK_ACTIONS: QuickAction[] = [
+  {
+    id: "select",
+    label: "Select Tool",
+    description: "Tap components to edit",
+    kind: "tool",
+    action: "set-tool",
+    data: { tool: "select" },
+    tool: "select",
+  },
+  {
+    id: "wire",
+    label: "Wire Tool",
+    description: "Drag to sketch new connections",
+    kind: "tool",
+    action: "set-tool",
+    data: { tool: "wire" },
+    tool: "wire",
+  },
+  {
+    id: "measure",
+    label: "Measure",
+    description: "Check distances and alignment",
+    kind: "tool",
+    action: "set-tool",
+    data: { tool: "measure" },
+    tool: "measure",
+  },
+  {
+    id: "clear",
+    label: "Clear Workspace",
+    description: "Remove all components, wires, and analysis data",
+    kind: "action",
+    action: "clear-workspace",
+  },
+  {
+    id: "simulate",
+    label: "Run Simulation",
+    description: "Preview circuit behaviour",
+    kind: "action",
+    action: "run-simulation",
+  },
+];
+
+const PROPERTY_ITEMS = [
+  { id: "component", name: "Selected Component", value: "None" },
+  { id: "position", name: "Position", value: "-" },
+  { id: "rotation", name: "Rotation", value: "-" },
+  { id: "metadata", name: "Metadata", value: "Tap any element to inspect" },
+];
+
+type PanelAction = {
+  id: string;
+  label: string;
+  description: string;
+  action: BuilderInvokeAction;
+  data?: Record<string, unknown>;
+};
+
+type SettingsItem = {
+  id: string;
+  label: string;
+  action: BuilderInvokeAction;
+  data?: Record<string, unknown>;
+  getDescription: (
+    state: LegacyModeState,
+    helpers: { currentFlowLabel: string },
+  ) => string;
+  isActive?: (state: LegacyModeState) => boolean;
+};
+
+type ArenaExportSummary = {
+  sessionId: string;
+  exportedAt: string;
+  componentCount: number;
+  wireCount: number;
+  junctionCount: number;
+  analysis?: {
+    basic?: {
+      voltage?: number;
+      current?: number;
+      resistance?: number;
+      power?: number;
+      topology?: string;
+    };
+    advanced?: {
+      impedance?: number;
+      netReactance?: number;
+      phaseAngleDegrees?: number;
+      totalResistance?: number;
+      totalCapacitance?: number;
+      totalInductance?: number;
+      energyDelivered?: number;
+      estimatedThermalRise?: number;
+      frequencyHz?: number;
+      temperatureC?: number;
+    };
+  };
+  testVariables?: Record<string, unknown>;
+  storage?: string;
+  requestId?: string | null;
+};
+
+type ArenaExportStatus = "idle" | "exporting" | "ready" | "error";
+
+type BuilderLogoSettings = {
+  speed: number;
+  travelX: number;
+  travelY: number;
+  bounce: number;
+  opacity: number;
+  isVisible: boolean;
+};
+
+type LogoNumericSettingKey =
+  | "speed"
+  | "travelX"
+  | "travelY"
+  | "bounce"
+  | "opacity";
+
+const LOGO_SETTINGS_STORAGE_KEY = "builder:logo-motion";
+const DEFAULT_LOGO_SETTINGS: BuilderLogoSettings = {
+  speed: 28,
+  travelX: 70,
+  travelY: 55,
+  bounce: 28,
+  opacity: 100,
+  isVisible: true,
+};
+
+const clamp = (value: number, min: number, max: number) => {
+  if (Number.isNaN(value)) {
+    return min;
+  }
+  return Math.min(Math.max(value, min), max);
+};
+
+const WIRE_TOOL_ACTIONS: PanelAction[] = [
+  {
+    id: "wire-mode",
+    label: "Wire Mode",
+    description:
+      "Switch into wiring mode to pick freeform, schematic (90 deg), star, or auto-routing paths.",
+    action: "toggle-wire-mode",
+  },
+  {
+    id: "rotate-mode",
+    label: "Rotate Mode",
+    description: "Rotate the active component to align with your build.",
+    action: "toggle-rotate-mode",
+  },
+  {
+    id: "junction",
+    label: "Add Junction",
+    description: "Drop a junction node for branching or merging wires.",
+    action: "add-junction",
+  },
+  {
+    id: "auto-arrange",
+    label: "Auto Arrange",
+    description: "Let CircuiTry tidy the layout while preserving connections.",
+    action: "auto-arrange",
+  },
+];
+
+const CURRENT_MODE_ACTIONS: PanelAction[] = [
+  {
+    id: "flow-style",
+    label: "Toggle Current Flow",
+    description: "Swap between electron cloud and conventional current views.",
+    action: "toggle-current-flow",
+  },
+  {
+    id: "polarity",
+    label: "Polarity Indicators",
+    description: "Show or hide polarity markers on applicable components.",
+    action: "toggle-polarity",
+  },
+  {
+    id: "layout-mode",
+    label: "Cycle Layout Mode",
+    description: "Step through free, square, and linear auto-layout modes.",
+    action: "cycle-layout",
+  },
+];
+
+const VIEW_CONTROL_ACTIONS: PanelAction[] = [
+  {
+    id: "reset-camera",
+    label: "Reset Camera",
+    description: "Return the camera to the default framing and distance.",
+    action: "reset-camera",
+  },
+  {
+    id: "fit-screen",
+    label: "Fit to Screen",
+    description: "Frame the full circuit within the active viewport.",
+    action: "fit-screen",
+  },
+  {
+    id: "toggle-grid",
+    label: "Toggle Grid",
+    description: "Show or hide the design grid for precise placement.",
+    action: "toggle-grid",
+  },
+  {
+    id: "toggle-labels",
+    label: "Toggle Labels",
+    description: "Display or conceal component reference labels.",
+    action: "toggle-labels",
+  },
+];
+
+const SETTINGS_ITEMS: SettingsItem[] = [
+  {
+    id: "flow-visualisation",
+    label: "Flow Visualisation",
+    action: "toggle-current-flow",
+    getDescription: (_state, { currentFlowLabel }) =>
+      `${currentFlowLabel} visualisation active`,
+    isActive: (state) => state.currentFlowStyle === "solid",
+  },
+  {
+    id: "polarity-markers",
+    label: "Polarity Markers",
+    action: "toggle-polarity",
+    getDescription: (state) =>
+      state.showPolarityIndicators
+        ? "Polarity markers visible"
+        : "Polarity markers hidden",
+    isActive: (state) => state.showPolarityIndicators,
+  },
+  {
+    id: "design-grid",
+    label: "Design Grid",
+    action: "toggle-grid",
+    getDescription: (state) =>
+      state.showGrid ? "Grid visible" : "Grid hidden",
+    isActive: (state) => state.showGrid,
+  },
+  {
+    id: "component-labels",
+    label: "Component Labels",
+    action: "toggle-labels",
+    getDescription: (state) =>
+      state.showLabels ? "Labels shown" : "Labels hidden",
+    isActive: (state) => state.showLabels,
+  },
+];
+
+type PracticeScenario = {
+  id: string;
+  label: string;
+  question: string;
+  description: string;
+  preset: string;
+  problemId?: string;
+};
+
+type PracticeWorksheetStatus = {
+  problemId: string;
+  complete: boolean;
+};
+
+const PRACTICE_SCENARIOS: PracticeScenario[] = [
+  {
+    id: "series-basic",
+    label: "Series Circuit",
+    question: "Series loop: solve for total current (I_T).",
+    description:
+      "Log W.I.R.E. values, add the resistances, pick I = E / R_T, then confirm with KVL.",
+    preset: "series_basic",
+    problemId: "series-square-01",
+  },
+  {
+    id: "parallel-basic",
+    label: "Parallel Circuit",
+    question: "Parallel bus: find equivalent resistance and branch currents.",
+    description:
+      "Use W.I.R.E. to capture knowns, compute R_T with reciprocals, and check KCL/KVL compliance.",
+    preset: "parallel_basic",
+    problemId: "parallel-square-02",
+  },
+  {
+    id: "mixed-circuit",
+    label: "Mixed Circuit",
+    question: "Series-parallel combo: reduce and solve the ladder.",
+    description:
+      "Collapse branches with W.I.R.E., select the right Ohm's Law form, and verify against Kirchhoff.",
+    preset: "mixed_circuit",
+    problemId: "combo-square-03",
+  },
+  {
+    id: "combo-challenge",
+    label: "Combo Challenge",
+    question: "Multi-loop combo: determine every unknown.",
+    description:
+      "Trace W.I.R.E. values, mix Ohm's Law identities, and enforce Kirchhoff on nested branches.",
+    preset: "combination_advanced",
+    problemId: "combo-square-03",
+  },
+];
+
+const PRACTICE_ACTIONS: PanelAction[] = [
+  {
+    id: "random-problem",
+    label: "Random Practice Problem",
+    description: "Generate a fresh practice challenge from the curated set.",
+    action: "generate-practice",
+  },
+  {
+    id: "practice-help",
+    label: "Table Method Guide",
+    description: "Open the W.I.R.E. table method worksheet and solving steps.",
+    action: "practice-help",
+  },
+  {
+    id: "open-arena",
+    label: "Component Arena Sync",
+    description:
+      "Export the active build and open the Component Arena for testing.",
+    action: "open-arena",
+  },
+];
+
+const WIRE_METRICS = [
+  { id: "watts", letter: "W", label: "Watts", value: "0.0" },
+  { id: "current", letter: "I", label: "Current", value: "0.00 A" },
+  { id: "resistance", letter: "R", label: "Resistance", value: "0.0 Ohm" },
+  { id: "voltage", letter: "E", label: "Voltage", value: "0.0 V" },
+];
 
 const HELP_SECTIONS: HelpSection[] = [
   {
@@ -1772,6 +2217,25 @@ export default function Builder() {
     [postToBuilder],
   );
 
+  const handleCatalogComponent = useCallback(
+    (entry: CatalogEntry) => {
+      if (!entry) {
+        return;
+      }
+
+      if (entry.kind === "ground") {
+        postToBuilder({ type: "builder:add-junction" });
+        return;
+      }
+
+      postToBuilder({
+        type: "builder:add-component",
+        payload: { componentType: entry.kind },
+      });
+    },
+    [postToBuilder],
+  );
+
   const handleQuickAction = useCallback(
     (quickAction: QuickAction) => {
       triggerBuilderAction(quickAction.action, quickAction.data);
@@ -2995,7 +3459,31 @@ export default function Builder() {
               />
             ) : (
             <div className="slider-section">
-              <span className="slider-heading slider-heading--component-library">Components Library</span>
+              <span className="slider-heading">Components</span>
+              <div className="slider-stack">
+                {COMPONENT_CATALOG.filter((entry) => entry.kind !== "wire").map((entry) => (
+                  <button
+                    key={entry.id}
+                    type="button"
+                    className="slider-btn slider-btn-compact"
+                    onClick={() => handleCatalogComponent(entry)}
+                    disabled={controlsDisabled}
+                    aria-disabled={controlsDisabled}
+                    title={
+                      controlsDisabled ? controlDisabledTitle : entry.description
+                    }
+                    data-component-catalog={entry.kind}
+                  >
+                    <span className="slider-icon" aria-hidden="true">
+                      {entry.icon}
+                    </span>
+                    <span className="slider-label">{entry.name}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="slider-section">
+              <span className="slider-heading">Legacy 3D Parts</span>
               <div className="slider-stack">
                 {COMPONENT_ACTIONS.map((component) => (
                   <button
@@ -3121,7 +3609,23 @@ export default function Builder() {
                 })}
               </div>
             </div>
-            <div className="slider-section" data-tutorial-target="wire-modes">
+            <div className="slider-section">
+              <span className="slider-heading">3D Schematic Workspace</span>
+              <div className="slider-stack">
+                <button
+                  type="button"
+                  className="slider-btn slider-btn-stacked"
+                  onClick={() => setSchematicPanelOpen(true)}
+                  title="Open dedicated 3D schematic grid workspace with advanced placement tools"
+                >
+                  <span className="slider-label">Open Grid Workspace</span>
+                  <span className="slider-description">
+                    Snap-to-grid placement with IEEE/ANSI/IEC symbols
+                  </span>
+                </button>
+              </div>
+            </div>
+            <div className="slider-section">
               <span className="slider-heading">Wire Modes</span>
               <div className="slider-stack">
                 {WIRE_TOOL_ACTIONS.map((action) => {
@@ -3697,6 +4201,35 @@ export default function Builder() {
                     </button>
                   );
                 })}
+              </div>
+            </div>
+            <div className="slider-section">
+              <span className="slider-heading">Symbol Standard</span>
+              <div className="slider-stack">
+                <div className="schematic-standard-control" role="group" aria-label="Schematic symbol standard">
+                  <div className="schematic-standard-buttons">
+                    {SYMBOL_STANDARD_OPTIONS.map((option) => (
+                      <button
+                        key={option.key}
+                        type="button"
+                        className={
+                          schematicStandard === option.key
+                            ? "schematic-standard-button is-active"
+                            : "schematic-standard-button"
+                        }
+                        onClick={() => setSchematicStandard(option.key)}
+                        title={option.description}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <p style={{ fontSize: "0.85rem", color: "#666", marginTop: "0.5rem", lineHeight: "1.4" }}>
+                  {schematicStandard === "ansi" 
+                    ? "IEEE/ANSI standard (North American textbooks and trades)"
+                    : "IEC standard (International/European convention)"}
+                </p>
               </div>
             </div>
             <div className="slider-section">
