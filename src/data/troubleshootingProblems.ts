@@ -154,7 +154,7 @@ const troubleshootingProblems: TroubleshootingProblem[] = [
       acceptedAnswers: [
         "missing wire",
         "open circuit",
-        "open circuit",
+        "broken circuit",
         "missing connection",
         "missing return path",
       ],

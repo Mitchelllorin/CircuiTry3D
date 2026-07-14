@@ -1273,7 +1273,7 @@ const practiceProblemSeeds: PracticeProblem[] = [
         return {
           title: "Step 4 — Track voltage drops with KVL",
           detail: `E_T = ${formatMetricValue(totals.voltage, "voltage")} = ${vR1} (R1) + ${vBranch} (parallel branch) + ${vR4} (R4)\nThe remaining voltage appears across the entire parallel section.`,
-          formula: "KVL around the circuit",
+          formula: "KVL around the path",
         };
       },
       ({ components }) => {
@@ -1357,7 +1357,7 @@ const practiceProblemSeeds: PracticeProblem[] = [
         const branchResistance = 1 / (1 / components.R2.resistance + 1 / components.R3.resistance);
         return {
           title: "Step 2 — Solve the simplified series circuit",
-          detail: `R_T = R1 + R_{2||3} = ${formatNumber(components.R1.resistance, 0)}Ω + ${formatNumber(branchResistance, 2)}Ω = ${formatMetricValue(totals.resistance, "resistance")}\nNow the circuit is fully simplified to a single series circuit.`,
+          detail: `R_T = R1 + R_{2||3} = ${formatNumber(components.R1.resistance, 0)}Ω + ${formatNumber(branchResistance, 2)}Ω = ${formatMetricValue(totals.resistance, "resistance")}\nNow the circuit is fully simplified to a single series path.`,
           formula: "R_T = R1 + R_{eq}",
         };
       },
@@ -1795,7 +1795,7 @@ const practiceProblemSeeds: PracticeProblem[] = [
   },
   // ═══════════════════════════════════════════════════════════════════════════
   // TEXTBOOK-STYLE SERIES PROBLEMS
-  // Single continuous path for current - one loop, no branches
+  // Single continuous path for current - one circuit, no branches
   // ═══════════════════════════════════════════════════════════════════════════
   {
     id: "textbook-series-basic-01",

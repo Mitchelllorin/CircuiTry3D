@@ -23,7 +23,7 @@ const LAWS = [
       "Voltage rises equal voltage drops",
       "In series: E_T = V₁ + V₂ + V₃",
     ],
-    tip: "Walk around any closed path — voltage gains equal voltage drops, summing to zero.",
+    tip: "Walk around any closed path - voltage gains equal voltage drops, summing to zero.",
   },
 ];
 

@@ -315,7 +315,7 @@ const TUTORIAL_SECTIONS: HelpSection[] = [
     title: "Getting Started",
     paragraphs: [
       "Add components from the Components menu, then place them directly into the 3D workspace.",
-      "Use the Wire tool to connect terminals and close the circuit so current can flow.",
+      "Use the Wire tool to connect terminals and complete the circuit so current can flow.",
       "Open the analysis panels on the right to watch live calculations while you build.",
     ],
     bullets: [
@@ -388,7 +388,7 @@ const WIRE_GUIDE_SECTIONS: HelpSection[] = [
   {
     title: "W.I.R.E. Overview",
     paragraphs: [
-      "The W.I.R.E. method keeps four core electrical values front and centre while you build or solve circuits. Each value has a dedicated color so you can spot it instantly in any panel or worksheet.",
+      "The W.I.R.E. method keeps four core electrical values front and centre while you build or solve circuits.",
       "Use this solve cycle: capture known values, choose one unknown, pick the matching formula, then verify with simulation.",
     ],
     bullets: [
@@ -549,7 +549,7 @@ const TABLE_METHOD_SECTIONS: HelpSection[] = [
       "2. Fill in every given value for W, I, R, or E in the worksheet rows.",
       "3. Choose the Ohm's Law or power identity that matches the two known values in the row.",
       "4. Record the newly solved value in the table, then update the totals row when complete.",
-      "5. Check your work with Kirchhoff: sum voltages around each closed path and verify currents at junctions.",
+      "5. Check your work with Kirchhoff: sum voltages around each path and verify currents at junctions.",
     ],
   },
   {
@@ -3666,14 +3666,35 @@ export default function Builder() {
         </Fragment>
       )}
 
-      {isIntroDialogVisible && (
-        <div
-          className="builder-intro-dialog-backdrop"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="intro-dialog-title"
-        >
-          <div className="builder-intro-dialog-card">
+      {shouldShowCurrentFlowPayoffBanner && (
+        <section className="current-flow-payoff-banner" role="status" aria-live="polite">
+          <div className="current-flow-payoff-kicker">Electricity in motion</div>
+          <h2 className="current-flow-payoff-title">
+            {currentFlowPayoffHasFlow
+              ? "Current is flowing in 3D right now."
+              : "Load a complete circuit to watch current flow instantly."}
+          </h2>
+          <p className="current-flow-payoff-text">
+            This is the core experience: virtual electricity moving through a
+            complete circuit.{" "}
+            {isCurrentFlowSolid
+              ? "Conventional current view is active (positive -> negative)."
+              : "Electron flow view is active (negative -> positive)."}
+          </p>
+          <div className="current-flow-payoff-metrics">
+            <span className="current-flow-payoff-metric">
+              <strong>I</strong>{" "}
+              <span>{currentFlowPayoffAmps.toFixed(activeWireProfile ? 4 : 3)} A</span>
+            </span>
+            <span className="current-flow-payoff-metric">
+              <strong>E</strong> <span>{currentFlowPayoffVolts.toFixed(1)} V</span>
+            </span>
+            <span className="current-flow-payoff-metric">
+              <strong>W</strong>{" "}
+              <span>{currentFlowPayoffWatts.toFixed(activeWireProfile ? 3 : 2)} W</span>
+            </span>
+          </div>
+          <div className="current-flow-payoff-actions">
             <button
               type="button"
               className="builder-intro-dialog-close"

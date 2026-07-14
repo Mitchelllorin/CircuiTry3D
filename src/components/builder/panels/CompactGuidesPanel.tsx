@@ -56,9 +56,9 @@ const GUIDE_WORKFLOWS: Record<GuideWorkflowId, GuideWorkflowConfig> = {
       },
       {
         id: "tutorial-build-circuit",
-        title: "Build and close a circuit",
+        title: "Build and complete a circuit",
         detail:
-          "Add the required parts and close the circuit so the simulator reports a complete circuit.",
+          "Add the required parts and complete the circuit so the simulator reports a complete circuit.",
       },
       {
         id: "tutorial-simulate",
@@ -79,7 +79,7 @@ const GUIDE_WORKFLOWS: Record<GuideWorkflowId, GuideWorkflowConfig> = {
     description:
       "W.I.R.E. = Watts (blue) · Current/Amps (yellow-orange) · Resistance/Ohms (green) · Voltage (red). These colors label the quantities in the UI panels. The animated particles in the 3D workspace use a separate color system showing current speed — those colors are unrelated. Use this checklist to solve one circuit at a time: identify the type, collapse any parallel groups to a simple series circuit, fill the W.I.R.E. table with known values, solve unknowns with formulas, then trace back through branches.",
     completionSummary:
-      "W.I.R.E. guide complete. Open Practice Worksheets and repeat the collapse → fill table → solve → verify on new circuits.",
+      "W.I.R.E. guide complete. Open Practice Worksheets and repeat the same solve-check cycle on new circuits.",
     workspaceSyncCopy:
       "These steps use the same W.I.R.E. values shown in the Insights bar and worksheet totals row.",
     steps: [
@@ -93,7 +93,7 @@ const GUIDE_WORKFLOWS: Record<GuideWorkflowId, GuideWorkflowConfig> = {
         id: "wire-collapse-parallel",
         title: "Collapse parallel groups to get a simple series circuit",
         detail:
-          "For each parallel group, calculate R_eq using the product-over-sum formula (two branches: R_eq = (R_a × R_b) / (R_a + R_b)) or the reciprocal method (three+ branches: 1/R_eq = 1/R_a + 1/R_b + 1/R_c). Replace the whole parallel group with that single R_eq. Repeat until only series elements remain. R_eq is a working-space calculation — it does NOT get its own column in the W.I.R.E. table.",
+          "For parallel or combination circuits: calculate each parallel branch's equivalent resistance first (R_eq = 1/(1/R_a + 1/R_b)). Replace the whole parallel section with that single equivalent resistor. Now the circuit looks like a simple series circuit — solve it using R_T = R_1 + R_2 + … .",
       },
       {
         id: "wire-fill-table-series",

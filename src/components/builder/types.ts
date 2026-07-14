@@ -109,23 +109,7 @@ export type LegacyCircuitState = {
     /** null when open/infinite resistance */
     resistance: number | null;
     power: number;
-    /** Effective wire-path resistance from routed geometry + active wire profile. */
-    wirePathResistance?: number | null;
-    /** Total routed wire length currently represented by the active path model. */
-    wireLengthMeters?: number | null;
-    /** Reference length used for converting Ω/m to path resistance. */
-    wireResistanceReferenceMeters?: number | null;
-    /** Conservative wire ampacity limit (typically bundled rating). */
-    wireAmpacityLimitA?: number | null;
-    /** I / ampacity limit (1.0 = at rating). */
-    wireAmpacityUtilization?: number | null;
-    /** Wire insulation voltage rating. */
-    wireVoltageLimitV?: number | null;
-    /** E / voltage limit (1.0 = at rating). */
-    wireVoltageUtilization?: number | null;
-    /** Non-null when wire profile limits are being exceeded. */
-    wireWarning?: string | null;
-    /** True when the legacy flow engine reports a complete closed loop. */
+    /** True when the legacy flow engine reports a complete closed circuit. */
     isComplete: boolean;
     /** Diagnostic reason when incomplete (e.g. 'no-battery', 'no-wires'). */
     reason?: string;

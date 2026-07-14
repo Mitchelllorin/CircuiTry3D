@@ -265,7 +265,7 @@ export const LAYOUT_SPECS = {
 /**
  * Series Circuit Layout Standards
  *
- * Series circuits form a single continuous loop with no branching nodes.
+ * Series circuits form a single continuous path with no branching nodes.
  * Components are distributed evenly around the rectangular frame.
  *
  * Layout Pattern:

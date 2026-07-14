@@ -4627,10 +4627,10 @@ body.android-optimized .zoom-btn {
                 question: "Series-parallel combo: collapse the ladder and solve for I_T.",
                 expectedAnswer: "current",
                 description: [
-                    "<strong>Plan</strong>: Reduce the series resistor first, then the parallel pair, before completing the circuit solution.",
+                    "<strong>Plan</strong>: Reduce the series resistor first, then the parallel pair, before finishing the circuit.",
                     "<strong>W.I.R.E.</strong>: Track resistors R1=150 ohm, R2=220 ohm, R3=330 ohm, R4=180 ohm with the 18 V supply.",
                     "<strong>Formulas</strong>: Use the 12 Ohm's Law identities (E=I*R, I=E/R, R=E/I, W=I*E, W=I^2*R, W=E^2/R).",
-                    "<strong>Kirchhoff</strong>: Verify KVL around the outer loop and KCL at the branch node."
+                    "<strong>Kirchhoff</strong>: Verify KVL around the outer path and KCL at the branch node."
                 ].join("<br>")
             },
             combination_parallel_strings: {
@@ -4644,13 +4644,13 @@ body.android-optimized .zoom-btn {
                 ].join("<br>")
             },
             combination_advanced: {
-                question: "Multi-loop combo: determine drops, currents, and power everywhere.",
+                question: "Multi-branch combo: determine drops, currents, and power everywhere.",
                 expectedAnswer: "power",
                 description: [
                     "<strong>Strategy</strong>: Work outward-in, simplifying parallel legs before folding the bridge back into series.",
                     "<strong>W.I.R.E.</strong>: Log each known resistor value and the 24 V supply; mark the unknowns for W, I, R, and E.",
                     "<strong>Formulas</strong>: Cycle through the Ohm's Law family plus power triangle (W=I*E, W=I^2*R, W=E^2/R).",
-                    "<strong>Checks</strong>: Apply KCL at every junction and KVL for each independent loop.",
+                    "<strong>Checks</strong>: Apply KCL at every junction and KVL for each independent path.",
                     "Present the answer set as a W.I.R.E. table." 
                 ].join("<br>")
             }
@@ -4694,7 +4694,7 @@ body.android-optimized .zoom-btn {
             },
             combination_advanced: {
                 guide: "Work branch-by-branch: simplify parallel legs, fold them into series paths, and repeat while logging each equivalent in W.I.R.E.",
-                note: "Reveal totals when you want to verify each loop against Kirchhoff's laws."
+                note: "Reveal totals when you want to verify each branch against Kirchhoff's laws."
             },
             random: {
                 guide: "Identify which elements share current or voltage before selecting the right Ohm's Law identity, then fill the blanks methodically.",
@@ -15759,15 +15759,114 @@ body.android-optimized .zoom-btn {
             }
         }
 
-        function maybeAutoShowTutorial() {
-            try {
-                if (!localStorage.getItem(TUTORIAL_SEEN_KEY)) {
-                    showTutorial();
-                }
-            } catch(e) {
-                // localStorage unavailable — show anyway for new sessions
-                showTutorial();
-            }
+?? GETTING STARTED:
+
+1?? ADD COMPONENTS (?? Components menu):
+   ? Battery (B key) - Power source
+   ? Resistor (R key) - Limit current
+   ? LED (L key) - Light indicator
+   ? Switch (S key) - Control flow
+   ? All components show real-time values
+
+2?? CONNECT WITH WIRES (??? Tools menu):
+   ? Click "?? Wire" button (or W key)
+   ? Touch component terminals to connect
+   ? Tap any existing wire run to drop a junction and start a branch
+   ? Complete the circuit for current flow
+
+3?? VIEW CALCULATIONS (panels on right):
+   ? ?? W.I.R.E. - Main electrical values
+   ? ?? EIR ? - Ohm's Law triangle
+   ? ? Power ? - Power calculations
+   ? ?? Worksheet - Step-by-step formulas
+   ? ? Solve - Check your answers
+
+???????????????????????????????????????
+
+?? VISUAL LEARNING:
+
+??? COLOR-CODED VALUES:
+   ?? Blue = Power (Watts)
+   ?? Orange = Current (Amps)
+   ?? Green = Resistance (Ohms)
+   ?? Red = Voltage (Volts)
+
+?? FLOW VISUALIZATION (View menu):
+   ? Electron Flow: Shows actual electron movement
+     (negative ? positive, semi-transparent particles)
+   ? Current Flow: Shows conventional direction
+     (positive ? negative, solid particles)
+   ? Toggle: View ? ?? Flow
+
+? POLARITY INDICATORS:
+   ? Red (+) and Blue (-) terminals
+   ? Prevents incorrect connections
+   ? Toggle: View ? ? Polarity
+
+???????????????????????????????????????
+
+?? ADVANCED FEATURES:
+
+?? ROUTING MODES (??? Tools menu):
+   ? Free-form: Natural connections
+   ? Manhattan: Textbook right-angles
+   ? Offset: Parallel detours
+   ? Arc: Smooth sweeps
+   ? Toggle: Tools ? ?? Route
+
+? JUNCTIONS (critical for parallel + series-parallel circuits):
+   ? In Wire Mode, tap/click any wire run to split it and drop a junction
+   ? The new junction becomes a live terminal so you can branch immediately
+   ? Use junction branches to apply KCL on every current split/recombine node
+
+?? AUTO-ARRANGE:
+   ? Tools ? ?? Auto-Arrange
+   ? Automatically creates textbook layouts
+   ? Perfect for practice problems
+
+?? LAYOUT MODES (View menu):
+   ? Free: Place anywhere
+   ? Square: Textbook style
+   ? Linear: Vertical tree
+   ? Toggle: View ? ?? Layout
+
+???????????????????????????????????????
+
+?? CONTROLS:
+
+MOUSE/TOUCH:
+   ? Drag: Move components
+   ? Long-press: Edit values/properties
+   ? Two-finger pinch: Zoom
+   ? Two-finger drag: Pan workspace
+
+KEYBOARD SHORTCUTS:
+   ? B = Battery, R = Resistor
+   ? L = LED, S = Switch, J = Junction
+   ? W = Wire Mode, T = Rotate Mode
+   ? Space = Toggle Menu
+
+VIEW CONTROLS (??? View menu):
+   ? Reset View: Center camera
+   ? Fit Screen: Auto-zoom to circuit
+   ? Toggle Grid: Show/hide snap grid
+   ? Labels: Show/hide component names
+
+???????????????????????????????????????
+
+?? TIPS:
+? Complete the circuit for current to flow
+? Open switches stop current flow
+? Use junctions for every parallel branch; that is where current splits/recombines
+? Long-press wires to add a branch junction, delete, or reroute
+? Try different routing modes for cleaner layouts
+
+Need more help? Check:
+? ?? W.I.R.E. Guide - Electrical concepts
+? ?? Shortcuts - Full keyboard reference
+? ?? About - Version info & features
+            `;
+            alert(tutorial);
         }
 
         function showWireGuide() {
@@ -17939,7 +18038,7 @@ Made with ? for visual learners everywhere!
                 if (!solved) {
                     return {
                         status: 'singular',
-                        reason: 'Circuit matrix is singular (floating network or ideal-only loop).',
+                        reason: 'Circuit matrix is singular (floating network or ideal-only path).',
                         nodeVoltages,
                         elementCurrents,
                         referenceNodeId: globalRef,
@@ -18500,7 +18599,7 @@ Made with ? for visual learners everywhere!
                 );
                 
                 if (!hasClosedPath) {
-                    // Circuit has components but no closed loop
+                    // Circuit has components but no complete circuit
                     const totalVoltage = batteries.reduce((sum, bat) => sum + bat.properties.voltage, 0);
                     updateTopologyDisplay('Incomplete');
                     const flowResult = {
@@ -18534,21 +18633,17 @@ Made with ? for visual learners everywhere!
                 const flowState = computeFlowState(batteries, components, wires, junctions);
 
                 if (!flowState.hasPath) {
-                    // Directed path finding failed.  Use the simpler BFS check as the
-                    // authoritative gate: if hasClosedCircuitPath confirms a physical loop
-                    // exists, force flow regardless of why the directed search failed.
-                    // This catches Android WebView terminal-key mismatches and any other
-                    // directed-graph edge-building bugs without falsely animating open circuits.
+                    // Directed path finding failed. Only enable fallback flow animation if:
+                    // 1. The reason is specifically 'polarity' (not 'open' circuit)
+                    // 2. AND there's a verified physical complete circuit
+                    // This prevents current from flowing in genuinely open circuits.
                     const isPolarityIssue = flowState.reason === 'polarity';
                     const hasPhysicalLoop = hasClosedCircuitPath(batteries[0], wires, components);
 
                     if (hasPhysicalLoop && wires.length > 0) {
-                        // Physical loop confirmed — force flow animation.
-                        // Show "Polarity" for known polarity reversals; otherwise fall through
-                        // to the general series display so the topology label is sensible.
-                        const wireModel = buildWirePathModel(wires);
-                        const baseWireResistance = Math.max(FLOW_CONSTANTS.wireResistance, wireModel.totalResistance || 0);
-                        let approxResistance = baseWireResistance;
+                        // There's a complete circuit but directed path finding failed due to polarity.
+                        // Show flow animation to indicate circuit completion with polarity issue.
+                        let approxResistance = FLOW_CONSTANTS.wireResistance;
                         resistors.forEach(r => {
                             approxResistance += r.properties?.resistance || 100;
                         });
@@ -19191,7 +19286,7 @@ Made with ? for visual learners everywhere!
         }
         
         // Check if there's a complete circuit path from battery positive to negative
-        // C3D-001: Open Circuit = Zero Current - A closed loop is required for current to flow
+        // C3D-001: Open Circuit = Zero Current - A complete circuit is required for current to flow
         // This function uses terminal-level checking: each connection point (component+side)
         // is a separate node in the graph to ensure BOTH terminals must be connected
         function hasClosedCircuitPath(battery, wires, allComponents) {
@@ -19299,7 +19394,7 @@ Made with ? for visual learners everywhere!
                 const current = queue.shift();
 
                 if (current === batteryPosKey) {
-                    return true; // Found closed loop from negative to positive
+                    return true; // Found complete circuit from negative to positive
                 }
 
                 const neighbors = graph.get(current) || [];
@@ -21130,7 +21225,7 @@ Made with ? for visual learners everywhere!
                     "Interpret a multi-section network arranged as top series, middle parallel box, and bottom return chain.",
                     "Track W.I.R.E. entries for R1=120 ohm, R2=150 ohm, R3=180 ohm, R4=270 ohm, R5=220 ohm, LED=60 ohm, E=24 V.",
                     "Jump between Ohm's Law and power identities (I = E / R, W = I * E, W = I^2 * R, W = E^2 / R).",
-                    "Validate results with Kirchhoff's Voltage Law on each loop and Current Law at every junction."
+                    "Validate results with Kirchhoff's Voltage Law on each path and Current Law at every junction."
                 ],
                 components: [
                     { id: 'B1', type: 'battery', position: [-14, 0, 0], rotation: 1.5707963267948966, properties: { voltage: 24 } },

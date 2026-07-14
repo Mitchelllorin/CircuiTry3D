@@ -60,17 +60,17 @@ or equivalently:
 
 ### Kirchhoff's Voltage Law (KVL)
 
-> **"Around any closed loop in a circuit, the algebraic sum of all voltage drops and rises equals zero."**
+> **"Around any closed path in a circuit, the algebraic sum of all voltage drops and rises equals zero."**
 
 Mathematical form:
 ```
-Σ V = 0  (around any closed loop)
+Σ V = 0  (around any closed path)
 ```
 
 **CircuiTry3D Implementation:**
 - Enforced through voltage-source constraints
 - Used in Modified Nodal Analysis (MNA) solver
-- Ensures energy conservation in closed loops
+- Ensures energy conservation in closed paths
 
 ---
 
@@ -78,14 +78,14 @@ Mathematical form:
 
 ### Rule C3D-001: Open Circuit = Zero Current
 
-> **"No current shall flow through any circuit path that is not part of a complete closed loop containing a power source."**
+> **"No current shall flow through any circuit path that is not part of a complete closed circuit containing a power source."**
 
 **Rationale:** This is a direct consequence of KCL and charge conservation. For current to flow, charges must have a complete path to return to their source.
 
 **Implementation Requirements:**
-1. Before calculating current flow, verify the circuit forms a closed loop
+1. Before calculating current flow, verify the circuit forms a complete circuit
 2. Detect and flag open circuits during validation
-3. Set current to 0A for all elements not part of a closed loop
+3. Set current to 0A for all elements not part of a complete circuit
 4. Current flow animation MUST NOT display when circuit is open
 
 **Error Condition:** `OPEN_CIRCUIT`
@@ -237,7 +237,7 @@ function areConnected(p1: Vec2, p2: Vec2): boolean {
 |-------|------------|--------------|-----------|
 | `incomplete` | Missing elements or connections | 0A | Disabled |
 | `invalid` | Has errors (short/open circuit) | 0A | Disabled |
-| `complete` | Valid closed loop with source and load | Calculated | Enabled |
+| `complete` | Valid complete circuit with source and load | Calculated | Enabled |
 
 **Implementation:**
 ```typescript
@@ -285,7 +285,7 @@ The circuit validator runs checks in this order:
 
 2. **Open Circuit Detection** (ERROR)
    - Battery and loads in separate connected components
-   - No closed loop for current flow
+   - No complete circuit for current flow
 
 3. **Floating Component Detection** (WARNING)
    - Components with 0 connections

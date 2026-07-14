@@ -14,7 +14,7 @@ import type { SchematicElement } from "../src/schematic/types";
 
 describe("System functionality checks", () => {
   describe("circuit completion", () => {
-    it("marks a powered loop as complete and closed", () => {
+    it("marks a powered circuit as complete and closed", () => {
       const negative = createNode("componentPin", { x: 0, y: 0 }, "neg");
       const rightBottom = createNode("junction", { x: 10, y: 0 }, "rb");
       const positive = createNode("componentPin", { x: 10, y: 10 }, "pos");
@@ -32,14 +32,14 @@ describe("System functionality checks", () => {
       ]);
 
       expect(result.isClosed).toBe(true);
-      expect(result.hasLoop).toBe(true);
+      expect(result.hasCycle).toBe(true);
       expect(result.powerSourceConnected).toBe(true);
       expect(result.componentCount).toBe(2);
       expect(result.openEndpoints).toHaveLength(0);
       expect(result.message).toBe("Circuit is complete and closed");
     });
 
-    it("flags dangling endpoints even when a loop exists", () => {
+    it("flags dangling endpoints even when a cycle exists", () => {
       const negative = createNode("componentPin", { x: 0, y: 0 }, "neg");
       const rightBottom = createNode("junction", { x: 10, y: 0 }, "rb");
       const positive = createNode("componentPin", { x: 10, y: 10 }, "pos");
@@ -59,7 +59,7 @@ describe("System functionality checks", () => {
       ]);
 
       expect(result.powerSourceConnected).toBe(true);
-      expect(result.hasLoop).toBe(true);
+      expect(result.hasCycle).toBe(true);
       expect(result.isClosed).toBe(false);
       expect(result.openEndpoints).toEqual(["dangling"]);
       expect(result.message).toBe("Open circuit: 1 unconnected wire endpoint(s)");

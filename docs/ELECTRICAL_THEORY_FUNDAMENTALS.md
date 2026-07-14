@@ -210,9 +210,9 @@ Or equivalently: **ΣI = 0** (using sign convention: positive for in, negative f
 
 ### 4.2 Kirchhoff's Voltage Law (KVL)
 
-> **"The sum of all voltages around any closed loop equals zero."**
+> **"The sum of all voltages around any closed path equals zero."**
 
-Around any loop: **ΣV = 0**
+Around any closed path: **ΣV = 0**
 
 **Physical basis:** Energy conservation — a charge returning to its starting point must have the same potential energy.
 
@@ -502,7 +502,7 @@ This document establishes the electrical theory foundation for CircuiTry3D. All 
 - Ohm's Law (V = IR)
 - Power equations (P = VI = I²R = V²/R)
 - Kirchhoff's Current Law (ΣI = 0 at nodes)
-- Kirchhoff's Voltage Law (ΣV = 0 around loops)
+- Kirchhoff's Voltage Law (ΣV = 0 around closed paths)
 
 **Circuit Analysis:**
 - Series: same current, voltages add, resistances add

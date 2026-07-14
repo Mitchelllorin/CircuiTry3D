@@ -129,21 +129,13 @@ export function BuilderInteractiveTutorial(props: {
         id: "tune-parts",
         title: "Tune a part",
         body:
-          "Long-press any part to change its value. Drag to move it.",
-        canSkipRequirement: true,
-        isComplete: () => true,
-      },
-      {
-        id: "wire-mode",
-        title: "Wire it up",
-        body:
-          "Turn on Wire Mode, then tap one terminal and the next to connect them.",
+          "Turn on Wire Mode so you can connect terminals. You’ll complete a circuit: battery → resistor → back to battery.",
         targetId: "tutorial-enable-wire",
         isComplete: ({ mode }) => Boolean(mode.isWireMode),
       },
       {
-        id: "close-circuit",
-        title: "Close the circuit",
+        id: "complete-circuit",
+        title: "Step 4 — Complete the circuit so current can flow",
         body:
           "Connect battery → resistor → back to the battery. Any gap (an 'open') and nothing flows.",
         canSkipRequirement: false,
@@ -153,7 +145,7 @@ export function BuilderInteractiveTutorial(props: {
         id: "simulate",
         title: "Run it",
         body:
-          "Hit Run. The glowing dots moving along the wires are your current.",
+          "Run a simulation to confirm values and visualize flow. (Tip: if current is 0, you likely have an open circuit.)",
         targetId: "tutorial-run-simulation",
         isComplete: ({ lastSimulationAt, tutorialOpenedAt }) => {
           if (!lastSimulationAt) return false;
@@ -668,7 +660,7 @@ export function BuilderInteractiveTutorial(props: {
               Junctions: <strong>{junctionCount}</strong>
             </span>
             <span className="builder-tutorial-status-item">
-              Circuit: <strong>{isComplete ? "Closed" : "Open"}</strong>
+              Circuit: <strong>{isComplete ? "Complete" : "Open"}</strong>
             </span>
           </div>
 
