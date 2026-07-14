@@ -1,21 +1,26 @@
+# Deploys the production build to GitHub Pages whenever a commit lands on main.
+#
+# One-time repo setup required (done once in GitHub UI, not repeated by CI):
+#   Settings → Pages → Source: "Deploy from a branch" → branch: gh-pages, folder: / (root)
+#   Settings → Actions → General → Workflow permissions: "Read and write permissions"
+
 name: Deploy to GitHub Pages
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: write   # needed to push the gh-pages branch
 
 concurrency:
-  group: github-pages-production
+  group: pages-production
   cancel-in-progress: true
 
 jobs:
   deploy:
-    name: Deploy
+    name: Build & Deploy
     runs-on: ubuntu-latest
 
     env:
@@ -34,90 +39,20 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Compute Pages settings
-        id: pages
-        env:
-          PAGES_BASE_PATH: ${{ vars.PAGES_BASE_PATH }}
-          PAGES_CNAME: ${{ vars.PAGES_CNAME }}
-          PAGES_ORIGIN: ${{ vars.PAGES_ORIGIN }}
-        run: |
-          set -euo pipefail
-          repo_name="${GITHUB_REPOSITORY#*/}"
-          owner_name="${GITHUB_REPOSITORY_OWNER}"
-          base_path="${PAGES_BASE_PATH:-/$repo_name/}"
-          case "$base_path" in
-            /*) ;;
-            *) base_path="/$base_path" ;;
-          esac
-          case "$base_path" in
-            */) ;;
-            *) base_path="$base_path/" ;;
-          esac
-          origin="${PAGES_ORIGIN:-https://$owner_name.github.io}"
-          origin="${origin%/}"
-          echo "base_path=$base_path" >> "$GITHUB_OUTPUT"
-          echo "origin=$origin" >> "$GITHUB_OUTPUT"
-          echo "site_url=${origin}${base_path%/}" >> "$GITHUB_OUTPUT"
-
       - name: Build
-        env:
-          VITE_BASE_PATH: ${{ steps.pages.outputs.base_path }}
-          VITE_DEMO_MODE: 'true'
-          VITE_OWNER_KEY: ${{ secrets.VITE_OWNER_KEY }}
-          VITE_OWNER_KEY_HASH: ${{ secrets.VITE_OWNER_KEY_HASH }}
         run: npm run build
         env:
-          # GitHub Pages serves this repo under /CircuiTry3D/ — this matches
-          # the default base path already set in vite.config.ts.
-          VITE_BASE_PATH: /CircuiTry3D/
-          VITE_DEMO_MODE: 'true'
-          VITE_PAYMENT_URL: 'https://play.google.com/store/apps/details?id=com.circuitry3d.app'
+          VITE_BASE_PATH: /
 
-      - name: Add GitHub Pages metadata
-        env:
-          PAGES_CNAME: ${{ vars.PAGES_CNAME }}
-        run: |
-          set -euo pipefail
-          touch dist/.nojekyll
-          if [ -n "${PAGES_CNAME:-}" ]; then
-            printf '%s\n' "$PAGES_CNAME" > dist/CNAME
-          fi
+      - name: Set custom domain
+        run: echo "www.circuitry3d.net" > dist/CNAME
 
-      - name: Publish to gh-pages branch
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_PAGES_BRANCH: gh-pages
-          PAGES_CNAME: ${{ vars.PAGES_CNAME }}
-          REPOSITORY_URL: https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
-          SOURCE_DIST: ${{ github.workspace }}/dist
-        run: |
-          set -euo pipefail
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
-          workdir="$(mktemp -d)"
-          if git ls-remote --exit-code --heads "$REPOSITORY_URL" "$GH_PAGES_BRANCH" >/dev/null 2>&1; then
-            git clone --branch "$GH_PAGES_BRANCH" --single-branch "$REPOSITORY_URL" "$workdir"
-          else
-            git clone "$REPOSITORY_URL" "$workdir"
-            cd "$workdir"
-            git checkout --orphan "$GH_PAGES_BRANCH"
-            find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
-          fi
-
-          cd "$workdir"
-          mkdir -p pr-preview
-          rsync -a --delete --exclude 'pr-preview' "$SOURCE_DIST"/ ./
-          touch .nojekyll
-          if [ -n "${PAGES_CNAME:-}" ]; then
-            printf '%s\n' "$PAGES_CNAME" > CNAME
-          fi
-
-          git add -A
-          if git diff --cached --quiet; then
-            echo "No production Pages changes to publish."
-            exit 0
-          fi
-
-          git commit -m "Deploy site for ${GITHUB_SHA}"
-          git push origin "$GH_PAGES_BRANCH"
+      - name: Deploy to gh-pages branch
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          branch: gh-pages
+          folder: dist
+          # Don't wipe PR-preview subdirectories that live alongside the root
+          # production deployment.
+          clean-exclude: pr-preview
+          single-commit: true

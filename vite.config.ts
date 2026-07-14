@@ -12,10 +12,11 @@ function normalizeBasePath(value?: string): string {
 }
 
 // https://vitejs.dev/config/
-export default defineConfig(() => ({
-  // Default to the repository Pages path, but allow CI to override it for
-  // custom domains and PR preview subpaths.
-  base: normalizeBasePath(process.env.VITE_BASE_PATH),
+export default defineConfig(({ mode }) => ({
+  // VITE_BASE_PATH is set by CI workflows so each deployment (production or
+  // PR preview) gets the correct sub-path. Defaults to root for the
+  // production custom domain (www.circuitry3d.net).
+  base: process.env.VITE_BASE_PATH ?? '/',
   plugins: [react()],
   build: {
     outDir: 'dist',

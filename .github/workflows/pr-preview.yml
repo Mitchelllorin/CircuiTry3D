@@ -1,3 +1,12 @@
+# Builds and deploys a live preview of every PR to GitHub Pages, then posts
+# the URL as a PR comment.  Cleans up the preview when the PR is closed.
+#
+# Preview URL: https://<owner>.github.io/CircuiTry3D/pr-preview/pr-<number>/
+#
+# Required repo settings (one-time, done in GitHub UI):
+#   Settings → Pages → Source: "Deploy from a branch" → branch: gh-pages, folder: / (root)
+#   Settings → Actions → General → Workflow permissions: "Read and write permissions"
+
 name: PR Preview
 
 on:
@@ -5,24 +14,24 @@ on:
     types: [opened, synchronize, reopened, closed]
 
 permissions:
-  contents: write
-  pull-requests: write
+  contents: write        # push to gh-pages branch
+  pull-requests: write   # post / update the preview comment
 
+# Cancel any in-progress preview build for the same PR so the latest push wins.
 concurrency:
   group: github-pages-preview-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
-jobs:
-  deploy-preview:
-    if: github.event.action != 'closed'
-    name: Deploy preview
-    runs-on: ubuntu-latest
-    if: github.event.pull_request.head.repo.id == github.event.repository.id && github.event.pull_request.head.repo.owner.id == github.event.repository.owner.id
+env:
+  NODE_VERSION: '20.19.0'
+  PR_NUMBER: ${{ github.event.pull_request.number }}
 
-    env:
-      # 18 * 10000ms = 180000ms (180s) total wait for external preview providers to report back.
-      PREVIEW_POLL_ATTEMPTS: '18'
-      PREVIEW_POLL_INTERVAL_MS: '10000'
+jobs:
+  # ── Deploy preview ────────────────────────────────────────────────────────
+  deploy-preview:
+    name: Build & Deploy Preview
+    runs-on: ubuntu-latest
+    if: github.event.action != 'closed'
 
     steps:
       - name: Upsert PR preview button comment
@@ -85,146 +94,87 @@ jobs:
           echo "preview_base_path=$preview_base_path" >> "$GITHUB_OUTPUT"
           echo "preview_url=${origin}${preview_base_path}" >> "$GITHUB_OUTPUT"
 
-      - name: Build
-        env:
-          VITE_BASE_PATH: ${{ steps.pages.outputs.preview_base_path }}
-          VITE_DEMO_MODE: 'true'
-          VITE_OWNER_KEY: ${{ secrets.VITE_OWNER_KEY }}
-          VITE_OWNER_KEY_HASH: ${{ secrets.VITE_OWNER_KEY_HASH }}
+      - name: Build (PR-scoped base path)
         run: npm run build
-
-      - name: Publish preview to gh-pages branch
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_PAGES_BRANCH: gh-pages
-          PREVIEW_DIR: ${{ steps.pages.outputs.preview_dir }}
-          REPOSITORY_URL: https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
-          SOURCE_DIST: ${{ github.workspace }}/dist
-        run: |
-          set -euo pipefail
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          VITE_BASE_PATH: /CircuiTry3D/pr-preview/pr-${{ env.PR_NUMBER }}/
 
-          workdir="$(mktemp -d)"
-          if git ls-remote --exit-code --heads "$REPOSITORY_URL" "$GH_PAGES_BRANCH" >/dev/null 2>&1; then
-            git clone --branch "$GH_PAGES_BRANCH" --single-branch "$REPOSITORY_URL" "$workdir"
-          else
-            git clone "$REPOSITORY_URL" "$workdir"
-            cd "$workdir"
-            git checkout --orphan "$GH_PAGES_BRANCH"
-            find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
-          fi
-
-          cd "$workdir"
-          mkdir -p "$PREVIEW_DIR"
-          rsync -a --delete "$SOURCE_DIST"/ "$PREVIEW_DIR"/
-          touch .nojekyll
-
-          git add -A
-          if git diff --cached --quiet; then
-            echo "Preview already up to date."
-            exit 0
-          fi
-
-          git commit -m "Deploy preview for PR #${{ github.event.pull_request.number }}"
-          git push origin "$GH_PAGES_BRANCH"
-
-      - name: Comment preview URL
-        uses: actions/github-script@v7
-        env:
-          PREVIEW_URL: ${{ steps.pages.outputs.preview_url }}
+      - name: Deploy preview to gh-pages
+        uses: JamesIves/github-pages-deploy-action@v4
         with:
-          script: |
-            const marker = '<!-- github-pages-preview -->';
-            const body = `${marker}\n🚀 Preview ready: ${process.env.PREVIEW_URL}`;
+          branch: gh-pages
+          folder: dist
+          target-folder: pr-preview/pr-${{ env.PR_NUMBER }}
+          # Keep the rest of the gh-pages tree intact (production root + other PRs).
+          clean: false
+          single-commit: false
 
-            const { data: comments } = await github.rest.issues.listComments({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-              per_page: 100,
-            });
+      - name: Find existing preview comment
+        uses: peter-evans/find-comment@v3
+        id: find-comment
+        with:
+          issue-number: ${{ env.PR_NUMBER }}
+          comment-author: github-actions[bot]
+          body-includes: '<!-- circuitry3d-pr-preview -->'
 
-            const existing = comments.find((comment) => comment.body?.includes(marker));
-            if (existing) {
-              await github.rest.issues.updateComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                comment_id: existing.id,
-                body,
-              });
-            } else {
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: context.issue.number,
-                body,
-              });
-            }
+      - name: Post / update preview comment
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          comment-id: ${{ steps.find-comment.outputs.comment-id }}
+          issue-number: ${{ env.PR_NUMBER }}
+          edit-mode: replace
+          body: |
+            <!-- circuitry3d-pr-preview -->
+            ## 🔍 PR Preview deployed
 
+            | | |
+            |---|---|
+            | **Preview URL** | https://mitchelllorin.github.io/CircuiTry3D/pr-preview/pr-${{ env.PR_NUMBER }}/ |
+            | **Commit** | ${{ github.event.pull_request.head.sha }} |
+
+            > Preview updates automatically on every push to this PR.
+
+  # ── Clean up preview on close ─────────────────────────────────────────────
   cleanup-preview:
-    if: github.event.action == 'closed'
-    name: Remove preview
+    name: Remove Preview
     runs-on: ubuntu-latest
+    if: github.event.action == 'closed'
 
     steps:
-      - name: Remove preview from gh-pages branch
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_PAGES_BRANCH: gh-pages
-          PREVIEW_DIR: pr-preview/pr-${{ github.event.pull_request.number }}
-          REPOSITORY_URL: https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
-        run: |
-          set -euo pipefail
-          if ! git ls-remote --exit-code --heads "$REPOSITORY_URL" "$GH_PAGES_BRANCH" >/dev/null 2>&1; then
-            echo "gh-pages branch does not exist yet."
-            exit 0
-          fi
-
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
-          workdir="$(mktemp -d)"
-          git clone --branch "$GH_PAGES_BRANCH" --single-branch "$REPOSITORY_URL" "$workdir"
-          cd "$workdir"
-
-          if [ ! -d "$PREVIEW_DIR" ]; then
-            echo "Preview directory already absent."
-            exit 0
-          fi
-
-          rm -rf "$PREVIEW_DIR"
-          git add -A
-          if git diff --cached --quiet; then
-            echo "No preview cleanup needed."
-            exit 0
-          fi
-
-          git commit -m "Remove preview for PR #${{ github.event.pull_request.number }}"
-          git push origin "$GH_PAGES_BRANCH"
-
-      - name: Update preview comment
-        uses: actions/github-script@v7
+      - name: Checkout gh-pages branch
+        uses: actions/checkout@v4
         with:
-          script: |
-            const marker = '<!-- github-pages-preview -->';
-            const body = `${marker}\n🧹 Preview removed because this pull request was closed.`;
+          ref: gh-pages
 
-            const { data: comments } = await github.rest.issues.listComments({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-              per_page: 100,
-            });
+      - name: Delete PR preview folder
+        run: |
+          PREVIEW_DIR="pr-preview/pr-${{ env.PR_NUMBER }}"
+          if [ -d "$PREVIEW_DIR" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git rm -r "$PREVIEW_DIR"
+            git commit -m "chore: remove preview for PR ${{ env.PR_NUMBER }}"
+            git push
+          else
+            echo "No preview directory found for PR ${{ env.PR_NUMBER }}, nothing to clean up."
+          fi
 
-            const existing = comments.find((comment) => comment.body?.includes(marker));
-            if (!existing) {
-              return;
-            }
+      - name: Find existing preview comment
+        uses: peter-evans/find-comment@v3
+        id: find-comment
+        with:
+          issue-number: ${{ env.PR_NUMBER }}
+          comment-author: github-actions[bot]
+          body-includes: '<!-- circuitry3d-pr-preview -->'
 
-            await github.rest.issues.updateComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              comment_id: existing.id,
-              body,
-            });
+      - name: Update comment to mark preview as removed
+        if: steps.find-comment.outputs.comment-id != ''
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          comment-id: ${{ steps.find-comment.outputs.comment-id }}
+          edit-mode: replace
+          body: |
+            <!-- circuitry3d-pr-preview -->
+            ## ~~🔍 PR Preview deployed~~
+
+            Preview has been removed — this PR is closed.
