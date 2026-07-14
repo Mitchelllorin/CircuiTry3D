@@ -141,7 +141,10 @@ type BuilderMessage =
         sessionName?: string;
         testVariables?: Record<string, unknown>;
       };
-    };
+      }
+    | { type: "builder:edit-active-component" }
+    | { type: "builder:rotate-active-component" }
+    | { type: "builder:wire-active-component" };
 
 type ComponentAction = {
   id: string;
@@ -165,295 +168,131 @@ type LegacyModeState = {
   showLabels: boolean;
 };
 
-type LegacySelectionComponentPayload = {
-  kind: "component";
+type LegacySelectionSnapshot = {
   id: string | null;
-  type: string | null;
+  type?: string | null;
   label?: string | null;
-  identifier?: string | null;
-  rotation?: { radians?: number; degrees?: number };
-  position?: { x?: number; y?: number; z?: number };
-  properties?: Record<string, unknown> | null;
+  componentNumber?: string | null;
+  position?: [number, number, number] | null;
+  rotation?: number | null;
   metadata?: Record<string, unknown> | null;
-  connections?: Array<{ wireId?: string | null; targetId?: string | null; side?: string | null }>;
+  properties?: Record<string, unknown> | null;
 };
 
-type LegacySelectionJunctionPayload = {
-  kind: "junction";
-  id: string | null;
-  label?: string | null;
-  position?: { x?: number; y?: number; z?: number };
-  connectionCount?: number;
+const truncate = (value: string, maxLength = 60): string => {
+  if (value.length <= maxLength) {
+    return value;
+  }
+  return `${value.slice(0, Math.max(0, maxLength - 3))}...`;
 };
 
-type LegacySelectionNonePayload = {
-  kind: "none";
-};
-
-type LegacySelectionPayload =
-  | LegacySelectionComponentPayload
-  | LegacySelectionJunctionPayload
-  | LegacySelectionNonePayload;
-
-type PropertyPanelItem = {
-  id: string;
-  name: string;
-  value: string;
-  multiline?: boolean;
-  isPlaceholder?: boolean;
-};
-
-const UNIT_MATCHERS: Array<{ test: RegExp; suffix: string }> = [
-  { test: /(volt|emf|voltage)/i, suffix: " V" },
-  { test: /(current|amp)/i, suffix: " A" },
-  { test: /(resist|ohm)/i, suffix: " Ohm" },
-  { test: /(power|watt)/i, suffix: " W" },
-  { test: /(frequency|hz)/i, suffix: " Hz" },
-  { test: /(temperature|temp)/i, suffix: " C" },
-  { test: /(capacitance|farad|capacitor)/i, suffix: " F" },
-  { test: /(inductance|henry)/i, suffix: " H" },
-  { test: /(energy|joule)/i, suffix: " J" },
-];
-
-function isPlainObject(value: unknown): value is Record<string, unknown> {
-  if (!value || typeof value !== "object") {
-    return false;
-  }
-  const proto = Object.getPrototypeOf(value);
-  return proto === Object.prototype || proto === null;
-}
-
-function toNumber(value: unknown): number | undefined {
-  return typeof value === "number" && Number.isFinite(value) ? value : undefined;
-}
-
-function toStringOrNull(value: unknown): string | null {
-  return typeof value === "string" ? value : null;
-}
-
-function toRecord(value: unknown): Record<string, unknown> | undefined {
-  return isPlainObject(value) ? (value as Record<string, unknown>) : undefined;
-}
-
-function normalizeSelectionPayload(raw: unknown): LegacySelectionPayload {
-  if (!raw || typeof raw !== "object") {
-    return { kind: "none" };
-  }
-
-  const record = raw as Record<string, unknown>;
-
-  if (record.kind === "component") {
-    const rotationRecord = toRecord(record.rotation);
-    const positionRecord = toRecord(record.position);
-    const connections = Array.isArray(record.connections)
-      ? record.connections
-          .map((entry) => {
-            if (!entry || typeof entry !== "object") {
-              return null;
-            }
-            const connectionRecord = entry as Record<string, unknown>;
-            return {
-              wireId: toStringOrNull(connectionRecord.wireId),
-              targetId: toStringOrNull(connectionRecord.targetId),
-              side: toStringOrNull(connectionRecord.side),
-            };
-          })
-          .filter(
-            (
-              entry,
-            ): entry is { wireId: string | null; targetId: string | null; side: string | null } => Boolean(entry),
-          )
-      : undefined;
-
-    return {
-      kind: "component",
-      id: toStringOrNull(record.id),
-      type: toStringOrNull(record.type),
-      label: toStringOrNull(record.label),
-      identifier: toStringOrNull(record.identifier),
-      rotation: rotationRecord
-        ? {
-            radians: toNumber(rotationRecord.radians),
-            degrees: toNumber(rotationRecord.degrees),
-          }
-        : undefined,
-      position: positionRecord
-        ? {
-            x: toNumber(positionRecord.x),
-            y: toNumber(positionRecord.y),
-            z: toNumber(positionRecord.z),
-          }
-        : undefined,
-      properties: isPlainObject(record.properties) ? (record.properties as Record<string, unknown>) : undefined,
-      metadata: isPlainObject(record.metadata) ? (record.metadata as Record<string, unknown>) : undefined,
-      connections,
-    };
-  }
-
-  if (record.kind === "junction") {
-    const positionRecord = toRecord(record.position);
-
-    return {
-      kind: "junction",
-      id: toStringOrNull(record.id),
-      label: toStringOrNull(record.label),
-      position: positionRecord
-        ? {
-            x: toNumber(positionRecord.x),
-            y: toNumber(positionRecord.y),
-            z: toNumber(positionRecord.z),
-          }
-        : undefined,
-      connectionCount: toNumber(record.connectionCount),
-    };
-  }
-
-  return { kind: "none" };
-}
-
-function formatKeyLabel(key: string): string {
-  return key
-    .replace(/[_\s]+/g, " ")
+const formatPropertyLabel = (key: string): string => {
+  const spaced = key
     .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
-    .trim()
-    .replace(/\b\w/g, (char) => char.toUpperCase());
-}
-
-function formatNumericValue(value: number): string {
-  if (!Number.isFinite(value)) {
-    return "-";
+    .replace(/[_-]+/g, " ")
+    .trim();
+  if (!spaced) {
+    return "Property";
   }
+  return spaced.charAt(0).toUpperCase() + spaced.slice(1);
+};
 
-  const absValue = Math.abs(value);
-
-  if (absValue === 0) {
-    return "0";
+const formatDisplayValue = (value: unknown): string => {
+  if (value === null || typeof value === "undefined") {
+    return "—";
   }
-
-  if (absValue >= 100 || Number.isInteger(value)) {
-    return value.toString();
+  if (typeof value === "number") {
+    if (!Number.isFinite(value)) {
+      return "—";
+    }
+    const abs = Math.abs(value);
+    const digits = abs >= 1000 ? 0 : abs >= 100 ? 1 : abs >= 10 ? 2 : 3;
+    return value.toFixed(digits);
   }
-
-  if (absValue >= 10) {
-    return value.toFixed(1);
-  }
-
-  if (absValue >= 1) {
-    return value.toFixed(2);
-  }
-
-  if (absValue >= 0.01) {
-    return value.toFixed(3);
-  }
-
-  return value.toExponential(2);
-}
-
-function formatPositionLabel(position?: { x?: number; y?: number; z?: number }): string {
-  if (!position) {
-    return "-";
-  }
-
-  const x = toNumber(position.x) ?? 0;
-  const y = toNumber(position.y) ?? 0;
-  const z = toNumber(position.z) ?? 0;
-
-  return `x: ${formatNumericValue(x)}, y: ${formatNumericValue(y)}, z: ${formatNumericValue(z)}`;
-}
-
-function formatRotationLabel(rotation?: { radians?: number; degrees?: number }): string {
-  if (!rotation) {
-    return "0°";
-  }
-
-  const degrees = typeof rotation.degrees === "number" && Number.isFinite(rotation.degrees)
-    ? rotation.degrees
-    : typeof rotation.radians === "number" && Number.isFinite(rotation.radians)
-      ? (rotation.radians * 180) / Math.PI
-      : 0;
-
-  const normalized = ((Math.round(degrees) % 360) + 360) % 360;
-  return `${normalized}°`;
-}
-
-function formatPropertyValueByKey(key: string, value: unknown): string | null {
-  if (value === null || value === undefined) {
-    return null;
-  }
-
-  const label = formatKeyLabel(key);
-
-  if (typeof value === "number" && Number.isFinite(value)) {
-    const matcher = UNIT_MATCHERS.find((entry) => entry.test.test(key));
-    const suffix = matcher ? matcher.suffix : "";
-    return `${label}: ${formatNumericValue(value)}${suffix}`;
-  }
-
   if (typeof value === "boolean") {
-    const lowerKey = key.toLowerCase();
-    const isAffirmativePrefix = lowerKey.startsWith("is") || lowerKey.startsWith("has") || lowerKey.startsWith("can");
-    const boolValue = value ? (isAffirmativePrefix ? "Yes" : "On") : isAffirmativePrefix ? "No" : "Off";
-    return `${label}: ${boolValue}`;
+    return value ? "Yes" : "No";
   }
-
   if (typeof value === "string") {
-    return `${label}: ${value}`;
+    return truncate(value, 80);
   }
-
   if (Array.isArray(value)) {
-    const printable = value
-      .map((item) => {
-        if (typeof item === "number" && Number.isFinite(item)) {
-          return formatNumericValue(item);
-        }
-        if (typeof item === "string") {
-          return item;
-        }
-        if (typeof item === "boolean") {
-          return item ? "Yes" : "No";
-        }
-        return null;
-      })
-      .filter((entry): entry is string => Boolean(entry));
+    return `${value.length} item${value.length === 1 ? "" : "s"}`;
+  }
+  try {
+    return truncate(JSON.stringify(value), 80);
+  } catch {
+    return "—";
+  }
+};
 
-    if (printable.length === 0) {
-      return null;
+const formatPosition = (position?: [number, number, number] | null): string => {
+  if (!position || position.length !== 3) {
+    return "-";
+  }
+  const [x, y, z] = position;
+  const formatAxis = (axis: number | undefined) => {
+    if (typeof axis !== "number" || Number.isNaN(axis)) {
+      return "0.00";
     }
+    const digits = Math.abs(axis) >= 10 ? 1 : 2;
+    return axis.toFixed(digits);
+  };
+  return `${formatAxis(x)}, ${formatAxis(y)}, ${formatAxis(z)}`;
+};
 
-    return `${label}: ${printable.join(", ")}`;
+const formatRotation = (rotation?: number | null): string => {
+  if (typeof rotation !== "number" || Number.isNaN(rotation)) {
+    return "-";
   }
+  const degrees = (rotation * 180) / Math.PI;
+  const normalized = ((degrees % 360) + 360) % 360;
+  return `${normalized.toFixed(1)}°`;
+};
 
-  if (isPlainObject(value)) {
-    const nestedEntries = extractKeyValuePairs(value as Record<string, unknown>);
-    if (nestedEntries.length === 0) {
-      return null;
+const formatComponentLabel = (snapshot: LegacySelectionSnapshot): string => {
+  const parts: string[] = [];
+  if (snapshot.label && snapshot.label.trim().length > 0) {
+    parts.push(snapshot.label.trim());
+  }
+  if (snapshot.componentNumber && snapshot.componentNumber.trim().length > 0) {
+    const token = snapshot.componentNumber.trim();
+    if (!parts.includes(token)) {
+      parts.push(token);
     }
-    return `${label}: ${nestedEntries.join(", ")}`;
   }
-
-  return null;
-}
-
-function extractKeyValuePairs(
-  source: Record<string, unknown> | null | undefined,
-  options: { exclude?: string[] } = {},
-): string[] {
-  if (!source) {
-    return [];
+  if (snapshot.type && snapshot.type.trim().length > 0) {
+    const normalized = snapshot.type.trim();
+    if (!parts.some((part) => part.toLowerCase() === normalized.toLowerCase())) {
+      parts.push(normalized);
+    }
   }
+  if (snapshot.id && snapshot.id.trim().length > 0) {
+    const idToken = `#${snapshot.id.trim()}`;
+    if (!parts.includes(idToken)) {
+      parts.push(idToken);
+    }
+  }
+  if (!parts.length) {
+    return "Component";
+  }
+  return parts.slice(0, 3).join(" · ");
+};
 
-  const excludeSet = new Set((options.exclude ?? []).map((entry) => entry.toLowerCase()));
-
-  return Object.entries(source)
-    .filter(([key]) => !excludeSet.has(key.toLowerCase()))
-    .map(([key, value]) => formatPropertyValueByKey(key, value))
-    .filter((entry): entry is string => Boolean(entry));
-}
-
-function formatWireLabel(wireId: string, index: number): string {
-  const shortId = wireId.length > 8 ? wireId.slice(-6) : wireId;
-  return `Wire ${index + 1} (${shortId})`;
-}
+const summarizeMetadata = (metadata?: Record<string, unknown> | null): string => {
+  if (!metadata) {
+    return "No metadata";
+  }
+  if (typeof metadata.displayName === "string" && metadata.displayName.trim().length > 0) {
+    return metadata.displayName.trim();
+  }
+  const entries = Object.entries(metadata)
+    .filter(([key, value]) => key !== "displayName" && typeof value !== "object" && typeof value !== "undefined")
+    .map(([key, value]) => `${formatPropertyLabel(key)}: ${formatDisplayValue(value)}`);
+  if (!entries.length) {
+    return "No metadata";
+  }
+  return entries.slice(0, 2).join(" · ");
+};
 
 type QuickAction = {
   id: string;
@@ -567,15 +406,6 @@ const QUICK_ACTIONS: QuickAction[] = [
     kind: "action",
     action: "run-simulation",
   },
-];
-
-const PROPERTY_ITEMS = [
-  { id: "component", name: "Selected Component", value: "None" },
-  { id: "type", name: "Type", value: "-" },
-  { id: "position", name: "Position", value: "-" },
-  { id: "rotation", name: "Rotation", value: "-" },
-  { id: "attributes", name: "Attributes", value: "Tap any element to inspect" },
-  { id: "connections", name: "Connections", value: "No wires attached" },
 ];
 
 type PanelAction = {
@@ -2111,16 +1941,13 @@ export default function Builder() {
       return false;
     }
 
-    if (typeof window.matchMedia === "function") {
-      const coarsePointer = window.matchMedia("(pointer: coarse)");
-      if (coarsePointer.matches) {
-        return true;
-      }
-    }
-
-    return (
-      typeof navigator !== "undefined" && (navigator.maxTouchPoints ?? 0) > 0
-    );
+    return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  });
+  const practiceProblemRef = useRef<string | null>(DEFAULT_PRACTICE_PROBLEM?.id ?? null);
+  const [selectionSnapshot, setSelectionSnapshot] = useState<LegacySelectionSnapshot | null>(null);
+  const appBasePath = useMemo(() => {
+    const baseUrl = import.meta.env.BASE_URL ?? "/";
+    return baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
   }, []);
   const shouldAnimateLibraryThumbnails = isLeftMenuOpen && !isCoarsePointer;
 
@@ -2178,8 +2005,16 @@ export default function Builder() {
   const [showGalleryToast, setShowGalleryToast] = useState(false);
   const galleryToastTimerRef = useRef<number | null>(null);
 
-  // Demo/Full mode feature gating
-  const { isDemoMode, isFeatureLocked, showUpgradePrompt } = useDemoMode();
+        const { type, payload } = data as { type?: string; payload?: unknown };
+
+        if (type === "legacy:selection") {
+          if (payload && typeof payload === "object") {
+            setSelectionSnapshot(payload as LegacySelectionSnapshot);
+          } else {
+            setSelectionSnapshot(null);
+          }
+          return;
+        }
 
       if (type === "legacy:ready") {
         setFrameReady(true);
@@ -2965,106 +2800,28 @@ export default function Builder() {
     triggerSimulationPulse();
   }, [triggerBuilderAction, triggerSimulationPulse]);
 
-  const handleEditSelectedComponent = useCallback(() => {
-    triggerBuilderAction("edit-selected-component");
-  }, [triggerBuilderAction]);
+  const handleEditSelection = useCallback(() => {
+    if (!selectionSnapshot) {
+      return;
+    }
+    postToBuilder({ type: "builder:edit-active-component" });
+  }, [postToBuilder, selectionSnapshot]);
 
-  const handleRotateSelectedComponent = useCallback(() => {
-    triggerBuilderAction("rotate-selected-component");
-  }, [triggerBuilderAction]);
+  const handleRotateSelection = useCallback(() => {
+    if (!selectionSnapshot) {
+      return;
+    }
+    postToBuilder({ type: "builder:rotate-active-component" });
+  }, [postToBuilder, selectionSnapshot]);
 
-  const handleOpenWireEditor = useCallback(
-    (wireId: string) => {
-      triggerBuilderAction("open-wire-editor", { wireId });
-    },
-    [triggerBuilderAction],
-  );
+  const handleWireSelection = useCallback(() => {
+    if (!selectionSnapshot) {
+      return;
+    }
+    postToBuilder({ type: "builder:wire-active-component" });
+  }, [postToBuilder, selectionSnapshot]);
 
-  const connectionSummaries = useMemo(() => {
-      if (selectionState.kind !== "component" || !selectionState.connections || selectionState.connections.length === 0) {
-        return [] as Array<{ wireId: string; buttonLabel: string; lineLabel: string; tooltip: string }>;
-      }
-
-      const summaryMap = new Map<string, { side?: string | null; targetId?: string | null }>();
-
-      selectionState.connections.forEach((connection) => {
-        const wireId = typeof connection?.wireId === "string" ? connection.wireId : null;
-        if (!wireId) {
-          return;
-        }
-
-        if (!summaryMap.has(wireId)) {
-          summaryMap.set(wireId, {
-            side: typeof connection?.side === "string" ? connection.side : null,
-            targetId: typeof connection?.targetId === "string" ? connection.targetId : null,
-          });
-        }
-      });
-
-      return Array.from(summaryMap.entries()).map(([wireId, meta], index) => {
-        const buttonLabel = formatWireLabel(wireId, index);
-        const targetLabel = meta.targetId || "open";
-        const sideLabel = meta.side || "terminal";
-        const lineLabel = `${buttonLabel} • ${sideLabel} → ${targetLabel}`;
-        const tooltip = `${buttonLabel}: ${sideLabel} → ${targetLabel}`;
-        return { wireId, buttonLabel, lineLabel, tooltip };
-      });
-    }, [selectionState]);
-
-    const propertyItems = useMemo<PropertyPanelItem[]>(() => {
-      if (selectionState.kind === "component") {
-        const label = selectionState.label || selectionState.identifier || selectionState.type || selectionState.id || "Component";
-        const typeLabel = selectionState.type
-          ? selectionState.type.charAt(0).toUpperCase() + selectionState.type.slice(1)
-          : "Component";
-        const positionLabel = formatPositionLabel(selectionState.position);
-        const rotationLabel = formatRotationLabel(selectionState.rotation);
-        const propertyPairs = extractKeyValuePairs(selectionState.properties, { exclude: ["displayName"] });
-        const metadataPairs = extractKeyValuePairs(selectionState.metadata, { exclude: ["displayName", "identifier"] });
-        const combinedAttributes = [...propertyPairs, ...metadataPairs];
-        const attributesValue = combinedAttributes.length > 0 ? combinedAttributes.join("\n") : "No component attributes";
-        const connectionsValue = connectionSummaries.length > 0
-          ? connectionSummaries.map((summary) => summary.lineLabel).join("\n")
-          : "No wires attached";
-
-        return [
-          { id: "component", name: "Selected Component", value: label },
-          { id: "type", name: "Type", value: typeLabel },
-          { id: "position", name: "Position", value: positionLabel },
-          { id: "rotation", name: "Rotation", value: rotationLabel },
-          {
-            id: "attributes",
-            name: "Attributes",
-            value: attributesValue,
-            multiline: combinedAttributes.length > 1,
-            isPlaceholder: combinedAttributes.length === 0,
-          },
-          {
-            id: "connections",
-            name: "Connections",
-            value: connectionsValue,
-            multiline: connectionSummaries.length > 1,
-            isPlaceholder: connectionSummaries.length === 0,
-          },
-        ];
-      }
-
-      if (selectionState.kind === "junction") {
-        const label = selectionState.label || selectionState.id || "Junction";
-        const positionLabel = formatPositionLabel(selectionState.position);
-        const connectionCount = typeof selectionState.connectionCount === "number" ? selectionState.connectionCount : 0;
-
-        return [
-          { id: "component", name: "Selected Node", value: label },
-          { id: "position", name: "Position", value: positionLabel },
-          { id: "connections", name: "Connections", value: `${connectionCount}` },
-        ];
-      }
-
-      return PROPERTY_ITEMS.map((item) => ({ ...item, isPlaceholder: true }));
-    }, [connectionSummaries, selectionState]);
-
-    const arenaStatusMessage = useMemo(() => {
+  const arenaStatusMessage = useMemo(() => {
     switch (arenaExportStatus) {
       case "exporting":
         return "Exporting current build to Component Arena...";
@@ -3130,6 +2887,56 @@ export default function Builder() {
 
     return `Complete the worksheet for ${problem.title} to unlock the next challenge.`;
   }, [activePracticeProblemId, practiceWorksheetState]);
+
+  const propertyItems = useMemo(() => {
+    const baseItems = [
+      { id: "component", name: "Selected Component", value: "None" },
+      { id: "position", name: "Position", value: "-" },
+      { id: "rotation", name: "Rotation", value: "-" },
+      { id: "metadata", name: "Metadata", value: "Tap any element to inspect" }
+    ];
+
+    if (!selectionSnapshot) {
+      return baseItems;
+    }
+
+    const items = [...baseItems];
+    items[0] = { ...items[0], value: formatComponentLabel(selectionSnapshot) };
+    items[1] = { ...items[1], value: formatPosition(selectionSnapshot.position ?? null) };
+    items[2] = { ...items[2], value: formatRotation(selectionSnapshot.rotation) };
+    items[3] = { ...items[3], value: summarizeMetadata(selectionSnapshot.metadata) };
+
+    const extras: Array<{ id: string; name: string; value: string }> = [];
+
+    if (selectionSnapshot.properties) {
+      Object.entries(selectionSnapshot.properties).forEach(([key, value]) => {
+        extras.push({
+          id: `prop-${key}`,
+          name: formatPropertyLabel(key),
+          value: formatDisplayValue(value)
+        });
+      });
+    }
+
+    if (selectionSnapshot.metadata) {
+      Object.entries(selectionSnapshot.metadata).forEach(([key, value]) => {
+        if (key === "displayName" || typeof value === "object") {
+          return;
+        }
+        extras.push({
+          id: `meta-${key}`,
+          name: formatPropertyLabel(key),
+          value: formatDisplayValue(value)
+        });
+      });
+    }
+
+    const extrasLimited = extras.slice(0, 8);
+
+    return [...items, ...extrasLimited];
+  }, [selectionSnapshot]);
+
+  const hasSelection = Boolean(selectionSnapshot && selectionSnapshot.type !== "junction");
 
   const isArenaSyncing = arenaExportStatus === "exporting";
   const canOpenLastArena = Boolean(lastArenaExport?.sessionId);
@@ -3971,82 +3778,72 @@ export default function Builder() {
           <span className="toggle-icon">{isRightMenuOpen ? "▶" : "◀"}</span>
           <span className="toggle-text">Settings</span>
         </button>
-        <nav
-          className="builder-menu builder-menu-right"
-          role="complementary"
-          aria-label="Settings"
-        >
-          {!rightPanelDrag.isFloating && (
-            <PanelDragHandle
-              dragHandleProps={rightPanelDrag.dragHandleProps}
-              onReset={rightPanelDrag.resetLayout}
-            />
-          )}
-          <div className="builder-menu-scroll">
-            <div className="slider-section">
-              <span className="slider-heading">Properties</span>
+        <nav className="builder-menu builder-menu-right" role="complementary" aria-label="Mode and view controls">
+            <div className="builder-menu-scroll">
+              <div className="slider-section">
+                <span className="slider-heading">Properties</span>
                 <div className="property-stack">
                   {propertyItems.map((item) => (
                     <div key={item.id} className="property-item">
                       <div className="property-name">{item.name}</div>
-                      <div
-                        className="property-value"
-                        data-multiline={item.multiline ? "true" : undefined}
-                        data-muted={item.isPlaceholder ? "true" : undefined}
-                      >
-                        {item.value}
-                      </div>
+                      <div className="property-value">{item.value}</div>
                     </div>
                   ))}
                 </div>
-                {selectionState.kind === "component" ? (
-                  <>
-                    <div className="property-actions">
-                      <button
-                        type="button"
-                        className="property-action-btn"
-                        onClick={handleEditSelectedComponent}
-                        disabled={controlsDisabled}
-                        aria-disabled={controlsDisabled}
-                        title={controlsDisabled ? controlDisabledTitle : "Edit component values"}
-                      >
-                        Edit Values
-                      </button>
-                      <button
-                        type="button"
-                        className="property-action-btn"
-                        data-variant="rotate"
-                        onClick={handleRotateSelectedComponent}
-                        disabled={controlsDisabled}
-                        aria-disabled={controlsDisabled}
-                        title={controlsDisabled ? controlDisabledTitle : "Rotate component 90°"}
-                      >
-                        Rotate 90°
-                      </button>
-                    </div>
-                    {connectionSummaries.length > 0 ? (
-                      <div className="property-wire-actions">
-                        <span className="property-wire-actions__label">Connected Wires</span>
-                        <div className="property-wire-actions__list">
-                          {connectionSummaries.map((summary) => (
-                            <button
-                              key={summary.wireId}
-                              type="button"
-                              className="property-wire-action-btn"
-                              onClick={() => handleOpenWireEditor(summary.wireId)}
-                              disabled={controlsDisabled}
-                              aria-disabled={controlsDisabled}
-                              title={controlsDisabled ? controlDisabledTitle : summary.tooltip}
-                            >
-                              {summary.buttonLabel}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    ) : null}
-                  </>
-                ) : null}
-            </div>
+                <div className="slider-stack">
+                  <button
+                    type="button"
+                    className="slider-btn slider-btn-stacked"
+                    onClick={handleEditSelection}
+                    disabled={controlsDisabled || !hasSelection}
+                    aria-disabled={controlsDisabled || !hasSelection}
+                    title={
+                      controlsDisabled
+                        ? controlDisabledTitle
+                        : hasSelection
+                        ? "Edit selected component values"
+                        : "Select a component to edit"
+                    }
+                  >
+                    <span className="slider-label">Edit Values</span>
+                    <span className="slider-description">Open component editor</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="slider-btn slider-btn-stacked"
+                    onClick={handleRotateSelection}
+                    disabled={controlsDisabled || !hasSelection}
+                    aria-disabled={controlsDisabled || !hasSelection}
+                    title={
+                      controlsDisabled
+                        ? controlDisabledTitle
+                        : hasSelection
+                        ? "Rotate the selected component"
+                        : "Select a component to rotate"
+                    }
+                  >
+                    <span className="slider-label">Rotate 90°</span>
+                    <span className="slider-description">Rotate selected component</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="slider-btn slider-btn-stacked"
+                    onClick={handleWireSelection}
+                    disabled={controlsDisabled || !hasSelection}
+                    aria-disabled={controlsDisabled || !hasSelection}
+                    title={
+                      controlsDisabled
+                        ? controlDisabledTitle
+                        : hasSelection
+                        ? "Start wiring from the selected component"
+                        : "Select a component to begin wiring"
+                    }
+                  >
+                    <span className="slider-label">Wire Mode</span>
+                    <span className="slider-description">Begin wiring from selection</span>
+                  </button>
+                </div>
+              </div>
             <div className="slider-section">
               <span className="slider-heading">Modes</span>
               <div className="slider-stack">

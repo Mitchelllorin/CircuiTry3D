@@ -4813,128 +4813,43 @@ body.android-optimized .zoom-btn {
             }
         }
 
-        function sanitizeSelectionValue(value) {
-            if (value === null) {
+        function buildSelectionSnapshot(entity) {
+            if (!entity) {
                 return null;
             }
 
-            switch (typeof value) {
-                case 'number':
-                    return Number.isFinite(value) ? Number(value) : undefined;
-                case 'string':
-                    return value;
-                case 'boolean':
-                    return value;
-                default:
-                    return undefined;
-            }
-        }
+            const snapshot = {
+                id: typeof entity.id === 'string' ? entity.id : null,
+                type: entity.type || (entity.isJunction ? 'junction' : 'entity'),
+                label: typeof getComponentFriendlyName === 'function' ? getComponentFriendlyName(entity) : (entity.type || 'Component'),
+                componentNumber: typeof entity.componentNumber === 'string' ? entity.componentNumber : null,
+                metadata: entity.metadata && typeof entity.metadata === 'object' ? { ...entity.metadata } : null,
+                properties: entity.properties && typeof entity.properties === 'object' ? { ...entity.properties } : null,
+                rotation: typeof entity.rotation === 'number'
+                    ? Number(entity.rotation)
+                    : (entity.mesh && entity.mesh.rotation && typeof entity.mesh.rotation.y === 'number' ? Number(entity.mesh.rotation.y) : null),
+                position: entity.position && typeof entity.position.toArray === 'function'
+                    ? entity.position.toArray().map((value) => (Number.isFinite(value) ? Number(value) : 0))
+                    : (entity.mesh && entity.mesh.position
+                        ? [Number(entity.mesh.position.x) || 0, Number(entity.mesh.position.y) || 0, Number(entity.mesh.position.z) || 0]
+                        : null)
+            };
 
-        function isPlainObject(value) {
-            if (!value || typeof value !== 'object') {
-                return false;
-            }
-            const proto = Object.getPrototypeOf(value);
-            return proto === Object.prototype || proto === null;
-        }
-
-        function sanitizeSelectionObject(source) {
-            if (!isPlainObject(source)) {
-                return undefined;
-            }
-
-            const result = {};
-            Object.keys(source).forEach((key) => {
-                const rawValue = source[key];
-
-                if (Array.isArray(rawValue)) {
-                    const sanitizedArray = rawValue
-                        .map((item) => sanitizeSelectionValue(item))
-                        .filter((item) => item !== undefined);
-                    if (sanitizedArray.length > 0) {
-                        result[key] = sanitizedArray;
-                    }
-                    return;
+            if (snapshot.metadata) {
+                const keys = Object.keys(snapshot.metadata);
+                if (!keys.length) {
+                    snapshot.metadata = null;
                 }
+            }
 
-                if (isPlainObject(rawValue)) {
-                    const nested = sanitizeSelectionObject(rawValue);
-                    if (nested && Object.keys(nested).length > 0) {
-                        result[key] = nested;
-                    }
-                    return;
+            if (snapshot.properties) {
+                const keys = Object.keys(snapshot.properties);
+                if (!keys.length) {
+                    snapshot.properties = null;
                 }
-
-                const sanitized = sanitizeSelectionValue(rawValue);
-                if (sanitized !== undefined) {
-                    result[key] = sanitized;
-                }
-            });
-
-            return Object.keys(result).length > 0 ? result : undefined;
-        }
-
-        function buildSelectionPayload(entity) {
-            if (!entity) {
-                return { kind: 'none' };
             }
 
-            if (entity.type) {
-                const rotationRadians = Number.isFinite(entity.rotation) ? Number(entity.rotation) : 0;
-                const rawDegrees = rotationRadians * (180 / Math.PI);
-                const rotationDegrees = Number.isFinite(rawDegrees) ? Math.round(rawDegrees) : 0;
-
-                const identifier = typeof entity.getComponentIdentifier === 'function'
-                    ? entity.getComponentIdentifier()
-                    : null;
-
-                const properties = sanitizeSelectionObject(entity.properties) || null;
-                const metadata = sanitizeSelectionObject(entity.metadata) || null;
-
-                const connections = Array.isArray(entity.connections)
-                    ? entity.connections.map((connection) => ({
-                        wireId: connection?.wire?.id || null,
-                        targetId: connection?.connectedTo?.id || null,
-                        side: connection?.side || null
-                    })).filter((connection) => connection.wireId || connection.targetId || connection.side)
-                    : [];
-
-                return {
-                    kind: 'component',
-                    id: entity.id || null,
-                    type: entity.type || null,
-                    label: identifier || (entity.type ? entity.type.toUpperCase() : null),
-                    identifier: identifier,
-                    rotation: {
-                        radians: rotationRadians,
-                        degrees: ((rotationDegrees % 360) + 360) % 360
-                    },
-                    position: {
-                        x: Number(entity.position?.x || 0),
-                        y: Number(entity.position?.y || 0),
-                        z: Number(entity.position?.z || 0)
-                    },
-                    properties,
-                    metadata,
-                    connections
-                };
-            }
-
-            if (entity.id && entity.id.startsWith('junction')) {
-                return {
-                    kind: 'junction',
-                    id: entity.id,
-                    label: entity.id,
-                    position: {
-                        x: Number(entity.position?.x || 0),
-                        y: Number(entity.position?.y || 0),
-                        z: Number(entity.position?.z || 0)
-                    },
-                    connectionCount: Array.isArray(entity.connections) ? entity.connections.length : 0
-                };
-            }
-
-            return { kind: 'none' };
+            return snapshot;
         }
 
         function notifyParentSelection(entity) {
@@ -4943,15 +4858,10 @@ body.android-optimized .zoom-btn {
             }
 
             try {
-                const payload = buildSelectionPayload(entity);
-                const payloadJson = JSON.stringify(payload);
-                if (payloadJson === lastSelectionJson) {
-                    return;
-                }
-                lastSelectionJson = payloadJson;
+                const payload = entity ? buildSelectionSnapshot(entity) : null;
                 window.parent.postMessage({ type: 'legacy:selection', payload }, '*');
             } catch (error) {
-                console.warn('Builder bridge: unable to share selection', error);
+                console.warn('Builder bridge: unable to share selection state', error);
             }
         }
 
@@ -5298,21 +5208,32 @@ body.android-optimized .zoom-btn {
                     }
                     break;
                 }
-                case 'builder:set-meter-mode': {
-                    if (payload && typeof payload === 'object' && typeof payload.mode === 'string') {
-                        if (typeof setMeterMode === 'function') setMeterMode(payload.mode);
-                        if (typeof openMeasurementTools === 'function') openMeasurementTools();
-                    }
-                    break;
-                }
-                case 'builder:toggle-meter-armed': {
-                    if (typeof toggleMeterArmed === 'function') toggleMeterArmed();
-                    break;
-                }
-                case 'builder:clear-meter': {
-                    if (typeof clearMeterSelection === 'function') clearMeterSelection();
-                    break;
-                }
+                  case 'builder:edit-active-component': {
+                      if (selectedComponent && typeof showEditPopup === 'function') {
+                          showEditPopup(selectedComponent);
+                      }
+                      break;
+                  }
+                  case 'builder:rotate-active-component': {
+                      if (selectedComponent && typeof rotateComponent === 'function') {
+                          rotateComponent(selectedComponent, { animate: true, silent: false });
+                      }
+                      break;
+                  }
+                  case 'builder:wire-active-component': {
+                      if (selectedComponent) {
+                          if (typeof enableWireMode === 'function') {
+                              enableWireMode({ silent: true });
+                          }
+                          const point = Array.isArray(selectedComponent.connectionPoints) ? selectedComponent.connectionPoints[0] : null;
+                          if (point && point.userData && typeof handleConnectionPointClick === 'function') {
+                              handleConnectionPointClick(point.userData);
+                          } else if (typeof setStatus === 'function') {
+                              setStatus('?? WIRE MODE! Touch terminals to connect components');
+                          }
+                      }
+                      break;
+                  }
                 default:
                     break;
             }
@@ -6080,7 +6001,8 @@ body.android-optimized .zoom-btn {
         let longPressStartPos = { x: 0, y: 0 };
         let isLongPressing = false;
         let currentEditComponent = null;
-        const LONG_PRESS_DURATION = 500; // Reduced for faster response on mobile
+        const LONG_PRESS_DURATION = 600; // Shorter for mobile
+        const LONG_PRESS_MOVE_TOLERANCE = 28; // pixels finger can drift before cancelling long press
         const COMPONENT_DRAG_THRESHOLD = 8;
         const LONG_PRESS_MOVEMENT_THRESHOLD = 15; // Increased for mobile finger wobble tolerance
         let componentContextMenu = null;
@@ -11604,7 +11526,7 @@ body.android-optimized .zoom-btn {
                 // Check if moved too far for long press - use configurable threshold
                 const totalDeltaX = Math.abs(touch.clientX - longPressStartPos.x);
                 const totalDeltaY = Math.abs(touch.clientY - longPressStartPos.y);
-                if ((totalDeltaX > LONG_PRESS_MOVEMENT_THRESHOLD || totalDeltaY > LONG_PRESS_MOVEMENT_THRESHOLD) && longPressTimer) {
+                if ((totalDeltaX > LONG_PRESS_MOVE_TOLERANCE || totalDeltaY > LONG_PRESS_MOVE_TOLERANCE) && longPressTimer) {
                     cancelLongPress();
                 }
 
@@ -11795,7 +11717,7 @@ body.android-optimized .zoom-btn {
             // Check if moved too far for long press - use configurable threshold
             const deltaX = Math.abs(e.clientX - longPressStartPos.x);
             const deltaY = Math.abs(e.clientY - longPressStartPos.y);
-            if ((deltaX > LONG_PRESS_MOVEMENT_THRESHOLD || deltaY > LONG_PRESS_MOVEMENT_THRESHOLD) && longPressTimer) {
+            if ((deltaX > LONG_PRESS_MOVE_TOLERANCE || deltaY > LONG_PRESS_MOVE_TOLERANCE) && longPressTimer) {
                 cancelLongPress();
             }
 
@@ -14338,6 +14260,7 @@ body.android-optimized .zoom-btn {
             
             // Recalculate circuit
             analyzeCircuit();
+            notifyParentSelection(currentEditComponent);
             
             const componentType = currentEditComponent.type;
             setStatus(`? ${componentType.charAt(0).toUpperCase() + componentType.slice(1)} updated successfully!`);
@@ -14863,14 +14786,7 @@ body.android-optimized .zoom-btn {
                 const state = component.properties.isOn ? 'ON' : 'OFF';
                 setStatus(`⚡  Switch ${state} - circuit updated`);
                 analyzeCircuit();
-            } else if (component.type === 'button' && !isWireMode) {
-                // Button is momentary — press/release is handled by mousedown/touchstart and
-                // mouseup/touchend respectively.  A bare "click" (very fast tap with no hold)
-                // still gives feedback via a brief press pulse so the user can see current flow.
-                if (!_pressedButtonComponent) {
-                    pressButton(component);
-                    setTimeout(() => releaseButton(component), BUTTON_BRIEF_PRESS_DURATION_MS);
-                }
+                notifyParentSelection(component);
             } else if (!isWireMode && !isDragging) {
                 selectComponent(component, { startDragging: false });
             }
@@ -22754,6 +22670,7 @@ Made with ? for visual learners everywhere!
             isDragging = false;
             selectedComponent = null;
             selectedComponents.clear();
+            notifyParentSelection(null);
             hideSnapIndicator();
             measureStartPoint = null;
             currentPracticeCircuit = null; // Reset practice circuit
