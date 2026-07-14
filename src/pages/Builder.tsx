@@ -122,7 +122,7 @@ type BuilderInvokeAction =
   | "run-simulation"
   | "edit-selected-component"
   | "rotate-selected-component"
-  | "open-wire-editor";
+  | "clear-selection";
 
 type BuilderMessage =
   | { type: "builder:add-component"; payload: { componentType: string } }
@@ -426,6 +426,76 @@ type SettingsItem = {
     helpers: { currentFlowLabel: string },
   ) => string;
   isActive?: (state: LegacyModeState) => boolean;
+};
+
+type LegacySelectionPosition = {
+  x: number;
+  y: number;
+  z: number;
+  grid?: {
+    x: number;
+    y: number;
+    z: number;
+  };
+};
+
+type LegacySelectionComponent = {
+  kind: "component";
+  id: string | null;
+  type: string | null;
+  label: string | null;
+  identifier: string | null;
+  componentNumber: number | null;
+  rotation?: {
+    radians: number | null;
+    degrees: number | null;
+  } | null;
+  position?: LegacySelectionPosition | null;
+  properties?: Record<string, unknown> | null;
+  metadata?: Record<string, unknown> | null;
+  connections?: number | null;
+  state?: string | null;
+};
+
+type LegacySelectionJunction = {
+  kind: "junction";
+  id: string | null;
+  label: string | null;
+  position?: LegacySelectionPosition | null;
+  connections?: number | null;
+};
+
+type LegacySelectionMulti = {
+  kind: "multi";
+  count: number;
+};
+
+type LegacySelectionPayload =
+  | LegacySelectionComponent
+  | LegacySelectionJunction
+  | LegacySelectionMulti
+  | null;
+
+type PropertyDisplayEntry = {
+  id: string;
+  label: string;
+  value: string;
+};
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
+
+const normalizeLegacySelectionPayload = (raw: unknown): LegacySelectionPayload => {
+  if (!isRecord(raw)) {
+    return null;
+  }
+
+  const kind = raw.kind;
+  if (kind === "component" || kind === "junction" || kind === "multi") {
+    return raw as LegacySelectionPayload;
+  }
+
+  return null;
 };
 
 type ArenaExportSummary = {
@@ -1583,19 +1653,17 @@ export default function Builder() {
   const [activePracticeProblemId, setActivePracticeProblemId] = useState<string | null>(
     DEFAULT_PRACTICE_PROBLEM?.id ?? null
   );
-  const [troubleshootSolvedIds, setTroubleshootSolvedIds] = useState<string[]>(
-    () => {
-      try {
-        const raw = window.localStorage.getItem(
-          "circuitry3d.troubleshoot.solved",
-        );
-        if (!raw) return [];
-        const parsed = JSON.parse(raw);
-        return Array.isArray(parsed)
-          ? parsed.filter((id) => typeof id === "string")
-          : [];
-      } catch {
-        return [];
+  const [practiceWorksheetState, setPracticeWorksheetState] = useState<PracticeWorksheetStatus | null>(null);
+  const [selectionInfo, setSelectionInfo] = useState<LegacySelectionPayload>(null);
+  const [logoSettings, setLogoSettings] = useState<BuilderLogoSettings>(() => {
+    if (typeof window === "undefined") {
+      return DEFAULT_LOGO_SETTINGS;
+    }
+
+    try {
+      const stored = window.localStorage.getItem(LOGO_SETTINGS_STORAGE_KEY);
+      if (!stored) {
+        return DEFAULT_LOGO_SETTINGS;
       }
     },
   );
@@ -1981,6 +2049,218 @@ export default function Builder() {
     }
   });
 
+  const numberFormatter = useMemo(
+    () =>
+      new Intl.NumberFormat(undefined, {
+        maximumFractionDigits: 3,
+        notation: "standard",
+      }),
+    []
+  );
+
+  const degreeFormatter = useMemo(
+    () =>
+      new Intl.NumberFormat(undefined, {
+        maximumFractionDigits: 1,
+        notation: "standard",
+      }),
+    []
+  );
+
+  const formatNumber = useCallback(
+    (value: number | null | undefined) => {
+      if (typeof value !== "number" || !Number.isFinite(value)) {
+        return "—";
+      }
+      return numberFormatter.format(value);
+    },
+    [numberFormatter]
+  );
+
+  const formatDegrees = useCallback(
+    (value: number | null | undefined) => {
+      if (typeof value !== "number" || !Number.isFinite(value)) {
+        return "—";
+      }
+      return `${degreeFormatter.format(value)}°`;
+    },
+    [degreeFormatter]
+  );
+
+  const formatBoolean = useCallback((value: unknown) => {
+    if (typeof value !== "boolean") {
+      return "—";
+    }
+    return value ? "Yes" : "No";
+  }, []);
+
+  const formatLabelText = useCallback((label: string) => {
+    if (!label) {
+      return "";
+    }
+    const spaced = label
+      .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+      .replace(/[_-]+/g, " ")
+      .trim();
+    if (spaced.length === 0) {
+      return "";
+    }
+    return spaced.charAt(0).toUpperCase() + spaced.slice(1);
+  }, []);
+
+  const formatPosition = useCallback(
+    (position?: LegacySelectionPosition | null) => {
+      if (!position) {
+        return "—";
+      }
+      const base = `${formatNumber(position.x)}, ${formatNumber(position.y)}, ${formatNumber(position.z)}`;
+      if (position.grid) {
+        return `${base} · grid (${position.grid.x}, ${position.grid.y}, ${position.grid.z})`;
+      }
+      return base;
+    },
+    [formatNumber]
+  );
+
+  const formatValue = useCallback(
+    (value: unknown) => {
+      if (value === null || typeof value === "undefined") {
+        return "—";
+      }
+      if (typeof value === "number") {
+        return formatNumber(value);
+      }
+      if (typeof value === "boolean") {
+        return formatBoolean(value);
+      }
+      if (typeof value === "string") {
+        return value;
+      }
+      try {
+        return JSON.stringify(value);
+      } catch {
+        return String(value);
+      }
+    },
+    [formatBoolean, formatNumber]
+  );
+
+  const propertyEntries = useMemo<PropertyDisplayEntry[]>(() => {
+    if (selectionInfo === null) {
+      return [
+        { id: "component", label: "Selected Component", value: "None" },
+        { id: "position", label: "Position", value: "—" },
+        { id: "rotation", label: "Rotation", value: "—" },
+        { id: "metadata", label: "Metadata", value: "Tap any element to inspect" },
+      ];
+    }
+
+    if (selectionInfo.kind === "multi") {
+      return [
+        {
+          id: "component",
+          label: "Selected Components",
+          value: `${selectionInfo.count} items`,
+        },
+      ];
+    }
+
+    if (selectionInfo.kind === "junction") {
+      return [
+        {
+          id: "component",
+          label: "Selected Junction",
+          value: selectionInfo.label ?? "Junction",
+        },
+        {
+          id: "position",
+          label: "Position",
+          value: formatPosition(selectionInfo.position),
+        },
+        {
+          id: "connections",
+          label: "Connections",
+          value:
+            typeof selectionInfo.connections === "number"
+              ? selectionInfo.connections.toString()
+              : "—",
+        },
+      ];
+    }
+
+    const summary: PropertyDisplayEntry[] = [];
+    const identifierParts = [selectionInfo.label, selectionInfo.identifier].filter(
+      (part, index, array) => typeof part === "string" && array.indexOf(part) === index
+    ) as string[];
+    const displayName =
+      identifierParts.length > 0
+        ? identifierParts.join(" · ")
+        : selectionInfo.type ?? "Component";
+
+    summary.push({ id: "component", label: "Selected Component", value: displayName });
+    summary.push({ id: "type", label: "Type", value: selectionInfo.type ?? "—" });
+
+    if (typeof selectionInfo.componentNumber === "number" && Number.isFinite(selectionInfo.componentNumber)) {
+      summary.push({
+        id: "component-number",
+        label: "Reference",
+        value: selectionInfo.componentNumber.toString(),
+      });
+    }
+
+    summary.push({
+      id: "rotation",
+      label: "Rotation",
+      value: formatDegrees(selectionInfo.rotation?.degrees ?? null),
+    });
+
+    summary.push({
+      id: "position",
+      label: "Position",
+      value: formatPosition(selectionInfo.position),
+    });
+
+    if (typeof selectionInfo.connections === "number") {
+      summary.push({
+        id: "connections",
+        label: "Connections",
+        value: selectionInfo.connections.toString(),
+      });
+    }
+
+    if (selectionInfo.state) {
+      summary.push({
+        id: "state",
+        label: "State",
+        value: selectionInfo.state.charAt(0).toUpperCase() + selectionInfo.state.slice(1),
+      });
+    }
+
+    const propertyDetails =
+      selectionInfo.properties && isRecord(selectionInfo.properties)
+        ? Object.entries(selectionInfo.properties)
+            .filter(([, value]) => value !== null && typeof value !== "undefined")
+            .map(([key, value]) => ({
+              id: `property-${key}`,
+              label: `Property · ${formatLabelText(key)}`,
+              value: formatValue(value),
+            }))
+        : [];
+
+    const metadataDetails =
+      selectionInfo.metadata && isRecord(selectionInfo.metadata)
+        ? Object.entries(selectionInfo.metadata)
+            .filter(([, value]) => value !== null && typeof value !== "undefined")
+            .map(([key, value]) => ({
+              id: `metadata-${key}`,
+              label: `Metadata · ${formatLabelText(key)}`,
+              value: formatValue(value),
+            }))
+        : [];
+
+    return [...summary, ...propertyDetails, ...metadataDetails];
+  }, [selectionInfo, formatDegrees, formatLabelText, formatPosition, formatValue]);
+
   useEffect(() => {
     try {
       localStorage.setItem(
@@ -2013,6 +2293,11 @@ export default function Builder() {
           } else {
             setSelectionSnapshot(null);
           }
+          return;
+        }
+
+        if (type === "legacy:selection") {
+          setSelectionInfo(normalizeLegacySelectionPayload(payload));
           return;
         }
 
@@ -3779,71 +4064,53 @@ export default function Builder() {
           <span className="toggle-text">Settings</span>
         </button>
         <nav className="builder-menu builder-menu-right" role="complementary" aria-label="Mode and view controls">
-            <div className="builder-menu-scroll">
-              <div className="slider-section">
-                <span className="slider-heading">Properties</span>
-                <div className="property-stack">
-                  {propertyItems.map((item) => (
-                    <div key={item.id} className="property-item">
-                      <div className="property-name">{item.name}</div>
-                      <div className="property-value">{item.value}</div>
-                    </div>
-                  ))}
-                </div>
-                <div className="slider-stack">
-                  <button
-                    type="button"
-                    className="slider-btn slider-btn-stacked"
-                    onClick={handleEditSelection}
-                    disabled={controlsDisabled || !hasSelection}
-                    aria-disabled={controlsDisabled || !hasSelection}
-                    title={
-                      controlsDisabled
-                        ? controlDisabledTitle
-                        : hasSelection
-                        ? "Edit selected component values"
-                        : "Select a component to edit"
-                    }
-                  >
-                    <span className="slider-label">Edit Values</span>
-                    <span className="slider-description">Open component editor</span>
-                  </button>
-                  <button
-                    type="button"
-                    className="slider-btn slider-btn-stacked"
-                    onClick={handleRotateSelection}
-                    disabled={controlsDisabled || !hasSelection}
-                    aria-disabled={controlsDisabled || !hasSelection}
-                    title={
-                      controlsDisabled
-                        ? controlDisabledTitle
-                        : hasSelection
-                        ? "Rotate the selected component"
-                        : "Select a component to rotate"
-                    }
-                  >
-                    <span className="slider-label">Rotate 90°</span>
-                    <span className="slider-description">Rotate selected component</span>
-                  </button>
-                  <button
-                    type="button"
-                    className="slider-btn slider-btn-stacked"
-                    onClick={handleWireSelection}
-                    disabled={controlsDisabled || !hasSelection}
-                    aria-disabled={controlsDisabled || !hasSelection}
-                    title={
-                      controlsDisabled
-                        ? controlDisabledTitle
-                        : hasSelection
-                        ? "Start wiring from the selected component"
-                        : "Select a component to begin wiring"
-                    }
-                  >
-                    <span className="slider-label">Wire Mode</span>
-                    <span className="slider-description">Begin wiring from selection</span>
-                  </button>
-                </div>
+          <div className="builder-menu-scroll">
+            <div className="slider-section">
+              <span className="slider-heading">Properties</span>
+              <div className="property-stack">
+                {propertyEntries.map((item) => (
+                  <div key={item.id} className="property-item">
+                    <div className="property-name">{item.label}</div>
+                    <div className="property-value">{item.value}</div>
+                  </div>
+                ))}
               </div>
+              {selectionInfo && (
+                <div className="property-actions">
+                  {selectionInfo.kind === "component" && (
+                    <>
+                      <button
+                        type="button"
+                        className="slider-chip"
+                        onClick={() => triggerBuilderAction("edit-selected-component")}
+                        disabled={controlsDisabled}
+                        aria-disabled={controlsDisabled}
+                      >
+                        Edit Values
+                      </button>
+                      <button
+                        type="button"
+                        className="slider-chip"
+                        onClick={() => triggerBuilderAction("rotate-selected-component")}
+                        disabled={controlsDisabled}
+                        aria-disabled={controlsDisabled}
+                      >
+                        Rotate 90°
+                      </button>
+                    </>
+                  )}
+                  <button
+                    type="button"
+                    className="slider-chip"
+                    onClick={() => triggerBuilderAction("clear-selection")}
+                    disabled={controlsDisabled}
+                    aria-disabled={controlsDisabled}
+                  >
+                    Deselect
+                  </button>
+                </div>
+              )}
+            </div>
             <div className="slider-section">
               <span className="slider-heading">Modes</span>
               <div className="slider-stack">
