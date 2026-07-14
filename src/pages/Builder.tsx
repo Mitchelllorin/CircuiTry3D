@@ -2501,9 +2501,63 @@ export default function Builder() {
             </div>
 
       {shouldShowEdgeActions && (
-        <Fragment>
-          {/* Workspace Quick Action Buttons - History/File actions on right edge */}
-          <div className="workspace-edge-actions workspace-edge-actions--right" aria-label="History and file actions">
+        <div
+          className="builder-top-quick-actions"
+          role="toolbar"
+          aria-label="Quick build actions"
+        >
+          <div className="builder-top-quick-actions-group" aria-label="Tool quick actions">
+            <button
+              type="button"
+              className="edge-action-btn edge-action-btn--clear"
+              onClick={handleClearWorkspace}
+              disabled={controlsDisabled}
+              aria-disabled={controlsDisabled}
+              aria-label="Clear workspace"
+              title="Clear all components, wires, and analysis data"
+            >
+              <IconTrash className="edge-action-icon-svg" />
+            </button>
+            <button
+              type="button"
+              className={`edge-action-btn${modeState.isWireMode ? " edge-action-btn--active" : ""}`}
+              onClick={() => triggerBuilderAction("toggle-wire-mode")}
+              disabled={controlsDisabled}
+              aria-disabled={controlsDisabled}
+              aria-pressed={modeState.isWireMode}
+              aria-label={modeState.isWireMode ? "Exit wire mode" : "Enter wire mode"}
+              title={modeState.isWireMode ? "Exit Wire Mode (W)" : "Wire Mode (W)"}
+            >
+              <img src={wireStrippersIcon} alt="" className="edge-action-icon-svg" aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              className={`edge-action-btn${modeState.isRotateMode ? " edge-action-btn--active" : ""}`}
+              onClick={() => triggerBuilderAction("toggle-rotate-mode")}
+              disabled={controlsDisabled}
+              aria-disabled={controlsDisabled}
+              aria-pressed={modeState.isRotateMode}
+              aria-label={modeState.isRotateMode ? "Exit rotate mode" : "Enter rotate mode"}
+              title={modeState.isRotateMode ? "Exit Rotate Mode (R)" : "Rotate Mode (R)"}
+            >
+              <IconRotate className="edge-action-icon-svg" />
+            </button>
+            <button
+              type="button"
+              className="edge-action-btn"
+              onClick={() => triggerBuilderAction("set-tool", { tool: "select" })}
+              disabled={controlsDisabled}
+              aria-disabled={controlsDisabled}
+              aria-label="Edit selected component"
+              title="Edit / Select (E)"
+            >
+              <IconPencil className="edge-action-icon-svg" />
+            </button>
+          </div>
+
+          <span className="builder-top-quick-actions-divider" aria-hidden="true" />
+
+          <div className="builder-top-quick-actions-group" aria-label="History and file actions">
             <button
               type="button"
               className="edge-action-btn edge-action-btn--simulate"
@@ -2573,261 +2627,7 @@ export default function Builder() {
               )}
             </button>
           </div>
-
-            {/* Tool actions (formerly left edge) */}
-            <button
-              type="button"
-              className="edge-action-btn edge-action-btn--clear"
-              onClick={handleClearWorkspace}
-              disabled={controlsDisabled}
-              aria-disabled={controlsDisabled}
-              aria-label="Clear workspace"
-              title="Clear all components, wires, and analysis data"
-            >
-              <IconTrash className="edge-action-icon-svg" />
-              <span className="edge-action-label" aria-hidden="true">Clear</span>
-            </button>
-            <button
-              type="button"
-              className={`edge-action-btn${modeState.isWireMode ? " edge-action-btn--active" : ""}`}
-              onClick={() => triggerBuilderAction("toggle-wire-mode")}
-              disabled={controlsDisabled}
-              aria-disabled={controlsDisabled}
-              aria-pressed={modeState.isWireMode}
-              aria-label={modeState.isWireMode ? "Exit wire mode" : "Enter wire mode"}
-              title={modeState.isWireMode ? "Exit Wire Mode (W)" : "Wire Mode (W)"}
-              data-tutorial-id="tutorial-enable-wire"
-            >
-              <img src={wireStrippersIcon} alt="" className="edge-action-icon-svg" aria-hidden="true" />
-              <span className="edge-action-label" aria-hidden="true">Wire</span>
-            </button>
-            <button
-              type="button"
-              className={`edge-action-btn${modeState.isRotateMode ? " edge-action-btn--active" : ""}`}
-              onClick={() => triggerBuilderAction("toggle-rotate-mode")}
-              disabled={controlsDisabled}
-              aria-disabled={controlsDisabled}
-              aria-pressed={modeState.isRotateMode}
-              aria-label={modeState.isRotateMode ? "Exit rotate mode" : "Enter rotate mode"}
-              title={modeState.isRotateMode ? "Exit Rotate Mode (R)" : "Rotate Mode (R)"}
-            >
-              <IconRotate className="edge-action-icon-svg" />
-              <span className="edge-action-label" aria-hidden="true">Rotate</span>
-            </button>
-            <button
-              type="button"
-              className="edge-action-btn"
-              onClick={() => triggerBuilderAction("set-tool", { tool: "select" })}
-              disabled={controlsDisabled}
-              aria-disabled={controlsDisabled}
-              aria-label="Edit selected component"
-              title="Edit / Select (E)"
-            >
-              <IconPencil className="edge-action-icon-svg" />
-              <span className="edge-action-label" aria-hidden="true">Edit</span>
-            </button>
-
-          {/* Centered component quick-add bar — 3D thumbnails rendered by
-              useComponent3DThumbnail (WebGL via Three.js), positioned just
-              below the ticker feed so nothing is obscured. */}
-          <div className="quick-add-bar" aria-label="Quick add components">
-            {QUICK_ADD_COMPONENTS.map((component) => (
-              <QuickAddButton
-                key={component.id}
-                component={component}
-                onClick={() => handleComponentAction(component)}
-                disabled={controlsDisabled}
-              />
-            ))}
-            <button
-              type="button"
-              className="edge-action-btn"
-              onClick={handleRunSimulationClick}
-              disabled={controlsDisabled}
-              aria-disabled={controlsDisabled}
-              data-pulse={isSimulatePulsing ? "true" : undefined}
-              aria-label="Run simulation"
-              title="Run the current circuit simulation"
-              data-tutorial-id="tutorial-run-simulation"
-            >
-              <IconPlay className="edge-action-icon-svg" />
-              <span className="edge-action-label" aria-hidden="true">Run</span>
-            </button>
-            <button
-              type="button"
-              className="edge-action-btn"
-              onClick={() => triggerBuilderAction("undo")}
-              disabled={controlsDisabled}
-              aria-disabled={controlsDisabled}
-              aria-label="Undo last change"
-              title="Undo (Ctrl+Z)"
-            >
-              <IconUndo className="edge-action-icon-svg" />
-              <span className="edge-action-label" aria-hidden="true">Undo</span>
-            </button>
-            <button
-              type="button"
-              className="edge-action-btn"
-              onClick={() => triggerBuilderAction("redo")}
-              disabled={controlsDisabled}
-              aria-disabled={controlsDisabled}
-              aria-label="Redo previous change"
-              title="Redo (Ctrl+Shift+Z)"
-            >
-              <IconRedo className="edge-action-icon-svg" />
-              <span className="edge-action-label" aria-hidden="true">Redo</span>
-            </button>
-            <button
-              type="button"
-              className="edge-action-btn"
-              onClick={() => setIsLoadModalOpen(true)}
-              aria-label="Open circuit"
-              title="Open saved circuit (Ctrl+O)"
-            >
-              <IconFolder className="edge-action-icon-svg" />
-              <span className="edge-action-label" aria-hidden="true">Load</span>
-            </button>
-            <button
-              type="button"
-              className="edge-action-btn"
-              onClick={() => setIsSaveModalOpen(true)}
-              aria-label="Save circuit"
-              title="Save circuit (Ctrl+S)"
-            >
-              <IconSave className="edge-action-icon-svg" />
-              <span className="edge-action-label" aria-hidden="true">Save</span>
-              {circuitStorage.hasUnsavedChanges && (
-                <span className="unsaved-dot" aria-label="Unsaved changes" />
-              )}
-            </button>
-
-            <span className="unified-action-divider" aria-hidden="true" />
-
-            {/* AI & Measurement tools — integrated into action bar */}
-            <button
-              type="button"
-              className={`edge-action-btn${isAIHelperOpen ? " edge-action-btn--active" : ""}`}
-              onClick={() => setIsAIHelperOpen((prev) => !prev)}
-              aria-label={isAIHelperOpen ? "Close Circuit AI" : "Open Circuit AI assistant"}
-              aria-expanded={isAIHelperOpen}
-              title="Circuit AI — ask anything about circuits or the app"
-            >
-              <IconBolt className="edge-action-icon-svg" />
-              <span className="edge-action-label" aria-hidden="true">AI</span>
-            </button>
-            <button
-              type="button"
-              className={`edge-action-btn${isExplainPanelOpen ? " edge-action-btn--active" : ""}`}
-              onClick={() => setIsExplainPanelOpen((prev) => !prev)}
-              aria-label={isExplainPanelOpen ? "Close circuit explanation" : "Explain this circuit"}
-              aria-expanded={isExplainPanelOpen}
-              title="Explain Circuit — AI-powered circuit analysis (Pro)"
-            >
-              <IconSparkle className="edge-action-icon-svg" />
-              <span className="edge-action-label" aria-hidden="true">Explain</span>
-            </button>
-            <button
-              type="button"
-              className={`edge-action-btn${(isMeasureWidgetOpen || meterState.armed) ? " edge-action-btn--active" : ""}`}
-              onClick={() => setMeasureWidgetOpen((o) => !o)}
-              aria-label={isMeasureWidgetOpen ? "Close measurement tools" : "Open measurement tools"}
-              aria-expanded={isMeasureWidgetOpen}
-              title="Measurement Tools — Digital Multimeter"
-            >
-              <IconRuler className="edge-action-icon-svg" />
-              <span className="edge-action-label" aria-hidden="true">Measure</span>
-            </button>
-            <button
-              type="button"
-              className="edge-action-btn"
-              onClick={handleReplayOnboarding}
-              aria-label="Replay the intro tour"
-              title="Replay intro — welcome message + live current-flow demo"
-            >
-              <span className="edge-action-icon-svg edge-action-icon-emoji" aria-hidden="true">
-                ▶
-              </span>
-              <span className="edge-action-label" aria-hidden="true">Tour</span>
-            </button>
-            <button
-              type="button"
-              className="edge-action-btn edge-action-btn--help"
-              onClick={() => openHelpWithView("overview")}
-              aria-label="Open help, guides and tutorials"
-              title="Help — guides, tutorials & shortcuts (press ?)"
-            >
-              <span className="edge-action-icon-svg edge-action-icon-emoji" aria-hidden="true">
-                ?
-              </span>
-              <span className="edge-action-label" aria-hidden="true">Help</span>
-            </button>
-
-            {/* Row 3 — zoom controls */}
-            <div className="circuit-zoom-controls" aria-label="Zoom controls">
-              <button
-                type="button"
-                className="circuit-zoom-btn"
-                onClick={() => triggerBuilderAction("zoom-in")}
-                disabled={controlsDisabled}
-                aria-label="Zoom in"
-                title="Zoom in"
-              >
-                <span className="circuit-zoom-icon" aria-hidden="true">+</span>
-                <span className="circuit-zoom-label" aria-hidden="true">In</span>
-              </button>
-              <button
-                type="button"
-                className="circuit-zoom-btn"
-                onClick={() => triggerBuilderAction("fit-screen")}
-                disabled={controlsDisabled}
-                aria-label="Fit circuit to screen"
-                title="Fit to screen"
-              >
-                <span className="circuit-zoom-icon" aria-hidden="true">⊡</span>
-                <span className="circuit-zoom-label" aria-hidden="true">Fit</span>
-              </button>
-              <button
-                type="button"
-                className="circuit-zoom-btn"
-                onClick={() => triggerBuilderAction("zoom-out")}
-                disabled={controlsDisabled}
-                aria-label="Zoom out"
-                title="Zoom out"
-              >
-                <span className="circuit-zoom-icon" aria-hidden="true">−</span>
-                <span className="circuit-zoom-label" aria-hidden="true">Out</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Junction info tip — shown until dismissed, explains the role
-              of junctions and how to use them so they are never missed */}
-          {isJunctionTipVisible && !isGuidedTourOpen && !isBuildAlongOpen && (
-            <div className="junction-info-tip" role="note" aria-label="Junction nodes tip">
-              <span className="junction-info-tip-icon" aria-hidden="true">─●─</span>
-              <div className="junction-info-tip-body">
-                <p className="junction-info-tip-title">Junction Nodes — critical for complex circuits</p>
-                <p className="junction-info-tip-text">
-                  Drop a <strong>Junction ─●─</strong> anywhere on a wire to instantly branch it.
-                  Essential for parallel circuits and combination topologies.
-                </p>
-                <ul className="junction-info-tip-bullets">
-                  <li>Press <kbd>J</kbd> or tap the pulsing <strong>Junction</strong> button in the component bar above</li>
-                  <li>In Wire mode, click any wire to split it and branch from that point</li>
-                  <li aria-label="KCL applies at every junction: sum of currents in equals sum of currents out">KCL applies at every junction: Σ I<sub>in</sub> = Σ I<sub>out</sub></li>
-                </ul>
-              </div>
-              <button
-                type="button"
-                className="junction-info-tip-close"
-                aria-label="Dismiss junction tip"
-                onClick={handleDismissJunctionTip}
-              >
-                ×
-              </button>
-            </div>
-          )}
-        </Fragment>
+        </div>
       )}
 
       {isIntroDialogVisible && (
@@ -3137,14 +2937,9 @@ export default function Builder() {
               />
             ) : (
             <div className="slider-section">
-              <span className="slider-heading">Components</span>
-              <div className="slider-stack slider-stack--bento">
-                {(IS_DEMO_MODE
-                  ? COMPONENT_ACTIONS.filter((c) =>
-                      DEMO_COMPONENT_IDS.includes(c.id)
-                    )
-                  : COMPONENT_ACTIONS
-                ).map((component) => (
+              <span className="slider-heading slider-heading--component-library">Components Library</span>
+              <div className="slider-stack">
+                {COMPONENT_ACTIONS.map((component) => (
                   <button
                     key={component.id}
                     type="button"
