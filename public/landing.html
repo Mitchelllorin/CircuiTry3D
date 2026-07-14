@@ -138,13 +138,13 @@
 
     /* Wordmark */
     .wordmark {
-      font-size: clamp(42px, 10vw, 96px);
+      font-size: clamp(64px, 16vw, 160px);
       font-weight: 900;
-      letter-spacing: -0.015em;
+      letter-spacing: -0.03em;
       display: inline-flex;
       gap: 0;
-      filter: drop-shadow(0 0 24px rgba(40,255,190,0.38));
-      line-height: 1;
+      margin-inline: auto;
+      filter: drop-shadow(0 0 22px rgba(40,255,190,0.4));
     }
     .wordmark .brand-blue   { color: var(--blue);   text-shadow: 0 0 22px rgba(168,216,255,.95),  0 0 44px rgba(168,216,255,.7); }
     .wordmark .brand-orange { color: var(--orange);  font-style: italic; text-shadow: 0 0 20px rgba(255,153,102,.9), 0 0 40px rgba(255,153,102,.7); }
@@ -1220,6 +1220,20 @@
         <div class="wordmark wordmark--fallback" aria-hidden="true">
           <span class="brand-blue">Circui</span><span class="brand-orange">Try</span><span class="brand-green">3D</span>
         </div>
+        <div class="onboarding-progress-text" id="onboarding-progress-text"></div>
+      </div>
+
+      <div class="onboarding-actions">
+        <button class="onboarding-btn onboarding-btn-secondary" id="onboarding-back">Back</button>
+        <button class="onboarding-btn onboarding-btn-primary" id="onboarding-next">Next</button>
+        <button class="onboarding-btn-skip" id="onboarding-skip">Skip intro</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="landing-page">
+      <div class="wordmark">
+        <span class="brand-blue">C</span><span class="brand-orange">T</span><span class="brand-green">3</span><span class="brand-green">D</span>
       </div>
       <div class="logo-mark" aria-hidden="true">
         <img src="/app-icon-no-text.svg" alt="" />
