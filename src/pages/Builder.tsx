@@ -1954,7 +1954,7 @@ export default function Builder() {
         return;
       }
       if (action.action === "practice-help") {
-        openHelpCenter("overview");
+        openHelpCenter("practice");
         return;
       }
       if (action.action === "generate-practice") {
@@ -4090,18 +4090,28 @@ export default function Builder() {
           <div className="builder-menu-scroll builder-menu-scroll-bottom">
             <div className="slider-section">
               <span className="slider-heading">Analysis</span>
-              <InsightsFilmReel
-                metrics={wireMetrics}
-                wireProfile={{
-                  gaugeLabel: activeWireProfile
-                    ? activeWireProfile.gaugeLabel
-                    : "Default builder wire",
-                  resistancePer: activeWireProfile
-                    ? `${activeWireSegmentResistance.toFixed(4)} Ω/m`
-                    : `${DEFAULT_WIRE_SEGMENT_RESISTANCE_OHM.toFixed(3)} Ω/m`,
-                  isActive: Boolean(activeWireProfile),
-                }}
-              />
+              <div className="menu-track menu-track-metrics">
+                {wireMetrics.map((metric) => (
+                  <div
+                    key={metric.id}
+                    className="slider-metric"
+                    title={`${metric.label}: ${metric.value} — Click to open the W.I.R.E. guide`}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => openHelpCenter("wire-guide")}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        openHelpCenter("wire-guide");
+                      }
+                    }}
+                  >
+                    <span className="metric-letter">{metric.letter}</span>
+                    <span className="metric-value">{metric.value}</span>
+                    <span className="metric-label">{metric.label}</span>
+                  </div>
+                ))}
+              </div>
             </div>
             <div className="slider-section">
               <span className="slider-heading">Environment</span>
@@ -4139,7 +4149,14 @@ export default function Builder() {
             <div className="slider-section">
               <span className="slider-heading">Settings</span>
               <div className="slider-stack">
-                {SETTINGS_ITEMS.map((setting) => {
+                {SETTINGS_ITEMS.filter((setting) =>
+                  ![
+                    "toggle-current-flow",
+                    "toggle-polarity",
+                    "toggle-grid",
+                    "toggle-labels",
+                  ].includes(setting.action),
+                ).map((setting) => {
                   const description = setting.getDescription(modeState, {
                     currentFlowLabel,
                   });
