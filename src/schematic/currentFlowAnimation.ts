@@ -1,6 +1,5 @@
 import { Vec2 } from "./types";
 import { getPerformanceTier } from "../utils/mobilePerformance";
-import { LOGO_COLORS } from "./visualConstants";
 
 /**
  * Flow mode determines the direction of particle animation:
@@ -15,26 +14,20 @@ export type FlowMode = "electron" | "conventional";
  */
 export type CurrentIntensity = "off" | "low" | "medium" | "high" | "critical";
 
-const parseHexColor = (hex: string, fallback: number): number => {
-  if (typeof hex !== "string") return fallback;
-  const normalized = hex.trim().replace(/^#/, "");
-  if (!/^[0-9a-fA-F]{6}$/.test(normalized)) {
-    return fallback;
-  }
-  const parsed = Number.parseInt(normalized, 16);
-  return Number.isFinite(parsed) ? parsed : fallback;
-};
-
 /**
  * Color scheme for current intensity visualization
- * CircuiTry3D standard: colors progress from red (slow/low) to blue-white (fast/high)
+ * Slowest -> fastest: red -> blue -> white
  */
-export const INTENSITY_COLORS = {
-  off: { core: 0x6b7280, glow: 0x9ca3af, emissive: 0x4b5563 },        // Gray - no current
-  low: { core: 0xef4444, glow: 0xfca5a5, emissive: 0xdc2626 },        // Red - low/slow current
-  medium: { core: 0xf97316, glow: 0xfb923c, emissive: 0xea580c },     // Orange - medium current
-  high: { core: 0xeab308, glow: 0xfde047, emissive: 0xca8a04 },       // Yellow - high current
-  critical: { core: 0xffffff, glow: 0xbfdbfe, emissive: 0x3b82f6 }    // Blue-white - critical/max current
+export const CURRENT_FLOW_COLOR_RAMP = {
+  slow: 0xef4444, // Red - slowest current
+  mid: 0x3b82f6,  // Blue - mid current
+  fast: 0xffffff  // White - fastest current
+} as const;
+
+const CURRENT_FLOW_OFF_COLORS = {
+  core: 0x6b7280,     // Gray - no current
+  glow: 0x9ca3af,
+  emissive: 0x4b5563
 } as const;
 
 /**
@@ -443,8 +436,9 @@ export class CurrentFlowAnimationSystem {
     if (!closed) {
       // Reset all particles to their starting positions when circuit opens
       this.particles.forEach(particle => {
-        particle.progress = 0;
-        particle.position = { ...particle.path[0] };
+        particle.progress = particle.reversed ? 1 : 0;
+        const resetPoint = particle.reversed ? particle.path[particle.path.length - 1] : particle.path[0];
+        particle.position = { ...resetPoint };
       });
     }
   }
@@ -665,12 +659,8 @@ export class CurrentFlowAnimationSystem {
     // Add a comet tail (stacked translucent spheres that trail behind)
     const tailGroup = new this.three.Group();
     tailGroup.name = "tail";
-    const tailHeadColor = inResistorZone
-      ? lerpColor(colors.glow, 0xffffff, 0.5)
-      : lerpColor(colors.glow, BRAND_FLOW_COLORS.positive, 0.3);
-    const tailTrailColor = inResistorZone
-      ? lerpColor(colors.core, 0x88aaff, 0.4)
-      : lerpColor(colors.glow, BRAND_FLOW_COLORS.negative, 0.6);
+    const tailHeadColor = lerpColor(colors.glow, CURRENT_FLOW_COLOR_RAMP.fast, 0.3);
+    const tailTrailColor = lerpColor(colors.glow, CURRENT_FLOW_COLOR_RAMP.slow, 0.6);
 
     for (let i = 0; i < COMET_TAIL.segments; i++) {
       const t = i / Math.max(COMET_TAIL.segments - 1, 1); // 0..1
@@ -738,8 +728,8 @@ export class CurrentFlowAnimationSystem {
       const tail = mesh.children.find((child: any) => child?.name === "tail");
       if (tail) {
         const COMET_TAIL = getCometTailConfig();
-        const tailHeadColor = lerpColor(colors.glow, BRAND_FLOW_COLORS.positive, 0.3);
-        const tailTrailColor = lerpColor(colors.glow, BRAND_FLOW_COLORS.negative, 0.6);
+        const tailHeadColor = lerpColor(colors.glow, CURRENT_FLOW_COLOR_RAMP.fast, 0.3);
+        const tailTrailColor = lerpColor(colors.glow, CURRENT_FLOW_COLOR_RAMP.slow, 0.6);
         const tailChildCount = tail.children?.length || 0;
         tail.children?.forEach?.((seg: any, index: number) => {
           if (!seg?.material) return;
