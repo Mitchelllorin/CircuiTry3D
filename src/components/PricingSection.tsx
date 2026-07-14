@@ -1,30 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import BrandSignature from "./BrandSignature";
-import {
-  initBilling,
-  hasWebPaymentCheckout,
-  isAndroidApp,
-  openWebPayment,
-  PLAY_STORE_URL,
-  purchasePremiumUnlock,
-  purchaseProSubscription,
-  restorePurchases,
-  restorePremiumPurchases,
-  restoreProPurchases,
-  getConsumerProductPrices,
-  PREMIUM_UNLOCK_SKU,
-  SUB_MONTHLY_SKU,
-  SUB_YEARLY_SKU,
-} from "../utils/playStoreBilling";
-import { useEntitlements } from "../utils/entitlementManager";
-import {
-  CONSUMER_TIERS,
-  ENTERPRISE_TIERS,
-  COMPARISON_ROWS,
-  type ConsumerTier,
-  type EnterpriseTier,
-} from "../data/hybridPricing";
+import pricingSource from "../data/pricing.json";
+import WordMark from "./WordMark";
 import "../styles/pricing.css";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -379,7 +356,7 @@ export default function PricingSection() {
 
       {/* ── Hero ── */}
       <div className="pricing-hero">
-        <BrandSignature size="sm" decorative className="pricing-brand" />
+        <WordMark size="sm" decorative className="pricing-brand" />
         <h1 id="pricing-title">Plans &amp; Pricing</h1>
         <p className="pricing-subtitle">
           Choose the plan that powers your circuits. Upgrade any time.

@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import BrandMark from "../components/BrandMark";
+import WordMark from "../components/WordMark";
 import { useAuth } from "../context/AuthContext";
 import { useEngagement } from "../context/EngagementContext";
 import type { FormEvent } from "react";
@@ -275,6 +277,7 @@ export default function Community() {
     <div className="community-page">
       <header className="community-hero">
         <div>
+          <WordMark size="sm" decorative className="community-brand" />
           <span className="community-eyebrow">Community Hub</span>
           <h1>The lab where builders compare notes</h1>
           <p>Sync with other makers, trade circuit tips, and capture feedback from the people using your builds.</p>

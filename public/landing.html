@@ -1263,7 +1263,7 @@
     <div class="status-wrapper">
       <div class="status-text">3D Circuit Environment Ready</div>
       <div class="status-bar"></div>
-      <a class="launch-button" href="/app" id="launch-btn">Launch</a>
+      <a class="launch-button" href="/app" id="launch-btn">Launch Workspace</a>
     </div>
     <a class="about-link" href="/about" id="about-link">Meet the founder & dev team</a>
   </div>
@@ -1358,109 +1358,6 @@
         return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
       }
 
-      function getPhaseIndex(pct) {
-        for (var i = 0; i < phases.length; i++) {
-          if (pct < phases[i].target) return i;
-        }
-        return phases.length - 1;
-      }
-
-      function tick(ts) {
-        if (startTime === null) startTime = ts;
-        var elapsed = ts - startTime;
-        var t       = Math.min(elapsed / DURATION, 1);
-        var current = easeInOut(t) * 100;
-
-        statusFill.style.width = current + "%";
-        statusBar.style.setProperty("--photon-pos", current + "%");
-
-        var pi = getPhaseIndex(current);
-        if (pi !== lastPhaseIdx) {
-          lastPhaseIdx = pi;
-          var msg = phases[pi].msg;
-          statusText.style.opacity = "0";
-          setTimeout(function () {
-            statusText.textContent = msg;
-            statusText.style.opacity = "1";
-          }, 180);
-        }
-
-        if (t < 1) {
-          requestAnimationFrame(tick);
-        } else {
-          statusFill.style.width = "100%";
-          statusBar.style.setProperty("--photon-pos", "100%");
-          setTimeout(function () {
-            statusBar.style.setProperty("--photon-opacity", "0");
-            statusText.style.opacity = "0";
-            setTimeout(function () {
-              statusText.textContent = "3D Circuit Environment Ready";
-              statusText.style.opacity = "1";
-              statusText.classList.add("status-ready");
-            }, 300);
-          }, 350);
-        }
-      }
-
-      statusText.textContent = phases[0].msg;
-      statusBar.style.setProperty("--photon-opacity", "1");
-      // Reveal the wrapper now that the correct text is set — prevents the
-      // browser from ever painting the empty/static fallback state.
-      var statusWrapper = document.getElementById("status-wrapper");
-      if (statusWrapper) statusWrapper.style.opacity = "1";
-      requestAnimationFrame(tick);
-    })();
-  </script>
-
-  <!-- ═══════════════════════════════════════════════════════════════
-       BACKGROUND CANVAS — animated particle / circuit field
-       (same visual as the promo video)
-  ═══════════════════════════════════════════════════════════════ -->
-  <script>
-  (function () {
-    var canvas = document.getElementById("bg-canvas");
-    if (!canvas) return;
-    var ctx = canvas.getContext("2d");
-
-    var W, H;
-    var MAX_PARTICLES = 220;
-    var particles = [];
-    var NODE_COUNT = 28;
-    var nodes = [];
-    var globalTime = 0;
-
-    function resize() {
-      W = canvas.width  = window.innerWidth  * (window.devicePixelRatio || 1);
-      H = canvas.height = window.innerHeight * (window.devicePixelRatio || 1);
-      canvas.style.width  = window.innerWidth  + "px";
-      canvas.style.height = window.innerHeight + "px";
-      buildNodes();
-    }
-    window.addEventListener("resize", resize);
-
-    var COLORS = [
-      "rgba(136,204,255,",
-      "rgba(0,255,136,",
-      "rgba(255,136,68,",
-      "rgba(192,132,252,",
-    ];
-
-    function buildNodes() {
-      nodes.length = 0;
-      for (var i = 0; i < NODE_COUNT; i++) {
-        nodes.push({
-          x:     Math.random() * W,
-          y:     Math.random() * H,
-          vx:    (Math.random() - 0.5) * 0.18,
-          vy:    (Math.random() - 0.5) * 0.18,
-          r:     Math.random() * 3 + 1.5,
-          phase: Math.random() * Math.PI * 2,
-          color: COLORS[Math.floor(Math.random() * COLORS.length)],
-        });
-      };
-
-      wireNavigationBridge(document.getElementById('launch-btn'));
-      wireNavigationBridge(document.getElementById('about-link'));
   })();
   </script>
 

@@ -25,6 +25,7 @@ export default function UnifiedNav() {
         <Link to="/pricing" className="unified-nav-link">Pricing</Link>
         <Link to="/about" className="unified-nav-link">About</Link>
         <Link to="/classroom" className="unified-nav-link">Classroom</Link>
+        <Link to="/student" className="unified-nav-link">Student</Link>
         <Link to="/community" className="unified-nav-link">Community</Link>
         <Link to="/account" className="unified-nav-link unified-nav-account">
           {currentUser ? (

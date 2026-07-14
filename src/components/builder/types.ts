@@ -206,7 +206,7 @@ export type ComponentAction = {
 
 export type BuilderToolId = "select" | "wire" | "measure" | "junction";
 
-export type WorkspaceMode = "build" | "practice" | "arena";
+export type WorkspaceMode = "build" | "practice" | "troubleshoot" | "arena" | "learn" | "classroom" | "pricing" | "community";
 
 export type LegacyModeState = {
   isWireMode: boolean;

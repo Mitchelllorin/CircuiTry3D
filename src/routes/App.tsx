@@ -10,7 +10,7 @@ import Community from "../pages/Community";
 import Account from "../pages/Account";
 import SchematicMode from "../pages/SchematicMode";
 import Classroom from "../pages/Classroom";
-import About from "../pages/About";
+import StudentView from "../pages/StudentView";
 import UnifiedNav from "../components/UnifiedNav";
 import "../styles/layout.css";
 
@@ -51,6 +51,7 @@ function PageFallback() {
         <Route path="/community" element={<Community />} />
         <Route path="/account" element={<Account />} />
         <Route path="/classroom" element={<Classroom />} />
+        <Route path="/student" element={<StudentView />} />
       </Route>
       <Route path="*" element={<NotFound />} />
     </Routes>
