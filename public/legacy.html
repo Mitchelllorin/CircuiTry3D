@@ -5467,23 +5467,8 @@ body.android-optimized .zoom-btn {
         // Each entry carries: jacketRatio (3D visual), color (THREE.js hex), opacity,
         // thermalLimitC (physics), plus extended physical fields (maxVoltageV,
         // densityKgPerM3, thermalConductivityWPerMK, dielectricStrengthKVPerMm, etc.).
-        //
-        // Guard: if component-failure-engine.js failed to load (e.g. network error,
-        // stale service-worker cache, or MIME-type mismatch on some CDN/edge configs),
-        // window.FailureEngine will be undefined.  Without this guard the bare property
-        // access would throw a TypeError that kills the ENTIRE inline script — preventing
-        // init() from ever running and leaving the 3D scene blank (grid gone, no
-        // components).  The minimal pvc80 fallback keeps wire geometry rendering correct
-        // even without the full FUSE™ engine, so the builder stays usable.
         // ---------------------------------------------------------------------------
-        const WIRE_INSULATION_SPECS = (window.FailureEngine && window.FailureEngine.WIRE_INSULATION_SPECS) || {
-            pvc80: {
-                jacketRatio: 1.55, color: 0x1a1a1a, opacity: 0.58,
-                thermalLimitC: 80, maxVoltageV: 600,
-                densityKgPerM3: 1350, thermalConductivityWPerMK: 0.17,
-                dielectricStrengthKVPerMm: 15
-            }
-        };
+        const WIRE_INSULATION_SPECS = window.FailureEngine.WIRE_INSULATION_SPECS;
 
         // Conversion factor: conductor radius in mm → scene units.
         // Reference: 14 AWG conductor dia 1.628 mm ⟹ conductor radius target 0.032 scene units.
