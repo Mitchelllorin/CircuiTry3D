@@ -234,16 +234,6 @@ body {
   overflow-y: auto;
 }
 
-.home-page {
-  flex: 1;
-  display: flex;
-  min-height: calc(100vh - 72px - var(--app-safe-area-top));
-  min-height: calc(100dvh - 72px - var(--app-safe-area-top));
-}
-
-.home-page iframe {
-  flex: 1;
-}
 
 /* Arena page — full-height iframe wrapper for arena.html */
 .arena-html-page {
