@@ -677,8 +677,6 @@ export const QUICK_ACTIONS: QuickAction[] = [
     action: "set-tool",
     data: { tool: "select" },
     tool: "select",
-    icon: "↖",
-    color: "#00c8ff",
   },
   {
     id: "measure",
@@ -716,7 +714,7 @@ export const WIRE_TOOL_ACTIONS: PanelAction[] = [
     id: "wire-mode",
     label: "Wire Mode",
     description:
-      "Switch into wiring mode to pick freeform, Manhattan (90-deg), square outside, offset, arc, simple, perimeter, A* auto-routing, diagonal (45°), stepped (staircase), or S-Curve paths.",
+      "Switch into wiring mode to pick freeform, Manhattan (90-deg), simple, perimeter, or A* auto-routing paths.",
     action: "toggle-wire-mode",
     icon: "~",
     color: "#44aaff",
@@ -724,8 +722,7 @@ export const WIRE_TOOL_ACTIONS: PanelAction[] = [
   {
     id: "cycle-routing",
     label: "Cycle Wire Routing",
-    description:
-      "Switch between freeform, Manhattan 90-deg, square outside, offset, arc, simple, perimeter, A*, diagonal, stepped, and S-Curve routing modes.",
+    description: "Switch between freeform, Manhattan 90-deg, simple, perimeter, and A* routing modes.",
     action: "cycle-wire-routing",
     icon: "🔄",
     color: "#00ddb8",

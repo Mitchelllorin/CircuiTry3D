@@ -9,21 +9,7 @@ import { CircuitStorageProvider } from "./context/CircuitStorageContext";
 import { GamificationProvider } from "./context/GamificationContext";
 import { initializeAndroid, registerServiceWorker } from "./hooks/capacitor/useAndroidInit";
 import { ClassroomProvider } from "./context/ClassroomContext";
-import { initBilling, restorePurchases, restoreProPurchases, restorePremiumPurchases, isAndroidApp } from "./utils/playStoreBilling";
-import { setupAndroidSimBootstrap } from "./sim/androidBootstrap";
-// Initialize i18n before rendering so all components can use translations.
-import "./i18n";
-function renderFatalOverlay(payload: {
-  title: string;
-  message: string;
-  stack?: string;
-  details?: string;
-}) {
-  // Avoid throwing while trying to render an error UI
-  try {
-    document.body.style.background = "#1a0000";
-    document.body.style.margin = "0";
-    document.body.style.padding = "0";
+import { TutorialProvider } from "./context/TutorialContext";
 
     const root = document.createElement("div");
     root.style.color = "white";
@@ -167,15 +153,15 @@ try {
       <HashRouter>
         <AuthProvider>
           <EngagementProvider>
-            <GalleryProvider>
-              <CircuitStorageProvider>
-                <GamificationProvider>
-                  <ClassroomProvider>
+            <CircuitStorageProvider>
+              <GamificationProvider>
+                <ClassroomProvider>
+                  <TutorialProvider>
                     <App />
-                  </ClassroomProvider>
-                </GamificationProvider>
-              </CircuitStorageProvider>
-            </GalleryProvider>
+                  </TutorialProvider>
+                </ClassroomProvider>
+              </GamificationProvider>
+            </CircuitStorageProvider>
           </EngagementProvider>
         </AuthProvider>
       </HashRouter>

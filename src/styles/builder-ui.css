@@ -1872,11 +1872,11 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
   background: var(--glass-bg-chrome);
   color: var(--builder-text);
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  box-sizing: border-box;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
   cursor: pointer;
   touch-action: manipulation;
   transition:
@@ -1888,6 +1888,7 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
     0 4px 12px var(--builder-shadow),
     0 0 12px rgba(136, 204, 255, 0.15);
   backdrop-filter: blur(14px);
+  padding: 0;
 }
 
 .builder-menu-toggle:hover,
@@ -1969,13 +1970,22 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
 }
 
 .toggle-icon {
-  width: 12px;
-  height: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
   pointer-events: none;
-  display: grid;
-  place-items: center;
-  font-size: 10px;
-  color: var(--builder-cyan);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  text-align: center;
+}
+
+.toggle-chevron {
+  width: 14px;
+  height: 14px;
+  display: block;
 }
 
 .toggle-icon svg {
@@ -4907,6 +4917,26 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
     box-shadow:
       0 -4px 16px var(--builder-shadow),
       0 -4px 20px rgba(136, 204, 255, 0.3);
+  }
+  .builder-menu-toggle-bottom {
+    width: auto;
+    height: auto;
+    padding: 8px 14px;
+    gap: 6px;
+  }
+  .builder-menu-toggle-bottom .toggle-icon {
+    width: auto;
+    height: auto;
+  }
+  .builder-menu-toggle-bottom .toggle-text {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+  }
+  .builder-menu-stage-bottom:not(.open) {
+    width: auto;
+    height: auto;
   }
 }
 

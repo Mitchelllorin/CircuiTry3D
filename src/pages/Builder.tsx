@@ -43,6 +43,8 @@ import {
 } from "../components/builder/panels/CompactSettingsPanel";
 import { useCircuitStorage } from "../context/CircuitStorageContext";
 import "../styles/circuit-storage.css";
+import { TutorialTip, TutorialControls } from "../components/tutorial";
+import { useTutorial } from "../context/TutorialContext";
 import practiceProblems, {
   DEFAULT_PRACTICE_PROBLEM,
   findPracticeProblemById,
@@ -169,7 +171,7 @@ const HELP_SECTIONS: HelpSection[] = [
     title: "Getting Started",
     paragraphs: [
       "Pull out the Component Library, tap a device, then place it directly into the 3D workspace.",
-      "Use the Wire Tool to drag intelligent routes between pins - swap between Freeform, Manhattan (90-deg), Square (outside), Simple, Perimeter, or A* routing modes from the left panel.",
+      "Use the Wire Tool to drag intelligent routes between pins - swap between Freeform, Manhattan (90-deg), Simple, Perimeter, or A* routing modes from the left panel.",
     ],
     bullets: [
       "One-touch buttons add, rotate, duplicate, or delete components.",
@@ -252,7 +254,7 @@ const TUTORIAL_SECTIONS: HelpSection[] = [
     ],
     bullets: [
       "Quick keys: B (battery), R (resistor), L (LED), S (switch), J (junction).",
-      "Wire tool supports freeform, Manhattan (90-deg), square outside, simple, perimeter, and A* auto-routing modes.",
+      "Wire tool supports freeform, Manhattan (90-deg), simple, perimeter, and A* auto-routing modes.",
       "Analysis panels include W.I.R.E., EIR triangle, power, worksheet, and solve tabs.",
     ],
   },
@@ -798,555 +800,76 @@ const IconPlay = ({ className }: IconProps) => (
   </svg>
 );
 
-const IconUndo = ({ className }: IconProps) => (
+const IconChevronLeft = ({ className }: IconProps) => (
   <svg
     className={className}
-    viewBox="0 0 20 20"
+    viewBox="0 0 16 16"
     fill="none"
+    stroke="currentColor"
+    strokeWidth="2.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
     xmlns="http://www.w3.org/2000/svg"
     aria-hidden="true"
     focusable="false"
   >
-    <path
-      d="M7 6 3.5 9.5 7 13"
-      stroke="currentColor"
-      strokeWidth="1.6"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-    <path
-      d="M4 9.5h6.25a4.25 4.25 0 1 1 0 8.5H9"
-      stroke="currentColor"
-      strokeWidth="1.6"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
+    <path d="M10 12L6 8l4-4" />
   </svg>
 );
 
-const IconRedo = ({ className }: IconProps) => (
+const IconChevronRight = ({ className }: IconProps) => (
   <svg
     className={className}
-    viewBox="0 0 20 20"
+    viewBox="0 0 16 16"
     fill="none"
+    stroke="currentColor"
+    strokeWidth="2.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
     xmlns="http://www.w3.org/2000/svg"
     aria-hidden="true"
     focusable="false"
   >
-    <path
-      d="M13 6 16.5 9.5 13 13"
-      stroke="currentColor"
-      strokeWidth="1.6"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-    <path
-      d="M16 9.5H9.75a4.25 4.25 0 1 0 0 8.5H11"
-      stroke="currentColor"
-      strokeWidth="1.6"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
+    <path d="M6 4l4 4-4 4" />
   </svg>
 );
 
-const IconFolder = ({ className }: IconProps) => (
+const IconChevronUp = ({ className }: IconProps) => (
   <svg
     className={className}
-    viewBox="0 0 20 20"
+    viewBox="0 0 16 16"
     fill="none"
+    stroke="currentColor"
+    strokeWidth="2.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
     xmlns="http://www.w3.org/2000/svg"
     aria-hidden="true"
     focusable="false"
   >
-    <path
-      d="M2.75 7A1.75 1.75 0 0 1 4.5 5.25h3.2l1.6 1.9h6.2a1.75 1.75 0 0 1 1.75 1.75v5.6a1.75 1.75 0 0 1-1.75 1.75h-11a1.75 1.75 0 0 1-1.75-1.75V7Z"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-    <path
-      d="M2.75 8.5h14.5"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
+    <path d="M12 10L8 6l-4 4" />
   </svg>
 );
 
-const IconSave = ({ className }: IconProps) => (
+const IconChevronDown = ({ className }: IconProps) => (
   <svg
     className={className}
-    viewBox="0 0 20 20"
+    viewBox="0 0 16 16"
     fill="none"
+    stroke="currentColor"
+    strokeWidth="2.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
     xmlns="http://www.w3.org/2000/svg"
     aria-hidden="true"
     focusable="false"
   >
-    <path
-      d="M4.5 3.75h9.4l2.35 2.35V15.5a1.75 1.75 0 0 1-1.75 1.75h-10a1.75 1.75 0 0 1-1.75-1.75v-10A1.75 1.75 0 0 1 4.5 3.75Z"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-    <path
-      d="M6.25 3.75V8h6.5V3.75"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-    <path
-      d="M6.5 13.25h7"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
+    <path d="M4 6l4 4 4-4" />
   </svg>
 );
-
-const IconBolt = ({ className }: IconProps) => (
-  <svg className={className} viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
-    <path d="M11.25 1.5L4 11.5h5l-1.25 7L15 8.5h-5l1.25-7Z" />
-  </svg>
-);
-
-const IconRotate = ({ className }: IconProps) => (
-  <svg
-    className={className}
-    viewBox="0 0 20 20"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-    aria-hidden="true"
-    focusable="false"
-  >
-    <path
-      d="M15.75 9.5A5.75 5.75 0 1 0 14 13.8"
-      stroke="currentColor"
-      strokeWidth="1.6"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-    <path
-      d="M15.75 4.75v4.75H11"
-      stroke="currentColor"
-      strokeWidth="1.6"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </svg>
-);
-
-const IconPencil = ({ className }: IconProps) => (
-  <svg
-    className={className}
-    viewBox="0 0 20 20"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-    aria-hidden="true"
-    focusable="false"
-  >
-    <path
-      d="m13.7 4.3 2 2a1.4 1.4 0 0 1 0 2l-7.4 7.4L4.75 16.5l.8-3.55 7.35-7.35a1.4 1.4 0 0 1 2 0Z"
-      stroke="currentColor"
-      strokeWidth="1.4"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-    <path
-      d="m11.9 5.9 2.2 2.2"
-      stroke="currentColor"
-      strokeWidth="1.4"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </svg>
-);
-
-const IconCursor = ({ className }: IconProps) => (
-  <svg className={className} viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
-    <path d="M5 3.5 15.5 10l-4.5 1.25L9 16.5 5 3.5Z" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-);
-
-const IconRuler = ({ className }: IconProps) => (
-  <svg className={className} viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
-    <rect x="2.5" y="7.5" width="15" height="5" rx="1" stroke="currentColor" strokeWidth="1.4" />
-    <path d="M5.5 7.5v2m3-2v3m3-3v2m3-2v3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
-  </svg>
-);
-
-const IconSparkle = ({ className }: IconProps) => (
-  <svg className={className} viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
-    <path d="M10 2.5 11.2 7.8l5.3 1.2-5.3 1.2L10 15.5l-1.2-5.3L3.5 9l5.3-1.2L10 2.5Z" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
-    <path d="M15.5 2.5 16.1 4.9l2.4.6-2.4.6-.6 2.4-.6-2.4-2.4-.6 2.4-.6.6-2.4Z" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-);
-
-/**
- * Hook to detect when an element is visible in the viewport
- * Used to lazy-load expensive 3D thumbnails only when needed
- */
-function useIsVisible(ref: React.RefObject<HTMLElement | null>): boolean {
-  const [isVisible, setIsVisible] = useState(false);
-
-  useEffect(() => {
-    const element = ref.current;
-    if (!element) return;
-
-    // Check if IntersectionObserver is available
-    if (typeof IntersectionObserver === 'undefined') {
-      // Fallback: assume visible
-      setIsVisible(true);
-      return;
-    }
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        // Once visible, stay visible (thumbnails are cached)
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-          observer.disconnect();
-        }
-      },
-      {
-        rootMargin: '100px', // Start loading slightly before visible
-        threshold: 0,
-      }
-    );
-
-    observer.observe(element);
-
-    return () => {
-      observer.disconnect();
-    };
-  }, [ref]);
-
-  return isVisible;
-}
-
-type ComponentLibraryCardProps = {
-  component: ComponentAction;
-  thumbnailsEnabled: boolean;
-  animateThumbnails: boolean;
-};
-
-function ComponentLibraryCard({
-  component,
-  thumbnailsEnabled,
-  animateThumbnails,
-}: ComponentLibraryCardProps) {
-  const containerRef = useRef<HTMLSpanElement>(null);
-  const isVisible = useIsVisible(containerRef);
-  const [isPreviewActive, setPreviewActive] = useState(false);
-
-  // Only request thumbnails while the library is open and the card is visible.
-  const shouldLoadThumbnail = thumbnailsEnabled && isVisible;
-  const shouldAnimateThumbnail =
-    shouldLoadThumbnail && animateThumbnails && isPreviewActive;
-
-  const thumbSrc = useComponent3DThumbnail(
-    shouldLoadThumbnail ? (component.builderType ?? component.id) : undefined,
-    { animated: shouldAnimateThumbnail }
-  );
-
-  const symbolKey = (() => {
-    const type = component.builderType ?? component.id;
-    switch (type) {
-      case "bjt-npn":
-        return "transistor-npn";
-      case "bjt-pnp":
-        return "transistor-pnp";
-      case "bjt":
-        return "transistor-npn";
-      default:
-        return type;
-    }
-  })();
-
-  const Symbol = getSchematicSymbol(symbolKey as any);
-  const symbolRotation = symbolKey === "battery" ? -90 : 0;
-
-  return (
-    <span
-      className="slider-component-card"
-      ref={containerRef}
-      onPointerEnter={
-        animateThumbnails ? () => setPreviewActive(true) : undefined
-      }
-      onPointerLeave={
-        animateThumbnails ? () => setPreviewActive(false) : undefined
-      }
-    >
-      <span className="slider-component-name">{component.label}</span>
-
-      {component.description ? (
-        <span className="slider-component-description">{component.description}</span>
-      ) : null}
-
-      <span className="slider-component-symbol" aria-hidden="true">
-        {Symbol ? (
-          <svg
-            className="slider-component-symbol-svg"
-            viewBox="-40 -40 80 80"
-            width="100%"
-            height="100%"
-            focusable="false"
-          >
-            <Symbol x={0} y={0} rotation={symbolRotation} scale={1} showLabel={false} />
-          </svg>
-        ) : (
-          <span className="slider-component-symbol-text">{component.icon}</span>
-        )}
-      </span>
-
-      <span className="slider-component-thumbnail" aria-hidden="true">
-        {thumbSrc ? (
-          <img src={thumbSrc} alt="" loading="lazy" />
-        ) : (
-          <span className="slider-component-thumbnail-placeholder" />
-        )}
-      </span>
-    </span>
-  );
-}
-
-/* ── Quick-add bar button with 3D thumbnail ───────────────────────────── */
-type QuickAddButtonProps = {
-  component: ComponentAction;
-  onClick: () => void;
-  disabled: boolean;
-};
-
-function QuickAddButton({ component, onClick, disabled }: QuickAddButtonProps) {
-  const builderType = component.builderType ?? component.id;
-  const thumbSrc = useComponent3DThumbnail(builderType);
-
-  return (
-    <button
-      type="button"
-      className="quick-add-btn"
-      onClick={onClick}
-      disabled={disabled}
-      aria-disabled={disabled}
-      title={component.description || component.label}
-    >
-      <span className="quick-add-btn-symbol" aria-hidden="true">
-        {thumbSrc ? (
-          <img
-            src={thumbSrc}
-            alt=""
-            className="quick-add-btn-3d-img"
-            aria-hidden="true"
-          />
-        ) : (
-          <span className="quick-add-btn-icon-text" aria-hidden="true">
-            {component.icon}
-          </span>
-        )}
-      </span>
-      <span className="quick-add-btn-label">{component.label}</span>
-    </button>
-  );
-}
-
-type IntroDialogStep = {
-  icon: string;
-  title: string;
-  isActive?: boolean;
-  showDescriptor?: boolean;
-};
-
-function QuickAddButton({
-  component,
-  onClick,
-  disabled,
-  title,
-  isActive = false,
-  showDescriptor,
-}: QuickAddButtonProps) {
-  const [isHovered, setIsHovered] = useState(false);
-  const thumbSrc = useComponent3DThumbnail(
-    component.builderType ?? component.id,
-    { animated: isHovered }
-  );
-
-  const symKey = (() => {
-    const t = component.builderType ?? component.id;
-    if (t === "bjt-npn" || t === "bjt") return "transistor-npn";
-    if (t === "bjt-pnp") return "transistor-pnp";
-    return t;
-  })() as ComponentSymbol;
-  const SymbolComp = getSchematicSymbol(symKey);
-  const symRotation = symKey === "battery" ? -90 : 0;
-
-  return (
-    <button
-      type="button"
-      className="quick-add-btn"
-      onClick={onClick}
-      disabled={disabled}
-      aria-disabled={disabled}
-      aria-pressed={isActive}
-      title={title}
-      onPointerEnter={() => setIsHovered(true)}
-      onPointerLeave={() => setIsHovered(false)}
-    >
-      <span className="quick-add-btn-symbol" aria-hidden="true">
-        {thumbSrc ? (
-          <img src={thumbSrc} alt="" className="quick-add-btn-thumb-img" aria-hidden="true" />
-        ) : SymbolComp ? (
-          <svg
-            className="quick-add-btn-symbol-svg"
-            viewBox="-36 -36 72 72"
-            focusable="false"
-            aria-hidden="true"
-          >
-            <SymbolComp x={0} y={0} rotation={symRotation} scale={0.9} showLabel={false} />
-          </svg>
-        ) : (
-          <span className="quick-add-btn-icon-text" aria-hidden="true">{component.icon}</span>
-        )}
-      </span>
-      <span className="quick-add-btn-label">{component.label}</span>
-      {showDescriptor && (
-        <span className="quick-add-btn-descriptor">
-          {getComponentShortDescriptor(component)}
-        </span>
-      )}
-    </button>
-  );
-}
-
-const INTRO_WELCOME = {
-  icon: "⚡",
-  title: "Welcome to CircuiTry3D",
-  body: "Build real electric circuits in 3D and watch the current actually flow — no experience needed. New to this? Start by tapping a part below (a Battery powers everything), add a Resistor and an LED, connect them with wires, and press Run. Not sure what a part is? Tap it to see what it does, or tap the ? Help button anytime.",
-};
-
-const INTRO_DIALOG_STEPS: IntroDialogStep[] = [
-  {
-    icon: "⚡",
-    title: "What is an Electric Circuit?",
-    body: "An electric circuit is a closed path through which electric charge (electrons) can flow continuously. Every working circuit needs three things: a voltage source (like a battery), at least one load (like a resistor or bulb), and conductors (wires) forming a complete, unbroken path.",
-    analogy:
-      "🔄 Think of it like a water cycle: a pump pushes water around a closed pipe system. If the pipe is broken anywhere, the flow stops — the same happens with electricity in an open circuit.",
-  },
-  {
-    icon: "🔋",
-    title: "Voltage (E) — The Electrical Push",
-    body: "Voltage, also called Electromotive Force (EMF) or potential difference, is the energy per unit charge that drives electrons through the circuit. It is measured in Volts (V).",
-    formula: "E  (Volts, V)",
-    analogy:
-      "💧 Imagine water pressure in a pipe. Higher pressure pushes more water through — higher voltage pushes more electrons through a conductor.",
-  },
-  {
-    icon: "➡️",
-    title: "Current (I) — The Flow of Electrons",
-    body: "Electric current is the rate at which electric charge flows past a point in a circuit. It is measured in Amperes (Amps, A). In a series circuit, the same current flows through every component.",
-    formula: "I  (Amperes, A)",
-    analogy:
-      "💧 Current is like the volume of water flowing through a pipe per second. A wider pipe (less resistance) allows more water (more current) to flow for the same pressure (voltage).",
-  },
-  {
-    icon: "🌀",
-    title: "Resistance (R) — Opposition to Flow",
-    body: "Resistance is the property of a material that opposes the flow of electric current. It converts electrical energy into heat or light. Resistance is measured in Ohms (Ω). Every real conductor and component has some resistance.",
-    formula: "R  (Ohms, Ω)",
-    analogy:
-      "💧 Resistance is like the narrowness of a pipe. A very narrow pipe (high resistance) restricts water flow even under high pressure. Resistors are deliberately added to control current.",
-  },
-  {
-    icon: "📐",
-    title: "Ohm's Law — The Fundamental Relationship",
-    body: "Ohm's Law states that the voltage across a conductor is directly proportional to the current flowing through it, with resistance as the constant of proportionality. This single equation lets you calculate any one of the three values if you know the other two.",
-    formula: "E = I × R",
-    analogy:
-      "🔧 Rearranged:\n  I = E ÷ R  →  more voltage or less resistance = more current\n  R = E ÷ I  →  knowing voltage and current reveals resistance",
-  },
-  {
-    icon: "🚀",
-    title: "You're Ready to Build!",
-    body: "CircuiTry3D lets you design interactive 3D circuits and instantly see how Ohm's Law plays out in real time. Add a battery, connect resistors, draw wires, and watch current flow — all the way down to the atomic level.\n\nUse the W.I.R.E. table (Watts · Current · Resistance · Voltage) to read every metric in your circuit.",
-  },
-);
-
-const UNIFIED_COMPONENT_ACTIONS: ComponentAction[] = [
-  ...COMPONENT_ACTIONS,
-  ...REAL_PART_LIBRARY_ACTIONS,
-];
-
-// ── Drag / resize handle sub-components ────────────────────────────────────
-const RESIZE_DIRS = ["n", "s", "e", "w", "ne", "nw", "se", "sw"] as const;
-type ResizeDir = typeof RESIZE_DIRS[number];
-
-function PanelResizeHandles({
-  getProps,
-}: {
-  getProps: (dir: ResizeDir) => {
-    onPointerDown: (e: React.PointerEvent<HTMLElement>) => void;
-    onPointerMove: (e: React.PointerEvent<HTMLElement>) => void;
-    onPointerUp: (e: React.PointerEvent<HTMLElement>) => void;
-  };
-}) {
-  return (
-    <div className="panel-resize-handles" aria-hidden="true">
-      {RESIZE_DIRS.map((dir) => (
-        <div
-          key={dir}
-          className={`panel-resize-handle panel-resize-handle--${dir}`}
-          {...getProps(dir)}
-        />
-      ))}
-    </div>
-  );
-}
-
-function PanelDragHandle({
-  dragHandleProps,
-  onReset,
-}: {
-  dragHandleProps: {
-    onPointerDown: (e: React.PointerEvent<HTMLElement>) => void;
-    onPointerMove: (e: React.PointerEvent<HTMLElement>) => void;
-    onPointerUp: (e: React.PointerEvent<HTMLElement>) => void;
-  };
-  onReset: () => void;
-}) {
-  return (
-    <div
-      className="panel-drag-handle"
-      {...dragHandleProps}
-      aria-hidden="true"
-    >
-      <div className="panel-drag-handle__grip">
-        {[0, 1, 2, 3, 4, 5].map((i) => (
-          <div key={i} className="panel-drag-handle__grip-dot" />
-        ))}
-      </div>
-      <button
-        type="button"
-        className="panel-drag-handle__reset"
-        onPointerDown={(e) => e.stopPropagation()}
-        onClick={(e) => {
-          e.stopPropagation();
-          onReset();
-        }}
-        title="Reset to default position"
-        aria-label="Reset panel to default position"
-      >
-        ↩
-      </button>
-    </div>
-  );
-}
 
 export default function Builder() {
-  const location = useLocation();
+  const { startTutorial, state: tutorialState } = useTutorial();
   const practiceProblemRef = useRef<string | null>(
     DEFAULT_PRACTICE_PROBLEM?.id ?? null,
   );
@@ -2137,6 +1660,61 @@ export default function Builder() {
     triggerBuilderAction(lock ? "lock-circuit" : "unlock-circuit");
   }, [isCircuitLocked, isShowcaseLocked, isFrameReady, triggerBuilderAction]);
 
+  // Tutorial menu control: open/close menus based on tutorial step requirements
+  useEffect(() => {
+    const handleOpenMenu = (event: Event) => {
+      const customEvent = event as CustomEvent<{ menu: string; stepId: string }>;
+      const { menu } = customEvent.detail;
+
+      switch (menu) {
+        case "left":
+          setLeftMenuOpen(true);
+          break;
+        case "right":
+          setRightMenuOpen(true);
+          break;
+        case "bottom":
+          setBottomMenuOpen(true);
+          break;
+      }
+    };
+
+    const handleCloseMenu = (event: Event) => {
+      const customEvent = event as CustomEvent<{ menu: string; stepId: string }>;
+      const { menu } = customEvent.detail;
+
+      // Only close menus that were opened by the tutorial
+      // We could track this state if needed, but for now we'll just close them
+      switch (menu) {
+        case "left":
+          setLeftMenuOpen(false);
+          break;
+        case "right":
+          setRightMenuOpen(false);
+          break;
+        case "bottom":
+          setBottomMenuOpen(false);
+          break;
+      }
+    };
+
+    window.addEventListener("tutorial:open-menu", handleOpenMenu);
+    window.addEventListener("tutorial:close-menu", handleCloseMenu);
+
+    return () => {
+      window.removeEventListener("tutorial:open-menu", handleOpenMenu);
+      window.removeEventListener("tutorial:close-menu", handleCloseMenu);
+    };
+  }, [setLeftMenuOpen, setRightMenuOpen, setBottomMenuOpen]);
+
+  // Sync circuit lock state to the iframe
+  useEffect(() => {
+    if (!isFrameReady) {
+      return;
+    }
+    triggerBuilderAction(isCircuitLocked ? "lock-circuit" : "unlock-circuit");
+  }, [isCircuitLocked, isFrameReady, triggerBuilderAction]);
+
   const triggerSimulationPulse = useCallback(() => {
     setSimulatePulsing(true);
     const timer = window.setTimeout(() => {
@@ -2802,9 +2380,6 @@ export default function Builder() {
   const wireRoutingNames: Record<string, string> = {
     freeform: "Freeform",
     manhattan: "Manhattan (90-deg)",
-    square: "Square (outside)",
-    offset: "Offset",
-    arc: "Arc",
     simple: "Simple",
     perimeter: "Perimeter",
     astar: "A* Auto",
@@ -3133,26 +2708,80 @@ export default function Builder() {
   ]);
 
   return (
-    <div
-      className="builder-shell"
-      data-left-menu-open={isLeftMenuOpen ? "true" : "false"}
-      data-right-menu-open={isRightMenuOpen ? "true" : "false"}
-      data-bottom-menu-open={isBottomMenuOpen ? "true" : "false"}
-      data-tour-active={isGuidedTourOpen ? "true" : "false"}
-    >
-    <CurrentFlowAnimation />
-
-      {/* Mode bar is now rendered globally in AppLayout */}
-
-      {/* ── Unified top action bar ─────────────────────────────────────────
-          Combines the former workspace-edge-actions (left + right) and the
-          quick-add-bar into a single horizontal strip below the ticker. */}
-      {shouldShowEdgeActions && (
-        <Fragment>
-          <div
-            className="unified-action-bar"
-            aria-label="Quick actions"
-            data-bar-mode={actionBarMode}
+    <div className="builder-shell">
+      <div className="workspace-mode-bar">
+        <button
+          type="button"
+          className="mode-tab"
+          data-active={workspaceMode === "build" ? "true" : undefined}
+          onClick={() => {
+            setWorkspaceMode("build");
+            setPracticeWorkspaceMode(false);
+            setCompactWorksheetOpen(false);
+            setCircuitLocked(false);
+            setArenaPanelOpen(false);
+          }}
+          aria-label="Build mode"
+          title="Component builder and circuit designer"
+        >
+          <span className="mode-icon" aria-hidden="true">🔧</span>
+          <span className="mode-label">Build</span>
+        </button>
+        <button
+          type="button"
+          className="mode-tab"
+          data-active={workspaceMode === "practice" ? "true" : undefined}
+          onClick={() => {
+            if (workspaceMode === "practice") {
+              setCompactWorksheetOpen(true);
+              return;
+            }
+            openPracticeWorkspace();
+          }}
+          aria-label="Practice mode"
+          title="Guided worksheets and W.I.R.E. problems"
+        >
+          <span className="mode-icon" aria-hidden="true">📝</span>
+          <span className="mode-label">Practice</span>
+        </button>
+        <button
+          type="button"
+          className="mode-tab"
+          data-active={workspaceMode === "arena" ? "true" : undefined}
+          onClick={() => {
+            setWorkspaceMode("arena");
+            setArenaPanelOpen(true);
+            if (arenaExportStatus !== "ready") {
+              handleArenaSync({ openWindow: false });
+            }
+          }}
+          aria-label="Arena mode"
+          title="Component testing and advanced simulation"
+        >
+          <span className="mode-icon" aria-hidden="true">⚡</span>
+          <span className="mode-label">Arena</span>
+        </button>
+        <button
+          type="button"
+          className="mode-tab"
+          data-active={tutorialState.isActive ? "true" : undefined}
+          onClick={startTutorial}
+          aria-label="Start tutorial"
+          title="Interactive tutorial - learn the basics step by step"
+        >
+          <span className="mode-icon" aria-hidden="true">🎓</span>
+          <span className="mode-label">Tutorial</span>
+        </button>
+        <div className="mode-bar-spacer" />
+        <div className="mode-bar-actions" aria-label="Workspace actions">
+          <button
+            type="button"
+            className="mode-action-btn"
+            onClick={() => triggerBuilderAction("undo")}
+            disabled={controlsDisabled}
+            aria-disabled={controlsDisabled}
+            aria-label="Undo last change"
+            title="Undo (Ctrl+Z)"
           >
             {/* Quick-add components — hidden when mode is 'tools' or 'hidden' */}
             <div className="quick-add-btn-wrapper" aria-label="Component shortcuts">
@@ -3824,11 +3453,141 @@ export default function Builder() {
               : "Expand component library"
           }
         >
-          <span className="toggle-icon" aria-hidden="true">
-            <IconChevron direction={isLeftMenuOpen ? "left" : "right"} />
-          </span>
+          <span className="toggle-icon">{isLeftMenuOpen ? <IconChevronLeft className="toggle-chevron" /> : <IconChevronRight className="toggle-chevron" />}</span>
           <span className="toggle-text">Library</span>
         </button>
+        <nav
+          className="builder-menu builder-menu-left"
+          role="navigation"
+          aria-label="Component and wiring controls"
+        >
+          <div className="builder-menu-scroll">
+            <div className="slider-section" data-tutorial-target="components-library">
+              <span className="slider-heading">Components Library</span>
+              <div className="slider-stack">
+                {COMPONENT_ACTIONS.map((component) => (
+                  <button
+                    key={component.id}
+                    type="button"
+                    className="slider-btn slider-btn-stacked"
+                    onClick={() => handleComponentAction(component)}
+                    disabled={controlsDisabled}
+                    aria-disabled={controlsDisabled}
+                    title={
+                      controlsDisabled ? controlDisabledTitle : component.description || component.label
+                    }
+                    data-component-action={component.action}
+                  >
+                    <span className="slider-icon-label">
+                      <span className="slider-icon" aria-hidden="true">
+                        {component.icon}
+                      </span>
+                      <span className="slider-label">{component.label}</span>
+                    </span>
+                    {component.description && (
+                      <span className="slider-description">{component.description}</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="slider-section" data-tutorial-target="quick-actions">
+              <span className="slider-heading">Quick Actions</span>
+              <div className="slider-stack">
+                {QUICK_ACTIONS.map((action) => {
+                  const isActive =
+                    action.kind === "tool" && action.tool === activeQuickTool;
+                  const isSimulation = action.id === "simulate";
+                  return (
+                    <button
+                      key={action.id}
+                      type="button"
+                      className="slider-btn slider-btn-stacked"
+                      onClick={() => handleQuickAction(action)}
+                      disabled={controlsDisabled}
+                      aria-disabled={controlsDisabled}
+                      aria-pressed={
+                        action.kind === "tool" ? isActive : undefined
+                      }
+                      data-active={
+                        action.kind === "tool" && isActive ? "true" : undefined
+                      }
+                      data-pulse={
+                        isSimulation && isSimulatePulsing ? "true" : undefined
+                      }
+                      title={
+                        controlsDisabled
+                          ? controlDisabledTitle
+                          : action.description
+                      }
+                    >
+                      <span className="slider-label">{action.label}</span>
+                      <span className="slider-description">
+                        {action.description}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="slider-section" data-tutorial-target="wire-modes">
+              <span className="slider-heading">Wire Modes</span>
+              <div className="slider-stack">
+                {WIRE_TOOL_ACTIONS.map((action) => {
+                  const isWireToggle = action.action === "toggle-wire-mode";
+                  const isRotateToggle = action.action === "toggle-rotate-mode";
+                  const isCycleRouting = action.action === "cycle-wire-routing";
+                  const isActionActive =
+                    (isWireToggle && modeState.isWireMode) ||
+                    (isRotateToggle && modeState.isRotateMode);
+                  const description = (() => {
+                    if (isWireToggle) {
+                      return modeState.isWireMode
+                        ? "Wire tool active"
+                        : "Activate wire mode to sketch connections";
+                    }
+                    if (isRotateToggle) {
+                      return modeState.isRotateMode
+                        ? "Rotate mode active"
+                        : "Rotate the active component";
+                    }
+                    if (isCycleRouting) {
+                      return `Current routing: ${wireRoutingLabel}`;
+                    }
+                    return action.description;
+                  })();
+
+                  return (
+                    <button
+                      key={action.id}
+                      type="button"
+                      className="slider-btn slider-btn-stacked"
+                      onClick={() =>
+                        triggerBuilderAction(action.action, action.data)
+                      }
+                      disabled={controlsDisabled}
+                      aria-disabled={controlsDisabled}
+                      title={
+                        controlsDisabled
+                          ? controlDisabledTitle
+                          : action.description
+                      }
+                      data-active={isActionActive ? "true" : undefined}
+                      aria-pressed={
+                        isWireToggle || isRotateToggle
+                          ? isActionActive
+                          : undefined
+                      }
+                    >
+                      <span className="slider-label">{action.label}</span>
+                      <span className="slider-description">{description}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </nav>
       </div>
 
       <div
@@ -3860,9 +3619,7 @@ export default function Builder() {
               : "Expand mode and view controls"
           }
         >
-          <span className="toggle-icon" aria-hidden="true">
-            <IconChevron direction={isRightMenuOpen ? "right" : "left"} />
-          </span>
+          <span className="toggle-icon">{isRightMenuOpen ? <IconChevronRight className="toggle-chevron" /> : <IconChevronLeft className="toggle-chevron" />}</span>
           <span className="toggle-text">Controls</span>
         </button>
         <nav
@@ -4095,10 +3852,8 @@ export default function Builder() {
               : "Expand analysis and guidance"
           }
         >
-          <span className="toggle-icon" aria-hidden="true">
-            <IconChevron direction={isBottomMenuOpen ? "down" : "up"} />
-          </span>
-          <span className="toggle-text">Insights</span>
+          <span className="toggle-icon">{isBottomMenuOpen ? <IconChevronDown className="toggle-chevron" /> : <IconChevronUp className="toggle-chevron" />}</span>
+          <span className="toggle-text">Analysis & Guides</span>
         </button>
         <nav
           className="builder-menu builder-menu-bottom"
@@ -4747,76 +4502,9 @@ export default function Builder() {
         />
       )}
 
-      <BuilderInteractiveTutorial
-        isOpen={isInteractiveTutorialOpen}
-        onClose={() => setInteractiveTutorialOpen(false)}
-        modeState={modeState}
-        circuitState={circuitState}
-        lastSimulationAt={lastSimulationAt}
-        isLeftMenuOpen={isLeftMenuOpen}
-        onRequestOpenLeftMenu={() => setLeftMenuOpen(true)}
-        onInvokeAction={triggerBuilderAction}
-      />
-
-      <BuilderGuidedTour
-        open={isGuidedTourOpen}
-        onClose={() => {
-          // Dismiss for good — it won't auto-open again (Guides menu re-launches it).
-          setGuidedTourOpen(false);
-          try {
-            window.localStorage.setItem(TOUR_DISMISSED_KEY, "1");
-          } catch {
-            /* ignore */
-          }
-        }}
-        onInvokeAction={triggerBuilderAction}
-        onStartBuildAlong={() => {
-          // Hand off from the tour into the build-it-yourself walkthrough on a
-          // clean, unlocked canvas (and don't auto-show the tour again).
-          setGuidedTourOpen(false);
-          setShowcaseLocked(false);
-          setCircuitLocked(false);
-          triggerBuilderAction("clear-workspace");
-          setBuildAlongOpen(true);
-          try {
-            window.localStorage.setItem(TOUR_DISMISSED_KEY, "1");
-          } catch {
-            /* ignore */
-          }
-        }}
-      />
-
-      <BuilderBuildAlong
-        open={isBuildAlongOpen}
-        onClose={() => setBuildAlongOpen(false)}
-        circuitState={circuitState}
-        modeState={modeState}
-        onInvokeAction={triggerBuilderAction}
-        onRequestSetLeftMenu={setLeftMenuOpen}
-      />
-
-      {/* Circuit AI helper — floating action button + sliding chat panel */}
-      <AIHelperPanel
-        isOpen={isAIHelperOpen}
-        circuitState={circuitState}
-        onClose={() => setIsAIHelperOpen(false)}
-      />
-      <button
-        type="button"
-        className={`ai-helper-fab${isAIHelperOpen ? " ai-helper-fab--open" : ""}`}
-        onClick={() => setIsAIHelperOpen((prev) => !prev)}
-        aria-label={isAIHelperOpen ? "Close Circuit AI" : "Open Circuit AI assistant"}
-        aria-expanded={isAIHelperOpen}
-        title="Circuit AI — ask anything about circuits or the app"
-      >
-        <span className="ai-helper-fab__icon" aria-hidden="true">
-          {isAIHelperOpen ? "✕" : "⚡"}
-        </span>
-        <span className="ai-helper-fab__label" aria-hidden="true">
-          {isAIHelperOpen ? "Close" : "AI"}
-        </span>
-      </button>
-
+      {/* Interactive Tutorial System */}
+      <TutorialTip />
+      <TutorialControls />
     </div>
   );
 }
