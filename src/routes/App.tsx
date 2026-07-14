@@ -3,12 +3,11 @@ import { Routes, Route, Link, Outlet, useLocation, Navigate } from "react-router
 import { useTranslation } from "react-i18next";
 import Home from "../pages/Home";
 import Builder from "../pages/Builder";
-import Arena from "../pages/Arena";
-import WireDemo from "../pages/WireDemo";
+import Practice from "../pages/Practice";
+import SchematicMode from "../pages/SchematicMode";
 import Pricing from "../pages/Pricing";
 import Community from "../pages/Community";
 import Account from "../pages/Account";
-import SchematicMode from "../pages/SchematicMode";
 import Classroom from "../pages/Classroom";
 import StudentView from "../pages/StudentView";
 import UnifiedNav from "../components/UnifiedNav";
@@ -42,19 +41,21 @@ const Settings = lazy(() => import("../pages/Settings"));
 function PageFallback() {
   const { t } = useTranslation();
   return (
-    <Routes>
-      <Route element={<AppLayout />}>
-        <Route path="/" element={<Home />} />
-        <Route path="/app" element={<Builder />} />
-        <Route path="/pricing" element={<Pricing />} />
-        <Route path="/about" element={<About />} />
-        <Route path="/community" element={<Community />} />
-        <Route path="/account" element={<Account />} />
-        <Route path="/classroom" element={<Classroom />} />
-        <Route path="/student" element={<StudentView />} />
-      </Route>
-      <Route path="*" element={<NotFound />} />
-    </Routes>
+    <WorkspaceModeProvider>
+      <Routes>
+        <Route element={<AppLayout />}>
+          <Route path="/" element={<Home />} />
+          <Route path="/app" element={<Builder />} />
+          <Route path="/practice" element={<Practice />} />
+          <Route path="/schematic" element={<SchematicMode />} />
+          <Route path="/pricing" element={<Pricing />} />
+          <Route path="/community" element={<Community />} />
+          <Route path="/account" element={<Account />} />
+          <Route path="/classroom" element={<Classroom />} />
+        </Route>
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </WorkspaceModeProvider>
   );
 }
 
