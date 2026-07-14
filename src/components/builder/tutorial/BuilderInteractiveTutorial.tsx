@@ -21,22 +21,7 @@ type TutorialStep = {
   }) => boolean;
 };
 
-type TutorialProgressState = {
-  circuit: LegacyCircuitState | null;
-  mode: LegacyModeState;
-  lastSimulationAt: string | null;
-  tutorialOpenedAt: number;
-};
-
-type TutorialObjective = {
-  id: string;
-  label: string;
-  done: boolean;
-};
-
-export const INTERACTIVE_TUTORIAL_PROGRESS_STORAGE_KEY =
-  "circuitry3d:tutorial:basic-circuits:v2";
-export const INTERACTIVE_TUTORIAL_DONE_STEP_INDEX = 14;
+const STORAGE_KEY = "circuitry3d:tutorial:basic-circuits:v2";
 
 function safeParseInt(value: string | null) {
   if (!value) return null;
@@ -106,6 +91,19 @@ export function BuilderInteractiveTutorial(props: {
           "Battery = the push. Resistor = the brake. Wires = the roads. Put them together and that's a circuit.",
         canSkipRequirement: true,
         isComplete: () => true,
+      },
+      {
+        id: "series-presets",
+        title: "Step 0 — Optional warm-up: load a starter series circuit",
+        body:
+          "Need ideas before your first build? In Library > Beginner Series Starters, load Starter Loop, Voltage Drop Chain, or LED + Resistor Starter. Use one as a reference, then modify values to explore.",
+        targetId: "tutorial-beginner-series-presets",
+        canSkipRequirement: true,
+        isComplete: ({ circuit }) =>
+          Boolean(
+            (circuit?.counts.byType?.battery ?? 0) > 0 &&
+              (circuit?.counts.byType?.resistor ?? 0) > 0,
+          ),
       },
       {
         id: "battery",
@@ -233,7 +231,7 @@ export function BuilderInteractiveTutorial(props: {
 
     // Some steps need the Library open so the user can actually see/click the target.
     if (
-      activeStep.id === "parts-tour" ||
+      activeStep.id === "series-presets" ||
       activeStep.id === "battery" ||
       activeStep.id === "resistor" ||
       activeStep.id === "wire-mode" ||

@@ -198,13 +198,33 @@ const getNextPracticeProblem = (currentId: string | null) => {
   return pool[(index + 1) % pool.length] ?? null;
 };
 
-const WORKSPACE_SECTION_TITLE: Record<WorkspaceSectionId, string> = {
-  arcade: "Arcade",
-  classroom: "Classroom",
-  community: "Community",
-  account: "Account",
-  pricing: "Pricing",
+type BeginnerSeriesPreset = {
+  id: string;
+  label: string;
+  description: string;
+  preset: string;
 };
+
+const BEGINNER_SERIES_PRESETS: BeginnerSeriesPreset[] = [
+  {
+    id: "starter-loop",
+    label: "Starter Loop",
+    description: "Battery + resistor loop for first-time wiring practice.",
+    preset: "series_basic",
+  },
+  {
+    id: "voltage-drop-chain",
+    label: "Voltage Drop Chain",
+    description: "Two resistors in series to compare how voltage divides.",
+    preset: "series_voltage_drop",
+  },
+  {
+    id: "led-resistor-starter",
+    label: "LED + Resistor Starter",
+    description: "Classic LED current-limiter build using a simple series path.",
+    preset: "series_led_resistor",
+  },
+];
 
 const TUTORIAL_SECTIONS: HelpSection[] = [
   {
@@ -215,8 +235,9 @@ const TUTORIAL_SECTIONS: HelpSection[] = [
     ],
     bullets: [
       "Quick keys: B (battery), R (resistor), L (LED), S (switch), J (junction).",
-      "Components auto-label (B1, R1, LED1) for easy reference.",
-      "Adjust component values by clicking on them in the workspace.",
+      "Need build ideas? Use Library -> Beginner Series Starters to load a preset and remix it.",
+      "Wire tool supports freeform, Manhattan (90-deg), simple, perimeter, and A* auto-routing modes.",
+      "Analysis panels include W.I.R.E., EIR triangle, power, worksheet, and solve tabs.",
     ],
   },
   {
@@ -1747,33 +1768,14 @@ export default function Builder() {
     [triggerBuilderAction, triggerSimulationPulse],
   );
 
-  const handleModeAction = useCallback(
-    (action: PanelAction) => {
-      if (action.action === "open-measurement-tools") {
-        setMeasurementPanelOpen((open) => !open);
-        return;
-      }
-      triggerBuilderAction(action.action, action.data);
-    },
-    [setMeasurementPanelOpen, triggerBuilderAction],
-  );
-
-  const handleMeterModeChange = useCallback(
-    (mode: MeterMode) => {
-      triggerBuilderAction("set-meter-mode", { mode });
+  const handleLoadBeginnerSeriesPreset = useCallback(
+    (preset: string) => {
+      triggerBuilderAction("load-preset", { preset });
     },
     [triggerBuilderAction],
   );
 
-  const handleMeterToggle = useCallback(() => {
-    triggerBuilderAction("toggle-meter-armed");
-  }, [triggerBuilderAction]);
-
-  const handleMeterClear = useCallback(() => {
-    triggerBuilderAction("clear-meter-selection");
-  }, [triggerBuilderAction]);
-
-  const handleAdvancePracticeProblem = useCallback(() => {
+  const handleAdvancePracticeProblem = useCallback((currentProblemId?: string) => {
     const currentId =
       currentProblemId ??
       practiceProblemRef.current ??
@@ -3199,68 +3201,35 @@ export default function Builder() {
                 </a>
               )}
             </div>
-            )}
-            {/* The branded "Real Parts" are now unified INTO the picker above
-                (UNIFIED_COMPONENT_ACTIONS) and filter under the same category tabs,
-                so there is no longer a separate stacked section to hide behind the
-                reel. */}
-          </div>
-        </nav>
-        <button
-          type="button"
-          className="builder-menu-toggle builder-menu-toggle-left"
-          onClick={() => setLeftMenuOpen((open) => !open)}
-          aria-expanded={isLeftMenuOpen}
-          aria-label={
-            isLeftMenuOpen
-              ? "Collapse component library"
-              : "Expand component library"
-          }
-          title={
-            isLeftMenuOpen
-              ? "Collapse component library"
-              : "Expand component library"
-          }
-        >
-          <span className="toggle-icon">{isLeftMenuOpen ? <IconChevronLeft className="toggle-chevron" /> : <IconChevronRight className="toggle-chevron" />}</span>
-          <span className="toggle-text">Library</span>
-        </button>
-        <nav
-          className="builder-menu builder-menu-left"
-          role="navigation"
-          aria-label="Component and wiring controls"
-        >
-          <div className="builder-menu-scroll">
-            <div className="slider-section" data-tutorial-target="components-library">
-              <span className="slider-heading">Components Library</span>
+            <div
+              className="slider-section"
+              data-tutorial-id="tutorial-beginner-series-presets"
+            >
+              <span className="slider-heading">Beginner Series Starters</span>
               <div className="slider-stack">
-                {COMPONENT_ACTIONS.map((component) => (
+                {BEGINNER_SERIES_PRESETS.map((preset) => (
                   <button
-                    key={component.id}
+                    key={preset.id}
                     type="button"
                     className="slider-btn slider-btn-stacked"
-                    onClick={() => handleComponentAction(component)}
+                    onClick={() => handleLoadBeginnerSeriesPreset(preset.preset)}
                     disabled={controlsDisabled}
                     aria-disabled={controlsDisabled}
                     title={
-                      controlsDisabled ? controlDisabledTitle : component.description || component.label
+                      controlsDisabled
+                        ? controlDisabledTitle
+                        : `Load preset: ${preset.label}`
                     }
-                    data-component-action={component.action}
                   >
-                    <span className="slider-icon-label">
-                      <span className="slider-icon" aria-hidden="true">
-                        {component.icon}
-                      </span>
-                      <span className="slider-label">{component.label}</span>
+                    <span className="slider-label">{preset.label}</span>
+                    <span className="slider-description">
+                      {preset.description}
                     </span>
-                    {component.description && (
-                      <span className="slider-description">{component.description}</span>
-                    )}
                   </button>
                 ))}
               </div>
             </div>
-            <div className="slider-section" data-tutorial-target="quick-actions">
+            <div className="slider-section">
               <span className="slider-heading">Quick Actions</span>
               <div className="slider-stack">
                 {QUICK_ACTIONS.map((action) => {
