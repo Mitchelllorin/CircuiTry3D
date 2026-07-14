@@ -145,27 +145,41 @@
         fill="#ff2b2b"
         stroke="#050b1f" stroke-width="1.5" paint-order="stroke fill">12V</text>
 
-  <!-- ── JUNCTION DOTS ── -->
-  <!-- Corners (large) -->
-  <circle cx="56"  cy="98"  r="9" fill="#8844ff" stroke="#0f172a" stroke-width="1.5" filter="url(#circuitGlow)"/>
-  <circle cx="456" cy="98"  r="9" fill="#8844ff" stroke="#0f172a" stroke-width="1.5" filter="url(#circuitGlow)"/>
-  <circle cx="456" cy="414" r="9" fill="#8844ff" stroke="#0f172a" stroke-width="1.5" filter="url(#circuitGlow)"/>
-  <circle cx="56"  cy="414" r="9" fill="#8844ff" stroke="#0f172a" stroke-width="1.5" filter="url(#circuitGlow)"/>
-  <!-- Component endpoints (small) -->
-  <circle cx="152" cy="98"  r="6" fill="#8844ff" stroke="#0f172a" stroke-width="1" filter="url(#circuitGlow)"/>
-  <circle cx="360" cy="98"  r="6" fill="#8844ff" stroke="#0f172a" stroke-width="1" filter="url(#circuitGlow)"/>
-  <circle cx="456" cy="182" r="6" fill="#8844ff" stroke="#0f172a" stroke-width="1" filter="url(#circuitGlow)"/>
-  <circle cx="456" cy="330" r="6" fill="#8844ff" stroke="#0f172a" stroke-width="1" filter="url(#circuitGlow)"/>
-  <circle cx="360" cy="414" r="6" fill="#8844ff" stroke="#0f172a" stroke-width="1" filter="url(#circuitGlow)"/>
-  <circle cx="152" cy="414" r="6" fill="#8844ff" stroke="#0f172a" stroke-width="1" filter="url(#circuitGlow)"/>
+    <line x1="55" y1="50" x2="100" y2="50" stroke="url(#wireGradient)" strokeWidth="3.5" />
 
-  <!-- ── COMPONENT LABELS ── -->
-  <g font-family="system-ui, -apple-system, sans-serif" font-size="14"
-     fill="#88ccff" font-weight="600"
-     stroke="#050b1f" stroke-width="1.5" paint-order="stroke fill">
-    <text x="256" y="50"  text-anchor="middle">R&#x2081; = 3 k&#x03A9;</text>
-    <text x="498" y="260" text-anchor="end">R&#x2082; =</text>
-    <text x="256" y="469" text-anchor="middle">R&#x2083; = 5 k&#x03A9;</text>
+    <g transform="translate(130, 50)" stroke="url(#componentGradient)" strokeWidth="3.5" filter="url(#glow)">
+      <polyline points="-30,0 -22,0 -17,-10 -7,10 3,-10 13,10 18,0 30,0" />
+    </g>
+
+    <line x1="160" y1="50" x2="205" y2="50" stroke="url(#wireGradient)" strokeWidth="3.5" />
+
+    <line x1="205" y1="50" x2="205" y2="75" stroke="url(#wireGradient)" strokeWidth="3.5" />
+
+    <g transform="translate(205, 105) rotate(90)" stroke="url(#componentGradient)" strokeWidth="3.5" filter="url(#glow)">
+      <polyline points="-30,0 -22,0 -17,-10 -7,10 3,-10 13,10 18,0 30,0" />
+    </g>
+
+    <line x1="205" y1="135" x2="205" y2="150" stroke="url(#wireGradient)" strokeWidth="3.5" />
+
+    <line x1="205" y1="150" x2="155" y2="150" stroke="url(#wireGradient)" strokeWidth="3.5" />
+
+    <g transform="translate(125, 150)" stroke="url(#componentGradient)" strokeWidth="3.5" filter="url(#glow)">
+      <polyline points="-30,0 -22,0 -17,-10 -7,10 3,-10 13,10 18,0 30,0" />
+    </g>
+
+    <line x1="95" y1="150" x2="55" y2="150" stroke="url(#wireGradient)" strokeWidth="3.5" />
+
+    <line x1="55" y1="150" x2="55" y2="115" stroke="url(#wireGradient)" strokeWidth="3.5" />
+
+    <circle cx="55" cy="50" r="3.5" fill="#00ff88" stroke="#0f172a" strokeWidth="1.5" />
+    <circle cx="205" cy="50" r="3.5" fill="#00ff88" stroke="#0f172a" strokeWidth="1.5" />
+    <circle cx="205" cy="150" r="3.5" fill="#00ff88" stroke="#0f172a" strokeWidth="1.5" />
+    <circle cx="55" cy="150" r="3.5" fill="#00ff88" stroke="#0f172a" strokeWidth="1.5" />
+
+    <text x="35" y="35" fontSize="8" fill="#94a3b8" fontWeight="bold">1</text>
+    <text x="220" y="35" fontSize="8" fill="#94a3b8" fontWeight="bold">2</text>
+    <text x="220" y="165" fontSize="8" fill="#94a3b8" fontWeight="bold">3</text>
+    <text x="35" y="165" fontSize="8" fill="#94a3b8" fontWeight="bold">4</text>
   </g>
   <!-- R2 unknown value -->
   <text x="498" y="260"
