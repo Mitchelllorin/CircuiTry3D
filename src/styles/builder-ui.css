@@ -4,9 +4,9 @@
   --builder-navy-deep: #09091e;
   --builder-overlay: rgba(12, 10, 36, 0.86);
   --builder-overlay-soft: rgba(14, 12, 40, 0.78);
-  --builder-border: rgba(168, 216, 255, 0.28);
-  --builder-border-strong: rgba(168, 216, 255, 0.45);
-  --builder-border-cyan: rgba(168, 216, 255, 0.28);
+  --builder-border: rgba(168, 216, 255, 0.35);
+  --builder-border-strong: rgba(168, 216, 255, 0.55);
+  --builder-border-cyan: rgba(168, 216, 255, 0.35);
   /* Alias global brand colors — single source of truth lives in layout.css */
   --builder-blue: var(--brand-blue);
   --builder-orange: var(--brand-orange);
@@ -15,7 +15,7 @@
   /* --wire-w/i/r/e intentionally omitted: defined once in layout.css */
   --builder-text: #ecf4ff;
   --builder-muted: rgba(200, 220, 255, 1.0);
-  --builder-muted-soft: rgba(200, 220, 255, 0.62);
+  --builder-muted-soft: rgba(210, 228, 255, 0.75);
   --builder-shadow: rgba(3, 8, 28, 0.6);
 
   /* ── UNIFIED GLASS-SURFACE + SHAPE STANDARD ──────────────────────────────
@@ -196,12 +196,12 @@ body.builder-body::before {
 @keyframes builderLogoPulse {
   0%,
   100% {
-    filter: drop-shadow(0 0 6px rgba(168, 216, 255, 0.45))
-      drop-shadow(0 0 16px rgba(168, 216, 255, 0.35));
+    filter: drop-shadow(0 0 8px rgba(168, 216, 255, 0.58))
+      drop-shadow(0 0 20px rgba(168, 216, 255, 0.44));
   }
   50% {
-    filter: drop-shadow(0 0 12px rgba(168, 216, 255, 0.65))
-      drop-shadow(0 0 24px rgba(255, 255, 255, 0.35));
+    filter: drop-shadow(0 0 16px rgba(168, 216, 255, 0.82))
+      drop-shadow(0 0 32px rgba(255, 255, 255, 0.45));
   }
 }
 
@@ -273,17 +273,10 @@ body.builder-body::before {
 }
 
 .mode-tab[data-active="true"] {
-  background: rgba(168, 216, 255, 0.18);
+  background: rgba(168, 216, 255, 0.22);
   color: var(--builder-cyan);
   border-color: var(--builder-border-strong);
-  box-shadow:
-    0 0 12px rgba(168, 216, 255, 0.32),
-    inset 0 -2px 0 rgba(168, 216, 255, 0.65);
-}
-
-.mode-tab:focus-visible {
-  outline: 2px solid rgba(168, 216, 255, 0.65);
-  outline-offset: 2px;
+  box-shadow: 0 0 16px rgba(168, 216, 255, 0.42);
 }
 
 .mode-icon {
