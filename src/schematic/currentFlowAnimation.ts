@@ -1,5 +1,7 @@
 import { Vec2 } from "./types";
 import { getPerformanceTier } from "../utils/mobilePerformance";
+import { isAndroid } from "../hooks/capacitor/useAndroidInit";
+import { LOGO_COLORS } from "./visualConstants";
 
 /**
  * Flow mode determines the direction of particle animation:
@@ -35,8 +37,8 @@ const CURRENT_FLOW_OFF_COLORS = {
  */
 export const FLOW_MODE_APPEARANCE = {
   // NOTE: size here is the *base radius* in scene units (scaled in update()).
-  electron: { opacity: 0.72, size: 0.13, glowOpacity: 0.28 },       // Softer, slightly larger
-  conventional: { opacity: 0.95, size: 0.16, glowOpacity: 0.42 }    // Brighter, larger
+  electron: { opacity: 0.78, size: 0.11, glowOpacity: 0.34 },       // Finer, denser electron stream
+  conventional: { opacity: 0.95, size: 0.13, glowOpacity: 0.48 }    // Bright but less oversized at close zoom
 } as const;
 
 /**
@@ -45,33 +47,34 @@ export const FLOW_MODE_APPEARANCE = {
  */
 const getCometTailConfig = () => {
   const tier = getPerformanceTier();
+  const android = isAndroid();
   if (tier === 'low') {
     return {
-      segments: 6,
-      length: 6.0,
-      maxOpacity: 0.28,
-      minOpacity: 0.02,
-      maxRadiusFactor: 0.75,
-      minRadiusFactor: 0.18
+      segments: android ? 6 : 7,
+      length: 6.8,
+      maxOpacity: android ? 0.28 : 0.32,
+      minOpacity: 0.025,
+      maxRadiusFactor: 0.72,
+      minRadiusFactor: 0.16
     };
   }
   if (tier === 'medium') {
     return {
-      segments: 7,
-      length: 6.8,
-      maxOpacity: 0.28,
+      segments: android ? 7 : 9,
+      length: android ? 7.0 : 7.8,
+      maxOpacity: android ? 0.3 : 0.34,
       minOpacity: 0.02,
-      maxRadiusFactor: 0.75,
-      minRadiusFactor: 0.18
+      maxRadiusFactor: 0.74,
+      minRadiusFactor: 0.15
     };
   }
   return {
-    segments: 8,
-    length: 7.4,
-    maxOpacity: 0.28,
-    minOpacity: 0.02,
-    maxRadiusFactor: 0.75,
-    minRadiusFactor: 0.18
+    segments: android ? 9 : 11,
+    length: android ? 7.8 : 8.6,
+    maxOpacity: android ? 0.32 : 0.36,
+    minOpacity: 0.015,
+    maxRadiusFactor: 0.76,
+    minRadiusFactor: 0.14
   };
 };
 
@@ -100,13 +103,14 @@ const lerpColor = (start: number, end: number, t: number) => {
  */
 const getParticleLimits = () => {
   const tier = getPerformanceTier();
+  const android = isAndroid();
   if (tier === 'low') {
-    return { min: 2, max: 10 };  // Increased from 1-8 for better flow visualization
+    return android ? { min: 2, max: 10 } : { min: 3, max: 14 };
   }
   if (tier === 'medium') {
-    return { min: 2, max: 14 }; // Increased from 2-12
+    return android ? { min: 2, max: 13 } : { min: 3, max: 18 };
   }
-  return { min: 2, max: 15 };
+  return android ? { min: 3, max: 16 } : { min: 4, max: 22 };
 };
 
 /**
@@ -135,7 +139,7 @@ export const CURRENT_FLOW_PHYSICS = {
    * Base number of particles per unit path length at 1A
    * Higher current = more charge carriers = more visible particles
    */
-  PARTICLES_PER_UNIT_LENGTH_PER_AMP: 0.8,
+  PARTICLES_PER_UNIT_LENGTH_PER_AMP: 1.0,
 
   /**
    * Minimum particles regardless of current (ensures visibility)
@@ -145,7 +149,7 @@ export const CURRENT_FLOW_PHYSICS = {
   /**
    * Maximum particles per path (performance limit)
    */
-  MAX_PARTICLES_PER_PATH: 15,
+  MAX_PARTICLES_PER_PATH: 22,
 
   /**
    * Current threshold below which we consider "no current" (microamps)
@@ -162,38 +166,16 @@ export const CURRENT_FLOW_PHYSICS = {
    * Resistance scaling: higher resistance slows particles within that element
    */
   RESISTANCE_LOG_RANGE: 4,          // log10 range (1Ω to 10kΩ) for full slowdown
-  MAX_RESISTANCE_SLOWDOWN: 0.6,     // up to 60% slowdown at high resistance
-  RESISTANCE_SPEED_FLOOR: 0.35,     // keep at least 35% of min visible speed
-
-  /**
-   * Scatter effect for resistor zones — electrons deflecting off atomic lattice sites
-   * like photons bouncing inside a mirror-lined cavity.
-   *
-   * MAX_SCATTER_AMPLITUDE: peak lateral displacement in scene-units at maximum resistance
-   * SCATTER_PRIMARY_FREQ:  primary oscillation frequency (Hz) — gives the main bounce cadence
-   * SCATTER_HARMONIC_FREQ: harmonic frequency — adds chaotic variation on top of the primary
-   * SCATTER_HARMONIC_RATIO: amplitude of the harmonic relative to the primary (0–1)
-   */
-  MAX_SCATTER_AMPLITUDE: 0.18,
-  SCATTER_PRIMARY_FREQ: 9.0,
-  SCATTER_HARMONIC_FREQ: 22.0,
-  SCATTER_HARMONIC_RATIO: 0.35,
-
-  /**
-   * Quantum thermal jitter — tiny stochastic displacement on every particle every frame.
-   * Simulates the real randomness of individual electron thermal motion around net drift.
-   * These are sine-based pseudo-random hash seeds (Wang/Blum hash style).
-   */
-  JITTER_RADIUS: 0.018,
-  JITTER_HASH_SEED_X: 127.1,
-  JITTER_HASH_SEED_Z: 269.5,
-  JITTER_HASH_MULTIPLIER: 43758.5453
+  MAX_RESISTANCE_SLOWDOWN: 0.72,    // up to 72% slowdown at high resistance
+  RESISTANCE_SPEED_FLOOR: 0.22      // keep at least 22% of min visible speed
 } as const;
 
 export type CurrentFlowParticle = {
   id: string;
   position: Vec2;
   progress: number;
+  /** Per-particle phase offset to avoid synchronized pulsing */
+  pulsePhase: number;
   /** Base speed from current calculation (will be modified by variation) */
   baseSpeed: number;
   /** Actual speed including random variation */
@@ -207,6 +189,8 @@ export type CurrentFlowParticle = {
   flowsForward: boolean;
   /** The amperage this particle represents */
   currentAmps: number;
+  /** Estimated local power dissipation (I²R) for behavior tinting */
+  powerWatts?: number;
   /** Whether this particle should track global current updates */
   usesGlobalCurrent: boolean;
   /** Optional resistance to slow this particle's speed */
@@ -229,6 +213,8 @@ export type FlowPathConfig = {
   particleCount?: number;
   baseSpeed?: number;
   currentAmps?: number;
+  /** Optional local power dissipation (I²R) in watts for this path */
+  powerWatts?: number;
   sourcePolarity?: "positive" | "negative";
   /** Direction of current flow: true if current flows forward along path */
   flowsForward?: boolean;
@@ -283,22 +269,49 @@ export class CurrentFlowAnimationSystem {
     return clamp01((logCurrent + 3) / 4);
   }
 
-  private getCurrentFlowColors(amps: number): { core: number; glow: number; emissive: number } {
+  private calculatePowerWatts(amps: number, resistanceOhms?: number): number | undefined {
+    if (!Number.isFinite(resistanceOhms) || resistanceOhms === undefined || resistanceOhms <= 0) {
+      return undefined;
+    }
+    const absAmps = Math.abs(amps);
+    return absAmps * absAmps * resistanceOhms;
+  }
+
+  private calculateNormalizedPower(powerWatts?: number): number {
+    if (!Number.isFinite(powerWatts) || powerWatts === undefined || powerWatts <= 0) {
+      return 0;
+    }
+    // Log scaling keeps tiny and very large dissipation values usable in one ramp.
+    const logPower = Math.log10(powerWatts + 0.001);
+    return clamp01((logPower + 3) / 4);
+  }
+
+  private getCurrentFlowColors(amps: number, powerWatts?: number): { core: number; glow: number; emissive: number } {
     const absAmps = Math.abs(amps);
     if (absAmps < CURRENT_FLOW_PHYSICS.ZERO_CURRENT_THRESHOLD) {
       return CURRENT_FLOW_OFF_COLORS;
     }
 
     const normalized = this.calculateNormalizedCurrent(absAmps);
-    const base =
+    const currentColor =
       normalized <= 0.5
         ? lerpColor(CURRENT_FLOW_COLOR_RAMP.slow, CURRENT_FLOW_COLOR_RAMP.mid, normalized / 0.5)
         : lerpColor(CURRENT_FLOW_COLOR_RAMP.mid, CURRENT_FLOW_COLOR_RAMP.fast, (normalized - 0.5) / 0.5);
+    const normalizedPower = this.calculateNormalizedPower(powerWatts);
+    const thermalColor =
+      normalizedPower > 0
+        ? CurrentFlowAnimationSystem.calculatePowerDissipationColor(powerWatts ?? 0)
+        : currentColor;
+    const core = lerpColor(currentColor, thermalColor, normalizedPower * 0.55);
+    const glowTarget = normalizedPower > 0
+      ? lerpColor(0xfff5d6, 0xff8a3d, normalizedPower)
+      : 0xffffff;
+    const emissiveDarken = Math.max(0.08, 0.25 - normalizedPower * 0.1);
 
     return {
-      core: base,
-      glow: lerpColor(base, 0xffffff, 0.45),
-      emissive: lerpColor(base, 0x000000, 0.25),
+      core,
+      glow: lerpColor(core, glowTarget, 0.45 + normalizedPower * 0.2),
+      emissive: lerpColor(core, 0x000000, emissiveDarken),
     };
   }
 
@@ -465,6 +478,7 @@ export class CurrentFlowAnimationSystem {
     this.particles.forEach((particle) => {
       if (!particle.usesGlobalCurrent) return;
       particle.currentAmps = this.globalCurrentAmps;
+      particle.powerWatts = this.calculatePowerWatts(particle.currentAmps, particle.resistanceOhms);
       const adjustedSpeed = this.applyResistanceToSpeed(newBaseSpeed, particle.resistanceOhms);
       particle.baseSpeed = adjustedSpeed;
       particle.speed = this.addSpeedVariation(adjustedSpeed);
@@ -514,6 +528,7 @@ export class CurrentFlowAnimationSystem {
   ): void {
     let path: Vec2[];
     let currentAmps = this.globalCurrentAmps;
+    let powerWatts: number | undefined;
     let flowsForward = true;
     let usesGlobalCurrent = true;
     let resistanceOhms: number | undefined;
@@ -525,6 +540,9 @@ export class CurrentFlowAnimationSystem {
       if (pathOrConfig.currentAmps !== undefined) {
         currentAmps = Math.abs(pathOrConfig.currentAmps);
         usesGlobalCurrent = false;
+      }
+      if (pathOrConfig.powerWatts !== undefined && Number.isFinite(pathOrConfig.powerWatts)) {
+        powerWatts = Math.abs(pathOrConfig.powerWatts);
       }
       if (pathOrConfig.flowsForward !== undefined) {
         flowsForward = pathOrConfig.flowsForward;
@@ -557,6 +575,7 @@ export class CurrentFlowAnimationSystem {
     // Calculate physics-based speed if not explicitly provided
     const calculatedSpeed = baseSpeed ?? this.calculateSpeedFromCurrent(currentAmps);
     const adjustedSpeed = this.applyResistanceToSpeed(calculatedSpeed, resistanceOhms);
+    const effectivePowerWatts = powerWatts ?? this.calculatePowerWatts(currentAmps, resistanceOhms);
 
     // Determine flow direction based on mode and current direction
     // - In electron flow mode, electrons move opposite to conventional current
@@ -577,6 +596,7 @@ export class CurrentFlowAnimationSystem {
         id: `particle-${this.nextParticleId++}`,
         position: { ...startPosition },
         progress: initialProgress,
+        pulsePhase: Math.random() * Math.PI * 2,
         baseSpeed: adjustedSpeed,
         speed: particleSpeed,
         path: path, // Use the path as-is, direction is handled in update()
@@ -585,6 +605,7 @@ export class CurrentFlowAnimationSystem {
         reversed: isReversed,
         flowsForward,
         currentAmps,
+        powerWatts: effectivePowerWatts,
         usesGlobalCurrent,
         resistanceOhms,
         jitterSeed: Math.random() * 1000
@@ -609,8 +630,9 @@ export class CurrentFlowAnimationSystem {
 
   private createParticleMesh(particle: CurrentFlowParticle): void {
     const appearance = FLOW_MODE_APPEARANCE[this.flowMode];
-    const colors = this.getCurrentFlowColors(particle.currentAmps);
+    const colors = this.getCurrentFlowColors(particle.currentAmps, particle.powerWatts);
     const tier = getPerformanceTier();
+    const android = isAndroid();
     const COMET_TAIL = getCometTailConfig();
 
     // Particles in resistor zones get a chrome/mirror look to suggest electrons
@@ -618,9 +640,15 @@ export class CurrentFlowAnimationSystem {
     const inResistorZone = (particle.scatterAmplitude ?? 0) > 0;
 
     // Improved sphere segments for better visual quality across all tiers
-    const sphereSegments = tier === 'low' ? 14 : tier === 'medium' ? 16 : 18;
-    const glowSegments = tier === 'low' ? 12 : tier === 'medium' ? 14 : 16;
-    const tailSegments = tier === 'low' ? 10 : tier === 'medium' ? 10 : 12;
+    const sphereSegments = android
+      ? (tier === 'low' ? 14 : tier === 'medium' ? 16 : 20)
+      : (tier === 'low' ? 18 : tier === 'medium' ? 22 : 28);
+    const glowSegments = android
+      ? (tier === 'low' ? 12 : tier === 'medium' ? 14 : 18)
+      : (tier === 'low' ? 16 : tier === 'medium' ? 20 : 24);
+    const tailSegments = android
+      ? (tier === 'low' ? 8 : tier === 'medium' ? 10 : 12)
+      : (tier === 'low' ? 12 : tier === 'medium' ? 14 : 18);
 
     // Use unit geometry and scale it so we can easily combine base size + pulse in update()
     const geometry = new this.three.SphereGeometry(1, sphereSegments, sphereSegments);
@@ -647,9 +675,9 @@ export class CurrentFlowAnimationSystem {
     const glowMaterial = new this.three.MeshBasicMaterial({
       color: glowColor,
       transparent: true,
-      opacity: inResistorZone
-        ? Math.min(1, appearance.glowOpacity * 1.8)
-        : (tier === 'low' ? appearance.glowOpacity * 0.7 : appearance.glowOpacity)
+      opacity: tier === 'low'
+        ? appearance.glowOpacity * (android ? 0.55 : 0.7)
+        : (android ? appearance.glowOpacity * 0.85 : appearance.glowOpacity)
     });
     const glow = new this.three.Mesh(glowGeometry, glowMaterial);
     glow.name = "glow";
@@ -697,6 +725,7 @@ export class CurrentFlowAnimationSystem {
    */
   private updateAllParticleAppearances(): void {
     const appearance = FLOW_MODE_APPEARANCE[this.flowMode];
+    const COMET_TAIL = getCometTailConfig();
 
     this.particles.forEach(particle => {
       const mesh = this.particleMeshes.get(particle.id);
@@ -705,7 +734,7 @@ export class CurrentFlowAnimationSystem {
       // Per-particle intensity (derived from this particle's own current) so parallel
       // branches can look/feel different.
       const intensity = this.calculateIntensity(particle.currentAmps);
-      const colors = this.getCurrentFlowColors(particle.currentAmps);
+      const colors = this.getCurrentFlowColors(particle.currentAmps, particle.powerWatts);
       particle.intensity = intensity;
 
       // Update main mesh material
@@ -727,9 +756,8 @@ export class CurrentFlowAnimationSystem {
 
       const tail = mesh.children.find((child: any) => child?.name === "tail");
       if (tail) {
-        const COMET_TAIL = getCometTailConfig();
-        const tailHeadColor = lerpColor(colors.glow, CURRENT_FLOW_COLOR_RAMP.fast, 0.3);
-        const tailTrailColor = lerpColor(colors.glow, CURRENT_FLOW_COLOR_RAMP.slow, 0.6);
+        const tailHeadColor = lerpColor(colors.glow, BRAND_FLOW_COLORS.positive, 0.3);
+        const tailTrailColor = lerpColor(colors.glow, BRAND_FLOW_COLORS.negative, 0.6);
         const tailChildCount = tail.children?.length || 0;
         tail.children?.forEach?.((seg: any, index: number) => {
           if (!seg?.material) return;
@@ -815,7 +843,7 @@ export class CurrentFlowAnimationSystem {
           mesh.position.set(meshX, 0.2, meshZ);
 
           // Orient the particle so +Z matches direction of travel (tail trails in -Z)
-          const sampleDistance = 0.08;
+          const sampleDistance = Math.min(0.08, totalLength * 0.22);
           const signed = particle.reversed ? -1 : 1;
           const aheadDistance = this.wrapDistance(targetDistance + signed * sampleDistance, totalLength);
           const ahead = this.getPositionAlongPath(particle.path, aheadDistance);
@@ -834,9 +862,10 @@ export class CurrentFlowAnimationSystem {
 
           // Pulse effect scaled by intensity
           const intensityPulseScale = this.getIntensityPulseScale(particle.intensity);
-          const pulse = 1 + Math.sin(particle.progress * Math.PI * 4) * 0.2 * intensityPulseScale;
+          const pulse = 1 + Math.sin((particle.progress * Math.PI * 4) + particle.pulsePhase) * 0.2 * intensityPulseScale;
+          const microPulse = 1 + Math.sin((particle.progress * Math.PI * 12) + particle.pulsePhase * 0.7) * 0.05 * intensityPulseScale;
           const baseScale = typeof mesh.userData.baseScale === "number" ? mesh.userData.baseScale : FLOW_MODE_APPEARANCE[this.flowMode].size;
-          const finalScale = baseScale * pulse;
+          const finalScale = baseScale * pulse * microPulse;
           mesh.scale.setScalar(finalScale);
         }
       }
@@ -900,9 +929,8 @@ export class CurrentFlowAnimationSystem {
    * @param wireSegmentCurrents - Array of per-segment current data from solveDCCircuit()
    * @param wirePathMap - Map of wireId to full path points
    *
-   * Each segment gets particles proportional to and moving at speeds based on
-   * the actual current flowing through that segment, providing realistic visualization
-   * of current distribution in complex circuits (e.g., parallel branches)
+   * Contiguous segments with similar solved currents are merged into longer runs so
+   * particles traverse larger wire sections while still reflecting local branch current.
    */
   public addFlowPathsFromSolver(
     wireSegmentCurrents: Array<{ wireId: string; segmentIndex: number; amps: number }>,
@@ -921,7 +949,21 @@ export class CurrentFlowAnimationSystem {
       });
     }
 
-    // Create flow paths for each wire's segments
+    const appendPointIfNeeded = (points: Vec2[], point: Vec2) => {
+      const last = points[points.length - 1];
+      if (!last) {
+        points.push(point);
+        return;
+      }
+      const dx = Math.abs(last.x - point.x);
+      const dz = Math.abs(last.z - point.z);
+      if (dx > 1e-6 || dz > 1e-6) {
+        points.push(point);
+      }
+    };
+
+    // Create flow paths for each wire by merging contiguous segments with similar current.
+    // This avoids tiny per-segment loops and produces a more realistic traversal pattern.
     for (const [wireId, segments] of wireGroups) {
       const fullPath = wirePathMap.get(wireId);
       if (!fullPath || fullPath.length < 2) continue;
@@ -929,27 +971,88 @@ export class CurrentFlowAnimationSystem {
       // Sort segments by index
       segments.sort((a, b) => a.segmentIndex - b.segmentIndex);
 
-      // Create a flow path for each segment with its own current
+      let runPath: Vec2[] = [];
+      let runAbsAmpTotal = 0;
+      let runSignedAmpTotal = 0;
+      let runSegmentCount = 0;
+      let previousSegmentIndex: number | null = null;
+      let previousSegmentAmp: number | null = null;
+
+      const flushRun = () => {
+        if (runPath.length < 2 || runSegmentCount <= 0) {
+          runPath = [];
+          runAbsAmpTotal = 0;
+          runSignedAmpTotal = 0;
+          runSegmentCount = 0;
+          return;
+        }
+        const avgAbsAmps = runAbsAmpTotal / runSegmentCount;
+        if (avgAbsAmps < CURRENT_FLOW_PHYSICS.ZERO_CURRENT_THRESHOLD) {
+          runPath = [];
+          runAbsAmpTotal = 0;
+          runSignedAmpTotal = 0;
+          runSegmentCount = 0;
+          return;
+        }
+        const avgSignedAmps = runSignedAmpTotal / runSegmentCount;
+        this.addFlowPath({
+          path: runPath,
+          currentAmps: avgAbsAmps,
+          flowsForward: avgSignedAmps >= 0,
+        });
+        runPath = [];
+        runAbsAmpTotal = 0;
+        runSignedAmpTotal = 0;
+        runSegmentCount = 0;
+      };
+
       for (const segment of segments) {
         const startIdx = segment.segmentIndex;
         const endIdx = segment.segmentIndex + 1;
+        if (startIdx < 0 || endIdx >= fullPath.length) {
+          continue;
+        }
 
-        if (startIdx >= fullPath.length - 1) continue;
+        const signedAmps = segment.amps;
+        const absAmps = Math.abs(signedAmps);
+        if (absAmps < CURRENT_FLOW_PHYSICS.ZERO_CURRENT_THRESHOLD) {
+          flushRun();
+          previousSegmentIndex = null;
+          previousSegmentAmp = null;
+          continue;
+        }
 
-        // Extract segment path (just two points for a single segment)
-        const segmentPath = [fullPath[startIdx], fullPath[endIdx]];
-        const currentAmps = segment.amps;
+        const contiguous =
+          previousSegmentIndex !== null && startIdx === previousSegmentIndex + 1;
+        const sameDirection =
+          previousSegmentAmp === null ||
+          Math.abs(previousSegmentAmp) < CURRENT_FLOW_PHYSICS.ZERO_CURRENT_THRESHOLD ||
+          Math.sign(previousSegmentAmp) === Math.sign(signedAmps);
+        const refAbs = Math.abs(previousSegmentAmp ?? signedAmps);
+        const ampTolerance = Math.max(0.002, refAbs * 0.25);
+        const similarMagnitude =
+          previousSegmentAmp === null ||
+          Math.abs(absAmps - refAbs) <= ampTolerance;
+        const canExtend = runPath.length >= 2 && contiguous && sameDirection && similarMagnitude;
 
-        // Direction: positive amps means current flows startIdx -> endIdx
-        // If amps is negative, current flows in reverse
-        const flowsForward = currentAmps >= 0;
+        if (!canExtend) {
+          flushRun();
+          runPath = [fullPath[startIdx], fullPath[endIdx]];
+          runAbsAmpTotal = absAmps;
+          runSignedAmpTotal = signedAmps;
+          runSegmentCount = 1;
+        } else {
+          appendPointIfNeeded(runPath, fullPath[endIdx]);
+          runAbsAmpTotal += absAmps;
+          runSignedAmpTotal += signedAmps;
+          runSegmentCount += 1;
+        }
 
-        this.addFlowPath({
-          path: segmentPath,
-          currentAmps: Math.abs(currentAmps),
-          flowsForward
-        });
+        previousSegmentIndex = startIdx;
+        previousSegmentAmp = signedAmps;
       }
+
+      flushRun();
     }
   }
 
