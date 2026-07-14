@@ -197,77 +197,77 @@
   <g aria-hidden="true" filter="url(#photonGlow)">
     <!-- Photon A -->
     <g>
-      <circle r="7" fill="url(#photonFill)" opacity="1">
-        <animateMotion dur="4.2s" repeatCount="indefinite" rotate="auto">
-          <mpath href="#photonPath" xlink:href="#photonPath"/>
+      <circle r="8" fill="url(#photonFill)" opacity="1">
+        <animateMotion dur="3.4s" repeatCount="indefinite" rotate="auto">
+          <mpath href="#photonPath" xlink:href="#photonPath" />
         </animateMotion>
       </circle>
-      <circle r="5.6" fill="url(#photonFill)" opacity="0.55">
-        <animateMotion dur="4.2s" repeatCount="indefinite" rotate="auto" begin="-0.17s">
-          <mpath href="#photonPath" xlink:href="#photonPath"/>
+      <circle r="6.5" fill="url(#photonFill)" opacity="0.55">
+        <animateMotion dur="3.4s" repeatCount="indefinite" rotate="auto" begin="-0.14s">
+          <mpath href="#photonPath" xlink:href="#photonPath" />
         </animateMotion>
       </circle>
-      <circle r="4.4" fill="url(#photonFill)" opacity="0.32">
-        <animateMotion dur="4.2s" repeatCount="indefinite" rotate="auto" begin="-0.34s">
-          <mpath href="#photonPath" xlink:href="#photonPath"/>
+      <circle r="5.2" fill="url(#photonFill)" opacity="0.32">
+        <animateMotion dur="3.4s" repeatCount="indefinite" rotate="auto" begin="-0.28s">
+          <mpath href="#photonPath" xlink:href="#photonPath" />
         </animateMotion>
       </circle>
-      <circle r="3.5" fill="url(#photonFill)" opacity="0.2">
-        <animateMotion dur="4.2s" repeatCount="indefinite" rotate="auto" begin="-0.51s">
-          <mpath href="#photonPath" xlink:href="#photonPath"/>
+      <circle r="4.2" fill="url(#photonFill)" opacity="0.2">
+        <animateMotion dur="3.4s" repeatCount="indefinite" rotate="auto" begin="-0.42s">
+          <mpath href="#photonPath" xlink:href="#photonPath" />
         </animateMotion>
       </circle>
-      <circle r="2.8" fill="url(#photonFill)" opacity="0.12">
-        <animateMotion dur="4.2s" repeatCount="indefinite" rotate="auto" begin="-0.68s">
-          <mpath href="#photonPath" xlink:href="#photonPath"/>
+      <circle r="3.4" fill="url(#photonFill)" opacity="0.12">
+        <animateMotion dur="3.4s" repeatCount="indefinite" rotate="auto" begin="-0.56s">
+          <mpath href="#photonPath" xlink:href="#photonPath" />
         </animateMotion>
       </circle>
-      <circle r="2.2" fill="url(#photonFill)" opacity="0.08">
-        <animateMotion dur="4.2s" repeatCount="indefinite" rotate="auto" begin="-0.85s">
-          <mpath href="#photonPath" xlink:href="#photonPath"/>
+      <circle r="2.7" fill="url(#photonFill)" opacity="0.08">
+        <animateMotion dur="3.4s" repeatCount="indefinite" rotate="auto" begin="-0.70s">
+          <mpath href="#photonPath" xlink:href="#photonPath" />
         </animateMotion>
       </circle>
-      <circle r="1.8" fill="url(#photonFill)" opacity="0.06">
-        <animateMotion dur="4.2s" repeatCount="indefinite" rotate="auto" begin="-1.02s">
-          <mpath href="#photonPath" xlink:href="#photonPath"/>
+      <circle r="2.1" fill="url(#photonFill)" opacity="0.06">
+        <animateMotion dur="3.4s" repeatCount="indefinite" rotate="auto" begin="-0.84s">
+          <mpath href="#photonPath" xlink:href="#photonPath" />
         </animateMotion>
       </circle>
     </g>
     <!-- Photon B (phase offset) -->
     <g>
-      <circle r="7" fill="url(#photonFill)" opacity="1">
-        <animateMotion dur="4.2s" repeatCount="indefinite" rotate="auto" begin="-2.1s">
-          <mpath href="#photonPath" xlink:href="#photonPath"/>
+      <circle r="8" fill="url(#photonFill)" opacity="1">
+        <animateMotion dur="3.4s" repeatCount="indefinite" rotate="auto" begin="-1.7s">
+          <mpath href="#photonPath" xlink:href="#photonPath" />
         </animateMotion>
       </circle>
-      <circle r="5.6" fill="url(#photonFill)" opacity="0.55">
-        <animateMotion dur="4.2s" repeatCount="indefinite" rotate="auto" begin="-2.27s">
-          <mpath href="#photonPath" xlink:href="#photonPath"/>
+      <circle r="6.5" fill="url(#photonFill)" opacity="0.55">
+        <animateMotion dur="3.4s" repeatCount="indefinite" rotate="auto" begin="-1.84s">
+          <mpath href="#photonPath" xlink:href="#photonPath" />
         </animateMotion>
       </circle>
-      <circle r="4.4" fill="url(#photonFill)" opacity="0.32">
-        <animateMotion dur="4.2s" repeatCount="indefinite" rotate="auto" begin="-2.44s">
-          <mpath href="#photonPath" xlink:href="#photonPath"/>
+      <circle r="5.2" fill="url(#photonFill)" opacity="0.32">
+        <animateMotion dur="3.4s" repeatCount="indefinite" rotate="auto" begin="-1.98s">
+          <mpath href="#photonPath" xlink:href="#photonPath" />
         </animateMotion>
       </circle>
-      <circle r="3.5" fill="url(#photonFill)" opacity="0.2">
-        <animateMotion dur="4.2s" repeatCount="indefinite" rotate="auto" begin="-2.61s">
-          <mpath href="#photonPath" xlink:href="#photonPath"/>
+      <circle r="4.2" fill="url(#photonFill)" opacity="0.2">
+        <animateMotion dur="3.4s" repeatCount="indefinite" rotate="auto" begin="-2.12s">
+          <mpath href="#photonPath" xlink:href="#photonPath" />
         </animateMotion>
       </circle>
-      <circle r="2.8" fill="url(#photonFill)" opacity="0.12">
-        <animateMotion dur="4.2s" repeatCount="indefinite" rotate="auto" begin="-2.78s">
-          <mpath href="#photonPath" xlink:href="#photonPath"/>
+      <circle r="3.4" fill="url(#photonFill)" opacity="0.12">
+        <animateMotion dur="3.4s" repeatCount="indefinite" rotate="auto" begin="-2.26s">
+          <mpath href="#photonPath" xlink:href="#photonPath" />
         </animateMotion>
       </circle>
-      <circle r="2.2" fill="url(#photonFill)" opacity="0.08">
-        <animateMotion dur="4.2s" repeatCount="indefinite" rotate="auto" begin="-2.95s">
-          <mpath href="#photonPath" xlink:href="#photonPath"/>
+      <circle r="2.7" fill="url(#photonFill)" opacity="0.08">
+        <animateMotion dur="3.4s" repeatCount="indefinite" rotate="auto" begin="-2.40s">
+          <mpath href="#photonPath" xlink:href="#photonPath" />
         </animateMotion>
       </circle>
-      <circle r="1.8" fill="url(#photonFill)" opacity="0.06">
-        <animateMotion dur="4.2s" repeatCount="indefinite" rotate="auto" begin="-3.12s">
-          <mpath href="#photonPath" xlink:href="#photonPath"/>
+      <circle r="2.1" fill="url(#photonFill)" opacity="0.06">
+        <animateMotion dur="3.4s" repeatCount="indefinite" rotate="auto" begin="-2.54s">
+          <mpath href="#photonPath" xlink:href="#photonPath" />
         </animateMotion>
       </circle>
     </g>

@@ -368,13 +368,20 @@
       position: relative;
       flex-shrink: 0;
     }
-    .zoom-orb::after {
-      content: "";
-      position: absolute;
-      inset: -5px;
-      border-radius: 50%;
-      border: 1.5px solid currentColor;
-      opacity: 0.28;
+    .landing-logo {
+      width: clamp(140px, 22vw, 240px);
+      height: auto;
+      display: block;
+      filter: drop-shadow(0 0 26px rgba(40, 255, 190, 0.28));
+      opacity: 0.98;
+    }
+    .wordmark {
+      font-size: clamp(38px, 9.4vw, 92px);
+      font-weight: 900;
+      letter-spacing: -0.015em;
+      display: inline-flex;
+      gap: 6px;
+      filter: drop-shadow(0 0 22px rgba(40,255,190,0.4));
     }
     .zoom-label {
       font-size: clamp(0.55rem, 1.4vw, 0.72rem);
@@ -1254,6 +1261,7 @@
   </div>
 
   <div class="landing-page">
+      <img class="landing-logo" src="landing-circuit-logo.svg" alt="CircuiTry3D circuit logo" />
       <div class="wordmark">
         <span class="brand-blue">C</span><span class="brand-orange">T</span><span class="brand-green">3</span><span class="brand-green">D</span>
       </div>
