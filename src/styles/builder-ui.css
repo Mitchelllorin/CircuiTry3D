@@ -52,6 +52,9 @@
   --builder-edge-actions-gap: 12px;
   --builder-edge-action-button-size: 44px;
   --builder-edge-action-icon-size: 20px;
+  /* Tracks the bottom panel stage's `bottom` value so zoom controls can sit
+     directly above it. Updated in each breakpoint that changes the stage offset. */
+  --builder-bottom-stage-bottom: 24px;
 }
 
 body.builder-body {
@@ -811,39 +814,48 @@ body.builder-body::before {
   display: none !important;
 }
 
-/* ── Bottom perimeter bar background ─────────────────────────────────────
-   Visual base for the unified bottom navigation strip that holds:
-   zoom controls (left) · Insights toggle (centre) · AI button (right).
-   The Library and Controls toggle tabs sit at the screen edges above this bar.
-   ─────────────────────────────────────────────────────────────────────────── */
-.builder-perimeter-bar {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: calc(var(--builder-perimeter-bar-height, 52px) + var(--builder-safe-area-bottom));
-  padding-bottom: var(--builder-safe-area-bottom);
-  background: rgba(8, 18, 38, 0.92);
-  border-top: 1px solid rgba(136, 204, 255, 0.2);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  z-index: calc(var(--z-builder-side-menu) - 2);
-  pointer-events: none; /* pass-through; child elements re-enable pointer-events */
-}
-
-/* Zoom controls — left section of the bottom perimeter bar */
+/* Zoom controls overlay
+   Right offset clears the right menu toggle tab (--builder-menu-toggle-hit-width)
+   so the buttons never overlap the toggle, matching the pattern used by
+   .workspace-edge-actions--right. PR #515 originally applied this fix to the
+   hidden legacy.html #zoom-controls element; this is the correct React target.
+   Bottom offset sits the controls just above the Insights panel toggle so they
+   never overlap the panel in either its open or closed state. */
 .circuit-zoom-controls {
   position: fixed;
-  top: auto;
   bottom: calc(
-    (var(--builder-perimeter-bar-height, 52px) - 36px) / 2 +
+    var(--builder-bottom-stage-bottom) +
+    var(--builder-menu-toggle-width) +
+    8px +
     var(--builder-safe-area-bottom)
   );
-  left: calc(var(--builder-menu-toggle-width, 28px) + 8px + var(--builder-safe-area-left));
-  z-index: var(--z-builder-toolbar);
+  right: calc(var(--builder-menu-toggle-hit-width) + 12px + var(--builder-safe-area-right));
+  z-index: 920;
   display: flex;
   flex-direction: row;
   gap: 4px;
+  transition: right 0.32s ease, bottom 0.32s ease;
+}
+
+/* When the Insights panel is open, raise zoom controls above the full panel height */
+.builder-shell[data-bottom-menu-open="true"] .circuit-zoom-controls {
+  bottom: calc(
+    var(--builder-bottom-stage-bottom) +
+    var(--builder-menu-bottom-height) +
+    var(--builder-menu-toggle-width) +
+    8px +
+    var(--builder-safe-area-bottom)
+  );
+}
+
+/* When the right sidebar is open, push zoom controls left to clear the full open panel */
+.builder-shell[data-right-menu-open="true"] .circuit-zoom-controls {
+  right: calc(
+    var(--builder-safe-area-right) +
+    var(--builder-menu-right-width) +
+    var(--builder-menu-toggle-hit-width) +
+    12px
+  );
 }
 
 .circuit-zoom-btn {
@@ -4948,7 +4960,18 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
     --builder-menu-bottom-height: 216px;
     --builder-menu-toggle-width: 26px;
     --builder-ticker-height: 28px;
-    --builder-ticker-top: 68px;
+    --builder-bottom-stage-bottom: 20px;
+  }
+
+  .builder-menu-stage-left,
+  .builder-menu-stage-right {
+    top: calc(80px + var(--builder-safe-area-top));
+    bottom: calc(24px + var(--builder-safe-area-bottom));
+  }
+
+  .builder-menu-stage-bottom {
+    right: 12px;
+    bottom: calc(20px + var(--builder-safe-area-bottom));
   }
 
   .builder-menu-bottom {
@@ -4976,7 +4999,7 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
     --builder-ticker-top: 64px;
     --builder-floating-action-offset: 120px;
     --builder-floating-button-size: 40px;
-    --builder-perimeter-bar-height: 52px;
+    --builder-bottom-stage-bottom: 16px;
   }
 
   /* Center the Insights panel */
@@ -5107,11 +5130,7 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
     --builder-menu-bottom-height: 160px;
     --builder-ticker-height: 0px;
     --builder-ticker-gap: 0px;
-    --builder-ticker-top: 0px;
-    --builder-perimeter-bar-height: 48px;
-    /* Narrower panels in landscape to preserve workspace width */
-    --builder-menu-left-width: 160px;
-    --builder-menu-right-width: 150px;
+    --builder-bottom-stage-bottom: 12px;
   }
 
   /* Hide decorative ticker to free vertical space */
