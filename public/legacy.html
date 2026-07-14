@@ -8527,6 +8527,9 @@ body.android-optimized .zoom-btn {
                 const conductorMaterial = getSharedConductorMaterial();
 
                 // Insulation jacket material — semi-transparent with insulation-class colour.
+                // depthWrite:false prevents the semi-transparent jacket from writing depth
+                // values that would occlude the current-flow particle spheres in the depth
+                // test pass, which causes particles to be invisible on Android WebView.
                 // Stored on the instance so we can mutate it during thermal stress events.
                 this._jacketMaterial = hasJack ? new THREE.MeshStandardMaterial({
                     color: radii.jacketColor,
@@ -8535,6 +8538,7 @@ body.android-optimized .zoom-btn {
                     transparent: true,
                     opacity: radii.jacketOpacity,
                     side: THREE.FrontSide,
+                    depthWrite: false,
                 }) : null;
 
                 // Store the nominal jacket appearance so we can restore it after stress clears.
@@ -8655,58 +8659,59 @@ body.android-optimized .zoom-btn {
                         return;
                     }
                     
-                    this.curve = {
-                        getPoint: (t) => {
-                            t = Math.max(0, Math.min(1, t));
-                            
-                            let totalDistance = 0;
-                            const distances = [];
-                            
-                            // Calculate segment distances
-                            for (let i = 0; i < path.length - 1; i++) {
-                                const segmentDistance = path[i].distanceTo(path[i + 1]);
-                                distances.push(segmentDistance);
-                                totalDistance += segmentDistance;
-                            }
+                    const _curveSample = (t) => {
+                        t = Math.max(0, Math.min(1, t));
 
-                            // Guard: zero total distance (collapsed path) — return midpoint
-                            if (totalDistance < 0.001) {
-                                return path[0].clone();
+                        let totalDistance = 0;
+                        const distances = [];
+
+                        // Calculate segment distances
+                        for (let i = 0; i < path.length - 1; i++) {
+                            const segmentDistance = path[i].distanceTo(path[i + 1]);
+                            distances.push(segmentDistance);
+                            totalDistance += segmentDistance;
+                        }
+
+                        // Guard: zero total distance (collapsed path) — return midpoint
+                        if (totalDistance < 0.001) {
+                            return path[0].clone();
+                        }
+
+                        // Find which segment we're on
+                        const targetDistance = t * totalDistance;
+                        let currentDistance = 0;
+
+                        for (let i = 0; i < distances.length; i++) {
+                            // Skip zero-length segments to avoid NaN from 0/0
+                            if (distances[i] < 0.001) {
+                                continue;
                             }
-                            
-                            // Find which segment we're on
-                            const targetDistance = t * totalDistance;
-                            let currentDistance = 0;
-                            
-                            for (let i = 0; i < distances.length; i++) {
-                                // Skip zero-length segments to avoid NaN from 0/0
-                                if (distances[i] < 0.001) {
-                                    continue;
-                                }
-                                if (currentDistance + distances[i] >= targetDistance) {
-                                    const segmentT = (targetDistance - currentDistance) / distances[i];
-                                    return new THREE.Vector3().lerpVectors(path[i], path[i + 1], Math.min(1, segmentT));
-                                }
-                                currentDistance += distances[i];
+                            if (currentDistance + distances[i] >= targetDistance) {
+                                const segmentT = (targetDistance - currentDistance) / distances[i];
+                                return new THREE.Vector3().lerpVectors(path[i], path[i + 1], Math.min(1, segmentT));
                             }
-                            
-                            return path[path.length - 1].clone();
-                        },
+                            currentDistance += distances[i];
+                        }
+
+                        return path[path.length - 1].clone();
+                    };
+
+                    this.curve = {
+                        getPoint: _curveSample,
+                        // getTangent: approximate the local wire direction by sampling
+                        // two nearby points.  Required by _spawnLatticeAtoms (atomic zoom).
                         getTangent: (t) => {
-                            // Finite-difference approximation of the tangent at parameter t.
-                            // TANGENT_SAMPLE_DELTA (2 × 0.001 = 0.002 of arc length) gives a
-                            // smooth but accurate direction on both short and long wire curves.
-                            const TANGENT_SAMPLE_DELTA = 0.001;
-                            // Minimum squared length below which we fall back to the X axis.
-                            // Prevents NaN on degenerate (collapsed) curve sections.
-                            const TANGENT_MIN_LEN = 1e-5;
-                            const t0 = Math.max(0, t - TANGENT_SAMPLE_DELTA);
-                            const t1 = Math.min(1, t + TANGENT_SAMPLE_DELTA);
-                            const p0 = this.curve.getPoint(t0);
-                            const p1 = this.curve.getPoint(t1);
-                            const tangent = p1.clone().sub(p0);
-                            const len = tangent.length();
-                            return len > TANGENT_MIN_LEN ? tangent.divideScalar(len) : new THREE.Vector3(1, 0, 0);
+                            const eps = 0.001;
+                            const a = _curveSample(Math.max(0, t - eps));
+                            const b = _curveSample(Math.min(1, t + eps));
+                            if (!a || !b || !a.isVector3 || !b.isVector3) {
+                                return new THREE.Vector3(1, 0, 0);
+                            }
+                            const dir = b.clone().sub(a);
+                            const len = dir.length();
+                            // Degenerate segment: fall back to the primary wire axis (+X).
+                            if (len < 0.0001) return new THREE.Vector3(1, 0, 0);
+                            return dir.normalize();
                         }
                     };
                 } catch (error) {
@@ -19787,20 +19792,8 @@ Made with ? for visual learners everywhere!
                             // Force opaque rendering on Android so particles are always visible.
                             transparent:       !isAndroid,
                             opacity:           baseOpacity,
-                            emissiveIntensity: effectiveEmissive,
-                            // Additive blending (desktop only) makes overlapping particles
-                            // accumulate brightness rather than occlude each other, so many
-                            // small dim electrons merge into a single continuous luminous stream.
-                            blending:          isAndroid ? THREE.NormalBlending : THREE.AdditiveBlending,
-                            // depthWrite must be false with additive blending to prevent
-                            // transparent particle geometry from incorrectly occluding objects
-                            // drawn later in the render order.
-                            depthWrite:        false,
-                            // On Android disable the depth test so particles always render
-                            // regardless of depth precision differences between GPU drivers
-                            // (a particle sitting 1 ULP behind a wire segment would normally
-                            // fail the depth test and become invisible on Mali/Adreno).
-                            depthTest:         !isAndroid
+                            emissiveIntensity: baseEmissive,
+                            depthWrite:        false
                         });
                         const particle = new THREE.Mesh(particleGeometry, particleMaterial);
                         // Always render particles regardless of frustum — on Android the
@@ -19981,7 +19974,8 @@ Made with ? for visual learners everywhere!
                             var geom = new THREE.SphereGeometry(0.06, 6, 6);
                             var mat = new THREE.MeshPhongMaterial({
                                 color: 0xff6600, emissive: 0xff3300,
-                                emissiveIntensity: 0.8, transparent: true, opacity: 0.9
+                                emissiveIntensity: 0.8, transparent: true, opacity: 0.9,
+                                depthWrite: false
                             });
                             var particle = new THREE.Mesh(geom, mat);
                             particle.position.copy(pos);
