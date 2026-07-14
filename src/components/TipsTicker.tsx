@@ -7,6 +7,7 @@ const STARTUP_DELAY_MS = 90000;
 const DISMISSED_STORAGE_KEY = "circuitry3d:tips-ticker:dismissed:v1";
 const TOUR_DISMISSED_KEY = "circuitry3d:onboarding:tour-dismissed:v1";
 const INTERACTIVE_TUTORIAL_PROGRESS_KEY = "circuitry3d:tutorial:basic-circuits:v2";
+// "done" is the final step in BuilderInteractiveTutorial's current sequence.
 const INTERACTIVE_TUTORIAL_DONE_STEP_INDEX = 14;
 
 function hasCompletedOnboarding(): boolean {
@@ -62,12 +63,22 @@ export function TipsTicker() {
     if (onboardingComplete) {
       return;
     }
-    const timer = setInterval(() => {
+    const checkCompletion = () => {
       if (hasCompletedOnboarding()) {
         setOnboardingComplete(true);
       }
-    }, 3000);
-    return () => clearInterval(timer);
+    };
+    checkCompletion();
+    window.addEventListener("storage", checkCompletion);
+    document.addEventListener("visibilitychange", checkCompletion);
+    const timer = setInterval(() => {
+      checkCompletion();
+    }, 10000);
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener("storage", checkCompletion);
+      document.removeEventListener("visibilitychange", checkCompletion);
+    };
   }, [onboardingComplete]);
 
   // Delay initial appearance so the ticker doesn't pop up the moment the
