@@ -13,13 +13,15 @@
   --builder-green: var(--brand-green);
   --builder-cyan: var(--brand-blue);
   /* --wire-w/i/r/e intentionally omitted: defined once in layout.css */
-  --builder-text: #ecf4ff;
-  --builder-muted: rgba(200, 220, 255, 1.0);
-  --builder-muted-soft: rgba(210, 228, 255, 0.78);
-  --builder-shadow: rgba(3, 8, 28, 0.45);
-  /* Toggle tabs - slimmer for minimal footprint */
-  --builder-menu-toggle-width: 32px;
+  --builder-text: #e8f6ff;
+  --builder-muted: rgba(200, 220, 255, 0.72);
+  --builder-shadow: rgba(3, 12, 32, 0.55);
+  /* Toggle tabs - wide enough to be tappable on touch screens */
+  --builder-menu-toggle-width: 40px;
   --builder-menu-toggle-height: 72px;
+  /* Height of the stacked top-strip (quick-add + action-bar + zoom + gaps).
+     Used to position elements that must clear the top strip. */
+  --builder-top-strip-height: 148px;
   /* On touch devices, toggles are widened via min-width; keep edge actions clear of that hitbox. */
   --builder-menu-toggle-hit-width: max(var(--builder-menu-toggle-width), 36px);
   /* Slimmer sidebar widths */
@@ -564,7 +566,32 @@ body.builder-body::before {
   object-fit: contain;
 }
 
-/* Right edge positioning — default: only toggle (24px) visible, so minimal offset */
+/* Plain-text label beneath each edge action button icon */
+.edge-action-label {
+  display: block;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: inherit;
+  line-height: 1;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* Hide text labels on narrow phones — icon-only to maximise workspace */
+@media (max-width: 480px) {
+  .edge-action-label {
+    display: none;
+  }
+  .edge-action-btn {
+    min-width: 28px;
+    padding: 5px 4px;
+  }
+}
+
+/* Right edge positioning (default - Undo, Redo, Load, Save)
+   Sits to the left of the right panel so it stays visible. */
 .workspace-edge-actions--right {
   right: calc(var(--builder-menu-toggle-width) + clamp(8px, 2vw, 16px) + env(safe-area-inset-right, 0px));
   left: auto;
@@ -872,15 +899,9 @@ body.builder-body::before {
   display: flex !important;
 }
 
+/* Zoom controls — inside .builder-top-strip; positioning handled by the strip. */
 .circuit-zoom-controls {
-  position: fixed;
-  bottom: calc(36px + var(--builder-safe-area-bottom, 0px));
-  /* Pushed hard to the right edge, out of the way of the workspace. */
-  right: calc(2px + env(safe-area-inset-right, 0px));
-  top: auto;
-  left: auto;
-  transform: none;
-  z-index: var(--z-builder-toolbar);
+  position: static;
   display: flex;
   flex-direction: column;
   gap: 3px;
@@ -891,33 +912,19 @@ body.builder-body::before {
   pointer-events: none;
 }
 
-.circuit-zoom-controls > * {
-  pointer-events: all;
-}
-
-/* Lifted above the Settings bottom sheet (54vh) so the zoom controls stay usable
-   while the panel is open and the workspace is being live-previewed. Raised z so
-   they sit above the panel even if they brush its top edge. */
-.circuit-zoom-controls--lifted {
-  bottom: calc(54vh + 16px + var(--builder-safe-area-bottom, 0px));
-  bottom: calc(54dvh + 16px + var(--builder-safe-area-bottom, 0px));
-  z-index: calc(var(--z-mode-panel) + 2);
-}
-
-/* Panels overlap the zoom controls — no shift needed, open panel has z-index:1000 */
-
 .circuit-zoom-btn {
-  width: 30px;
-  height: 30px;
-  border-radius: 8px;
-  border: 1px solid rgba(168, 216, 255, 0.34);
-  background: rgba(18, 24, 56, 0.72);
-  color: rgba(224, 241, 255, 0.96);
-  font-size: 18px;
-  line-height: 1;
+  min-width: 36px;
+  padding: 5px 8px;
+  height: auto;
+  border-radius: 10px;
+  border: 1px solid rgba(136, 204, 255, 0.3);
+  background: rgba(10, 18, 38, 0.82);
+  color: rgba(200, 224, 255, 0.9);
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 2px;
   cursor: pointer;
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
@@ -926,6 +933,22 @@ body.builder-body::before {
     background 0.15s ease,
     border-color 0.15s ease,
     transform 0.12s ease;
+}
+
+.circuit-zoom-icon {
+  font-size: 18px;
+  line-height: 1;
+  display: block;
+}
+
+.circuit-zoom-label {
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  line-height: 1;
+  color: rgba(200, 224, 255, 0.75);
+  pointer-events: none;
 }
 
 .circuit-zoom-btn:hover:not(:disabled) {
@@ -948,30 +971,40 @@ body.builder-body::before {
 }
 
 /* ── Measurement Tools FAB ──────────────────────────────────────────────────
-   Positioned at top-left corner, just below the action bar.
-   One tap opens the Insights drawer (DMM, analysis).
+   Standalone floating button (green) positioned at the right edge, just below
+   the ticker bar — above the Controls panel toggle strip.
    ─────────────────────────────────────────────────────────────────────────── */
 .measure-fab {
   display: none !important; /* Moved to action bar */
   position: fixed;
-  left: calc(var(--builder-safe-area-left, 0px) + 8px);
-  top: calc(var(--builder-ticker-top, 72px) + var(--builder-ticker-height, 32px) + 8px + var(--builder-safe-area-top, 0px));
-  bottom: auto;
+  /* Left edge — top of workspace, just below the top strip */
+  left: calc(var(--builder-safe-area-left, 0px));
+  top: calc(
+    var(--builder-ticker-top, 72px) +
+    var(--builder-ticker-height, 32px) +
+    var(--builder-safe-area-top, 0px) +
+    2px
+  );
+  transform: none;
   z-index: var(--z-builder-floats);
-  width: 46px;
-  height: 46px;
-  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  border-radius: 0 0 10px 0;
   border: 1.5px solid rgba(0, 255, 136, 0.45);
+  border-top: none;
+  border-left: none;
   background: linear-gradient(
     145deg,
     rgba(4, 20, 14, 0.92) 0%,
     rgba(2, 12, 8, 0.95) 100%
   );
   color: #00ff88;
-  font-size: 20px;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 2px;
+  padding: 4px;
   cursor: pointer;
   touch-action: manipulation;
   box-shadow:
@@ -1007,17 +1040,90 @@ body.builder-body::before {
   );
   border-color: rgba(0, 255, 136, 0.8);
   box-shadow:
-    0 6px 24px rgba(2, 8, 20, 0.65),
+    6px 0 24px rgba(2, 8, 20, 0.65),
     0 0 16px rgba(0, 255, 136, 0.35);
 }
 
-/* ── Centered component quick-add bar (legacy — kept for sub-element styles) ─ */
-.quick-add-bar {
+.measure-fab__icon {
+  font-size: 20px;
+  line-height: 1;
+  display: block;
+}
+
+.measure-fab__label {
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  line-height: 1;
+  color: #00ff88;
+  pointer-events: none;
+}
+
+/* ── Builder top strip ──────────────────────────────────────────────────────
+   Fixed column that stacks the component quick-add bar, the consolidated
+   action bar, and the zoom controls in a neat column just below the ticker.
+   Pointer-events are disabled on the container and re-enabled on children
+   so clicks on the workspace iframe pass through the empty gap area.
+   ─────────────────────────────────────────────────────────────────────── */
+.builder-top-strip {
   position: fixed;
-  top: calc(var(--builder-ticker-top, 72px) + var(--builder-ticker-height, 32px) + 12px + var(--builder-safe-area-top));
+  top: calc(var(--builder-ticker-top) + var(--builder-ticker-height) + var(--builder-safe-area-top));
   left: 50%;
   transform: translateX(-50%);
-  z-index: var(--z-builder-floats);
+  z-index: var(--z-builder-toolbar);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding-top: 6px;
+  pointer-events: none;
+  width: max-content;
+  max-width: calc(100vw - 2 * var(--builder-menu-toggle-width) - 8px);
+}
+
+.builder-top-strip > * {
+  pointer-events: auto;
+}
+
+/* ── Consolidated action bar — single slim pill ───────────────────────────
+   All 9 action buttons in one horizontal pill. Labels are hidden on narrow
+   viewports (≤480px) so icon-only buttons fit comfortably on a 412px phone.
+   ─────────────────────────────────────────────────────────────────────── */
+.consolidated-action-bar {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 2px;
+  padding: 3px 6px;
+  background: var(--builder-overlay, rgba(10, 22, 48, 0.88));
+  border: 1px solid var(--builder-border, rgba(136, 204, 255, 0.28));
+  border-radius: 28px;
+  backdrop-filter: blur(14px);
+  box-shadow: 0 2px 12px rgba(3, 12, 32, 0.5);
+}
+
+/* Thin divider between button groups */
+.action-bar-divider {
+  display: inline-block;
+  width: 1px;
+  height: 18px;
+  background: rgba(136, 204, 255, 0.28);
+  flex-shrink: 0;
+  margin: 0 2px;
+  border-radius: 1px;
+}
+
+/* Wrapper used by two-row split in Builder.tsx — collapse to no-op */
+.action-row {
+  display: contents;
+}
+
+/* ── Centered component quick-add bar ───────────────────────────────────
+   Sits inside .builder-top-strip; positioning is handled by the strip.
+   ─────────────────────────────────────────────────────────────────────── */
+.quick-add-bar {
+  position: static;
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -1649,24 +1755,30 @@ body.ct-opaque-menus {
   will-change: transform, opacity;
 }
 
-/* Left menu — side-edge drawer layout */
+/* Left menu — side-panel layout: full height, right corners rounded */
 .builder-menu-left {
   width: var(--builder-menu-left-width);
-  height: var(--builder-menu-left-height);
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
   flex-shrink: 0;
-  overflow: hidden;
-  border-radius: 0 var(--radius-panel) var(--radius-panel) 0;
+  border-radius: 0 12px 12px 0;
   border-left: none;
+  border-bottom: none;
+  order: 0;
 }
 
-/* Right menu — mirror of the left drawer (identical width/height, mirrored radius) */
+/* Right menu — side-panel layout: full height, left corners rounded */
 .builder-menu-right {
   width: var(--builder-menu-right-width);
-  height: var(--builder-menu-right-height);
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
   flex-shrink: 0;
-  overflow: hidden;
-  border-radius: var(--radius-panel) 0 0 var(--radius-panel);
+  border-radius: 12px 0 0 12px;
   border-right: none;
+  border-bottom: none;
+  order: 1;
 }
 
 /* Bottom "Insights" sheet — same glass container + rounded top corners so it
@@ -1729,54 +1841,40 @@ body.ct-opaque-menus {
   align-items: flex-end;
 }
 
-/* Open panels float above zoom controls, FABs, and edge-action buttons */
-.builder-menu-stage.open {
-  z-index: 1000;
-}
-
-/* Left panel — Library: slide the whole stage left so only the toggle peeks at the
-   screen edge when closed; open slides it fully into view with nav at the left edge
-   (mirrors Controls: nav at its screen edge, toggle adjacent on the inside). */
+/* Left-edge side panel — Library slides in from the left */
 .builder-menu-stage-left {
   left: 0;
-  top: 34%;
-  bottom: auto;
-  /* row-reverse: nav is the leftmost child (at screen-left when open),
-     toggle is the rightmost child (at the toggle-width peek position when closed) */
-  flex-direction: row-reverse;
+  top: calc(var(--builder-ticker-top) + var(--builder-ticker-height) + var(--builder-safe-area-top));
+  bottom: 0;
+  flex-direction: row;
   width: calc(var(--builder-menu-left-width) + var(--builder-menu-toggle-width));
-  height: var(--builder-menu-left-height);
-  align-items: stretch;
-  overflow: visible; /* transform-based reveal — no clip required */
-  transition: transform 0.36s cubic-bezier(0.34, 1.56, 0.64, 1);
-  /* Closed: stage shifted left so nav is off-screen; toggle peek at x=0 */
-  transform: translateX(calc(-1 * var(--builder-menu-left-width))) translateY(-50%);
+  height: auto;
+  align-items: flex-start;
+  transition: transform 0.32s ease;
+  /* Closed: push panel off-screen left, 46px edge column stays visible */
+  transform: translateX(calc(-1 * var(--builder-menu-left-width)));
 }
 
 .builder-menu-stage-left.open {
-  /* Fully in view: nav at left edge (x=0), toggle to its right */
-  transform: translateX(0) translateY(-50%);
+  transform: translateX(0);
 }
 
-/* Right panel — Controls: same clip approach, mirrored */
+/* Right-edge side panel — Controls slides in from the right */
 .builder-menu-stage-right {
   right: 0;
-  left: auto;
-  top: 34%;
-  bottom: auto;
-  flex-direction: row; /* in row at right:0 — toggle fills the stage width when closed */
-  width: var(--builder-menu-toggle-width); /* closed: only the toggle tab is visible */
-  height: var(--builder-menu-right-height);
-  align-items: stretch;
-  overflow: clip;
-  overflow-clip-margin: 4px;
-  transition: width 0.36s cubic-bezier(0.34, 1.56, 0.64, 1);
-  transform: translateY(-50%);
+  top: calc(var(--builder-ticker-top) + var(--builder-ticker-height) + var(--builder-safe-area-top));
+  bottom: 0;
+  flex-direction: row;
+  width: calc(var(--builder-menu-right-width) + var(--builder-menu-toggle-width));
+  height: auto;
+  align-items: flex-start;
+  transition: transform 0.32s ease;
+  /* Closed: push panel off-screen right, toggle-width strip stays visible */
+  transform: translateX(var(--builder-menu-right-width));
 }
 
 .builder-menu-stage-right.open {
-  width: calc(var(--builder-menu-right-width) + var(--builder-menu-toggle-width));
-  transform: translateY(-50%);
+  transform: translateX(0);
 }
 
 /* Insights panel — small pill docked to the bottom edge when closed;
@@ -1784,13 +1882,10 @@ body.ct-opaque-menus {
 .builder-menu-stage-bottom {
   left: 50%;
   right: auto;
-  /* Docked to the bottom safe-area edge (mirrors how left/right panels are flush
-     to their respective screen edges with no extra gap) */
-  bottom: var(--builder-safe-area-bottom);
-  flex-direction: column-reverse; /* toggle at bottom (DOM-first = bottom in reverse), menu above */
-  width: var(--builder-menu-bottom-width); /* closed: slim pill */
-  height: var(--builder-menu-toggle-width); /* closed = just toggle tab */
-  overflow: hidden; /* robust height-based clip; works even with composited children */
+  bottom: calc(4px + var(--builder-safe-area-bottom));
+  flex-direction: column;
+  width: var(--builder-menu-toggle-width);
+  height: var(--builder-menu-toggle-height);
   transform: translateX(-50%);
   transition: height 0.36s cubic-bezier(0.34, 1.56, 0.64, 1), width 0.36s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
@@ -2150,26 +2245,6 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
   text-orientation: mixed;
 }
 
-/* Left toggle tab — slim vertical handle at the left edge, rounded right side */
-.builder-menu-toggle-left {
-  border-radius: 0 var(--radius-tab) var(--radius-tab) 0;
-  border-left: none;
-  border-right: var(--glass-border-strong);
-  box-shadow:
-    2px 0 12px var(--builder-shadow),
-    2px 0 16px rgba(168, 216, 255, 0.18);
-}
-
-/* Right toggle tab — mirror of the left */
-.builder-menu-toggle-right {
-  border-radius: var(--radius-tab) 0 0 var(--radius-tab);
-  border-right: none;
-  border-left: var(--glass-border-strong);
-  box-shadow:
-    -2px 0 12px var(--builder-shadow),
-    -2px 0 16px rgba(168, 216, 255, 0.18);
-}
-
 .builder-menu-toggle:hover,
 .builder-menu-toggle:focus-visible {
   border-color: var(--builder-border-strong);
@@ -2185,17 +2260,16 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
   box-shadow: 0 0 0 2px rgba(0, 255, 136, 0.35);
 }
 
-/* Side panel toggle tabs: slim vertical handles, centered on the panel height */
+/* Side-panel toggles: vertical strip on the inner edge of each panel */
 .builder-menu-toggle-left,
 .builder-menu-toggle-right {
   flex-shrink: 0;
   width: var(--builder-menu-toggle-width);
   min-width: var(--builder-menu-toggle-width);
-  height: 88px;
-  min-height: 0;
-  padding: 8px 3px;
-  margin: auto 0; /* vertically center within the stage */
-  align-self: center;
+  height: var(--builder-menu-toggle-height);
+  padding: 8px 4px;
+  margin: 0;
+  align-self: flex-start;
   position: relative;
   z-index: var(--z-raised);
   writing-mode: vertical-rl;
@@ -2203,33 +2277,28 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
   flex-direction: column;
 }
 
-/* Subtle periodic hint pulse when the side panel is closed */
-@keyframes toggleHintPulse {
-  0%, 70%, 100% { border-color: var(--builder-border-strong); }
-  82% { border-color: rgba(168, 216, 255, 0.75); box-shadow: 0 0 16px rgba(168, 216, 255, 0.38); }
-}
-.builder-menu-stage-left:not(.open) .builder-menu-toggle-left {
-  animation: toggleHintPulse 6s ease-in-out infinite;
-}
-.builder-menu-stage-right:not(.open) .builder-menu-toggle-right {
-  animation: toggleHintPulse 6s ease-in-out infinite;
-  animation-delay: 2s;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .builder-menu-stage-left:not(.open) .builder-menu-toggle-left,
-  .builder-menu-stage-right:not(.open) .builder-menu-toggle-right {
-    animation: none;
-  }
+/* Left toggle — right edge of the left stage (panel content is left/order:0) */
+.builder-menu-stage-left .builder-menu-toggle-left {
+  order: 1;
+  border-radius: 0 8px 8px 0;
+  border-left: none;
+  box-shadow:
+    2px 0 12px var(--builder-shadow),
+    2px 0 16px rgba(136, 204, 255, 0.2);
+  /* Start below the Measure FAB */
+  margin-top: calc(var(--builder-floating-button-size) + 2px);
 }
 
-/* Left toggle is first in DOM with flex-direction:row — sits at x=0 (left edge) naturally */
-/* No order override needed */
-
-/* Right toggle sits as the first flex item in row (leftmost visually = right edge tab) */
+/* Right toggle — left edge of the right stage (panel content is right/order:1) */
 .builder-menu-stage-right .builder-menu-toggle-right {
   order: 0;
-  margin-left: 0;
+  border-radius: 8px 0 0 8px;
+  border-right: none;
+  box-shadow:
+    -2px 0 12px var(--builder-shadow),
+    -2px 0 16px rgba(136, 204, 255, 0.2);
+  /* Start below the AI FAB */
+  margin-top: calc(var(--builder-floating-button-size) + 2px);
 }
 
 .builder-menu-toggle-bottom {
@@ -5091,23 +5160,18 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
 
 @media (max-width: 960px) {
   :root {
-    /* Tablet - slimmer toggles */
+    /* Tablet - wider toggles stay visible */
     --builder-menu-left-width: 160px;
     --builder-menu-right-width: 160px; /* mirror left */
     --builder-menu-bottom-width: min(440px, calc(100vw - 96px));
     --builder-menu-bottom-height: 216px;
-    --builder-menu-toggle-width: 28px;
+    --builder-menu-toggle-width: 38px;
     --builder-menu-toggle-height: 64px;
     --builder-ticker-height: 28px;
     --builder-ticker-top: 68px;
-    --builder-menu-left-height: clamp(280px, 60vh, 540px);
-    --builder-menu-right-height: clamp(280px, 60vh, 540px); /* mirror left */
-  }
-
-  /* Side panels remain centered (top:50%) at all widths */
-  .builder-menu-stage-left,
-  .builder-menu-stage-right {
-    top: 50%;
+    --builder-menu-left-height: 260px;
+    --builder-menu-right-height: 240px;
+    --builder-top-strip-height: 142px;
   }
 
   .builder-menu-stage-bottom {
@@ -5129,19 +5193,20 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
 
 @media (max-width: 720px) {
   :root {
-    /* Mobile - slim but tappable toggles */
+    /* Mobile portrait — toggles wide enough to tap with a thumb */
     --builder-menu-left-width: 140px;
     --builder-menu-right-width: 140px; /* mirror left */
     --builder-menu-bottom-width: calc(100vw - 24px);
     --builder-menu-bottom-height: 188px;
-    --builder-menu-toggle-width: 26px;
+    --builder-menu-toggle-width: 38px;
     --builder-menu-toggle-height: 56px;
     --builder-ticker-height: 24px;
     --builder-floating-action-offset: 120px;
     --builder-floating-button-size: 40px;
     --builder-ticker-top: 64px;
-    --builder-menu-left-height: clamp(260px, 60vh, 500px);
-    --builder-menu-right-height: clamp(260px, 60vh, 500px); /* mirror left */
+    --builder-menu-left-height: 240px;
+    --builder-menu-right-height: 220px;
+    --builder-top-strip-height: 138px;
   }
 
   /* Side panels remain centered at all widths */
@@ -5239,7 +5304,32 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
 }
 
 @media (max-width: 900px), (pointer: coarse) {
-  /* Side panels are centered vertically — do NOT override top: 50% */
+  /* Side panels: restore side-slide (translateX) so toggle tabs are always
+     visible at the left/right screen edges on touch devices.
+     Explicit top resets the `top: auto` that the 960px breakpoint may set. */
+  .builder-menu-stage-left,
+  .builder-menu-stage-right {
+    top: calc(var(--builder-ticker-top) + var(--builder-ticker-height) + var(--builder-safe-area-top));
+    bottom: 0;
+  }
+
+  .builder-menu-stage-left {
+    width: calc(var(--builder-menu-left-width) + var(--builder-menu-toggle-width));
+    transform: translateX(calc(-1 * var(--builder-menu-left-width)));
+  }
+
+  .builder-menu-stage-left.open {
+    transform: translateX(0);
+  }
+
+  .builder-menu-stage-right {
+    width: calc(var(--builder-menu-right-width) + var(--builder-menu-toggle-width));
+    transform: translateX(var(--builder-menu-right-width));
+  }
+
+  .builder-menu-stage-right.open {
+    transform: translateX(0);
+  }
 
   .builder-menu-stage-left .builder-menu {
     height: var(--builder-menu-left-height);
@@ -5251,79 +5341,31 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
     min-height: 48px;
   }
 
-  /* Ensure toggle buttons are always visible on touch devices */
+  /* Ensure toggle buttons are always visible and tappable on touch devices */
   .builder-menu-toggle {
     min-width: 44px;
     min-height: 44px;
     box-shadow:
-      0 -4px 16px var(--builder-shadow),
-      0 -4px 16px rgba(168, 216, 255, 0.25);
+      2px 0 16px var(--builder-shadow),
+      0 0 16px rgba(136, 204, 255, 0.25);
   }
 
   .builder-menu-toggle-left {
     box-shadow:
-      0 -4px 16px var(--builder-shadow),
-      0 -4px 20px rgba(168, 216, 255, 0.3);
+      2px 0 16px var(--builder-shadow),
+      2px 0 20px rgba(136, 204, 255, 0.3);
   }
 
   .builder-menu-toggle-right {
     box-shadow:
-      0 -4px 16px var(--builder-shadow),
-      0 -4px 20px rgba(168, 216, 255, 0.3);
+      -2px 0 16px var(--builder-shadow),
+      -2px 0 20px rgba(136, 204, 255, 0.3);
   }
 
   .builder-menu-toggle-bottom {
     box-shadow:
       0 -4px 16px var(--builder-shadow),
       0 -4px 20px rgba(168, 216, 255, 0.3);
-  }
-
-  /* Side panels on touch devices: use same transform-based approach as desktop */
-  .builder-menu-stage-left {
-    top: 40%;
-    width: calc(var(--builder-menu-left-width) + var(--builder-menu-toggle-width));
-    transform: translateX(calc(-1 * var(--builder-menu-left-width))) translateY(-50%);
-  }
-
-  .builder-menu-stage-left.open {
-    transform: translateX(0) translateY(-50%);
-  }
-
-  .builder-menu-stage-right {
-    top: 40%;
-    width: var(--builder-menu-toggle-width);
-    transform: translateY(-50%);
-  }
-
-  .builder-menu-stage-right.open {
-    width: calc(var(--builder-menu-right-width) + var(--builder-menu-toggle-width));
-    transform: translateY(-50%);
-  }
-}
-
-/* ============================================
-   All landscape touch devices (phones + tablets)
-   Shift side panels and the mode bar inward so they
-   clear any camera notch / rounded-corner cutout that
-   appears on the left or right side when the device
-   is rotated. Zero-cost in portrait (insets are 0).
-   More specific blocks (max-height / min-width) below
-   will override where needed.
-   ============================================ */
-@media (pointer: coarse) and (orientation: landscape) {
-  .workspace-mode-bar {
-    max-width: calc(
-      min(1200px, 100vw - 24px) -
-        var(--builder-safe-area-left) - var(--builder-safe-area-right)
-    );
-  }
-
-  .builder-menu-stage-left {
-    left: var(--builder-safe-area-left);
-  }
-
-  .builder-menu-stage-right {
-    right: var(--builder-safe-area-right);
   }
 }
 
@@ -5353,9 +5395,9 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
     height: calc(44px + var(--builder-safe-area-top));
   }
 
-  /* Ticker is hidden; place quick-add-bar just below the nav bar */
-  .quick-add-bar {
-    top: calc(max(var(--app-mode-bar-height, 0px), 38px) + 18px + var(--builder-safe-area-top));
+  /* Ticker is hidden in landscape; top strip shifts to just below the nav bar */
+  .builder-top-strip {
+    top: calc(max(var(--app-mode-bar-height, 0px), 38px) + 4px + var(--builder-safe-area-top));
   }
 
   .workspace-mode-bar {
@@ -5376,33 +5418,13 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
     padding: 6px 9px;
   }
 
-  .workspace-edge-actions {
-    top: auto;
-    bottom: calc(
-      var(--builder-edge-actions-gap) +
-      var(--builder-safe-area-bottom)
-    );
-    padding: 4px;
-    gap: 4px;
-  }
-
-  .workspace-edge-actions--right {
-    right: calc(var(--builder-menu-right-width) + clamp(4px, 1vw, 8px) + env(safe-area-inset-right, 0px));
-    bottom: calc(
-      var(--builder-menu-toggle-height) +
-      8px +
-      var(--builder-safe-area-bottom)
-    );
-  }
-
-  /* Panels are bottom-anchored; clear top/bottom overrides for landscape.
-     The left panel uses a transform-based reveal so we reset translateY and
-     keep the translateX slide. */
+  /* In landscape, side panels anchor to bottom edges and still use side-slide
+     so toggle tabs remain visible at the screen edges */
   .builder-menu-stage-left {
     top: auto;
     bottom: 0;
     left: var(--builder-safe-area-left);
-    /* Closed: push nav off-screen to the left; toggle peeks at left edge */
+    width: calc(var(--builder-menu-left-width) + var(--builder-menu-toggle-width));
     transform: translateX(calc(-1 * var(--builder-menu-left-width)));
   }
 
@@ -5414,13 +5436,12 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
     top: auto;
     bottom: 0;
     right: var(--builder-safe-area-right);
-    /* Clear the translateY(-50%) centering inherited from the (pointer:coarse) rule
-       so the panel stays bottom-anchored in landscape instead of floating mid-screen. */
-    transform: none;
+    width: calc(var(--builder-menu-right-width) + var(--builder-menu-toggle-width));
+    transform: translateX(var(--builder-menu-right-width));
   }
 
   .builder-menu-stage-right.open {
-    transform: none;
+    transform: translateX(0);
   }
 
   .builder-menu-stage-bottom {

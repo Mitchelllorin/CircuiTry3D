@@ -8,25 +8,34 @@
 .ai-helper-fab {
   display: none !important; /* Moved to action bar */
   position: fixed;
-  /* Top-right corner, just below the action bar */
-  top: calc(var(--builder-ticker-top, 72px) + var(--builder-ticker-height, 32px) + 8px + var(--builder-safe-area-top, 0px));
-  bottom: auto;
-  right: calc(8px + var(--builder-safe-area-right, 0px));
+  /* Right edge — top of workspace, just below the top strip */
+  right: calc(var(--builder-safe-area-right, 0px));
+  top: calc(
+    var(--builder-ticker-top, 72px) +
+    var(--builder-ticker-height, 32px) +
+    var(--builder-safe-area-top, 0px) +
+    2px
+  );
+  transform: none;
   z-index: var(--z-ai-helper);
-  width: 46px;
-  height: 46px;
-  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  border-radius: 0 0 0 10px;
   border: 1.5px solid rgba(136, 204, 255, 0.45);
+  border-top: none;
+  border-right: none;
   background: linear-gradient(
     145deg,
     rgba(20, 40, 80, 0.92) 0%,
     rgba(10, 26, 52, 0.95) 100%
   );
   color: #88ccff;
-  font-size: 20px;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 2px;
+  padding: 4px;
   cursor: pointer;
   box-shadow:
     0 4px 18px rgba(2, 8, 20, 0.55),
@@ -70,9 +79,22 @@
   align-items: center;
   justify-content: center;
   line-height: 1;
+  font-size: 20px;
   /* prevent layout shift when icon chars differ */
   width: 1.2em;
   height: 1.2em;
+}
+
+/* Plain-text label beneath the AI FAB icon */
+.ai-helper-fab__label {
+  display: block;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  line-height: 1;
+  color: #88ccff;
+  pointer-events: none;
 }
 
 /* Unread badge dot */
@@ -115,17 +137,19 @@
 
 .ai-helper-panel {
   position: fixed;
-  /* Positioned above the FAB (FAB is 46px + 8px gap = 54px above panels) */
-  bottom: calc(
-    var(--builder-menu-right-height, 260px) +
-    var(--builder-menu-toggle-height, 64px) +
-    70px +
-    var(--builder-safe-area-bottom, 0px)
+  /* Opens below and to the left of the AI FAB (top-right corner) */
+  right: calc(var(--builder-safe-area-right, 0px) + 48px);
+  top: calc(
+    var(--builder-ticker-top, 72px) +
+    var(--builder-ticker-height, 32px) +
+    var(--builder-safe-area-top, 0px) +
+    2px
   );
-  right: calc(var(--builder-safe-area-right, 0px) + 8px);
-  top: calc(var(--builder-ticker-top, 72px) + var(--builder-ticker-height, 32px) + 12px + var(--builder-safe-area-top, 0px));
-  z-index: var(--z-ai-helper, 1100);
-  width: clamp(300px, 38vw, 420px);
+  bottom: auto;
+  left: auto;
+  z-index: var(--z-ai-helper);
+  width: clamp(260px, calc(100vw - 100px), 380px);
+  max-height: calc(100svh - 160px);
   border-radius: 16px;
   border: 1px solid rgba(136, 204, 255, 0.32);
   background: linear-gradient(
@@ -140,14 +164,14 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  transform-origin: bottom right;
+  transform-origin: top right;
   animation: aiPanelReveal 0.22s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 @keyframes aiPanelReveal {
   from {
     opacity: 0;
-    transform: scale(0.88) translateY(12px);
+    transform: scale(0.88) translateY(-8px);
   }
   to {
     opacity: 1;

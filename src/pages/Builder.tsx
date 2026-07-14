@@ -3604,44 +3604,42 @@ export default function Builder() {
               <span className="edge-action-label" aria-hidden="true">Help</span>
             </button>
 
-            {/* Single reveal toggle — cycles hidden → tools (partial) → full → hidden.
-                Grid icon = "open the tools / quick actions"; ✕ when fully open = hide.
-                (Replaces the old 3-segment All/Tools/Hide bar; the gear moved out to
-                the workspace stack as the Settings button.) */}
-            <button
-              type="button"
-              className={`action-bar-cycle action-bar-cycle--${actionBarMode}`}
-              onClick={() =>
-                setActionBarMode(
-                  actionBarMode === "hidden"
-                    ? "tools"
-                    : actionBarMode === "tools"
-                      ? "full"
-                      : "hidden",
-                )
-              }
-              aria-label="Toggle quick actions and tools"
-              title={
-                actionBarMode === "hidden"
-                  ? "Show tool buttons"
-                  : actionBarMode === "tools"
-                    ? "Show all buttons"
-                    : "Hide buttons"
-              }
-            >
-              {actionBarMode === "full" ? (
-                <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <path d="M18 6 6 18M6 6l12 12" />
-                </svg>
-              ) : (
-                <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <rect x="3" y="3" width="7" height="7" rx="1" />
-                  <rect x="14" y="3" width="7" height="7" rx="1" />
-                  <rect x="3" y="14" width="7" height="7" rx="1" />
-                  <rect x="14" y="14" width="7" height="7" rx="1" />
-                </svg>
-              )}
-            </button>
+            {/* Row 3 — zoom controls */}
+            <div className="circuit-zoom-controls" aria-label="Zoom controls">
+              <button
+                type="button"
+                className="circuit-zoom-btn"
+                onClick={() => triggerBuilderAction("zoom-in")}
+                disabled={controlsDisabled}
+                aria-label="Zoom in"
+                title="Zoom in"
+              >
+                <span className="circuit-zoom-icon" aria-hidden="true">+</span>
+                <span className="circuit-zoom-label" aria-hidden="true">In</span>
+              </button>
+              <button
+                type="button"
+                className="circuit-zoom-btn"
+                onClick={() => triggerBuilderAction("fit-screen")}
+                disabled={controlsDisabled}
+                aria-label="Fit circuit to screen"
+                title="Fit to screen"
+              >
+                <span className="circuit-zoom-icon" aria-hidden="true">⊡</span>
+                <span className="circuit-zoom-label" aria-hidden="true">Fit</span>
+              </button>
+              <button
+                type="button"
+                className="circuit-zoom-btn"
+                onClick={() => triggerBuilderAction("zoom-out")}
+                disabled={controlsDisabled}
+                aria-label="Zoom out"
+                title="Zoom out"
+              >
+                <span className="circuit-zoom-icon" aria-hidden="true">−</span>
+                <span className="circuit-zoom-label" aria-hidden="true">Out</span>
+              </button>
+            </div>
           </div>
 
           {/* Junction info tip — shown until dismissed, explains the role
@@ -3970,34 +3968,6 @@ export default function Builder() {
         data-floating={leftPanelDrag.isFloating ? "true" : undefined}
         style={leftPanelDrag.containerStyle}
       >
-        <PanelResizeHandles getProps={leftPanelDrag.getResizeHandleProps} />
-        {leftPanelDrag.isFloating && (
-          <PanelDragHandle
-            dragHandleProps={leftPanelDrag.dragHandleProps}
-            onReset={leftPanelDrag.resetLayout}
-          />
-        )}
-        <button
-          type="button"
-          className="builder-menu-toggle builder-menu-toggle-left"
-          onClick={() => setLeftMenuOpen((open) => !open)}
-          aria-expanded={isLeftMenuOpen}
-          aria-label={
-            isLeftMenuOpen
-              ? "Collapse component library"
-              : "Expand component library"
-          }
-          title={
-            isLeftMenuOpen
-              ? "Collapse component library"
-              : "Expand component library"
-          }
-        >
-          <span className="toggle-icon" aria-hidden="true">
-            <IconChevron direction={isLeftMenuOpen ? "left" : "right"} />
-          </span>
-          <span className="toggle-text">Library</span>
-        </button>
         <nav
           className="builder-menu builder-menu-left"
           role="navigation"
@@ -4090,6 +4060,27 @@ export default function Builder() {
                 reel. */}
           </div>
         </nav>
+        <button
+          type="button"
+          className="builder-menu-toggle builder-menu-toggle-left"
+          onClick={() => setLeftMenuOpen((open) => !open)}
+          aria-expanded={isLeftMenuOpen}
+          aria-label={
+            isLeftMenuOpen
+              ? "Collapse component library"
+              : "Expand component library"
+          }
+          title={
+            isLeftMenuOpen
+              ? "Collapse component library"
+              : "Expand component library"
+          }
+        >
+          <span className="toggle-icon" aria-hidden="true">
+            <IconChevron direction={isLeftMenuOpen ? "left" : "right"} />
+          </span>
+          <span className="toggle-text">Library</span>
+        </button>
       </div>
 
       <div
@@ -4696,67 +4687,6 @@ export default function Builder() {
         )}
       </div>
 
-      {isActiveCircuitBuildMode && !isOverlayActive && (
-        <div
-          className="circuit-zoom-controls"
-          aria-label="Zoom controls"
-          data-draggable-stage=""
-          data-floating={zoomDrag.isFloating ? "true" : undefined}
-          style={zoomDrag.containerStyle}
-        >
-          <div
-            className="zoom-drag-grip"
-            {...zoomDrag.dragHandleProps}
-            title="Drag to reposition"
-            aria-hidden="true"
-          >
-            ⠿
-          </div>
-          <button
-            type="button"
-            className="circuit-zoom-btn"
-            onClick={() => triggerBuilderAction("zoom-in")}
-            disabled={controlsDisabled}
-            aria-label="Zoom in"
-            title="Zoom in"
-          >
-            +
-          </button>
-          <button
-            type="button"
-            className="circuit-zoom-btn"
-            onClick={() => triggerBuilderAction("fit-screen")}
-            disabled={controlsDisabled}
-            aria-label="Fit circuit to screen"
-            title="Fit to screen"
-          >
-            ⊡
-          </button>
-          <button
-            type="button"
-            className="circuit-zoom-btn"
-            onClick={() => triggerBuilderAction("zoom-out")}
-            disabled={controlsDisabled}
-            aria-label="Zoom out"
-            title="Zoom out"
-          >
-            −
-          </button>
-          {zoomDrag.isFloating && (
-            <button
-              type="button"
-              className="circuit-zoom-btn zoom-reset-btn"
-              onPointerDown={(e) => e.stopPropagation()}
-              onClick={zoomDrag.resetLayout}
-              title="Reset to default position"
-              aria-label="Reset zoom controls position"
-            >
-              ↩
-            </button>
-          )}
-        </div>
-      )}
-
       <div
         ref={floatingLogoRef}
         className="builder-floating-logo builder-floating-logo--3d"
@@ -5089,198 +5019,33 @@ export default function Builder() {
         circuitState={circuitState}
         onClose={() => setIsAIHelperOpen(false)}
       />
+      <button
+        type="button"
+        className={`ai-helper-fab${isAIHelperOpen ? " ai-helper-fab--open" : ""}`}
+        onClick={() => setIsAIHelperOpen((prev) => !prev)}
+        aria-label={isAIHelperOpen ? "Close Circuit AI" : "Open Circuit AI assistant"}
+        aria-expanded={isAIHelperOpen}
+        title="Circuit AI — ask anything about circuits or the app"
+      >
+        <span className="ai-helper-fab__icon" aria-hidden="true">
+          {isAIHelperOpen ? "✕" : "⚡"}
+        </span>
+        <span className="ai-helper-fab__label" aria-hidden="true">
+          {isAIHelperOpen ? "Close" : "AI"}
+        </span>
+      </button>
 
-      {/* Circuit Explanation Engine — Pro-gated AI-powered analysis panel */}
-      <CircuitExplainPanel
-        isOpen={isExplainPanelOpen}
-        circuitState={circuitState}
-        onClose={() => setIsExplainPanelOpen(false)}
-        onUpgrade={() => {
-          setIsExplainPanelOpen(false);
-          openWorkspacePanelMode("pricing");
-        }}
-      />
-
-      <CinematicPanel
-        isOpen={isCinematicOpen}
-        onToggle={() => setIsCinematicOpen((prev) => !prev)}
-        isPlaying={cinematicIsPlaying}
-        isRecording={cinematicIsRecording}
-        waypointCount={cinematicWaypointCount}
-        recordError={cinematicRecordError}
-        onPlayPreset={(preset: CinematicPreset) => triggerBuilderAction("cinematic-play", { preset })}
-        onPlayKeyframes={() => triggerBuilderAction("cinematic-play", {})}
-        onStop={() => triggerBuilderAction("cinematic-stop")}
-        onCaptureFrame={() => triggerBuilderAction("cinematic-capture")}
-        onStartRecord={() => triggerBuilderAction("cinematic-record-start")}
-        onStopRecord={() => triggerBuilderAction("cinematic-record-stop")}
-        onAddWaypoint={() => {
-          triggerBuilderAction("cinematic-add-waypoint");
-          setCinematicWaypointCount((n) => n + 1);
-        }}
-        onClearWaypoints={() => {
-          triggerBuilderAction("cinematic-clear-waypoints");
-          setCinematicWaypointCount(0);
-        }}
-      />
-
-      {/* Floating Measure Widget — shown when the Measure action button is toggled */}
-      {isMeasureWidgetOpen && (
-        <div
-          className={`measure-widget${meterState.armed ? " measure-widget--armed" : ""}`}
-          role="region"
-          aria-label="Measurement tools"
-        >
-          {/* Header */}
-          <div className="measure-widget-header">
-            <span className="measure-widget-title">MULTIMETER</span>
-            <div className="measure-widget-header-actions">
-              {meterState.armed && (
-                <span className="measure-widget-armed-badge" aria-label="Probes active">LIVE</span>
-              )}
-              <button
-                type="button"
-                className="measure-widget-close"
-                onClick={() => setMeasureWidgetOpen(false)}
-                aria-label="Close measurement tools"
-                title="Close"
-              >
-                ✕
-              </button>
-            </div>
-          </div>
-
-          {/* LCD display */}
-          <div className="dmm-display" aria-live="polite">
-            <span className="dmm-mode-label">
-              {meterState.mode === "voltage"
-                ? "VOLTMETER"
-                : meterState.mode === "current"
-                  ? "AMMETER"
-                  : meterState.mode === "resistance"
-                    ? "OHMMETER"
-                    : "OSCILLOSCOPE"}
-            </span>
-            <span
-              className={`dmm-reading-main${meterState.reading !== "—" && meterState.reading !== "" ? " has-value" : ""}`}
-              aria-label={`Reading: ${meterState.reading}`}
-            >
-              {meterState.reading !== "—" && meterState.reading !== ""
-                ? meterState.reading
-                : "- - - -"}
-            </span>
-            {meterState.subreading ? (
-              <span className="dmm-subreading">{meterState.subreading}</span>
-            ) : null}
-          </div>
-
-          {/* Mode selector */}
-          <div className="dmm-mode-row" role="group" aria-label="Meter mode">
-            {(["voltage", "current", "resistance", "scope"] as const).map((mode) => {
-              const modeLabels: Record<string, { symbol: string; name: string }> = {
-                voltage:    { symbol: "V",  name: "Voltage" },
-                current:    { symbol: "A",  name: "Current" },
-                resistance: { symbol: "Ω",  name: "Resistance" },
-                scope:      { symbol: "~",  name: "Oscilloscope" },
-              };
-              const isActive = meterState.mode === mode && meterState.armed;
-              return (
-                <button
-                  key={mode}
-                  type="button"
-                  className={`dmm-mode-btn${isActive ? " active" : ""}`}
-                  aria-pressed={isActive}
-                  title={modeLabels[mode].name}
-                  disabled={!isFrameReady}
-                  onClick={() => {
-                    postToBuilder({ type: "builder:set-meter-mode", payload: { mode } });
-                  }}
-                >
-                  <span className="dmm-mode-symbol">{modeLabels[mode].symbol}</span>
-                  <span className="dmm-mode-name">{modeLabels[mode].name}</span>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Probe terminals */}
-          <div className="dmm-probes" aria-label="Probe terminals">
-            <div className={`dmm-probe dmm-probe-red${meterState.probeA !== "—" ? " placed" : ""}`}>
-              <span className="dmm-probe-dot" aria-hidden="true">●</span>
-              <div className="dmm-probe-info">
-                <span className="dmm-probe-port">VΩmA</span>
-                <span className="dmm-probe-node" aria-label={`Red probe: ${meterState.probeA}`}>
-                  {meterState.probeA !== "—" ? meterState.probeA : "open"}
-                </span>
-              </div>
-            </div>
-            <div className={`dmm-probe dmm-probe-black${meterState.probeB !== "—" ? " placed" : ""}`}>
-              <span className="dmm-probe-dot" aria-hidden="true">●</span>
-              <div className="dmm-probe-info">
-                <span className="dmm-probe-port">COM</span>
-                <span className="dmm-probe-node" aria-label={`Black probe: ${meterState.probeB}`}>
-                  {meterState.probeB !== "—" ? meterState.probeB : "open"}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Arm / clear */}
-          <div className="dmm-actions">
-            <button
-              type="button"
-              className={`dmm-arm-btn${meterState.armed ? " armed" : ""}`}
-              aria-pressed={meterState.armed}
-              title={meterState.armed ? "Probes active — click circuit terminals to measure" : "Activate probes then tap two terminals on the circuit"}
-              disabled={!isFrameReady}
-              onClick={() => {
-                postToBuilder({ type: "builder:toggle-meter-armed" });
-              }}
-            >
-              {meterState.armed ? "⦿ Probes Active" : "○ Place Probes"}
-            </button>
-            <button
-              type="button"
-              className="dmm-clear-btn"
-              title="Reset probe positions and clear reading"
-              disabled={!isFrameReady}
-              onClick={() => {
-                postToBuilder({ type: "builder:clear-meter" });
-              }}
-            >
-              ✕
-            </button>
-          </div>
-
-          {/* Contextual hint */}
-          {meterState.instructions && (
-            <p className="dmm-instructions" aria-live="polite">
-              {meterState.instructions}
-            </p>
-          )}
-        </div>
-      )}
-
-      {/* Gallery toast — shown when a recording is saved */}
-      <div className={`cinematic-toast${showGalleryToast ? " visible" : ""}`} role="status" aria-live="polite">
-        <span>🎬 Recording saved to gallery</span>
-        <a
-          href="#/gallery"
-          className="cinematic-toast__link"
-          onClick={() => setShowGalleryToast(false)}
-        >
-          View Gallery
-        </a>
-        <button
-          type="button"
-          className="cinematic-toast__dismiss"
-          onClick={() => setShowGalleryToast(false)}
-          aria-label="Dismiss"
-        >
-          ✕
-        </button>
-      </div>
-
+      {/* Measurement Tools FAB — fixed at right edge above the Controls panel toggle */}
+      <button
+        type="button"
+        className={`measure-fab${meterState.armed ? " measure-fab--active" : ""}`}
+        onClick={() => setBottomMenuOpen(true)}
+        aria-label="Open measurement tools"
+        title="Measurement Tools — Digital Multimeter"
+      >
+        <span className="measure-fab__icon" aria-hidden="true">📐</span>
+        <span className="measure-fab__label" aria-hidden="true">Meter</span>
+      </button>
     </div>
   );
 }
