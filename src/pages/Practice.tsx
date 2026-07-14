@@ -44,6 +44,7 @@ import {
   type SymbolStandard,
 } from "../schematic/standards";
 import WireLibrary from "../components/practice/WireLibrary";
+import BrandSignature from "../components/BrandSignature";
 import "../styles/practice.css";
 import "../styles/schematic.css";
 
@@ -950,6 +951,7 @@ export default function Practice({
         </aside>
         <main className="practice-main">
           <header className="practice-header">
+            <BrandSignature size="xs" decorative className="practice-brand" />
             <h1>Practice Lab</h1>
             <p>Practice presets are unavailable right now.</p>
           </header>
@@ -1122,6 +1124,7 @@ export default function Practice({
         </aside>
         <main className="practice-main">
           <header className="practice-header">
+            <BrandSignature size="xs" decorative className="practice-brand" />
             <h1>{selectedProblem.title}</h1>
             <span className="difficulty-pill">
               {DIFFICULTY_LABEL[selectedProblem.difficulty]}

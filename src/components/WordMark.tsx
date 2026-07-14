@@ -1,3 +1,5 @@
+import { APP_BRAND_NAME, APP_WORDMARK_PARTS } from "../constants/branding";
+
 type WordMarkSize = "xs" | "sm" | "md" | "lg";
 
 const SIZE_MAP: Record<WordMarkSize, number> = {
@@ -17,7 +19,7 @@ type WordMarkProps = {
 export default function WordMark({
   size = "md",
   className,
-  label = "CircuiTry3D",
+  label = APP_BRAND_NAME,
   decorative = false,
 }: WordMarkProps) {
   const fontSize = SIZE_MAP[size] ?? SIZE_MAP.md;
@@ -29,9 +31,9 @@ export default function WordMark({
       aria-hidden={decorative ? true : undefined}
       style={{ fontSize }}
     >
-      <span className="circuitry-wordmark__circui">Circui</span>
-      <span className="circuitry-wordmark__try">Try</span>
-      <span className="circuitry-wordmark__3d">3D</span>
+      <span className="circuitry-wordmark__circui">{APP_WORDMARK_PARTS.prefix}</span>
+      <span className="circuitry-wordmark__try">{APP_WORDMARK_PARTS.infix}</span>
+      <span className="circuitry-wordmark__3d">{APP_WORDMARK_PARTS.suffix}</span>
     </span>
   );
 }

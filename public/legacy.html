@@ -28,7 +28,7 @@
             }
         })();
     </script>
-    <title>CircuiTry - Professional Circuit Design</title>
+    <title>CircuiTry3D - Professional Circuit Design</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
     <meta name="application-name" content="CircuiTry3D">
     <meta name="mobile-web-app-capable" content="yes">
@@ -941,15 +941,58 @@
             left: 50%;
             transform: translateX(-50%);
             display: flex;
-            flex-direction: row;
-            gap: 8px;
-            z-index: 300;
-            transition: top 0.3s ease;
-            background: rgba(10, 10, 26, 0.72);
-            border: 1.5px solid rgba(170, 136, 255, 0.35);
-            border-radius: 36px;
-            padding: 6px 10px;
-            backdrop-filter: blur(8px);
+            gap: 16px;
+            margin-top: 24px;
+        }
+        
+        .edit-btn {
+            flex: 1;
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 16px;
+            min-height: 56px;
+        }
+        
+        .edit-btn.save {
+            background: linear-gradient(135deg, #00ff88, #00cc66);
+            color: #000;
+        }
+        
+        .e<!DOCTYPE html>
+<html>
+<head>
+    <title>CircuiTry3D - Professional Circuit Design</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <style>
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+        
+        body { 
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            color: white; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            touch-action: none;
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            -webkit-overflow-scrolling: touch;
         }
 
         /* Centered bar — no horizontal shift needed when menu opens */
@@ -3377,7 +3420,7 @@
         </div>
         
         <button class="launch-button" id="launch-btn" style="display:none">
-            Launch CircuiTry
+            Launch CircuiTry3D
         </button>
         
         <div class="loading-progress" id="loading-progress" style="display: none;">
@@ -3391,17 +3434,9 @@
         <div class="version-text">Professional Edition v2.0</div>
     </div>
 
-    <!-- CircuiTry3D floating workspace logo (near-invisible watermark by default) -->
-    <div id="branding-overlay" class="branding-overlay" aria-hidden="true">
-        <span class="logo-circui">Circui</span><span class="logo-try">Try</span><span class="logo-3d">3D</span>
-    </div>
-
-    <div class="quick-actions" id="quick-actions">
-        <button class="quick-action-btn" onclick="addJunction()" title="Add Junction">⬡<br>Junct</button>
-        <button class="quick-action-btn" onclick="addComponent('battery')" title="Add Battery">🔋<br>Battery</button>
-        <button class="quick-action-btn" onclick="addComponent('resistor')" title="Add Resistor">⏦<br>Resistor</button>
-        <button class="quick-action-btn" onclick="addComponent('led')" title="Add LED">💡<br>LED</button>
-    </div>
+    <div id="loading" class="loading" style="display: none;">Loading CircuiTry3D...</div>
+    
+    <button class="menu-toggle" id="menu-toggle" onclick="toggleMenuBar()">Menu</button>
     
     <div class="menu-bar" id="menu-bar" style="display: none;">
         <div class="menu-tabs">
@@ -13491,9 +13526,19 @@ body.android-optimized .zoom-btn {
             // Initial state is managed by the React host via postMessage bridge
         }
 
-        function unlockCircuitForEditing() {
-            isCircuitEditLocked = false;
-            setStatus('✏️ Edit mode — you can now move and modify components');
+                    const toggleButton = document.getElementById('menu-toggle');
+                    if (toggleButton) {
+                        toggleButton.classList.toggle('open', menuVisible);
+                        toggleButton.textContent = menuVisible ? 'Close' : 'Menu';
+                    }
+                    if (document.body && document.body.classList.contains('android-optimized')) {
+                        document.body.classList.toggle('menu-visible', menuVisible);
+                    }
+                    
+                    // Set initial status for CircuiTry3D
+                    setStatus('CircuiTry3D Professional Circuit Design Environment Ready!');
+                }, 0);
+            }, 0);
         }
 
         // Auto-launch immediately to avoid getting stuck on splash
@@ -19836,7 +19881,7 @@ Made with ? for visual learners everywhere!
                         ? component.getComponentIdentifier()
                         : component.type,
                     createdAt: new Date().toISOString(),
-                    vendor: enrichedProperties.manufacturer || 'CircuiTry Virtual Builder',
+                    vendor: enrichedProperties.manufacturer || 'CircuiTry3D Virtual Builder',
                     partNumber: enrichedProperties.partNumber || (component.type.toUpperCase() + '-' + (component.componentNumber || 'X')),
                     tolerance: enrichedProperties.tolerance || null
                 },
