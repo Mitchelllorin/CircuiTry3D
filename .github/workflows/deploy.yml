@@ -1,14 +1,10 @@
-# Deploy CircuiTry3D to GitHub Pages on every push to main.
-# The live demo URL is: https://mitchelllorin.github.io/CircuiTry3D/
-#
-# One-time setup (repo owner):
-#   Settings → Pages → Source: "GitHub Actions"
+# Production is served by Vercel — this workflow is kept for optional manual
+# re-deployment to GitHub Pages (e.g. fallback or mirror).
+# `keep_files: true` preserves the pr-preview/ directory managed by pr-preview.yml.
 
 name: Deploy to GitHub Pages
 
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -55,18 +51,7 @@ jobs:
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: dist
-
-  deploy:
-    name: Deploy
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
-
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+          # Preserves the pr-preview/ directory so open PR previews are not wiped.
+          keep_files: true
