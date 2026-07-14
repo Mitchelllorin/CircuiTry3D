@@ -5,7 +5,7 @@ export type Vec2 = {
 
 export type Orientation = "horizontal" | "vertical";
 
-export type SchematicStandard = "ansi" | "ieee" | "iec";
+export type SymbolStandard = "ansi-ieee" | "iec";
 
 export type ComponentKind =
   | "battery"
