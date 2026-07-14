@@ -59,37 +59,6 @@ body.builder-body::before {
   color: inherit;
 }
 
-.builder-logo-header {
-  display: none;
-}
-
-.builder-logo-mark {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  animation: builderLogoPulse 3.2s ease-in-out infinite;
-}
-
-.builder-logo-mark .circuitry-brandmark__img {
-  width: clamp(52px, 10vw, 72px);
-  height: auto;
-  filter: drop-shadow(0 0 10px rgba(168, 216, 255, 0.28))
-    drop-shadow(0 0 26px rgba(168, 216, 255, 0.45));
-}
-
-.builder-logo-text {
-  font-size: 28px;
-  font-weight: 900;
-  letter-spacing: 0.12em;
-  display: inline-flex;
-  align-items: baseline;
-  gap: 0.2rem;
-  text-shadow:
-    0 0 10px rgba(168, 216, 255, 0.28),
-    0 0 26px rgba(168, 216, 255, 0.45);
-  animation: builderLogoPulse 3.2s ease-in-out infinite;
-}
-
 .builder-logo-circui {
   color: var(--builder-cyan);
 }
@@ -103,19 +72,7 @@ body.builder-body::before {
   letter-spacing: 0.18em;
 }
 
-@keyframes builderLogoPulse {
-  0%,
-  100% {
-    filter: drop-shadow(0 0 8px rgba(168, 216, 255, 0.58))
-      drop-shadow(0 0 20px rgba(168, 216, 255, 0.44));
-  }
-  50% {
-    filter: drop-shadow(0 0 16px rgba(168, 216, 255, 0.82))
-      drop-shadow(0 0 32px rgba(255, 255, 255, 0.45));
-  }
-}
-
-.workspace-mode-bar {
+.builder-panel {
   position: fixed;
   background: rgba(15, 20, 40, 0.82);
   backdrop-filter: blur(16px);
