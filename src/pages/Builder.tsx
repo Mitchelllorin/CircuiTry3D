@@ -133,74 +133,6 @@ type WorkspacePanelMode =
   | "settings";
 
 const DEFAULT_WIRE_SEGMENT_RESISTANCE_OHM = 0.01;
-const CURRENT_FLOW_PAYOFF_STORAGE_KEY =
-  "circuitry3d:onboarding:current-flow-payoff:v2";
-const INTRO_DIALOG_STORAGE_KEY = "circuitry3d:onboarding:v1";
-const JUNCTION_TIP_STORAGE_KEY = "circuitry3d:junction-tip-dismissed:v1";
-// Set once the user dismisses the guided tour "for good" — after that it no longer
-// auto-opens on launch (still re-launchable from the Guides menu).
-const TOUR_DISMISSED_KEY = "circuitry3d:onboarding:tour-dismissed:v1";
-const ACTION_BAR_MODE_STORAGE_KEY = "ct3d.actionbar.mode";
-const WORKSPACE_QUERY_MODE_MAP: Record<string, WorkspaceMode> = {
-  build: "build",
-  practice: "practice",
-  troubleshoot: "troubleshoot",
-  arena: "arena",
-  help: "help",
-  "wire-guide": "wire-guide",
-  wireguide: "wire-guide",
-  arcade: "arcade",
-  classroom: "classroom",
-  community: "community",
-  account: "account",
-  pricing: "pricing",
-  textbook: "textbook",
-  gallery: "gallery",
-  "home-circuit": "home-circuit",
-  homecircuit: "home-circuit",
-  "car-circuit": "car-circuit",
-  carcircuit: "car-circuit",
-};
-
-type ActionBarMode = "full" | "tools" | "hidden";
-
-/**
- * Derive a short, plain-language descriptor for a component palette button.
- * Component descriptions follow the pattern "Name - what it does"; we strip
- * the leading name and any redundant symbol prefixes so newcomers who don't
- * recognise a part by name still get a friendly hint (e.g. "controls current
- * flow"). Falls back to the unit/symbol descriptor, then the label.
- */
-function getComponentShortDescriptor(component: ComponentAction): string {
-  const raw = (component.description ?? "").trim();
-  if (raw) {
-    // Split on the first " - " / " — " separator that follows the name.
-    const parts = raw.split(/\s[—-]\s/);
-    let tail = (parts.length > 1 ? parts.slice(1).join(" - ") : raw).trim();
-    // Drop a leading repeat of the component label if present.
-    const label = (component.label ?? "").trim();
-    if (label && tail.toLowerCase().startsWith(label.toLowerCase())) {
-      tail = tail.slice(label.length).replace(/^[\s:–—-]+/, "").trim();
-    }
-    if (tail) {
-      // Keep it short — first clause only, capped length.
-      const clause = tail.split(/[.;]/)[0].trim();
-      const compact = clause.length > 38 ? `${clause.slice(0, 36).trim()}…` : clause;
-      return compact.charAt(0).toUpperCase() + compact.slice(1);
-    }
-  }
-  return component.metadata?.symbolDesc ?? component.label ?? "";
-}
-
-// Payoff retry delays: first retry shows the banner and re-triggers the flow
-// animation after the 3D scene has rendered its first frame (~480 ms).
-// Second retry at 1.2 s covers slow devices and first-load jank where the
-// WebGL context initialises later than usual.
-// Third retry at 2.8 s is exclusively for Android (Capacitor) where the WebView
-// can be slow to stabilise GPU state on first launch; web builds skip this.
-const PAYOFF_FIRST_RETRY_MS = 480;
-const PAYOFF_SECOND_RETRY_MS = 1200;
-const PAYOFF_THIRD_RETRY_MS_ANDROID = 2800;
 
 const toWireProfileBridgePayload = (wireProfile: WireSpec | null) => {
   if (!wireProfile) {
@@ -2629,10 +2561,9 @@ export default function Builder() {
       clearCurrentFlowPayoffTimers();
       setCurrentFlowPayoffRunning(true);
 
-      // Step 1: Send load-payoff which builds the series circuit, forces solid
-      // flow style, and calls analyzeCircuit() — all in one atomic shot inside
-      // legacy.html. No separate toggle-current-flow race condition.
-      triggerBuilderAction("load-payoff");
+      if (reloadPreset) {
+        triggerBuilderAction("load-preset", { preset: "welcome_demo" });
+      }
 
       // Step 2: After the 3D scene has had time to render the first frame,
       // fire run-payoff-flow as a reliability retry to ensure particles are
@@ -2692,118 +2623,11 @@ export default function Builder() {
   const handleDismissIntroDialog = useCallback(() => {
     setIntroDialogVisible(false);
 
-    // Mark intro as seen so it doesn't appear again
-    try {
-      window.localStorage.setItem(INTRO_DIALOG_STORAGE_KEY, "1");
-    } catch {
-      // ignore storage write failures
-    }
+    firstRunPayoffTriggeredRef.current = true;
 
-    try {
-      window.localStorage.setItem(CURRENT_FLOW_PAYOFF_STORAGE_KEY, "seen");
-    } catch {
-      // ignore storage write failures
-    }
-
-    // Launch the current-flow payoff demo immediately after closing the intro.
-    // Lock the circuit as onboarding-locked so the preset circuit stays
-    // view-only until the user explicitly taps "Edit Circuit".
-    // runCurrentFlowPayoffSequence will set pendingPayoffRef if the iframe is
-    // not ready yet, and Effect 2 will pick it up when it becomes ready.
-    setOnboardingLocked(true);
-    runCurrentFlowPayoffSequence({ revealBanner: true });
-  }, [runCurrentFlowPayoffSequence]);
-
-  const handleDismissJunctionTip = useCallback(() => {
-    setJunctionTipVisible(false);
-    try {
-      window.localStorage.setItem(JUNCTION_TIP_STORAGE_KEY, "1");
-    } catch {
-      // ignore storage write failures
-    }
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      clearCurrentFlowPayoffTimers();
-    };
-  }, [clearCurrentFlowPayoffTimers]);
-
-  // Effect 1 — load the showcase circuit on launch: a simple SERIES circuit
-  // (battery → resistor → switch → light, switch closed, current flowing, light
-  // lit), framed at a dynamic 3/4 angle toward the top of the workspace. This is
-  // the backdrop the user lands on and that the point-at-the-parts guided tour
-  // walks through. (The old build-it-yourself tutorial is no longer auto-opened;
-  // it's being replaced by the tour.)
-  const showcaseLoadedRef = useRef(false);
-  useEffect(() => {
-    if (!isFrameReady || showcaseLoadedRef.current) {
-      return;
-    }
-    showcaseLoadedRef.current = true;
-    triggerBuilderAction("load-payoff");
-    // The showcase is view-only — lock it so the user can't drag/edit the parts
-    // while the guided tour points at them.
-    setShowcaseLocked(true);
-    setGuidedTourOpen(true);
-    // The showcase has junctions; suppress the junction tip so it can't pop over
-    // the tour.
-    junctionTipTriggeredRef.current = true;
-  }, [isFrameReady, triggerBuilderAction]);
-
-  // Both walkthroughs teach the 3D workspace, and their overlay layer (z 1260)
-  // paints above every workspace panel. Leaving build mode — into the Arena,
-  // Practice, Settings — used to leave the coach card stranded on top of a
-  // surface it knows nothing about. Close them when the workspace changes.
-  useEffect(() => {
-    if (workspaceMode !== "build") {
-      setGuidedTourOpen(false);
-      setBuildAlongOpen(false);
-    }
-  }, [workspaceMode]);
-
-  // Effect 1a — showcase load watchdog. On slower devices (Android) the very first
-  // load-payoff trigger sometimes races the builder's init and the parts never
-  // appear. While the tour is open with an empty workspace, re-fire the load until
-  // the parts show (or give up after a few tries) so the circuit reliably renders.
-  const showcaseRetriesRef = useRef(0);
-  useEffect(() => {
-    if (!isGuidedTourOpen) {
-      showcaseRetriesRef.current = 0;
-      return;
-    }
-    const componentCount = circuitState?.counts?.components ?? 0;
-    if (componentCount > 0 || showcaseRetriesRef.current >= 5) {
-      if (componentCount > 0) {
-        showcaseRetriesRef.current = 0;
-      }
-      return;
-    }
-    const id = window.setTimeout(() => {
-      showcaseRetriesRef.current += 1;
-      triggerBuilderAction("load-payoff");
-    }, 1400);
-    return () => window.clearTimeout(id);
-  }, [isGuidedTourOpen, circuitState, triggerBuilderAction]);
-
-  // Effect 1b — auto-dismiss the intro dialog after a short display so the
-  // user reaches the payoff 3D circuit without needing to tap anything.
-  useEffect(() => {
-    if (!isIntroDialogVisible) {
-      return;
-    }
-    const timer = window.setTimeout(() => {
-      handleDismissIntroDialog();
-    }, 3500);
-    return () => window.clearTimeout(timer);
-  }, [isIntroDialogVisible, handleDismissIntroDialog]);
-
-  // Effect 2 — REMOVED. The payoff demo circuit is no longer auto-loaded on
-  // startup; first-run onboarding is the interactive tutorial (Effect 1) on a
-  // clean canvas. The payoff sequence (runCurrentFlowPayoffSequence) remains in
-  // the code but is now only reachable on demand (e.g. a future "show me" action)
-  // and never fires automatically. This also resolves the mobile bug where the
-  // payoff circuit silently failed to load on the slower Capacitor WebView.
+    setBottomMenuOpen(true);
+    runCurrentFlowPayoffSequence({ reloadPreset: true, revealBanner: true });
+  }, [isFrameReady, runCurrentFlowPayoffSequence, setBottomMenuOpen]);
 
   useEffect(() => {
     if (!isCurrentFlowPayoffVisible) {
@@ -3825,28 +3649,18 @@ export default function Builder() {
 
       {shouldShowCurrentFlowPayoffBanner && (
         <section className="current-flow-payoff-banner" role="status" aria-live="polite">
-          <button
-            type="button"
-            className="current-flow-payoff-close"
-            aria-label="Dismiss"
-            onClick={() => {
-              setCurrentFlowPayoffVisible(false);
-            }}
-          >
-            ×
-          </button>
-          <div className="current-flow-payoff-kicker">Electricity in motion</div>
+          <div className="current-flow-payoff-kicker">⚡ Welcome to CircuiTry3D — Electricity Illuminated</div>
           <h2 className="current-flow-payoff-title">
             {currentFlowPayoffHasFlow
-              ? "Current is flowing in 3D right now."
-              : "Load a complete circuit to watch current flow instantly."}
+              ? "Live current is flowing through your circuit right now."
+              : "Close the loop to watch current come alive in 3D."}
           </h2>
           <p className="current-flow-payoff-text">
-            This is the core experience: virtual electricity moving through a
-            complete circuit.{" "}
-            {isCurrentFlowSolid
-              ? "Conventional current view is active (positive -> negative)."
-              : "Electron flow view is active (negative -> positive)."}
+            The battery is the electron pump — it creates a voltage difference that pushes current through the switch, resistor, and LED.{" "}
+            {currentFlowPayoffVolts > 0 && currentFlowPayoffAmps > 0
+              ? `At ${currentFlowPayoffVolts.toFixed(0)} V with ${(currentFlowPayoffVolts / currentFlowPayoffAmps).toFixed(0)} Ω total resistance, Ohm's Law gives I = V ÷ R ≈ ${currentFlowPayoffAmps.toFixed(3)} A.`
+              : "Apply Ohm's Law (I = V ÷ R) to find the current, then watch it animate in real time."}{" "}
+            Orbit with left-drag, pan with right-drag, and zoom with the scroll wheel.
           </p>
           <div className="current-flow-payoff-explainer">
             <div className="payoff-explainer-item">
