@@ -167,18 +167,18 @@ const getCategoryDescription = (category: WireMaterialSpec["category"]): string 
   }
 };
 
-type WireLibraryProps = {
-  onSelectWire?: (wireId: string) => void;
-  selectedWireId?: string;
-};
-
-export default function WireLibrary({ onSelectWire, selectedWireId }: WireLibraryProps) {
+export default function WireLibrary({
+  activeWireId = null,
+  onApplyWire,
+  onClearAppliedWire,
+  liveMetrics = null,
+}: WireLibraryProps = {}) {
   const [material, setMaterial] = useState<MaterialOption>("any");
   const [insulation, setInsulation] = useState<InsulationOption>("any");
   const [category, setCategory] = useState<CategoryOption>("any");
   const [minAmpacity, setMinAmpacity] = useState(0);
   const [search, setSearch] = useState("");
-  const canSelect = typeof onSelectWire === "function";
+  const [selectedWireId, setSelectedWireId] = useState<string | null>(activeWireId);
 
   // Filter materials based on selected category
   const availableMaterials = useMemo(() => getMaterialsByCategory(category), [category]);
@@ -408,13 +408,6 @@ export default function WireLibrary({ onSelectWire, selectedWireId }: WireLibrar
     return `${selectedWire.gaugeLabel} is selected. Review the preview, then apply it to the circuit.`;
   }, [selectedWire, selectedWireAlreadyApplied]);
 
-  const selectedWire = useMemo(() => {
-    if (!selectedWireId) {
-      return null;
-    }
-    return WIRE_LIBRARY.find((spec) => spec.id === selectedWireId) ?? null;
-  }, [selectedWireId]);
-
   // Count wires by category for display
   const categoryCounts = useMemo(() => {
     const counts = { conductor: 0, resistance: 0, specialty: 0 };
@@ -458,14 +451,6 @@ export default function WireLibrary({ onSelectWire, selectedWireId }: WireLibrar
               {typeof highestAmpacity === "number" ? `${formatNumber(highestAmpacity, 0)} A` : "—"}
             </strong>
           </div>
-          {canSelect && (
-            <div>
-              <span className="summary-label">Active wire</span>
-              <strong className="summary-value">
-                {selectedWire ? selectedWire.gaugeLabel : "Choose a wire"}
-              </strong>
-            </div>
-          )}
         </div>
       </header>
 
@@ -802,16 +787,24 @@ export default function WireLibrary({ onSelectWire, selectedWireId }: WireLibrar
                 <th scope="col">Ampacity (free / bundled)</th>
                 <th scope="col">Thermal · Voltage</th>
                 <th scope="col">Use cases</th>
-                {canSelect ? <th scope="col">Use</th> : null}
               </tr>
             </thead>
             <tbody>
               {filtered.map((spec) => {
                 const manufacturer = getManufacturerForWire(spec.id);
                 const materialSpec = WIRE_MATERIALS[spec.material as WireMaterialId];
-                const isSelected = Boolean(selectedWireId && spec.id === selectedWireId);
+                const isSelected = selectedWireId === spec.id;
+                const isActiveProfile = activeWireSpec?.id === spec.id;
                 return (
-                  <tr key={spec.id} data-category={materialSpec?.category} data-selected={isSelected ? "true" : undefined}>
+                  <tr
+                    key={spec.id}
+                    data-category={materialSpec?.category}
+                    data-selected={isSelected ? "true" : undefined}
+                    data-active-profile={isActiveProfile ? "true" : undefined}
+                    onClick={() => setSelectedWireId(spec.id)}
+                    className="wire-library-table-row"
+                    title={isSelected ? `${spec.gaugeLabel} selected` : `Click to select ${spec.gaugeLabel}`}
+                  >
                     <th scope="row">
                       <div className="wire-row-actions">
                         <button
@@ -872,19 +865,6 @@ export default function WireLibrary({ onSelectWire, selectedWireId }: WireLibrar
                       </ul>
                       {spec.notes ? <p className="wire-notes">{spec.notes}</p> : null}
                     </td>
-                    {canSelect ? (
-                      <td>
-                        <button
-                          type="button"
-                          className="wire-library-select"
-                          onClick={() => onSelectWire?.(spec.id)}
-                          aria-pressed={isSelected}
-                          disabled={isSelected}
-                        >
-                          {isSelected ? "Active" : "Use"}
-                        </button>
-                      </td>
-                    ) : null}
                   </tr>
                 );
               })}

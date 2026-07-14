@@ -3,65 +3,6 @@ import type { ReactNode } from "react";
 import { isLifetimeTester } from "../utils/lifetimeTesterEmails";
 import { getStoredTier, setStoredTier } from "../utils/playStoreBilling";
 
-// ── Password hashing (PBKDF2-SHA256) ────────────────────────────────────────
-
-const HASH_PREFIX = "pbkdf2v1";
-const PBKDF2_ITERATIONS = 100_000;
-const PBKDF2_KEY_BITS = 256;
-
-const bytesToHex = (bytes: Uint8Array): string =>
-  Array.from(bytes)
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
-
-const hexToBytes = (hex: string): Uint8Array =>
-  new Uint8Array((hex.match(/.{2}/g) ?? []).map((h) => parseInt(h, 16)));
-
-const hashPassword = async (password: string): Promise<string> => {
-  if (typeof crypto === "undefined" || !crypto.subtle) {
-    return password; // Fallback for non-HTTPS / test environments
-  }
-  const salt = crypto.getRandomValues(new Uint8Array(16));
-  const keyMaterial = await crypto.subtle.importKey(
-    "raw",
-    new TextEncoder().encode(password),
-    "PBKDF2",
-    false,
-    ["deriveBits"]
-  );
-  const bits = await crypto.subtle.deriveBits(
-    { name: "PBKDF2", hash: "SHA-256", salt: salt as BufferSource, iterations: PBKDF2_ITERATIONS },
-    keyMaterial,
-    PBKDF2_KEY_BITS
-  );
-  return `${HASH_PREFIX}$${bytesToHex(salt)}$${bytesToHex(new Uint8Array(bits))}`;
-};
-
-const verifyPassword = async (password: string, stored: string): Promise<boolean> => {
-  if (!stored.startsWith(`${HASH_PREFIX}$`)) {
-    return password === stored; // Legacy plaintext comparison
-  }
-  if (typeof crypto === "undefined" || !crypto.subtle) {
-    return false;
-  }
-  const parts = stored.split("$");
-  if (parts.length !== 3) return false;
-  const [, saltHex, expectedHex] = parts;
-  const salt = hexToBytes(saltHex);
-  const keyMaterial = await crypto.subtle.importKey(
-    "raw",
-    new TextEncoder().encode(password),
-    "PBKDF2",
-    false,
-    ["deriveBits"]
-  );
-  const bits = await crypto.subtle.deriveBits(
-    { name: "PBKDF2", hash: "SHA-256", salt: salt as BufferSource, iterations: PBKDF2_ITERATIONS },
-    keyMaterial,
-    PBKDF2_KEY_BITS
-  );
-  return bytesToHex(new Uint8Array(bits)) === expectedHex;
-};
 
 type AuthStorageSchema = {
   users: StoredUser[];

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, startTransition } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { createPortal } from "react-dom";
 import practiceProblems, {
@@ -30,20 +30,121 @@ import WireTable, {
 import SolutionSteps from "../components/practice/SolutionSteps";
 import TriangleDeck from "../components/practice/TriangleDeck";
 import OhmsLawWheel from "../components/practice/OhmsLawWheel";
-import PracticeReferenceCards from "../components/practice/PracticeReferenceCards";
+import KirchhoffLaws from "../components/practice/KirchhoffLaws";
+import JunctionGuide from "../components/practice/JunctionGuide";
 import CircuitDiagram from "../components/practice/CircuitDiagram";
-import PracticeViewport from "../components/schematic/PracticeViewport";
-import ComponentDrawer from "../components/schematic/ComponentDrawer";
-import { COMPONENT_CATALOG } from "../schematic/catalog";
+import ResistorColorCode from "../components/practice/ResistorColorCode";
+import { ProgressDashboard } from "../components/gamification/ProgressDashboard";
+import CircuitGamesPanel from "../components/gamification/CircuitGamesPanel";
+import { useGamification } from "../context/GamificationContext";
+import { PracticeViewport } from "./SchematicMode";
+import { useAdaptivePractice } from "../hooks/practice/useAdaptivePractice";
 import {
   DEFAULT_SYMBOL_STANDARD,
   SYMBOL_STANDARD_OPTIONS,
   type SymbolStandard,
 } from "../schematic/standards";
 import WireLibrary from "../components/practice/WireLibrary";
-import BrandSignature from "../components/BrandSignature";
 import "../styles/practice.css";
 import "../styles/schematic.css";
+
+type ElectricalFormula = {
+  id: string;
+  category: "ohms-law" | "power" | "derived";
+  formula: string;
+  description: string;
+  variables: { symbol: string; name: string }[];
+};
+
+const ELECTRICAL_FORMULAS: ElectricalFormula[] = [
+  {
+    id: "ohms-v",
+    category: "ohms-law",
+    formula: "E = I × R",
+    description: "Voltage equals current times resistance",
+    variables: [
+      { symbol: "E", name: "Voltage (V)" },
+      { symbol: "I", name: "Current (A)" },
+      { symbol: "R", name: "Resistance (Ω)" },
+    ],
+  },
+  {
+    id: "ohms-i",
+    category: "ohms-law",
+    formula: "I = E / R",
+    description: "Current equals voltage divided by resistance",
+    variables: [
+      { symbol: "I", name: "Current (A)" },
+      { symbol: "E", name: "Voltage (V)" },
+      { symbol: "R", name: "Resistance (Ω)" },
+    ],
+  },
+  {
+    id: "ohms-r",
+    category: "ohms-law",
+    formula: "R = E / I",
+    description: "Resistance equals voltage divided by current",
+    variables: [
+      { symbol: "R", name: "Resistance (Ω)" },
+      { symbol: "E", name: "Voltage (V)" },
+      { symbol: "I", name: "Current (A)" },
+    ],
+  },
+  {
+    id: "power-ei",
+    category: "power",
+    formula: "P = E × I",
+    description: "Power equals voltage times current",
+    variables: [
+      { symbol: "P", name: "Power (W)" },
+      { symbol: "E", name: "Voltage (V)" },
+      { symbol: "I", name: "Current (A)" },
+    ],
+  },
+  {
+    id: "power-i2r",
+    category: "power",
+    formula: "P = I² × R",
+    description: "Power equals current squared times resistance",
+    variables: [
+      { symbol: "P", name: "Power (W)" },
+      { symbol: "I", name: "Current (A)" },
+      { symbol: "R", name: "Resistance (Ω)" },
+    ],
+  },
+  {
+    id: "power-e2r",
+    category: "power",
+    formula: "P = E² / R",
+    description: "Power equals voltage squared divided by resistance",
+    variables: [
+      { symbol: "P", name: "Power (W)" },
+      { symbol: "E", name: "Voltage (V)" },
+      { symbol: "R", name: "Resistance (Ω)" },
+    ],
+  },
+  {
+    id: "parallel-two",
+    category: "derived",
+    formula: "R_eq = (R_a × R_b) / (R_a + R_b)",
+    description: "Collapse two parallel branches to one equivalent resistor",
+    variables: [
+      { symbol: "R_eq", name: "Equivalent resistance (Ω)" },
+      { symbol: "R_a", name: "Branch 1 resistance (Ω)" },
+      { symbol: "R_b", name: "Branch 2 resistance (Ω)" },
+    ],
+  },
+  {
+    id: "parallel-reciprocal",
+    category: "derived",
+    formula: "1/R_eq = 1/R_a + 1/R_b + 1/R_c",
+    description: "Collapse three or more parallel branches (reciprocal method)",
+    variables: [
+      { symbol: "R_eq", name: "Equivalent resistance (Ω)" },
+      { symbol: "R_a, R_b, R_c", name: "Branch resistances (Ω)" },
+    ],
+  },
+];
 
 const TOPOLOGY_ORDER: PracticeTopology[] = [
   "series",
@@ -74,11 +175,6 @@ type PracticeProps = {
     complete: boolean;
   }) => void;
 };
-
-const FALLBACK_PRACTICE_PROBLEM = DEFAULT_PRACTICE_PROBLEM ?? practiceProblems[0];
-if (!FALLBACK_PRACTICE_PROBLEM) {
-  throw new Error("No practice problems configured.");
-}
 
 const groupProblems = (problems: PracticeProblem[]): GroupedProblems =>
   problems.reduce<GroupedProblems>(
@@ -154,10 +250,18 @@ const buildStepPresentations = (
   solution: SolveResult,
 ) => problem.steps.map((step) => step(solution.stepContext));
 
-const ensureProblem = (problem: PracticeProblem | null): PracticeProblem =>
-  problem ?? FALLBACK_PRACTICE_PROBLEM;
+const ensureProblem = (problem: PracticeProblem | null): PracticeProblem | null => {
+  const fallback = DEFAULT_PRACTICE_PROBLEM;
+  if (problem) {
+    return problem;
+  }
+  if (!fallback) {
+    return null;
+  }
+  return fallback;
+};
 
-const findProblem = (id: string | null): PracticeProblem =>
+const findProblem = (id: string | null): PracticeProblem | null =>
   ensureProblem(findPracticeProblemById(id));
 
 const parseMetricInput = (raw: string): number | null => {
@@ -282,7 +386,7 @@ export default function Practice({
   onProblemChange,
   onWorksheetStatusChange,
 }: PracticeProps = {}) {
-  const fallbackProblemId = FALLBACK_PRACTICE_PROBLEM.id;
+  const fallbackProblemId = DEFAULT_PRACTICE_PROBLEM?.id ?? null;
   const [internalProblemId, setInternalProblemId] = useState<string | null>(
     () => {
       if (selectedProblemId !== undefined && selectedProblemId !== null) {
@@ -294,13 +398,22 @@ export default function Practice({
   const [tableRevealed, setTableRevealed] = useState(false);
   const [stepsVisible, setStepsVisible] = useState(false);
   const [answerRevealed, setAnswerRevealed] = useState(false);
-  const [visualMode, setVisualMode] = useState<"2d" | "3d" | "both">("2d");
   const [worksheetEntries, setWorksheetEntries] = useState<WorksheetState>({});
   const [worksheetComplete, setWorksheetComplete] = useState(false);
-  const [activeHint, setActiveHint] = useState<"target" | "worksheet" | null>(null);
-  const [visualMode, setVisualMode] = useState<"diagram" | "schematic">("diagram");
-  const [symbolStandard, setSymbolStandard] = useState<SymbolStandard>(DEFAULT_SYMBOL_STANDARD);
-  const [drawerSelection, setDrawerSelection] = useState<string | null>(null);
+  const [assistUsed, setAssistUsed] = useState(false);
+  const [sprintActive, setSprintActive] = useState(false);
+  const [sprintElapsedMs, setSprintElapsedMs] = useState(0);
+  const [sprintLastMs, setSprintLastMs] = useState<number | null>(null);
+  const [activeHint, setActiveHint] = useState<"target" | "worksheet" | null>(
+    null,
+  );
+  const [symbolStandard, setSymbolStandard] = useState<SymbolStandard>(
+    DEFAULT_SYMBOL_STANDARD,
+  );
+  const { recordCompletion, state: gamificationState } = useGamification();
+  const lastControlledProblemId = useRef<string | null | undefined>(
+    selectedProblemId,
+  );
   const lastReportedProblemId = useRef<string | null>(null);
   const lastWorksheetReport = useRef<{
     problemId: string;
@@ -327,12 +440,6 @@ export default function Practice({
   }, [resetSprint]);
 
   useEffect(() => {
-    if (visualMode === "schematic" && !drawerSelection) {
-      setDrawerSelection(COMPONENT_CATALOG[0]?.id ?? null);
-    }
-  }, [visualMode, drawerSelection]);
-
-  useEffect(() => {
     if (selectedProblemId === undefined) {
       lastControlledProblemId.current = undefined;
       return;
@@ -356,36 +463,24 @@ export default function Practice({
   }, [internalProblemId, resetArcade, selectedProblemId]);
 
   const grouped = useMemo(() => groupProblems(practiceProblems), []);
-  const selectedProblem = useMemo(() => findProblem(internalProblemId), [internalProblemId]);
-
-  const solution = useMemo(
-    () => solvePracticeProblem(selectedProblem),
-    [selectedProblem],
-  );
-  const tableRows = useMemo(
-    () => buildTableRows(selectedProblem, solution),
-    [selectedProblem, solution],
-  );
-  const selectedCatalogEntry = useMemo(
-    () => COMPONENT_CATALOG.find((entry) => entry.id === drawerSelection) ?? null,
-    [drawerSelection],
-  );
-  const stepPresentations = useMemo(
-    () => buildStepPresentations(selectedProblem, solution),
-    [selectedProblem, solution]
+  const selectedProblem = useMemo(
+    () => findProblem(internalProblemId),
+    [internalProblemId],
   );
 
-  const solutionResult = useMemo(
-    (): SolveAttempt => trySolvePracticeProblem(selectedProblem),
-    [selectedProblem]
-  );
+  const solutionResult = useMemo((): SolveAttempt => {
+    if (!selectedProblem) {
+      return { ok: false, error: "No practice problems available" };
+    }
+    return trySolvePracticeProblem(selectedProblem);
+  }, [selectedProblem]);
   const solution = solutionResult.ok ? solutionResult.data : null;
   const tableRows = useMemo(
-    () => (solution ? buildTableRows(selectedProblem, solution) : []),
+    () => (selectedProblem && solution ? buildTableRows(selectedProblem, solution) : []),
     [selectedProblem, solution],
   );
   const stepPresentations = useMemo(
-    () => (solution ? buildStepPresentations(selectedProblem, solution) : []),
+    () => (selectedProblem && solution ? buildStepPresentations(selectedProblem, solution) : []),
     [selectedProblem, solution],
   );
 
@@ -549,19 +644,65 @@ export default function Practice({
   }, [expectedValues, tableRows]);
 
   useEffect(() => {
-    // Wrap worksheet reset in startTransition to prevent blocking the 3D viewport render
-    // This fixes flickering/glitching when switching to parallel circuits
-    startTransition(() => {
-      setWorksheetEntries(baselineWorksheet);
-      setWorksheetComplete(false);
+    setWorksheetEntries(baselineWorksheet);
+    setWorksheetComplete(false);
+  }, [baselineWorksheet, selectedProblem?.id]);
+
+  useEffect(() => {
+    if (!sprintActive || worksheetComplete || !sprintStartRef.current) {
+      return;
+    }
+    const interval = window.setInterval(() => {
+      if (sprintStartRef.current) {
+        setSprintElapsedMs(Date.now() - sprintStartRef.current);
+      }
+    }, 1000);
+    return () => window.clearInterval(interval);
+  }, [sprintActive, worksheetComplete]);
+
+  useEffect(() => {
+    if (!selectedProblem) {
+      return;
+    }
+    const currentProblemId = selectedProblem.id;
+    const previous = lastChallengeReport.current;
+
+    if (!worksheetComplete) {
+      if (!previous || previous.problemId !== currentProblemId || previous.complete) {
+        lastChallengeReport.current = {
+          problemId: currentProblemId,
+          complete: false,
+        };
+      }
+      return;
+    }
+
+    if (previous && previous.problemId === currentProblemId && previous.complete) {
+      return;
+    }
+
+    let elapsedMs: number | undefined;
+    if (sprintStartRef.current) {
+      elapsedMs = Date.now() - sprintStartRef.current;
+      sprintStartRef.current = null;
+      setSprintActive(false);
+      setSprintElapsedMs(elapsedMs);
+      setSprintLastMs(elapsedMs);
+    }
+
+    recordCompletion(selectedProblem, {
+      usedAssist: assistUsed,
+      elapsedMs,
     });
-  }, [baselineWorksheet, selectedProblem.id]);
+    lastChallengeReport.current = {
+      problemId: currentProblemId,
+      complete: true,
+    };
+  }, [assistUsed, recordCompletion, selectedProblem, worksheetComplete]);
 
   useEffect(() => {
     if (worksheetComplete && !answerRevealed) {
-      startTransition(() => {
-        setAnswerRevealed(true);
-      });
+      setAnswerRevealed(true);
     }
   }, [worksheetComplete, answerRevealed]);
 
@@ -775,7 +916,6 @@ export default function Practice({
         </aside>
         <main className="practice-main">
           <header className="practice-header">
-            <BrandSignature size="xs" decorative className="practice-brand" />
             <h1>Practice Lab</h1>
             <p>Practice presets are unavailable right now.</p>
           </header>
@@ -948,7 +1088,6 @@ export default function Practice({
         </aside>
         <main className="practice-main">
           <header className="practice-header">
-            <BrandSignature size="xs" decorative className="practice-brand" />
             <h1>{selectedProblem.title}</h1>
             <span className="difficulty-pill">
               {DIFFICULTY_LABEL[selectedProblem.difficulty]}
@@ -969,126 +1108,213 @@ export default function Practice({
                 <p>{selectedProblem.prompt}</p>
               </div>
 
+              <section className="target-card" aria-live="polite">
+                <div className="target-icon-wrapper">
+                  <button
+                    type="button"
+                    className="target-icon"
+                    onClick={() => toggleHint("target")}
+                    aria-label="Explain the question mark icon"
+                    aria-haspopup="dialog"
+                    aria-expanded={targetHintOpen}
+                    aria-controls="practice-target-hint"
+                  >
+                    ?
+                  </button>
+                </div>
+                <div>
+                  <div className="target-question">
+                    {selectedProblem.targetQuestion}
+                  </div>
+                  <div className="target-answer">
+                    {answerRevealed && Number.isFinite(targetValue) ? (
+                      formatMetricValue(
+                        targetValue as number,
+                        selectedProblem.targetMetric.key,
+                      )
+                    ) : (
+                      <span>Reveal the answer when you&apos;re ready.</span>
+                    )}
+                  </div>
+                </div>
+              </section>
+            </div>
+
+            <div className="problem-overview-diagram" ref={diagramAnchorRef}>
+              <div className="practice-diagram-inline">
+                <CircuitDiagram problem={selectedProblem} />
+              </div>
+              <div className="practice-schematic-controls">
+                <div
+                  className="practice-standard-control-compact"
+                  role="group"
+                  aria-label="Schematic symbol standard"
+                >
+                  <span className="practice-standard-label">3D Standard</span>
+                  <div className="practice-standard-buttons">
+                    {SYMBOL_STANDARD_OPTIONS.map((option) => (
+                      <button
+                        key={option.key}
+                        type="button"
+                        data-active={
+                          symbolStandard === option.key ? "true" : undefined
+                        }
+                        onClick={() => setSymbolStandard(option.key)}
+                        title={option.description}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <p className="practice-visual-caption">
+                Rendering {activeStandardLabel} symbols in the 3D workspace.
+              </p>
+            </div>
+          </section>
+
+          <ProgressDashboard />
+
+          <CircuitGamesPanel
+            problem={selectedProblem}
+            worksheetComplete={worksheetComplete}
+            assistUsed={assistUsed}
+            sprintActive={sprintActive}
+            sprintElapsedMs={sprintElapsedMs}
+            sprintTargetMs={sprintTargetMs}
+            sprintBonusXp={sprintBonusXp}
+            cleanBonusXp={CLEAN_SOLVE_BONUS}
+            sprintBestMs={sprintBestMs}
+            sprintLastMs={sprintLastMs}
+            cleanSolves={gamificationState.cleanSolves}
+            speedSolves={gamificationState.speedSolves}
+            onStartSprint={handleStartSprint}
+            onResetSprint={handleResetSprint}
+            onShuffleProblem={handleShuffleProblem}
+          />
+
+          <section className="adaptive-card" aria-live="polite">
+            <div className="adaptive-card-header">
+              <div>
+                <h2>Adaptive Practice Path</h2>
+                <p>
+                  {adaptiveInsights.hasMistakes
+                    ? "We’re queuing challenges that reinforce the concepts you’ve missed recently."
+                    : "Solve a few worksheet cells and we’ll personalize the next wave of circuits."}
+                </p>
+              </div>
+              <span className="adaptive-pill">
+                {adaptiveInsights.hasMistakes ? "Focus Mode" : "Warm-Up"}
+              </span>
+            </div>
+            <div className="adaptive-card-stats">
+              <div className="adaptive-stat">
+                <span className="adaptive-stat-label">Concept focus</span>
+                <strong>
+                  {adaptiveInsights.focusConceptLabel ??
+                    toConceptLabel(selectedProblem.conceptTags[0]) ??
+                    "Dialing in concepts"}
+                </strong>
+                <small>
+                  {adaptiveInsights.focusConceptCount > 0
+                    ? `${formatAdaptiveValue(adaptiveInsights.focusConceptCount)} recent misses`
+                    : "Tracking your first entries"}
+                </small>
+              </div>
+              <div className="adaptive-stat">
+                <span className="adaptive-stat-label">Metric focus</span>
+                <strong>
+                  {adaptiveInsights.focusMetricLabel ?? "W.I.R.E. overview"}
+                </strong>
+                <small>
+                  {adaptiveInsights.focusMetricCount > 0
+                    ? `${formatAdaptiveValue(adaptiveInsights.focusMetricCount)} misses`
+                    : "Watching watts, amps, ohms, volts"}
+                </small>
+              </div>
+            </div>
+            {adaptiveHelperTargets.length ? (
+              <div className="adaptive-helpers">
+                <span className="adaptive-helpers-label">Jump to helper</span>
+                <div className="adaptive-helper-buttons">
+                  {adaptiveHelperTargets.map((target) => (
+                    <button
+                      key={target}
+                      type="button"
+                      onClick={target === "diagram" ? scrollToDiagram : scrollToOhmsWheel}
+                    >
+                      {target === "diagram"
+                        ? "View Circuit Diagram"
+                        : "Open Ohm's Law Wheel"}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+            <div className="adaptive-queue">
+              <div className="adaptive-queue-header">
+                <h3>Next up</h3>
+                <span>Prioritized by recent performance</span>
+              </div>
+              {adaptiveRecommendations.length ? (
+                <div className="adaptive-queue-list">
+                  {adaptiveRecommendations.map((item) => (
+                    <button
+                      key={item.problem.id}
+                      type="button"
+                      className="adaptive-queue-item"
+                      onClick={() => selectProblemById(item.problem.id)}
+                    >
+                      <div className="adaptive-queue-copy">
+                        <strong>{item.problem.title}</strong>
+                        <small>{item.reason}</small>
+                      </div>
+                      <span className="adaptive-queue-meta">
+                        {`${TOPOLOGY_LABEL[item.problem.topology]} · ${
+                          DIFFICULTY_LABEL[item.problem.difficulty]
+                        }`}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <p className="adaptive-queue-empty">
+                  Complete a W.I.R.E. table to unlock personalized sequencing.
+                </p>
+              )}
+            </div>
+          </section>
+
           <section className="practice-grid">
             <div className="worksheet-controls">
               <button
                 type="button"
-                onClick={() => setTableRevealed((value) => !value)}
+                onClick={handleToggleTable}
               >
                 {tableRevealed ? "Hide Worksheet Answers" : "Reveal Worksheet"}
               </button>
               <button
                 type="button"
-                onClick={() => setStepsVisible((value) => !value)}
+                onClick={handleToggleSteps}
               >
                 {stepsVisible ? "Hide Steps" : "Show Solving Steps"}
               </button>
               <button
                 type="button"
-                onClick={() => setAnswerRevealed((value) => !value)}
+                onClick={handleToggleAnswer}
               >
                 {answerRevealed ? "Hide Final Answer" : "Reveal Final Answer"}
               </button>
               <button
                 type="button"
                 onClick={advanceToNextProblem}
-                disabled={!worksheetComplete}
                 className="next-problem"
               >
-                {worksheetComplete ? "Next Problem" : "Solve to Unlock Next"}
+                Next Problem
               </button>
             </div>
 
-            <div className="practice-visual-wrapper">
-              <div className="practice-visual-toolbar">
-                <div
-                  className="practice-visual-toggle"
-                  role="tablist"
-                  aria-label="Visualization mode"
-                >
-                  <button
-                    type="button"
-                    role="tab"
-                    aria-selected={visualMode === "diagram"}
-                    className="practice-visual-button"
-                    data-active={visualMode === "diagram" ? "true" : undefined}
-                    onClick={() => setVisualMode("diagram")}
-                  >
-                    Diagram
-                  </button>
-                  <button
-                    type="button"
-                    role="tab"
-                    aria-selected={visualMode === "schematic"}
-                    className="practice-visual-button"
-                    data-active={visualMode === "schematic" ? "true" : undefined}
-                    onClick={() => setVisualMode("schematic")}
-                  >
-                    3D Schematic
-                  </button>
-                </div>
-                {visualMode === "schematic" && (
-                  <div
-                    className="practice-standard-control-compact"
-                    role="group"
-                    aria-label="3D schematic symbol standard"
-                  >
-                    <span className="practice-standard-label">3D Standard</span>
-                    <div className="practice-standard-buttons">
-                      {SYMBOL_STANDARD_OPTIONS.map((option) => (
-                        <button
-                          key={option.key}
-                          type="button"
-                          className="schematic-standard-button"
-                          data-active={
-                            symbolStandard === option.key ? "true" : undefined
-                          }
-                          onClick={() => setSymbolStandard(option.key)}
-                          title={option.description}
-                        >
-                          {option.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                {visualMode === "schematic" && selectedCatalogEntry ? (
-                  <div className="practice-catalog-note">
-                    <strong>{selectedCatalogEntry.name}</strong>
-                    <span>{selectedCatalogEntry.description}</span>
-                  </div>
-                ) : null}
-              </div>
-              <div
-                className={`practice-visual-stage${visualMode === "schematic" ? " is-schematic" : ""}`}
-                aria-live="polite"
-              >
-                {visualMode === "schematic" ? (
-                  <div className="practice-schematic-stage">
-                    <ComponentDrawer
-                      entries={COMPONENT_CATALOG}
-                      selectedId={drawerSelection}
-                      onSelect={(entry) => setDrawerSelection(entry.id)}
-                      placement="right"
-                      defaultOpen
-                    />
-                    <div className="schematic-stage">
-                      <PracticeViewport
-                        problem={selectedProblem}
-                        symbolStandard={symbolStandard}
-                      />
-                    </div>
-                  </div>
-                ) : (
-                  <CircuitDiagram problem={selectedProblem} />
-                )}
-              </div>
-              {visualMode === "schematic" && (
-                <p className="practice-visual-caption">
-                  Rendering {activeStandardLabel} symbols.
-                </p>
-              )}
-            </div>
             <div
               className="worksheet-status-banner"
               role="status"
@@ -1291,10 +1517,13 @@ export default function Practice({
           </section>
 
           <section className="practice-supplement">
-            <div className="practice-reference-section">
-              <h2 className="practice-reference-title">Reference Materials</h2>
-              <PracticeReferenceCards />
+            <JunctionGuide />
+            <KirchhoffLaws />
+            <TriangleDeck />
+            <div ref={ohmsWheelRef} id="practice-ohms-wheel" className="practice-helper-anchor">
+              <OhmsLawWheel />
             </div>
+            <ResistorColorCode />
           </section>
         </main>
       </div>

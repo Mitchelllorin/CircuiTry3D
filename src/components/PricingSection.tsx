@@ -1,10 +1,30 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import pricingSource from "../data/pricing.json";
 import BrandSignature from "./BrandSignature";
-import SectionWorkflowStrip, {
-  type SectionWorkflowStep,
-} from "./SectionWorkflowStrip";
+import {
+  initBilling,
+  hasWebPaymentCheckout,
+  isAndroidApp,
+  openWebPayment,
+  PLAY_STORE_URL,
+  purchasePremiumUnlock,
+  purchaseProSubscription,
+  restorePurchases,
+  restorePremiumPurchases,
+  restoreProPurchases,
+  getConsumerProductPrices,
+  PREMIUM_UNLOCK_SKU,
+  SUB_MONTHLY_SKU,
+  SUB_YEARLY_SKU,
+} from "../utils/playStoreBilling";
+import { useEntitlements } from "../utils/entitlementManager";
+import {
+  CONSUMER_TIERS,
+  ENTERPRISE_TIERS,
+  COMPARISON_ROWS,
+  type ConsumerTier,
+  type EnterpriseTier,
+} from "../data/hybridPricing";
 import "../styles/pricing.css";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -129,22 +149,10 @@ export default function PricingSection() {
       setPurchaseError(detail?.error ?? null);
     };
 
-type Plan = {
-  id: string;
-  name: string;
-  tagline?: string;
-  audience?: string;
-  popular?: boolean;
-  price: PriceMap;
-  unit?: string;
-  features: string[];
-  renewal?: string;
-  cta: CallToAction;
-  bulk?: {
-    minimumSeats?: number;
-    notes?: string;
-  };
-};
+    window.addEventListener("circuitry3d:tierChanged", clearPurchaseState);
+    window.addEventListener("circuitry3d:premiumUnlocked", clearPurchaseState);
+    window.addEventListener("circuitry3d:proUnlocked", clearPurchaseState);
+    window.addEventListener("circuitry3d:purchaseFailed", handleFailedPurchase);
 
     return () => {
       window.removeEventListener("circuitry3d:tierChanged", clearPurchaseState);
@@ -154,45 +162,7 @@ type Plan = {
     };
   }, []);
 
-type ManufacturerTier = {
-  id: string;
-  name: string;
-  tagline?: string;
-  priceRange: {
-    min: number;
-    max: number | null;
-  };
-  period: string;
-  features: string[];
-  popular?: boolean;
-};
-
-type ManufacturerPartnerships = {
-  title: string;
-  subtitle: string;
-  description: string;
-  tiers: ManufacturerTier[];
-  cta: {
-    label: string;
-    href: string;
-  };
-  factors: Array<{
-    title: string;
-    description: string;
-  }>;
-};
-
-type PricingData = {
-  currency: string;
-  billingCycles: BillingCycle[];
-  plans: Plan[];
-  addons?: AddOn[];
-  manufacturerPartnerships?: ManufacturerPartnerships;
-  stripe?: {
-    status: string;
-    note?: string;
-  };
-};
+  // ── Price resolution helpers ───────────────────────────────────────────────
 
   /**
    * Return the display price for a consumer tier.
@@ -202,27 +172,9 @@ type PricingData = {
     (tier: ConsumerTier, cycle?: ProCycle): string => {
       if (tier.id === "free") return "Free";
 
-const DEFAULT_CYCLE: BillingCycleId = "annual";
-const PRICING_WORKFLOW_STEPS: SectionWorkflowStep[] = [
-  {
-    id: "pricing-compare",
-    title: "Compare plan scope",
-    detail:
-      "Review educator tiers, included features, and add-ons before selecting a package.",
-  },
-  {
-    id: "pricing-cycle",
-    title: "Set billing cadence",
-    detail:
-      "Switch monthly vs annual billing to align costs with your classroom or district cycle.",
-  },
-  {
-    id: "pricing-activate",
-    title: "Activate and launch",
-    detail:
-      "Start the sandbox or contact the team to finalize rollout and subscription onboarding.",
-  },
-];
+      if (tier.id === "premium" && tier.sku) {
+        return livePrices[tier.sku] ?? tier.staticPriceFallback;
+      }
 
       if (tier.id === "pro" && tier.skus) {
         if (cycle === "yearly") {
@@ -269,31 +221,23 @@ const PRICING_WORKFLOW_STEPS: SectionWorkflowStep[] = [
     }
     const launched = await purchasePremiumUnlock();
     if (!launched) {
-      window.location.href =
-        "mailto:hello@circuitry3d.net?subject=Premium%20Unlock%20Purchase";
+      console.warn("[Pricing] purchasePremiumUnlock: billing unavailable");
     }
   }, [handleWebPurchase]);
 
-function formatPriceRange(min: number, max: number | null, currency: string): string {
-  const formatter = new Intl.NumberFormat(undefined, {
-    style: "currency",
-    currency,
-    minimumFractionDigits: 0,
-  });
-
-  if (max === null) {
-    return `${formatter.format(min)}+`;
-  }
-
-  return `${formatter.format(min)} – ${formatter.format(max)}`;
-}
-
-function getDisplayUnit(plan: Plan | AddOn): string | undefined {
-  if (plan.unit) {
-    return plan.unit;
-  }
-  return undefined;
-}
+  /** Handle a tap on the Pro Subscription buy button. */
+  const handlePurchasePro = useCallback(async () => {
+    setPurchaseStatus("purchasing");
+    setPurchaseError(null);
+    if (handleWebPurchase()) {
+      setPurchaseStatus("idle");
+      return;
+    }
+    const launched = await purchaseProSubscription(proCycle);
+    if (!launched) {
+      console.warn("[Pricing] purchaseProSubscription: billing unavailable");
+    }
+  }, [handleWebPurchase, proCycle]);
 
   /** Restore all consumer purchases (subscriptions + one-time). */
   const handleRestorePurchases = useCallback(async () => {
@@ -307,49 +251,23 @@ function getDisplayUnit(plan: Plan | AddOn): string | undefined {
     setTimeout(() => setRestoreStatus("idle"), 3000);
   }, []);
 
-type AudienceTab = "all" | "students" | "educators" | "institutions" | "general";
+  // ── Render helpers ────────────────────────────────────────────────────────
 
-const AUDIENCE_TABS: { id: AudienceTab; label: string }[] = [
-  { id: "all", label: "All Plans" },
-  { id: "students", label: "Students" },
-  { id: "educators", label: "Educators" },
-  { id: "institutions", label: "Schools" },
-  { id: "general", label: "Makers" },
-];
+  /** Determine whether a consumer tier is currently active for the user. */
+  const isTierActive = useCallback(
+    (tierId: "free" | "premium" | "pro"): boolean => {
+      if (tierId === "free") return entitlements.tier === "free";
+      if (tierId === "premium") return entitlements.hasPremium && !entitlements.hasPro;
+      if (tierId === "pro") return entitlements.hasPro;
+      return false;
+    },
+    [entitlements]
+  );
 
-export default function PricingSection() {
-  const [billingCycle, setBillingCycle] = useState<BillingCycleId>(() => {
-    const preferred = normalizeCycle(pricingData.billingCycles?.[0]?.id);
-    return preferred ?? DEFAULT_CYCLE;
-  });
-
-  const [audienceFilter, setAudienceFilter] = useState<AudienceTab>("all");
-
-  const cycles = useMemo(() => pricingData.billingCycles.map((cycle) => normalizeCycle(cycle.id)), []);
-
-  const activeCycle = billingCycle;
-  const activeCycleMeta = pricingData.billingCycles.find((cycle) => normalizeCycle(cycle.id) === activeCycle);
-
-  const filteredPlans = useMemo(() => {
-    if (audienceFilter === "all") {
-      return pricingData.plans;
-    }
-    return pricingData.plans.filter((plan) => plan.audience === audienceFilter);
-  }, [audienceFilter]);
-
-  const handleCycleChange = (cycle: BillingCycleId) => {
-    setBillingCycle(cycle);
-  };
-
-  const handleStripeClick = (sku: string) => {
-    console.info("Stripe checkout pending integration", { sku });
-    window.alert?.("Stripe checkout coming soon. Contact us to activate your subscription.");
-  };
-
-  const renderCTA = (cta: CallToAction) => {
-    if (cta.type === "link") {
-      const isInternal = cta.href.startsWith("/");
-      if (isInternal) {
+  /** Render the CTA button for a consumer tier. */
+  const renderConsumerCTA = useCallback(
+    (tier: ConsumerTier) => {
+      if (tier.id === "free") {
         return (
           <Link className="pricing-cta" to="/app" data-cta-type="internal">
             Start Free
@@ -422,15 +340,13 @@ export default function PricingSection() {
   /** Render the CTA for an enterprise tier. */
   const renderEnterpriseCTA = useCallback((tier: EnterpriseTier) => {
     return (
-      <button
-        type="button"
-        className="pricing-cta"
-        data-cta-type="stripe"
-        disabled={checkoutLoading === cta.sku}
-        onClick={() => handleStripeClick(cta.sku)}
+      <Link
+        className="pricing-cta pricing-cta--enterprise"
+        to={`/contact-sales?tier=${tier.id}`}
+        data-cta-type="internal"
       >
-        {checkoutLoading === cta.sku ? "Redirecting..." : cta.label}
-      </button>
+        Contact Sales
+      </Link>
     );
   }, []);
 
@@ -456,40 +372,68 @@ export default function PricingSection() {
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
-  const manufacturerData = pricingData.manufacturerPartnerships;
-
   return (
     <section className="pricing-section" aria-labelledby="pricing-title">
-      <SectionWorkflowStrip
-        sectionLabel="Pricing"
-        steps={PRICING_WORKFLOW_STEPS}
-      />
 
+      {/* ── Hero ── */}
       <div className="pricing-hero">
-        <h1 id="pricing-title">Simple, Accessible Pricing</h1>
+        <BrandSignature size="sm" decorative className="pricing-brand" />
+        <h1 id="pricing-title">Plans &amp; Pricing</h1>
         <p className="pricing-subtitle">
-          CircuiTry3D is free for students and makers. Educators get free tools too, with premium options for those who want more.
+          Choose the plan that powers your circuits. Upgrade any time.
         </p>
+      </div>
 
-        <div className="audience-tabs" role="tablist" aria-label="Filter by audience">
-          {AUDIENCE_TABS.map((tab) => (
+      {/* ── Consumer tiers ── */}
+      <div className="pricing-section-group">
+        <div className="pricing-section-label">
+          <span className="pricing-section-kicker">App Purchase</span>
+          <h2 className="pricing-section-title">Consumer Plans</h2>
+          <p className="pricing-section-desc">
+            One-time purchase or subscription — fully managed through Google Play.
+          </p>
+          {!onAndroid && !supportsDirectWebCheckout && (
+            <p className="pricing-purchase-status pricing-purchase-status--info">
+              Purchases complete in the Android app through Google Play.
+            </p>
+          )}
+          {purchaseStatus === "failed" && (
+            <p className="pricing-purchase-status pricing-purchase-status--error" role="alert">
+              {purchaseError
+                ? `Unable to start checkout: ${purchaseError}`
+                : "Unable to start checkout. Please try again."}
+            </p>
+          )}
+          {purchaseStatus === "cancelled" && (
+            <p className="pricing-purchase-status pricing-purchase-status--warning">
+              Purchase cancelled before checkout completed.
+            </p>
+          )}
+        </div>
+
+        {/* Pro cycle toggle — only visible above the Pro card */}
+        <div className="pricing-pro-cycle-toggle" role="group" aria-label="Pro billing cycle">
+          {(["monthly", "yearly"] as ProCycle[]).map((cycle) => (
             <button
-              key={tab.id}
+              key={cycle}
               type="button"
-              role="tab"
-              className={`audience-tab${audienceFilter === tab.id ? " active" : ""}`}
-              onClick={() => setAudienceFilter(tab.id)}
-              aria-selected={audienceFilter === tab.id}
+              className={`billing-toggle-btn${proCycle === cycle ? " active" : ""}`}
+              onClick={() => setProCycle(cycle)}
+              aria-pressed={proCycle === cycle}
             >
-              {tab.label}
+              <span className="billing-toggle-label">
+                {cycle.charAt(0).toUpperCase() + cycle.slice(1)}
+              </span>
+              {cycle === "yearly" && yearlyPriceNote && (
+                <span className="billing-toggle-note">{yearlyPriceNote}</span>
+              )}
             </button>
           ))}
         </div>
 
-        <div className="billing-toggle" role="group" aria-label="Billing cycle selector">
-          {cycles.map((cycleId) => {
-            const meta = pricingData.billingCycles.find((cycle) => normalizeCycle(cycle.id) === cycleId);
-            const isActive = activeCycle === cycleId;
+        <div className="plan-grid plan-grid--consumer">
+          {CONSUMER_TIERS.map((tier) => {
+            const active = isTierActive(tier.id);
             return (
               <article
                 key={tier.id}
@@ -547,31 +491,17 @@ export default function PricingSection() {
         </div>
       </div>
 
-      <div className="plan-grid" data-plan-count={filteredPlans.length}>
-        {filteredPlans.map((plan) => {
-          const amount = plan.price?.[activeCycle];
-          const priceLabel = formatPrice(amount, pricingData.currency);
-          const unit = getDisplayUnit(plan);
-          const isFree = amount === 0;
-          return (
-            <article
-              key={plan.id}
-              className={`plan-card plan-${plan.id}${plan.popular ? " plan-popular" : ""}${isFree ? " plan-free" : ""}`}
-            >
-              {plan.popular && <span className="plan-badge">Most Popular</span>}
-              {isFree && !plan.popular && <span className="plan-badge plan-badge-free">Free Forever</span>}
-              <header className="plan-header">
-                {plan.popular && <span className="plan-popular-badge">Most Popular</span>}
-                <h2>{plan.name}</h2>
-                {plan.tagline && <p className="plan-tagline">{plan.tagline}</p>}
-              </header>
-              <div className="plan-price">
-                <span className="plan-price-amount">{priceLabel}</span>
-                {unit && <span className="plan-price-unit">{unit}</span>}
-                {amount && amount > 0 && (
-                  <span className="plan-price-cycle">per {activeCycle === "annual" ? "year" : "month"}</span>
-                )}
-                {plan.renewal && <p className="plan-renewal">{plan.renewal}</p>}
+      {/* ── Feature comparison table ── */}
+      <div className="pricing-comparison">
+        <h2 className="pricing-comparison-title">Feature Comparison</h2>
+        <div className="pricing-comparison-table" role="table" aria-label="Feature comparison">
+          {/* Header row */}
+          <div className="pricing-comparison-row pricing-comparison-row--header" role="row">
+            <div className="pricing-comparison-cell pricing-comparison-cell--label" role="columnheader">Feature</div>
+            {CONSUMER_TIERS.map((t) => (
+              <div key={t.id} className="pricing-comparison-cell pricing-comparison-cell--tier" role="columnheader">
+                <span className="pricing-comparison-tier-icon" aria-hidden="true">{t.icon}</span>
+                {t.name}
               </div>
             ))}
           </div>
@@ -600,109 +530,103 @@ export default function PricingSection() {
         </div>
       </div>
 
-      {pricingData.addons && pricingData.addons.length > 0 && (
-        <div className="addon-section">
-          <h3>Add-Ons & Bundles</h3>
-          <div className="addon-grid">
-            {pricingData.addons.map((addon) => {
-              const amount = addon.price?.[activeCycle];
-              const priceLabel = formatPrice(amount, pricingData.currency);
-              const unit = getDisplayUnit(addon);
-              return (
-                <article key={addon.id} className="addon-card">
-                  <header className="addon-header">
-                    <h4>{addon.name}</h4>
-                    {addon.tagline && <p className="addon-tagline">{addon.tagline}</p>}
-                    {addon.availability && <span className="addon-availability">{addon.availability}</span>}
-                  </header>
-                  <div className="addon-price">
-                    <span className="addon-price-amount">{priceLabel}</span>
-                    {unit && <span className="addon-price-unit">{unit}</span>}
-                    {amount && amount > 0 && (
-                      <span className="addon-price-cycle">per {activeCycle}</span>
-                    )}
-                  </div>
-                  <ul className="addon-features">
-                    {addon.features.map((feature) => (
-                      <li key={feature}>{feature}</li>
-                    ))}
-                  </ul>
-                  <div className="addon-cta-wrapper">{renderCTA(addon.cta)}</div>
-                </article>
-              );
-            })}
+      {/* ── Enterprise tiers ── */}
+      <div className="pricing-section-group pricing-section-group--enterprise">
+        <div className="pricing-section-label">
+          <span className="pricing-section-kicker pricing-section-kicker--enterprise">Enterprise</span>
+          <h2 className="pricing-section-title">Arena Plans</h2>
+          <p className="pricing-section-desc">
+            Designed for manufacturers, educators, and enterprise teams. No in-app
+            purchase — contact our sales team to get started.
+          </p>
+        </div>
+
+        <div className="plan-grid plan-grid--enterprise">
+          {ENTERPRISE_TIERS.map((tier) => (
+            <article key={tier.id} className={`plan-card plan-card--enterprise plan-${tier.id}`}>
+              <header className="plan-header">
+                <span className="plan-badge plan-badge--enterprise">{tier.badge}</span>
+                <div className="plan-icon" aria-hidden="true">{tier.icon}</div>
+                <h3 className="plan-name">{tier.name}</h3>
+              </header>
+
+              <div className="plan-price">
+                {tier.startingPrice ? (
+                  <span className="plan-price-amount plan-price-amount--enterprise">
+                    {tier.startingPrice}
+                  </span>
+                ) : (
+                  <span className="plan-price-amount plan-price-amount--enterprise">Contact Sales</span>
+                )}
+              </div>
+
+              <ul className="plan-features">
+                {tier.description.map((f) => (
+                  <li key={f}>{f}</li>
+                ))}
+              </ul>
+
+              <div className="plan-cta-wrapper">{renderEnterpriseCTA(tier)}</div>
+            </article>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Manufacturer placement callout ── */}
+      <div className="pricing-section-group pricing-section-group--placement">
+        <div className="pricing-section-label">
+          <span className="pricing-section-kicker pricing-section-kicker--placement">Component Arena</span>
+          <h2 className="pricing-section-title">Manufacturer Placement</h2>
+          <p className="pricing-section-desc">
+            Get your real components in front of students and educators running live FUSE™ stress
+            tests. Packages start at <strong>$149 / mo</strong> — from a basic catalog listing
+            to a sponsored top-of-panel spotlight.
+          </p>
+        </div>
+        <div className="pricing-placement-callout">
+          <span className="pricing-placement-callout-icon" aria-hidden="true">🏭</span>
+          <div className="pricing-placement-callout-body">
+            <p className="pricing-placement-callout-text">
+              Standard Listing · Featured Placement · Sponsored Spotlight
+            </p>
+            <Link to="/partnerships#placement" className="pricing-cta pricing-cta--placement">
+              View Placement Packages →
+            </Link>
           </div>
         </div>
       </div>
 
-      {manufacturerData && (
-        <div className="manufacturer-section" id="partnerships">
-          <div className="manufacturer-hero">
-            <span className="manufacturer-kicker">For Manufacturers</span>
-            <h2>{manufacturerData.title}</h2>
-            <p className="manufacturer-subtitle">{manufacturerData.subtitle}</p>
-            <p className="manufacturer-description">{manufacturerData.description}</p>
-          </div>
-
-          <div className="manufacturer-grid">
-            {manufacturerData.tiers.map((tier) => (
-              <article
-                key={tier.id}
-                className={`manufacturer-card${tier.popular ? " manufacturer-popular" : ""}`}
-              >
-                {tier.popular && <span className="plan-badge">Recommended</span>}
-                <header className="manufacturer-header">
-                  <h3>{tier.name}</h3>
-                  {tier.tagline && <p className="manufacturer-tagline">{tier.tagline}</p>}
-                </header>
-                <div className="manufacturer-price">
-                  <span className="manufacturer-price-range manufacturer-contact-sales">
-                    Contact Sales
-                  </span>
-                </div>
-                <ul className="manufacturer-features">
-                  {tier.features.map((feature) => (
-                    <li key={feature}>{feature}</li>
-                  ))}
-                </ul>
-              </article>
-            ))}
-          </div>
-
-          <div className="manufacturer-factors">
-            <h3>What Affects Partnership Pricing?</h3>
-            <div className="manufacturer-factors-grid">
-              {manufacturerData.factors.map((factor) => (
-                <div key={factor.title} className="manufacturer-factor">
-                  <h4>{factor.title}</h4>
-                  <p>{factor.description}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="manufacturer-cta-wrapper">
-            <a
-              className="manufacturer-cta"
-              href={manufacturerData.cta.href}
-            >
-              {manufacturerData.cta.label}
-            </a>
-            <p className="manufacturer-cta-note">
-              We'll discuss your goals and create a custom partnership package.
+      {/* ── Education license callout ── */}
+      <div className="pricing-section-group pricing-section-group--placement">
+        <div className="pricing-section-label">
+          <span className="pricing-section-kicker pricing-section-kicker--enterprise">Education Arena</span>
+          <h2 className="pricing-section-title">Education Licenses</h2>
+          <p className="pricing-section-desc">
+            Affordable licensing for teachers and schools. Plans start at <strong>$9 / mo</strong> for
+            a solo educator with up to 30 students — scaling to a full campus license at
+            <strong> $49 / mo</strong>. No overcharging, no hidden fees.
+          </p>
+        </div>
+        <div className="pricing-placement-callout">
+          <span className="pricing-placement-callout-icon" aria-hidden="true">🏫</span>
+          <div className="pricing-placement-callout-body">
+            <p className="pricing-placement-callout-text">
+              Educator Solo · Multi-Class · Campus License
             </p>
+            <Link to="/partnerships#education" className="pricing-cta pricing-cta--enterprise">
+              View Education Plans →
+            </Link>
           </div>
         </div>
-      )}
+      </div>
 
+      {/* ── Footer ── */}
       <footer className="pricing-footer">
-        {pricingData.stripe && pricingData.stripe.status !== "active" && (
-          <p className="pricing-stripe-note">
-            {pricingData.stripe.note ?? "Online payments launching soon."}
-          </p>
-        )}
         <p className="pricing-contact-help">
-          Questions? <a href="mailto:info@circuitry3d.net">Reach out to our team</a> for help finding the right plan.
+          Need a custom package? <a href="mailto:info@circuitry3d.net">Contact our team</a> for tailored pricing.
+          Have questions?{" "}
+          <a href="mailto:info@circuitry3d.net">Contact our team</a> for
+          tailored pricing or enterprise onboarding.
         </p>
       </footer>
     </section>

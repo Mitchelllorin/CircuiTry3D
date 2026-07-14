@@ -6,7 +6,14 @@ export type ArenaViewProps = {
   variant?: ArenaViewVariant;
   onNavigateBack?: () => void;
   onOpenBuilder?: () => void;
-  sessionId?: string | null;
+  /**
+   * Workspace variant only: whether the params/metrics panel is expanded.
+   * When the panel collapses the camera cinematically sweeps into the arena
+   * and full orbit control is handed to the user.
+   */
+  panelOpen?: boolean;
+  /** Workspace variant only: toggle the params panel (the collapse arrow). */
+  onTogglePanel?: () => void;
 };
 
 export type ArenaSourceComponent = {

@@ -21,7 +21,22 @@ type TutorialStep = {
   }) => boolean;
 };
 
-const STORAGE_KEY = "circuitry3d:tutorial:basic-circuits:v2";
+type TutorialProgressState = {
+  circuit: LegacyCircuitState | null;
+  mode: LegacyModeState;
+  lastSimulationAt: string | null;
+  tutorialOpenedAt: number;
+};
+
+type TutorialObjective = {
+  id: string;
+  label: string;
+  done: boolean;
+};
+
+export const INTERACTIVE_TUTORIAL_PROGRESS_STORAGE_KEY =
+  "circuitry3d:tutorial:basic-circuits:v2";
+export const INTERACTIVE_TUTORIAL_DONE_STEP_INDEX = 14;
 
 function safeParseInt(value: string | null) {
   if (!value) return null;
@@ -93,19 +108,6 @@ export function BuilderInteractiveTutorial(props: {
         isComplete: () => true,
       },
       {
-        id: "series-presets",
-        title: "Step 0 — Optional warm-up: load a starter series circuit",
-        body:
-          "Need ideas before your first build? In Library > Beginner Series Starters, load Starter Loop, Voltage Drop Chain, or LED + Resistor Starter. Use one as a reference, then modify values to explore.",
-        targetId: "tutorial-beginner-series-presets",
-        canSkipRequirement: true,
-        isComplete: ({ circuit }) =>
-          Boolean(
-            (circuit?.counts.byType?.battery ?? 0) > 0 &&
-              (circuit?.counts.byType?.resistor ?? 0) > 0,
-          ),
-      },
-      {
         id: "battery",
         title: "Add a battery",
         body:
@@ -127,13 +129,21 @@ export function BuilderInteractiveTutorial(props: {
         id: "tune-parts",
         title: "Tune a part",
         body:
-          "Turn on Wire Mode so you can connect terminals. You’ll make a circuit: battery → resistor → back to battery.",
+          "Long-press any part to change its value. Drag to move it.",
+        canSkipRequirement: true,
+        isComplete: () => true,
+      },
+      {
+        id: "wire-mode",
+        title: "Wire it up",
+        body:
+          "Turn on Wire Mode, then tap one terminal and the next to connect them.",
         targetId: "tutorial-enable-wire",
         isComplete: ({ mode }) => Boolean(mode.isWireMode),
       },
       {
         id: "close-circuit",
-        title: "Step 4 — Complete the circuit so current can flow",
+        title: "Close the circuit",
         body:
           "Connect battery → resistor → back to the battery. Any gap (an 'open') and nothing flows.",
         canSkipRequirement: false,
@@ -143,7 +153,7 @@ export function BuilderInteractiveTutorial(props: {
         id: "simulate",
         title: "Run it",
         body:
-          "Run a simulation to confirm values and visualize flow. (Tip: if current is 0, you likely have an open circuit.)",
+          "Hit Run. The glowing dots moving along the wires are your current.",
         targetId: "tutorial-run-simulation",
         isComplete: ({ lastSimulationAt, tutorialOpenedAt }) => {
           if (!lastSimulationAt) return false;
@@ -204,7 +214,7 @@ export function BuilderInteractiveTutorial(props: {
         id: "done",
         title: "You've got it",
         body:
-          "You've mastered the full approach: place components, complete the circuit, read W.I.R.E. metrics, add junctions for parallel paths, collapse parallel groups to R_eq, then fill the W.I.R.E. table from Totals inward. Head to Practice Worksheets to work through series, parallel, and combination problems using this exact method.",
+          "Pick parts, wire a circuit, run it, read W.I.R.E. That's the app.",
         canSkipRequirement: true,
         isComplete: () => true,
       },
@@ -231,7 +241,7 @@ export function BuilderInteractiveTutorial(props: {
 
     // Some steps need the Library open so the user can actually see/click the target.
     if (
-      activeStep.id === "series-presets" ||
+      activeStep.id === "parts-tour" ||
       activeStep.id === "battery" ||
       activeStep.id === "resistor" ||
       activeStep.id === "wire-mode" ||

@@ -5,6 +5,7 @@ import {
   SCHEMATIC_COLORS,
   STROKE_WIDTHS,
   NODE_DIMENSIONS,
+  LAYOUT_SPECS,
   LABEL_SPECS,
   RESISTOR_SPECS,
   SERIES_LAYOUT,
@@ -17,7 +18,6 @@ import {
 
 type DiagramProps = {
   problem: PracticeProblem;
-  showGivens?: boolean;
 };
 
 type Point = {
@@ -25,14 +25,15 @@ type Point = {
   y: number;
 };
 
-const WIRE_COLOR = "rgba(148, 208, 255, 0.9)";
-const LABEL_COLOR = "#d6ecff";
-const RESISTOR_STROKE = "rgba(220, 244, 255, 0.96)";
-const RESISTOR_GLOW = "rgba(116, 196, 255, 0.42)";
-const BATTERY_POSITIVE_STROKE = "rgba(232, 246, 255, 0.96)";
-const BATTERY_NEGATIVE_STROKE = "rgba(108, 186, 255, 0.92)";
-const BATTERY_HIGHLIGHT = "rgba(255, 255, 255, 0.45)";
-const WIRE_STROKE_WIDTH = 4;
+// Use centralized visual constants
+const WIRE_COLOR = SCHEMATIC_COLORS.wire;
+const COMPONENT_STROKE = SCHEMATIC_COLORS.componentStroke;
+const LABEL_COLOR = SCHEMATIC_COLORS.labelPrimary;
+const VALUE_COLOR = SCHEMATIC_COLORS.labelValue;
+const NODE_FILL = SCHEMATIC_COLORS.nodeFill;
+const NODE_STROKE = SCHEMATIC_COLORS.nodeStroke;
+const WIRE_STROKE_WIDTH = STROKE_WIDTHS.wire;
+const NODE_RADIUS = NODE_DIMENSIONS.radius2D;
 
 // Get component label with resistance value (e.g., "R1 150Ω")
 const getComponentLabelWithValue = (problem: PracticeProblem, componentId: string): { label: string; value: string | null } => {
@@ -60,124 +61,20 @@ const getComponentLabelWithValue = (problem: PracticeProblem, componentId: strin
   return { label: componentId, value: null };
 };
 
-type BatteryOptions = {
-  x: number;
-  y: number;
-  orientation: "horizontal" | "vertical";
-  length?: number;
-};
-
-const drawBattery = ({ x, y, orientation, length = 80 }: BatteryOptions) => {
-  const plateGap = length * 0.36;
-  const halfGap = plateGap / 2;
-  const leadLength = (length - plateGap) / 2;
-  const plateThickness = 4.5;
-  const positiveSpan = orientation === "vertical" ? 46 : 46;
-  const negativeSpan = positiveSpan * 0.62;
-
-  if (orientation === "vertical") {
-    return (
-      <g transform={`translate(${x}, ${y})`}>
-        <line
-          x1={0}
-          y1={-length / 2}
-          x2={0}
-          y2={-halfGap - leadLength * 0.1}
-          stroke={WIRE_COLOR}
-          strokeWidth={WIRE_STROKE_WIDTH}
-          strokeLinecap="round"
-        />
-        <line
-          x1={0}
-          y1={halfGap + leadLength * 0.1}
-          x2={0}
-          y2={length / 2}
-          stroke={WIRE_COLOR}
-          strokeWidth={WIRE_STROKE_WIDTH}
-          strokeLinecap="round"
-        />
-        <line
-          x1={-positiveSpan / 2}
-          y1={-halfGap}
-          x2={positiveSpan / 2}
-          y2={-halfGap}
-          stroke={BATTERY_POSITIVE_STROKE}
-          strokeWidth={plateThickness}
-          strokeLinecap="round"
-        />
-        <line
-          x1={-negativeSpan / 2}
-          y1={halfGap}
-          x2={negativeSpan / 2}
-          y2={halfGap}
-          stroke={BATTERY_NEGATIVE_STROKE}
-          strokeWidth={plateThickness * 0.88}
-          strokeLinecap="round"
-        />
-        <line
-          x1={-positiveSpan / 2}
-          y1={-halfGap - plateThickness * 0.4}
-          x2={positiveSpan / 2}
-          y2={-halfGap - plateThickness * 0.4}
-          stroke={BATTERY_HIGHLIGHT}
-          strokeWidth={1.4}
-          strokeLinecap="round"
-        />
-      </g>
-    );
+const getComponentLabel = (problem: PracticeProblem, componentId: string) => {
+  if (componentId === "totals") {
+    return "Circuit Totals";
   }
 
-  return (
-    <g transform={`translate(${x}, ${y})`}>
-      <line
-        x1={-length / 2}
-        y1={0}
-        x2={-halfGap - leadLength * 0.1}
-        y2={0}
-        stroke={WIRE_COLOR}
-        strokeWidth={WIRE_STROKE_WIDTH}
-        strokeLinecap="round"
-      />
-      <line
-        x1={halfGap + leadLength * 0.1}
-        y1={0}
-        x2={length / 2}
-        y2={0}
-        stroke={WIRE_COLOR}
-        strokeWidth={WIRE_STROKE_WIDTH}
-        strokeLinecap="round"
-      />
-      <line
-        x1={-halfGap}
-        y1={-positiveSpan / 2}
-        x2={-halfGap}
-        y2={positiveSpan / 2}
-        stroke={BATTERY_POSITIVE_STROKE}
-        strokeWidth={plateThickness}
-        strokeLinecap="round"
-      />
-      <line
-        x1={halfGap}
-        y1={-negativeSpan / 2}
-        x2={halfGap}
-        y2={negativeSpan / 2}
-        stroke={BATTERY_NEGATIVE_STROKE}
-        strokeWidth={plateThickness * 0.88}
-        strokeLinecap="round"
-      />
-      <line
-        x1={-halfGap - plateThickness * 0.4}
-        y1={-positiveSpan / 2}
-        x2={-halfGap - plateThickness * 0.4}
-        y2={positiveSpan / 2}
-        stroke={BATTERY_HIGHLIGHT}
-        strokeWidth={1.3}
-        strokeLinecap="round"
-      />
-    </g>
-  );
+  if (componentId === problem.source.id) {
+    return problem.source.label ?? problem.source.id;
+  }
+
+  const match = problem.components.find((component) => component.id === componentId);
+  return match?.label ?? componentId;
 };
 
+// Junction node drawn per style guide (filled circles at T-junctions)
 const drawNode = ({ x, y }: Point, key?: string) => (
   <circle
     key={key}
@@ -194,89 +91,107 @@ type ResistorSymbolOptions = {
   start: Point;
   end: Point;
   orientation: "horizontal" | "vertical";
-  labelPosition?: "above" | "below" | "left" | "right";
+  label: string;
+  value?: string | null;
+  key?: string;
+  labelOffset?: number;
+  labelSide?: "left" | "right";
 };
 
-const drawResistor = ({ x, y, width, height, label, orientation, labelPosition }: ResistorOptions) => {
-  const length = orientation === "horizontal" ? width : height;
-  const thickness = orientation === "horizontal" ? height : width;
-  const amplitude = Math.max(thickness * 0.42, 8);
-  const lead = Math.min(length * 0.18, 22);
-  const segments = 6;
-  const segmentLength = (length - 2 * lead) / segments;
+const drawResistor = ({ start, end, orientation, label, value, key, labelOffset, labelSide }: ResistorSymbolOptions) => {
+  const centerX = (start.x + end.x) / 2;
+  const centerY = (start.y + end.y) / 2;
+  const rotation = orientation === "horizontal" ? 0 : 90;
 
-  const pathSegments: string[] = [];
+  // For horizontal resistors, position label above the zigzag peak
+  // Label needs to be higher to avoid being obscured by the resistor body
+  const adjustedLabelOffset = orientation === "horizontal"
+    ? (labelOffset ?? LABEL_SPECS.horizontalLabelOffset)
+    : 0;
 
-  if (orientation === "horizontal") {
-    const half = width / 2;
-    const start = -half;
-    pathSegments.push(`M ${start} 0`);
-    pathSegments.push(`L ${start + lead} 0`);
+  const labelX = orientation === "horizontal"
+    ? centerX
+    : centerX + ((labelSide ?? "right") === "left" ? -22 : 22);
 
-    let currentX = start + lead;
-    for (let i = 0; i < segments; i += 1) {
-      currentX += segmentLength;
-      const yOffset = i % 2 === 0 ? -amplitude : amplitude;
-      pathSegments.push(`L ${currentX} ${yOffset}`);
-    }
+  const labelY = orientation === "horizontal"
+    ? centerY + adjustedLabelOffset
+    : centerY + (labelOffset ?? 0);
 
-    pathSegments.push(`L ${half - lead} 0`);
-    pathSegments.push(`L ${half} 0`);
-  } else {
-    const half = height / 2;
-    const start = -half;
-    pathSegments.push(`M 0 ${start}`);
-    pathSegments.push(`L 0 ${start + lead}`);
+  const textAnchor = orientation === "horizontal"
+    ? "middle" as const
+    : ((labelSide ?? "right") === "left" ? "end" as const : "start" as const);
 
-    let currentY = start + lead;
-    for (let i = 0; i < segments; i += 1) {
-      currentY += segmentLength;
-      const xOffset = i % 2 === 0 ? amplitude : -amplitude;
-      pathSegments.push(`L ${xOffset} ${currentY}`);
-    }
+  // Calculate proper wire endpoints accounting for direction
+  // Resistor symbol body uses centralized constant for total span
+  const resistorHalfWidth = RESISTOR_SPECS.totalHalfSpan;
 
-    pathSegments.push(`L 0 ${half - lead}`);
-    pathSegments.push(`L 0 ${half}`);
-  }
-
-  const pathD = pathSegments.join(" ");
-
-  let labelX = 0;
-  let labelY = 0;
-  let anchor: "start" | "middle" | "end" = "middle";
+  // For horizontal: wire goes from start to left edge, then from right edge to end
+  // For vertical: wire goes from start to top edge, then from bottom edge to end
+  let wireEndFromStart: { x: number; y: number };
+  let wireStartToEnd: { x: number; y: number };
 
   if (orientation === "horizontal") {
-    const offset = height / 2 + 16;
-    if (labelPosition === "below") {
-      labelY = offset;
+    const leftEdge = centerX - resistorHalfWidth;
+    const rightEdge = centerX + resistorHalfWidth;
+    if (start.x < end.x) {
+      // Left to right
+      wireEndFromStart = { x: leftEdge, y: centerY };
+      wireStartToEnd = { x: rightEdge, y: centerY };
     } else {
-      labelY = -offset;
+      // Right to left
+      wireEndFromStart = { x: rightEdge, y: centerY };
+      wireStartToEnd = { x: leftEdge, y: centerY };
     }
-    anchor = "middle";
   } else {
-    const offset = width / 2 + 20;
-    if (labelPosition === "left") {
-      labelX = -offset;
-      anchor = "end";
+    const topEdge = centerY - resistorHalfWidth;
+    const bottomEdge = centerY + resistorHalfWidth;
+    if (start.y < end.y) {
+      // Top to bottom
+      wireEndFromStart = { x: centerX, y: topEdge };
+      wireStartToEnd = { x: centerX, y: bottomEdge };
     } else {
-      labelX = offset;
-      anchor = "start";
+      // Bottom to top
+      wireEndFromStart = { x: centerX, y: bottomEdge };
+      wireStartToEnd = { x: centerX, y: topEdge };
     }
   }
+
+  // Value label positioning (below the main label for horizontal, offset for vertical)
+  const valueY = orientation === "horizontal"
+    ? labelY + 13
+    : labelY + 12;
 
   return (
-    <g transform={`translate(${x}, ${y})`}>
-      <path
-        d={pathD}
-        stroke={RESISTOR_GLOW}
-        strokeWidth={6}
+    <g key={key}>
+      <line
+        x1={start.x}
+        y1={start.y}
+        x2={wireEndFromStart.x}
+        y2={wireEndFromStart.y}
+        stroke={WIRE_COLOR}
+        strokeWidth={WIRE_STROKE_WIDTH}
         strokeLinecap="round"
-        strokeLinejoin="round"
-        fill="none"
-        opacity={0.4}
       />
-      <path d={pathD} stroke={RESISTOR_STROKE} strokeWidth={3.8} strokeLinecap="round" strokeLinejoin="round" fill="none" />
-      <text x={labelX} y={labelY} textAnchor={anchor} fontSize={13} fill={LABEL_COLOR} fontWeight={600} dominantBaseline="middle">
+      <ResistorSymbol
+        x={centerX}
+        y={centerY}
+        rotation={rotation}
+        scale={1}
+        label=""
+        showLabel={false}
+        color={COMPONENT_STROKE}
+        strokeWidth={STROKE_WIDTHS.wireSvgSymbol}
+      />
+      <line
+        x1={wireStartToEnd.x}
+        y1={wireStartToEnd.y}
+        x2={end.x}
+        y2={end.y}
+        stroke={WIRE_COLOR}
+        strokeWidth={WIRE_STROKE_WIDTH}
+        strokeLinecap="round"
+      />
+      <text x={labelX} y={labelY} textAnchor={textAnchor} fill={LABEL_COLOR} fontSize={LABEL_SPECS.componentLabelSize} fontWeight={LABEL_SPECS.labelWeight}>
         {label}
       </text>
       {value && (
@@ -288,20 +203,63 @@ const drawResistor = ({ x, y, width, height, label, orientation, labelPosition }
   );
 };
 
-const SeriesRectDiagram = ({ problem, showGivens = true }: DiagramProps) => {
-  const labels = {
-    R1: getComponentLabel(problem, "R1"),
-    R2: getComponentLabel(problem, "R2"),
-    R3: getComponentLabel(problem, "R3"),
-    R4: getComponentLabel(problem, "R4"),
+const SeriesRectDiagram = ({ problem }: DiagramProps) => {
+  // Canonical textbook series template:
+  // battery on left + one centered component on top/right/bottom sides.
+  const componentIds = problem.components.map(c => c.id);
+  const sourceData = getComponentLabelWithValue(problem, problem.source.id);
+
+  // Get component data map
+  const componentData = new Map(
+    componentIds.map(id => [id, getComponentLabelWithValue(problem, id)])
+  );
+
+  // Layout from centralized standards
+  const { leftX, rightX, topY, bottomY } = SERIES_LAYOUT.frame2D;
+
+  // Battery on left side (vertical orientation) - USE CENTRALIZED CONSTANTS
+  const batteryScale = BATTERY_LAYOUT.scale;
+  const batteryHalfSpan = BATTERY_LAYOUT.halfSpan2D;
+  const batteryCenterY = (topY + bottomY) / 2;
+  const batteryTopY = batteryCenterY - batteryHalfSpan;
+  const batteryBottomY = batteryCenterY + batteryHalfSpan;
+
+  // Corner nodes
+  const topLeft: Point = { x: leftX, y: topY };
+  const topRight: Point = { x: rightX, y: topY };
+  const bottomRight: Point = { x: rightX, y: bottomY };
+  const bottomLeft: Point = { x: leftX, y: bottomY };
+
+  const buildSeriesSideGroups = (): [string[], string[], string[]] => {
+    if (!componentIds.length) {
+      return [[], [], []];
+    }
+    if (componentIds.length === 1) {
+      return [[componentIds[0]], [componentIds[0]], []];
+    }
+    if (componentIds.length === 2) {
+      return [[componentIds[0]], [componentIds[1]], []];
+    }
+    const topCount = Math.ceil(componentIds.length / 3);
+    const remainingAfterTop = componentIds.length - topCount;
+    const rightCount = Math.ceil(remainingAfterTop / 2);
+    return [
+      componentIds.slice(0, topCount),
+      componentIds.slice(topCount, topCount + rightCount),
+      componentIds.slice(topCount + rightCount),
+    ];
   };
 
-    const batteryX = 60;
-    const batteryY = 150;
-    const positiveX = batteryX + 8;
-    const negativeX = batteryX - 6;
-    const positiveRightY = batteryY;
-    const negativeRightY = batteryY;
+  const getSeriesSideData = (
+    ids: string[],
+    fallbackLabel: string,
+  ): { label: string; value: string | null } => {
+    if (!ids.length) {
+      return { label: fallbackLabel, value: null };
+    }
+    if (ids.length === 1) {
+      return componentData.get(ids[0]) ?? { label: ids[0], value: null };
+    }
 
     const label = ids
       .map((id) => componentData.get(id)?.label ?? id)
@@ -326,18 +284,25 @@ const SeriesRectDiagram = ({ problem, showGivens = true }: DiagramProps) => {
     };
   };
 
-    return (
-      <svg className="diagram-svg" viewBox="0 0 360 260" role="img" aria-label="Series circuit diagram">
-        {drawBattery(batteryX, batteryY)}
-        {/* Source leads - positive connects to top, negative connects to bottom via left side */}
-        <line x1={positiveX} y1={positiveRightY} x2={loopLeftX} y2={positiveRightY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
-        <line x1={loopLeftX} y1={positiveRightY} x2={loopLeftX} y2={topY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
-        <line x1={negativeX} y1={negativeRightY} x2={negativeX - 30} y2={negativeRightY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
-        <line x1={negativeX - 30} y1={negativeRightY} x2={negativeX - 30} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
-        <line x1={negativeX - 30} y1={bottomY} x2={loopLeftX} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
+  const renderResistors = () => {
+    const [topIds, rightIds, bottomIds] = buildSeriesSideGroups();
+    const topData = getSeriesSideData(topIds, "Top load");
+    const rightData = getSeriesSideData(rightIds, "Right load");
+    const bottomData = getSeriesSideData(bottomIds, "Bottom return");
 
-        {/* Top run */}
-        <line x1={loopLeftX} y1={topY} x2={r1Start.x} y2={topY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
+    const horizontalMargin = SERIES_LAYOUT.margins.threeComponent.horizontal;
+    const verticalMargin = SERIES_LAYOUT.margins.threeComponent.vertical;
+
+    const topStart: Point = { x: leftX + horizontalMargin, y: topY };
+    const topEnd: Point = { x: rightX - horizontalMargin, y: topY };
+    const rightStart: Point = { x: rightX, y: topY + verticalMargin };
+    const rightEnd: Point = { x: rightX, y: bottomY - verticalMargin };
+    const bottomStart: Point = { x: rightX - horizontalMargin, y: bottomY };
+    const bottomEnd: Point = { x: leftX + horizontalMargin, y: bottomY };
+
+    return [
+      <g key="series-top-group">
+        <line x1={leftX} y1={topY} x2={topStart.x} y2={topY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
         {drawResistor({
           key: "series-top-load",
           start: topStart,
@@ -372,96 +337,57 @@ const SeriesRectDiagram = ({ problem, showGivens = true }: DiagramProps) => {
           orientation: "horizontal",
           labelOffset: 22,
         })}
-        <line x1={r3End.x} y1={bottomY} x2={loopLeftX} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
+        <line x1={bottomEnd.x} y1={bottomY} x2={leftX} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
+      </g>,
+    ];
+  };
 
   return (
-    <svg className="diagram-svg" viewBox="0 0 360 260" role="img" aria-label="Series square circuit">
-      <rect x={60} y={60} width={240} height={140} fill="none" stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} />
-      {drawBattery({ x: 45, y: 130, orientation: "horizontal", length: 30 })}
-      <line
-        x1={12}
-        y1={130}
-        x2={30}
-        y2={130}
-        stroke={WIRE_COLOR}
-        strokeWidth={WIRE_STROKE_WIDTH}
-        strokeLinecap="round"
+    <svg className="diagram-svg" viewBox="0 0 600 240" role="img" aria-label="Series circuit diagram" preserveAspectRatio="xMidYMid meet">
+      {/* Left side with battery (vertical) */}
+      <line x1={leftX} y1={bottomY} x2={leftX} y2={batteryBottomY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
+      <BatterySymbol
+        x={leftX}
+        y={batteryCenterY}
+        rotation={-90}
+        scale={batteryScale}
+        label=""
+        showLabel={false}
+        color={WIRE_COLOR}
+        strokeWidth={3}
       />
-      <line
-        x1={300}
-        y1={130}
-        x2={324}
-        y2={130}
-        stroke={WIRE_COLOR}
-        strokeWidth={WIRE_STROKE_WIDTH}
-        strokeLinecap="round"
-      />
-      {drawResistor({ x: 180, y: 60, width: 120, height: 26, label: labels.R1, orientation: "horizontal" })}
-      {drawResistor({ x: 300, y: 130, width: 26, height: 110, label: labels.R2, orientation: "vertical" })}
-      {drawResistor({ x: 180, y: 200, width: 120, height: 26, label: labels.R3, orientation: "horizontal", labelPosition: "below" })}
-      {drawResistor({ x: 60, y: 130, width: 26, height: 110, label: labels.R4, orientation: "vertical", labelPosition: "left" })}
-      <text x={36} y={116} fill={LABEL_COLOR} fontSize={13} textAnchor="start">
-        {problem.source.label ?? "Source"}
+      <line x1={leftX} y1={batteryTopY} x2={leftX} y2={topY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
+
+      {/* Dynamically render resistors */}
+      {renderResistors()}
+
+      {/* Corner nodes */}
+      {drawNode(topLeft, "series-node-tl")}
+      {drawNode(topRight, "series-node-tr")}
+      {drawNode(bottomRight, "series-node-br")}
+      {drawNode(bottomLeft, "series-node-bl")}
+
+      {/* Battery label on the left, outside the circuit */}
+      <text x={leftX - 28} y={batteryCenterY - 2} fill={LABEL_COLOR} fontSize={LABEL_SPECS.componentLabelSize} textAnchor="middle">
+        {sourceData.label}
       </text>
+      {sourceData.value && (
+        <text x={leftX - 28} y={batteryCenterY + 12} fill={VALUE_COLOR} fontSize={LABEL_SPECS.valueLabelSize} textAnchor="middle">
+          {sourceData.value}
+        </text>
+      )}
     </svg>
   );
 };
 
-const ParallelRectDiagram = ({ problem, showGivens = true }: DiagramProps) => {
-  const branchIds = ["R1", "R2", "R3"] as const;
-  const labels: Record<(typeof branchIds)[number], string> = {
-    R1: getComponentLabel(problem, "R1"),
-    R2: getComponentLabel(problem, "R2"),
-    R3: getComponentLabel(problem, "R3"),
-  };
+const ParallelRectDiagram = ({ problem }: DiagramProps) => {
+  // Dynamically get component IDs from the problem (supports 2, 3, 4+ resistors)
+  const branchIds = problem.components.map(c => c.id);
+  const branchCount = branchIds.length;
 
-  return (
-    <svg className="diagram-svg" viewBox="0 0 360 260" role="img" aria-label="Parallel square circuit">
-      <rect x={80} y={50} width={200} height={160} fill="none" stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} />
-      {drawBattery({ x: 62, y: 130, orientation: "horizontal", length: 36 })}
-      <line
-        x1={24}
-        y1={130}
-        x2={44}
-        y2={130}
-        stroke={WIRE_COLOR}
-        strokeWidth={WIRE_STROKE_WIDTH}
-        strokeLinecap="round"
-      />
-      <line
-        x1={280}
-        y1={130}
-        x2={314}
-        y2={130}
-        stroke={WIRE_COLOR}
-        strokeWidth={WIRE_STROKE_WIDTH}
-        strokeLinecap="round"
-      />
-      <line
-        x1={180}
-        y1={50}
-        x2={180}
-        y2={70}
-        stroke={WIRE_COLOR}
-        strokeWidth={WIRE_STROKE_WIDTH}
-        strokeLinecap="round"
-      />
-      <line
-        x1={180}
-        y1={210}
-        x2={180}
-        y2={230}
-        stroke={WIRE_COLOR}
-        strokeWidth={WIRE_STROKE_WIDTH}
-        strokeLinecap="round"
-      />
-      {drawResistor({ x: 180, y: 82, width: 200, height: 24, label: labels.R1, orientation: "horizontal" })}
-      {drawResistor({ x: 180, y: 128, width: 200, height: 24, label: labels.R2, orientation: "horizontal", labelPosition: "below" })}
-      {drawResistor({ x: 180, y: 174, width: 200, height: 24, label: labels.R3, orientation: "horizontal", labelPosition: "below" })}
-      <text x={46} y={116} fill={LABEL_COLOR} fontSize={13} textAnchor="start">
-        {problem.source.label ?? "Source"}
-      </text>
-    </svg>
+  // Get labels and values for each resistor dynamically
+  const componentData = new Map(
+    branchIds.map(id => [id, getComponentLabelWithValue(problem, id)])
   );
   const sourceData = getComponentLabelWithValue(problem, problem.source.id);
 
@@ -548,47 +474,16 @@ const ParallelRectDiagram = ({ problem, showGivens = true }: DiagramProps) => {
         <text x={leftX - 28} y={batteryCenterY + 12} fill={VALUE_COLOR} fontSize={LABEL_SPECS.valueLabelSize} textAnchor="middle">
           {sourceData.value}
         </text>
-        {showGivens && (
-          <>
-            {problem.source.givens?.voltage !== undefined && (
-              <text x={batteryX - 40} y={batteryY} fill={"#ffeb3b"} fontSize={14} fontWeight={600} textAnchor="end">
-                {problem.source.givens.voltage}V
-              </text>
-            )}
-            {branchIds.map((id, idx) => {
-              const component = problem.components.find(c => c.id === id);
-              if (!component?.givens || Object.keys(component.givens).length === 0) return null;
-              
-              const x = branchXs[idx];
-              const textY = (branchResTop + branchResBottom) / 2;
-              
-              const givens = component.givens;
-              const displayValue = givens.resistance !== undefined ? `${givens.resistance}Ω` :
-                                   givens.voltage !== undefined ? `${givens.voltage}V` :
-                                   givens.current !== undefined ? `${givens.current}A` :
-                                   givens.watts !== undefined ? `${givens.watts}W` : null;
-              
-              if (!displayValue) return null;
-              
-              return (
-                <text key={`given-${id}`} x={x + 32} y={textY} fill={"#ffeb3b"} fontSize={14} fontWeight={600} textAnchor="start">
-                  {displayValue}
-                </text>
-              );
-            })}
-          </>
-        )}
-      </svg>
-    );
+      )}
+    </svg>
+  );
 };
 
-const CombinationRectDiagram = ({ problem, showGivens = true }: DiagramProps) => {
-  const labels = {
-    R1: getComponentLabel(problem, "R1"),
-    R2: getComponentLabel(problem, "R2"),
-    R3: getComponentLabel(problem, "R3"),
-    R4: getComponentLabel(problem, "R4"),
-  };
+const CombinationRectDiagram = ({ problem }: DiagramProps) => {
+  // Dynamically get component data from the problem
+  const componentIds = problem.components.map(c => c.id);
+  const componentCount = componentIds.length;
+  const sourceData = getComponentLabelWithValue(problem, problem.source.id);
 
   // Get component data map
   const componentData = new Map(
@@ -663,60 +558,28 @@ const CombinationRectDiagram = ({ problem, showGivens = true }: DiagramProps) =>
   const parallelBoxBottom = bottomY + 8;
 
   return (
-    <svg className="diagram-svg" viewBox="0 0 360 260" role="img" aria-label="Combination ladder circuit">
-      <rect x={70} y={56} width={220} height={148} fill="none" stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} />
-      {drawBattery({ x: 52, y: 130, orientation: "horizontal", length: 36 })}
-      <line
-        x1={36}
-        y1={130}
-        x2={52}
-        y2={130}
-        stroke={WIRE_COLOR}
-        strokeWidth={WIRE_STROKE_WIDTH}
-        strokeLinecap="round"
+    <svg className="diagram-svg" viewBox="0 0 600 240" role="img" aria-label="Combination circuit diagram" preserveAspectRatio="xMidYMid meet">
+      {/* Parallel section indicator box (textbook "box within box" style) */}
+      <rect
+        x={parallelBoxLeft}
+        y={parallelBoxTop}
+        width={parallelBoxRight - parallelBoxLeft}
+        height={parallelBoxBottom - parallelBoxTop}
+        fill="none"
+        stroke="rgba(162, 212, 255, 0.25)"
+        strokeWidth={1.5}
+        strokeDasharray="6 4"
+        rx={6}
+        ry={6}
       />
-      <line
-        x1={290}
-        y1={130}
-        x2={324}
-        y2={130}
-        stroke={WIRE_COLOR}
-        strokeWidth={WIRE_STROKE_WIDTH}
-        strokeLinecap="round"
-      />
-      {drawResistor({ x: 180, y: 56, width: 160, height: 26, label: labels.R1, orientation: "horizontal" })}
-      {drawResistor({ x: 290, y: 110, width: 26, height: 60, label: labels.R2, orientation: "vertical" })}
-      {drawResistor({ x: 290, y: 170, width: 26, height: 60, label: labels.R3, orientation: "vertical" })}
-      <line
-        x1={250}
-        y1={110}
-        x2={290}
-        y2={110}
-        stroke={WIRE_COLOR}
-        strokeWidth={WIRE_STROKE_WIDTH}
-        strokeLinecap="round"
-      />
-      <line
-        x1={250}
-        y1={170}
-        x2={290}
-        y2={170}
-        stroke={WIRE_COLOR}
-        strokeWidth={WIRE_STROKE_WIDTH}
-        strokeLinecap="round"
-      />
-      <line
-        x1={250}
-        y1={110}
-        x2={250}
-        y2={170}
-        stroke={WIRE_COLOR}
-        strokeWidth={WIRE_STROKE_WIDTH}
-        strokeLinecap="round"
-      />
-      {drawResistor({ x: 180, y: 204, width: 160, height: 26, label: labels.R4, orientation: "horizontal", labelPosition: "below" })}
-      <text x={36} y={116} fill={LABEL_COLOR} fontSize={13} textAnchor="start">
-        {problem.source.label ?? "Source"}
+      <text
+        x={parallelBoxRight + 8}
+        y={parallelBoxTop + 14}
+        fill="rgba(162, 212, 255, 0.5)"
+        fontSize={9}
+        fontStyle="italic"
+      >
+        parallel
       </text>
 
       {/* Left side with battery (vertical) */}
@@ -815,56 +678,9 @@ const CombinationRectDiagram = ({ problem, showGivens = true }: DiagramProps) =>
         <text x={leftX - 28} y={batteryCenterY + 12} fill={VALUE_COLOR} fontSize={LABEL_SPECS.valueLabelSize} textAnchor="middle">
           {sourceData.value}
         </text>
-        {showGivens && (
-          <>
-            {problem.source.givens?.voltage !== undefined && (
-              <text x={batteryX - 40} y={batteryY} fill={"#ffeb3b"} fontSize={14} fontWeight={600} textAnchor="end">
-                {problem.source.givens.voltage}V
-              </text>
-            )}
-            {problem.components.map((component, idx) => {
-              const givens = component.givens;
-              if (!givens || Object.keys(givens).length === 0) return null;
-              
-              let textX = 0;
-              let textY = 0;
-              let anchor: "start" | "end" | "middle" = "middle";
-              
-              if (component.id === "R1") {
-                textX = (r1Start.x + r1End.x) / 2;
-                textY = topY - 26;
-                anchor = "middle";
-              } else if (component.id === "R2") {
-                textX = branchX + branchOffsets["R2"] - 32;
-                textY = (branchResTop + branchResBottom) / 2;
-                anchor = "end";
-              } else if (component.id === "R3") {
-                textX = branchX + branchOffsets["R3"] + 32;
-                textY = (branchResTop + branchResBottom) / 2;
-                anchor = "start";
-              } else if (component.id === "R4") {
-                textX = (r4Start.x + r4End.x) / 2;
-                textY = bottomY + 32;
-                anchor = "middle";
-              }
-              
-              const displayValue = givens.resistance !== undefined ? `${givens.resistance}Ω` :
-                                   givens.voltage !== undefined ? `${givens.voltage}V` :
-                                   givens.current !== undefined ? `${givens.current}A` :
-                                   givens.watts !== undefined ? `${givens.watts}W` : null;
-              
-              if (!displayValue) return null;
-              
-              return (
-                <text key={`given-${component.id}`} x={textX} y={textY} fill={"#ffeb3b"} fontSize={14} fontWeight={600} textAnchor={anchor}>
-                  {displayValue}
-                </text>
-              );
-            })}
-          </>
-        )}
-      </svg>
-    );
+      )}
+    </svg>
+  );
 };
 
 // Helper function to determine if network is a standard ladder (series-parallel-series)
@@ -890,7 +706,6 @@ function isDoubleParallelNetwork(network: PracticeProblem["network"]): boolean {
 
 // Render textbook double-parallel diagram: two parallel boxes stacked in series.
 function renderDoubleParallelDiagram(
-  _problem: PracticeProblem,
   sourceData: { label: string; value: string | null },
   componentData: Map<string, { label: string; value: string | null }>,
   componentIds: string[],

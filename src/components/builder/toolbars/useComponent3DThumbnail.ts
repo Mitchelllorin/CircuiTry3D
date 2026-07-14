@@ -1,9 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import * as THREE from "three";
 import { getComponent3D } from "../../circuit/Component3DLibrary";
+import {
+  buildElement,
+  buildNodeMesh,
+  disposeThreeObject,
+} from "../../../schematic/threeFactory";
+import { getPerformanceTier, isMobile } from "../../../utils/mobilePerformance";
 
-// Render at a higher resolution than we display for sharper thumbnails.
-const THUMBNAIL_SIZE_PX = 256;
 const THUMBNAIL_CACHE = new Map<string, string>();
 const THUMBNAIL_IN_FLIGHT = new Map<string, Promise<string>>();
 const THUMBNAIL_ANIMATION_FRAME_MS = 300;
@@ -57,69 +61,92 @@ let renderQueue: Promise<void> = Promise.resolve();
 
 type ThumbnailKind = string;
 
-function mapBuilderTypeToComponent3DType(kind: ThumbnailKind): string | null {
-  switch (kind) {
-    case "bjt":
-      return "transistor-bjt-npn";
-    case "bjt-npn":
-      return "transistor-bjt-npn";
-    case "bjt-pnp":
-      return "transistor-bjt-pnp";
-    case "darlington":
-      return "darlington-pair";
-    case "mosfet":
-      return "transistor-mosfet";
-    case "ac_source":
-      return "ac_source";
-    case "battery":
-      return "battery";
-    case "resistor":
-      return "resistor";
-    case "capacitor":
-      return "capacitor";
-    case "inductor":
-      return "inductor";
-    case "lamp":
-      return "lamp";
-    case "motor":
-      return "motor";
-    case "speaker":
-      return "speaker";
-    case "diode":
-      return "diode";
-    case "led":
-      return "led";
-    case "switch":
-      return "switch";
-    case "fuse":
-      return "fuse";
-    case "potentiometer":
-      return "potentiometer";
-    case "opamp":
-      return "opamp";
-    case "transformer":
-      return "transformer";
-    case "ground":
-    case "junction":
-    default:
-      return null;
-  }
-}
+type ThumbnailListener = (dataUrl: string) => void;
 
-function disposeThreeObject(root: THREE.Object3D) {
-  root.traverse((object: any) => {
-    if (object.geometry && typeof object.geometry.dispose === "function") {
-      object.geometry.dispose();
-    }
-    const material = object.material;
-    if (material) {
-      if (Array.isArray(material)) {
-        material.forEach((mat) => mat?.dispose?.());
-      } else {
-        material.dispose?.();
-      }
-    }
-  });
+const THUMBNAIL_ANIMATION_LISTENERS = new Map<
+  ThumbnailKind,
+  Set<ThumbnailListener>
+>();
+const THUMBNAIL_ANIMATION_ROTATIONS = new Map<ThumbnailKind, number>();
+let animationFrameHandle: number | null = null;
+let lastAnimationTime = 0;
+let isAnimationRenderQueued = false;
+
+const COMPONENT_3D_TYPE_MAP: Record<string, string> = {
+  bjt: "transistor-bjt",
+  "bjt-npn": "transistor-bjt-npn",
+  "bjt-pnp": "transistor-bjt-pnp",
+  darlington: "darlington-pair",
+  mosfet: "transistor-mosfet",
+};
+
+const resolveComponent3DType = (kind: string) =>
+  COMPONENT_3D_TYPE_MAP[kind] ?? kind;
+
+function buildLegacyThumbnailElement(kind: ThumbnailKind): any {
+  if (kind === "junction") {
+    return { kind: "junction" };
+  }
+
+  if (kind === "ground") {
+    return {
+      id: "thumb-ground",
+      kind: "ground",
+      orientation: "horizontal",
+      position: { x: 0, z: 0 },
+    };
+  }
+
+  if (kind === "opamp" || kind === "transformer") {
+    // Minimal multi-terminal elements: terminals are enough for the 3D builders.
+    return {
+      id: `thumb-${kind}`,
+      kind,
+      terminals:
+        kind === "opamp"
+          ? [
+              { x: -1.0, z: -0.5 }, // in-
+              { x: -1.0, z: 0.5 }, // in+
+              { x: 1.2, z: 0.0 }, // out
+            ]
+          : [
+              { x: -1.0, z: -0.6 },
+              { x: -1.0, z: 0.6 },
+              { x: 1.0, z: -0.6 },
+              { x: 1.0, z: 0.6 },
+            ],
+      label: "",
+    };
+  }
+
+  if (
+    kind === "bjt" ||
+    kind === "bjt-npn" ||
+    kind === "bjt-pnp" ||
+    kind === "darlington" ||
+    kind === "mosfet" ||
+    kind === "potentiometer"
+  ) {
+    return {
+      id: `thumb-${kind}`,
+      kind,
+      collector: { x: 1.0, z: 0.6 },
+      base: { x: -1.0, z: 0.0 },
+      emitter: { x: 1.0, z: -0.6 },
+      transistorType: kind === "bjt-pnp" ? "pnp" : "npn",
+      label: "",
+    };
+  }
+
+  // Default: two terminal component.
+  return {
+    id: `thumb-${kind}`,
+    kind,
+    orientation: "horizontal",
+    start: { x: -1.2, z: 0 },
+    end: { x: 1.2, z: 0 },
+    label: "",
+  };
 }
 
 function buildComponentLibraryGroup(kind: ThumbnailKind): THREE.Object3D | null {
@@ -252,25 +279,47 @@ function renderComponentThumbnail(
   // Creating too many WebGL contexts (one per thumbnail) will fail on many devices.
   // Reuse a single renderer/canvas for all thumbnails.
   if (!sharedRenderer) {
-    const canvas = document.createElement("canvas");
-    const renderer = new THREE.WebGLRenderer({
-      canvas,
-      alpha: true,
-      antialias: true,
-      preserveDrawingBuffer: true,
-    });
-    // Render thumbnails at a higher DPR for sharpness, while keeping the displayed
-    // CSS size small in the component library.
-    const dpr = Math.min((window.devicePixelRatio || 1), 2);
-    renderer.setPixelRatio(dpr);
-    renderer.setSize(THUMBNAIL_SIZE_PX, THUMBNAIL_SIZE_PX, false);
-    // Improve clarity on high-DPI screens, but avoid extreme memory usage.
-    const dpr =
-      typeof window !== "undefined" && typeof window.devicePixelRatio === "number"
-        ? Math.min(2, Math.max(1, window.devicePixelRatio))
-        : 1;
-    renderer.setPixelRatio(dpr);
-    sharedRenderer = { canvas, renderer };
+    if (sharedRendererFailed) {
+      return "";
+    }
+    try {
+      const canvas = document.createElement("canvas");
+      canvas.width = thumbnailSize;
+      canvas.height = thumbnailSize;
+
+      // Enable antialiasing for smoother edges (even on lower-tier devices)
+      const useAntialias = true; // Always enable for visual quality
+
+      const renderer = new THREE.WebGLRenderer({
+        canvas,
+        alpha: true,
+        antialias: useAntialias,
+        preserveDrawingBuffer: true,
+        powerPreference: isMobile() ? 'low-power' : 'default',
+      });
+      const threeCompat = THREE as unknown as Record<string, unknown>;
+      const srgbColorSpace = threeCompat["SRGBColorSpace"];
+      const legacySrgbEncoding = threeCompat["sRGBEncoding"];
+      if ("outputColorSpace" in renderer && srgbColorSpace) {
+        (renderer as any).outputColorSpace = srgbColorSpace;
+      } else if ("outputEncoding" in renderer && legacySrgbEncoding) {
+        (renderer as any).outputEncoding = legacySrgbEncoding;
+      }
+      if ("toneMapping" in renderer && (THREE as any).ACESFilmicToneMapping) {
+        (renderer as any).toneMapping = (THREE as any).ACESFilmicToneMapping;
+        (renderer as any).toneMappingExposure = 1.15;
+      }
+      if ("physicallyCorrectLights" in renderer) {
+        (renderer as any).physicallyCorrectLights = true;
+      }
+      renderer.setSize(thumbnailSize, thumbnailSize, false);
+      renderer.setPixelRatio(1);
+      sharedRenderer = { canvas, renderer };
+    } catch (err) {
+      console.warn("[CT3D] 3D thumbnail renderer unavailable – falling back to SVG icons", err);
+      sharedRendererFailed = true;
+      return "";
+    }
   }
 
   const { canvas, renderer } = sharedRenderer;
@@ -283,14 +332,11 @@ function renderComponentThumbnail(
   }
 
   const scene = new THREE.Scene();
-  const ambient = new THREE.AmbientLight(0xffffff, 0.72);
+  const ambient = new THREE.AmbientLight(0xffffff, 1.0);
   scene.add(ambient);
-  const key = new THREE.DirectionalLight(0xffffff, 0.95);
-  key.position.set(4, 5, 4);
+  const key = new THREE.DirectionalLight(0xffffff, 1.25);
+  key.position.set(3, 4, 3);
   scene.add(key);
-  const fill = new THREE.DirectionalLight(0x88ccff, 0.35);
-  fill.position.set(-4, 2.5, -3);
-  scene.add(fill);
 
   // Always add fill light for better dimensional appearance
   const fill = new THREE.DirectionalLight(0x88ccff, 0.5);
@@ -300,120 +346,38 @@ function renderComponentThumbnail(
   let root: THREE.Object3D | null = null;
   let pivot: THREE.Group | null = null;
   try {
-    const mappedType = mapBuilderTypeToComponent3DType(kind);
-    const def = mappedType ? getComponent3D(mappedType) : undefined;
+    const libraryGroup = buildComponentLibraryGroup(kind);
 
-    root = new THREE.Group();
-
-    if (def) {
-      const segments = 24;
-
-      def.geometry.shapes.forEach((shapeDef) => {
-        let geometry: THREE.BufferGeometry | null = null;
-        switch (shapeDef.type) {
-          case "box":
-            geometry = new THREE.BoxGeometry(
-              shapeDef.scale?.[0] ?? 1,
-              shapeDef.scale?.[1] ?? 1,
-              shapeDef.scale?.[2] ?? 1,
-            );
-            break;
-          case "cylinder":
-            geometry = new THREE.CylinderGeometry(
-              shapeDef.scale?.[0] ?? 0.5,
-              shapeDef.scale?.[0] ?? 0.5,
-              shapeDef.scale?.[1] ?? 1,
-              segments,
-            );
-            break;
-          case "sphere":
-            geometry = new THREE.SphereGeometry(shapeDef.scale?.[0] ?? 0.5, segments, segments);
-            break;
-          case "cone":
-            geometry = new THREE.ConeGeometry(
-              shapeDef.scale?.[0] ?? 0.5,
-              shapeDef.scale?.[1] ?? 1,
-              segments,
-            );
-            break;
-          case "torus":
-            geometry = new THREE.TorusGeometry(
-              shapeDef.scale?.[0] ?? 0.5,
-              shapeDef.scale?.[1] ?? 0.2,
-              Math.max(8, Math.floor(segments / 2)),
-              segments * 3,
-            );
-            break;
-          default:
-            geometry = null;
-        }
-
-        if (!geometry) return;
-
-        const material = new THREE.MeshStandardMaterial({
-          color: shapeDef.color ?? "#888888",
-          metalness: 0.3,
-          roughness: 0.45,
-          transparent: shapeDef.opacity !== undefined,
-          opacity: shapeDef.opacity ?? 1.0,
-        });
-
-        const mesh = new THREE.Mesh(geometry, material);
-        mesh.position.set(shapeDef.position[0], shapeDef.position[1], shapeDef.position[2]);
-        if (shapeDef.rotation) {
-          mesh.rotation.set(shapeDef.rotation[0], shapeDef.rotation[1], shapeDef.rotation[2]);
-        }
-        root.add(mesh);
-      });
-
-      def.geometry.leads.forEach((leadDef) => {
-        const geometry = new THREE.CylinderGeometry(
-          leadDef.radius,
-          leadDef.radius,
-          leadDef.length,
-          Math.max(8, Math.floor(segments / 2)),
-        );
-        const material = new THREE.MeshStandardMaterial({
-          color: leadDef.color ?? "#C0C0C0",
-          metalness: 0.85,
-          roughness: 0.25,
-        });
-        const mesh = new THREE.Mesh(geometry, material);
-        mesh.position.set(leadDef.position[0], leadDef.position[1], leadDef.position[2]);
-        root.add(mesh);
-      });
+    if (libraryGroup) {
+      root = libraryGroup;
+    } else if (kind === "junction") {
+      root = new THREE.Group();
+      root.add(buildNodeMesh(THREE, { x: 0, z: 0 }, { preview: true }));
     } else {
-      // Fallback: generic cube if we don't have a 3D definition (e.g., ground/junction).
-      const geometry = new THREE.BoxGeometry(0.9, 0.9, 0.9);
-      const material = new THREE.MeshStandardMaterial({
-        color: "#3b82f6",
-        metalness: 0.2,
-        roughness: 0.5,
-      });
-      root.add(new THREE.Mesh(geometry, material));
+      const element = buildLegacyThumbnailElement(kind);
+      const built = buildElement(THREE, element, { preview: true });
+      root = built.group as THREE.Object3D;
     }
 
-    // Fit camera to content (tight framing so the model looks big in the same container).
-    scene.add(root);
+    // Fit camera to content.
     const box = new THREE.Box3().setFromObject(root);
+    const size = box.getSize(new THREE.Vector3());
     const center = box.getCenter(new THREE.Vector3());
-    const sphere = box.getBoundingSphere(new THREE.Sphere());
-    const radius = Math.max(sphere.radius, 0.001);
+    const maxDim = Math.max(size.x, size.y, size.z, 0.001);
 
-    const camera = new THREE.PerspectiveCamera(32, 1, 0.01, 200);
-    const halfFovRad = THREE.MathUtils.degToRad(camera.fov * 0.5);
-    // Smaller = more zoom (fills more of the thumbnail).
-    const padding = 1.12;
-    const distance = (radius / Math.sin(halfFovRad)) * padding;
+    pivot = new THREE.Group();
+    pivot.name = `thumb-pivot-${kind}`;
+    root.position.sub(center);
+    pivot.add(root);
+    pivot.rotation.y = rotationY;
+    scene.add(pivot);
 
-    const viewDir = new THREE.Vector3(1, 0.85, 1).normalize();
-    camera.position.copy(center).addScaledVector(viewDir, distance);
-    camera.near = Math.max(0.01, distance / 100);
-    camera.far = distance * 100;
-    camera.lookAt(center);
+    const camera = new THREE.PerspectiveCamera(32, 1, 0.01, 100);
+    const distance = maxDim * 2.35;
+    camera.position.set(distance, distance * 0.9, distance);
+    camera.lookAt(0, 0, 0);
     camera.updateProjectionMatrix();
 
-    renderer.clear();
     renderer.render(scene, camera);
     return canvas.toDataURL("image/png");
   } finally {

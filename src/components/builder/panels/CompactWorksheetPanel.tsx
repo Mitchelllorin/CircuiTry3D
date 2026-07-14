@@ -4,7 +4,9 @@ import type { WireMetricKey } from "../../../utils/electrical";
 import { formatMetricValue, formatNumber } from "../../../utils/electrical";
 import { trySolvePracticeProblem } from "../../../utils/practiceSolver";
 import { METRIC_ORDER, METRIC_PRECISION, type WorksheetEntry, type WorksheetEntryStatus } from "../../../components/practice/WireTable";
-import PracticeReferenceCards from "../../../components/practice/PracticeReferenceCards";
+import CircuitDiagram from "../../../components/practice/CircuitDiagram";
+import { Component3DViewer } from "../../arena/Component3DViewer";
+import WordMark from "../../WordMark";
 import "../../../styles/compact-worksheet.css";
 
 type CompactWorksheetPanelProps = {
@@ -442,8 +444,6 @@ export function CompactWorksheetPanel({
                             status: "blank",
                             given: false,
                           };
-                          const placeholder =
-                            row.id === problem.source.id && key === "voltage" ? "" : "?";
                           return (
                             <td key={row.id} data-status={entry.status} className={row.id === "totals" ? "totals-cell" : ""}>
                               <input
@@ -451,7 +451,7 @@ export function CompactWorksheetPanel({
                                 value={entry.raw}
                                 onChange={(e) => handleWorksheetChange(row.id, key, e.target.value)}
                                 disabled={entry.given}
-                                placeholder={placeholder}
+                                placeholder="?"
                                 className={`worksheet-input ${entry.status}`}
                               />
                             </td>
@@ -607,14 +607,27 @@ export function CompactWorksheetPanel({
             )}
           </div>
 
-          <div className="compact-worksheet-reference-section">
-            <h4 className="compact-worksheet-reference-title">Reference Materials</h4>
-            <PracticeReferenceCards />
-          </div>
+          {/* Dismissable hint */}
+          {!tipDismissed && (
+            <div className="compact-worksheet-hint">
+              <button
+                type="button"
+                className="hint-dismiss-btn"
+                onClick={() => setTipDismissed(true)}
+                aria-label="Dismiss tip"
+              >
+                ×
+              </button>
+              <p>
+                <strong>Tip:</strong> Zoom and pan the 3D circuit above to inspect components while solving.
+                Green cells are correct. Complete all cells to unlock editing.
+              </p>
+            </div>
+          )}
+            </>
+          )}
         </div>
       )}
-    </div>
-  )}
     </div>
   );
 }

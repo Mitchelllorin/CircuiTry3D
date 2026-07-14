@@ -41,16 +41,16 @@ export default defineConfig(({ mode }) => ({
           'three-vendor': ['three']
         }
       }
-    },
-    server: {
-      port: 3000,
-      open: true,
-      // Bind to 0.0.0.0 so the dev server is reachable from phones/tablets on
-      // the same LAN (e.g. Android testing via the QR code at http://<lan-ip>:3000).
-      host: true
-    },
-    preview: {
-      port: 4173
     }
-  };
-});
+  },
+  server: {
+    port: 3000,
+    open: true,
+    // Bind to 0.0.0.0 so the dev server is reachable from phones/tablets on
+    // the same LAN (e.g. Android testing via the QR code at http://<lan-ip>:3000).
+    host: true
+  },
+  preview: {
+    port: 4173
+  }
+}));

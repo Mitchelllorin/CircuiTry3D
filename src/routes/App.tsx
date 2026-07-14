@@ -1,40 +1,117 @@
-import { Routes, Route, Link } from "react-router-dom";
+import { lazy, Suspense, useEffect, useLayoutEffect, useRef } from "react";
+import { Routes, Route, Link, Outlet, useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import Home from "../pages/Home";
-import Builder from "../pages/Builder";
-import Pricing from "../pages/Pricing";
-import Community from "../pages/Community";
-import Account from "../pages/Account";
-import Classroom from "../pages/Classroom";
-import StudentView from "../pages/StudentView";
-import UnifiedNav from "../components/UnifiedNav";
 import BrandSignature from "../components/BrandSignature";
 import GlobalModeBar from "../components/GlobalModeBar";
-import BuildStamp from "../components/BuildStamp";
+import TipsTicker from "../components/TipsTicker";
+import ErrorBoundary from "../components/ErrorBoundary";
+import DemoBanner from "../components/DemoBanner";
 import { WorkspaceModeProvider } from "../context/WorkspaceModeContext";
-import { UpgradePromptModal } from "../components/builder/modals/UpgradePromptModal";
+import { ThemeProvider } from "../context/ThemeContext";
+import { AppSettingsProvider } from "../context/AppSettingsContext";
+import { IS_DEMO_MODE } from "../utils/demoMode";
 import "../styles/layout.css";
-import "../styles/demo-mode.css";
 
 // Lazy-load heavy pages so they are code-split into separate chunks.
 // This drastically reduces the initial JS bundle size — the Builder page
 // alone pulls in Three.js, the schematic engine, wire routing, etc.
 const Builder = lazy(() => import("../pages/Builder"));
+const Practice = lazy(() => import("../pages/Practice"));
 const Pricing = lazy(() => import("../pages/Pricing"));
 const Community = lazy(() => import("../pages/Community"));
 const Account = lazy(() => import("../pages/Account"));
 const Classroom = lazy(() => import("../pages/Classroom"));
 const Arcade = lazy(() => import("../pages/Arcade"));
+const PrivacyPolicy = lazy(() => import("../pages/PrivacyPolicy"));
+const DataSafety = lazy(() => import("../pages/DataSafety"));
+const AppAccess = lazy(() => import("../pages/AppAccess"));
+const PlayStoreCompliance = lazy(() => import("../pages/PlayStoreCompliance"));
+const DeleteAccount = lazy(() => import("../pages/DeleteAccount"));
+const Textbook = lazy(() => import("../pages/Textbook"));
+const Screenshots = lazy(() => import("../pages/Screenshots"));
+const Partnerships = lazy(() => import("../pages/Partnerships"));
+const Promo = lazy(() => import("../pages/Promo"));
+const Promo2 = lazy(() => import("../pages/Promo2"));
+const Promo3 = lazy(() => import("../pages/Promo3"));
+const Promo4 = lazy(() => import("../pages/Promo4"));
+const Promo5 = lazy(() => import("../pages/Promo5"));
+const Promo7 = lazy(() => import("../pages/Promo7"));
+const Promo9 = lazy(() => import("../pages/Promo9"));
+const Upgrade = lazy(() => import("../pages/Upgrade"));
+const ContactSales = lazy(() => import("../pages/ContactSales"));
+const Gallery = lazy(() => import("../pages/Gallery"));
+const EducatorPilot = lazy(() => import("../pages/EducatorPilot"));
+const OwnerAccess = lazy(() => import("../pages/OwnerAccess"));
+const TermsOfService = lazy(() => import("../pages/TermsOfService"));
+const Settings = lazy(() => import("../pages/Settings"));
 
 function PageFallback() {
   const { t } = useTranslation();
   return (
-    <Routes>
-      <Route path="/" element={<Home />} />
-      <Route path="/app" element={<Builder />} />
-      <Route path="/arena" element={<Arena />} />
-      <Route path="/wire-demo" element={<WireDemo />} />
-      <Route path="*" element={<NotFound />} />
-    </Routes>
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "40vh", color: "rgba(200,220,255,0.7)" }}>
+      <span>{t("common.loading")}</span>
+    </div>
+  );
+}
+
+export default function App() {
+  // Dispatch ctapp:ready after the first render so the initial-loader in
+  // index.html is removed precisely when React has painted its first frame.
+  // The event is also dispatched earlier in main.tsx (when the module script
+  // runs) as an additional safety net.
+  useEffect(() => {
+    document.dispatchEvent(new CustomEvent('ctapp:ready'));
+  }, []);
+
+  return (
+    <ThemeProvider>
+    <AppSettingsProvider>
+    <WorkspaceModeProvider>
+      <ErrorBoundary>
+      {/* Fixed demo-version banner – rendered above the entire app shell */}
+      <DemoBanner />
+      <Suspense fallback={<PageFallback />}>
+        <Routes>
+          <Route element={<AppLayout />}>
+            <Route path="/" element={<Home />} />
+            <Route path="/app" element={<Builder />} />
+            <Route path="/practice" element={<Practice />} />
+            <Route path="/pricing" element={<Pricing />} />
+            <Route path="/community" element={<Community />} />
+            <Route path="/account" element={<Account />} />
+            <Route path="/classroom" element={<Classroom />} />
+            <Route path="/arcade" element={<Arcade />} />
+            <Route path="/privacy" element={<PrivacyPolicy />} />
+            <Route path="/data-safety" element={<DataSafety />} />
+            <Route path="/app-access" element={<AppAccess />} />
+            <Route path="/play-store" element={<PlayStoreCompliance />} />
+            <Route path="/delete-account" element={<DeleteAccount />} />
+            <Route path="/textbook" element={<Textbook />} />
+            <Route path="/screenshots" element={<Screenshots />} />
+            <Route path="/partnerships" element={<Partnerships />} />
+            <Route path="/promo" element={<Promo />} />
+            <Route path="/promo2" element={<Promo2 />} />
+            <Route path="/promo3" element={<Promo3 />} />
+            <Route path="/promo4" element={<Promo4 />} />
+            <Route path="/promo5" element={<Promo5 />} />
+            <Route path="/promo7" element={<Promo7 />} />
+            <Route path="/promo9" element={<Promo9 />} />
+            <Route path="/upgrade" element={<Upgrade />} />
+            <Route path="/contact-sales" element={<ContactSales />} />
+            <Route path="/gallery" element={<Gallery />} />
+            <Route path="/educator-pilot" element={<EducatorPilot />} />
+            <Route path="/terms" element={<TermsOfService />} />
+            <Route path="/settings" element={<Settings />} />
+          </Route>
+          <Route path="/owner" element={<OwnerAccess />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </Suspense>
+      </ErrorBoundary>
+    </WorkspaceModeProvider>
+    </AppSettingsProvider>
+    </ThemeProvider>
   );
 }
 
@@ -57,21 +134,29 @@ function AppLayout() {
   const { t } = useTranslation();
   const isLanding = location.pathname === "/";
   const isWorkspace = location.pathname === "/app";
-  // arena.html is a full-screen self-contained 3D app (like landing.html).
-  // Hide the React shell chrome (GlobalModeBar, TipsTicker, footer) so
-  // arena.html's own navigation is the only nav the user sees.
-  const isArena = location.pathname === "/arena";
+  const isPromo = location.pathname === "/promo";
+  const isPromo2 = location.pathname === "/promo2";
+  const isPromo3 = location.pathname === "/promo3";
+  const isPromo4 = location.pathname === "/promo4";
+  const isPromo5 = location.pathname === "/promo5";
+  const isPromo7 = location.pathname === "/promo7";
+  const isPromo9 = location.pathname === "/promo9";
+  const isAnyPromo = isPromo || isPromo2 || isPromo3 || isPromo4 || isPromo5 || isPromo7 || isPromo9;
   const shellRef = useRef<HTMLDivElement>(null);
 
   const shellClass = [
     "app-shell",
     isLanding && "is-landing",
     isWorkspace && "is-workspace",
-    isArena && "is-arena",
+    isPromo && "is-promo",
+    isPromo2 && "is-promo2",
+    isPromo3 && "is-promo3",
+    isPromo4 && "is-promo4",
+    isPromo5 && "is-promo5",
+    isPromo7 && "is-promo7",
+    isPromo9 && "is-promo9",
   ].filter(Boolean).join(" ");
-  // Arena uses its own full-viewport CSS scoped to `.app-shell.is-arena` in layout.css.
-  // Only landing.html needs the `is-landing` content class.
-  const contentClass = isLanding ? "app-content is-landing" : "app-content";
+  const contentClass = isLanding || isAnyPromo ? "app-content is-landing" : "app-content";
 
   useLayoutEffect(() => {
     const shell = shellRef.current;
@@ -106,13 +191,33 @@ function AppLayout() {
       ref={shellRef}
       style={IS_DEMO_MODE ? { paddingTop: "var(--demo-banner-height, 38px)" } : undefined}
     >
-      {/* Global Mode Bar - shown on all pages except landing and the arena (which has its own nav) */}
-      {!isLanding && !isArena && <GlobalModeBar />}
+      {/* Global Mode Bar - shown on all pages except landing and promo */}
+      {!isLanding && !isAnyPromo && <GlobalModeBar />}
       <main className={contentClass}>
         <Outlet />
       </main>
-      {/* Global upgrade prompt modal */}
-      <UpgradePromptModal />
+      {/* Tips & facts ticker - workspace only */}
+      {isWorkspace && <TipsTicker />}
+      {/* Site footer with legal links - shown on all pages except landing, workspace & promo */}
+      {!isLanding && !isWorkspace && !isAnyPromo && (
+        <footer className="app-footer">
+          <Link to="/privacy" className="app-footer-link">{t("footer.privacyPolicy")}</Link>
+          <span className="app-footer-sep" aria-hidden="true">·</span>
+          <Link to="/data-safety" className="app-footer-link">{t("footer.dataSafety")}</Link>
+          <span className="app-footer-sep" aria-hidden="true">·</span>
+          <Link to="/settings" className="app-footer-link">Settings</Link>
+          <span className="app-footer-sep" aria-hidden="true">·</span>
+          <Link to="/app-access" className="app-footer-link">{t("footer.getTheApp")}</Link>
+          <span className="app-footer-sep" aria-hidden="true">·</span>
+          <Link to="/play-store" className="app-footer-link">{t("footer.playStoreCompliance")}</Link>
+          <span className="app-footer-sep" aria-hidden="true">·</span>
+          <Link to="/delete-account" className="app-footer-link">{t("footer.deleteAccount")}</Link>
+          <span className="app-footer-sep" aria-hidden="true">·</span>
+          <Link to="/partnerships" className="app-footer-link">{t("footer.partnerships")}</Link>
+          <span className="app-footer-sep" aria-hidden="true">·</span>
+          <Link to="/terms" className="app-footer-link">{t("footer.terms")}</Link>
+        </footer>
+      )}
     </div>
   );
 }
