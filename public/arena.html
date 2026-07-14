@@ -96,7 +96,7 @@
       --safe-left: env(safe-area-inset-left, 0px);
       --safe-right: env(safe-area-inset-right, 0px);
       --safe-bottom: env(safe-area-inset-bottom, 0px);
-      --panel-bg: rgba(0, 0, 0, 0.68);
+      --panel-bg: rgba(4, 8, 20, 0.82);
       --panel-border: rgba(136, 204, 255, 0.28);
       --panel-border-strong: rgba(0, 255, 136, 0.45);
       --metric-bg: rgba(12, 22, 42, 0.8);
@@ -124,25 +124,24 @@
     body {
       margin: 0;
       height: 100%;
-      background: radial-gradient(ellipse at 50% -5%, #1a1040 0%, #0a0e27 40%, #030615 80%);
+      background: radial-gradient(ellipse at top, #1e1b4b 0%, #020617 55%, #010413 100%);
       color: var(--text-strong);
-      font-family: "DM Sans", "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+      font-family: "Inter", "DM Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
       padding: var(--safe-top) var(--safe-right) var(--safe-bottom) var(--safe-left);
-      box-sizing: border-box;
       overflow: hidden;
-      overscroll-behavior: none; /* prevent iOS bounce-scroll visual glitches */
     }
 
     body::before {
       content: "";
       position: fixed;
       inset: 0;
-      background: radial-gradient(circle at 50% -10%, rgba(14, 165, 233, 0.28), transparent 55%),
+      background:
+        radial-gradient(circle at 50% -10%, rgba(14, 165, 233, 0.28), transparent 55%),
         radial-gradient(circle at 80% 20%, rgba(168, 85, 247, 0.25), transparent 52%),
-        radial-gradient(circle at 20% 80%, rgba(57, 255, 183, 0.08), transparent 60%);
-      z-index: 0;
+        radial-gradient(circle at 20% 80%, rgba(244, 63, 94, 0.2), transparent 60%);
       pointer-events: none;
-      opacity: 1.0;
+      opacity: 0.9;
+      z-index: 0;
     }
 
     #arena {
@@ -152,33 +151,13 @@
       height: 100%;
       display: block;
       z-index: 1;
-      will-change: transform; /* promote to own GPU compositing layer */
-    }
-
-    /* ── Embedded-in-React-shell mode ────────────────────────────────── */
-    /* The is-embedded class is applied immediately by the <head> script   */
-    /* so there is no flash of the native header over the GlobalModeBar.   */
-    html.is-embedded .arena-header {
-      display: none !important;
-    }
-    /* Pull the HUD and panel up to sit just below the React GlobalModeBar.
-       --parent-clearance is set via arena:init once the shell measures its bar.
-       Default 70px covers the typical GlobalModeBar height (~44px) + 12px top offset.
-       68px ≈ HUD button height (44px) + 16px gap below HUD before panel top.
-       98px = 68px (HUD block) + 30px bottom padding for the panel max-height calc. */
-    html.is-embedded .hud {
-      top: calc(var(--parent-clearance, 70px) + var(--safe-top));
-    }
-    html.is-embedded .panel {
-      top: calc(var(--parent-clearance, 70px) + 68px + var(--safe-top));
-      max-height: calc(100vh - var(--parent-clearance, 70px) - 98px - var(--safe-top) - var(--safe-bottom));
     }
 
     .hud {
       position: fixed;
-      top: calc(100px + var(--safe-top));
-      left: calc(16px + var(--safe-left));
-      right: calc(16px + var(--safe-right));
+      top: calc(12px + var(--safe-top));
+      left: calc(12px + var(--safe-left));
+      right: calc(12px + var(--safe-right));
       display: flex;
       gap: 10px;
       flex-wrap: wrap;
@@ -187,45 +166,31 @@
     }
 
     .btn {
-      padding: 12px 18px;
-      border-radius: 14px;
-      border: 1px solid rgba(94, 234, 212, 0.45);
-      background: rgba(15, 23, 42, 0.9);
-      color: #e5e7eb;
-      font-weight: 700;
+      padding: 11px 18px;
+      border-radius: 12px;
+      border: 1px solid rgba(94, 234, 212, 0.35);
+      background: rgba(10, 15, 32, 0.92);
+      color: var(--text-strong);
+      font-weight: 600;
       cursor: pointer;
       touch-action: manipulation;
       letter-spacing: 0.01em;
-      font-size: 13px;
-      transition: transform 0.2s ease, box-shadow 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+      font-size: 14px;
+      transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
       box-shadow: 0 0 0 rgba(34, 211, 238, 0);
     }
 
     .btn:hover {
       transform: translateY(-2px);
-      box-shadow: 0 10px 25px rgba(34, 211, 238, 0.25);
+      border-color: var(--panel-border-strong);
+      box-shadow: 0 12px 28px rgba(34, 211, 238, 0.25);
     }
 
     .btn:disabled {
       opacity: 0.6;
       cursor: not-allowed;
       transform: none;
-    }
-
-    #btn-run {
-      border-color: rgba(57, 255, 183, 0.65);
-      color: #39ffb7;
-      font-size: 13px;
-      font-weight: 800;
-      letter-spacing: 0.04em;
-      box-shadow: 0 0 16px rgba(57, 255, 183, 0.18), inset 0 1px 0 rgba(255,255,255,0.06);
-    }
-    #btn-run:hover {
-      box-shadow: 0 0 28px rgba(57, 255, 183, 0.38), 0 8px 24px rgba(0,0,0,0.4);
-      background: rgba(4, 40, 30, 0.95);
-    }
-    #btn-run:active {
-      transform: scale(0.97) translateY(0);
+      box-shadow: none;
     }
 
     .file-btn {
@@ -242,33 +207,22 @@
 
     .panel {
       position: fixed;
-      top: calc(164px + var(--safe-top));
-      left: calc(16px + var(--safe-left));
+      top: calc(72px + var(--safe-top));
+      left: calc(12px + var(--safe-left));
       width: 340px;
-      max-width: calc(100vw - 32px - var(--safe-left) - var(--safe-right));
-      max-height: calc(100vh - 194px - var(--safe-top) - var(--safe-bottom));
-      background: rgba(10, 12, 28, 0.82);
-      backdrop-filter: blur(22px) saturate(180%);
-      -webkit-backdrop-filter: blur(22px) saturate(180%);
+      max-width: calc(100vw - 24px - var(--safe-left) - var(--safe-right));
+      max-height: calc(100vh - 96px - var(--safe-top) - var(--safe-bottom));
+      background: var(--panel-bg);
+      backdrop-filter: blur(16px);
       border: 1px solid var(--panel-border);
-      border-radius: var(--panel-radius);
+      border-radius: 16px;
       padding: 16px;
       display: flex;
       flex-direction: column;
-      gap: 14px;
+      gap: 16px;
       overflow: hidden;
-      z-index: 4;
-      box-shadow: var(--shadow-panel), 0 0 60px rgba(0,180,255,0.04) inset;
-    }
-
-    /* Reduce heavy blur on mobile/touch devices — prevents GPU frame-rate drops
-       and compositing glitches on Android WebView and iOS WKWebView. */
-    @media (pointer: coarse) {
-      .panel {
-        backdrop-filter: blur(8px) saturate(140%);
-        -webkit-backdrop-filter: blur(8px) saturate(140%);
-        background: rgba(10, 12, 28, 0.92);
-      }
+      z-index: 3;
+      box-shadow: 0 25px 60px -18px rgba(59, 130, 246, 0.45);
     }
 
     .panel-scroll {
@@ -302,25 +256,21 @@
       font-weight: 800;
       letter-spacing: 0.12em;
       text-transform: uppercase;
-      color: rgba(200, 220, 255, 0.9);
-      margin-bottom: 8px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
+      color: rgba(148, 163, 184, 0.82);
     }
-    .section-heading::before {
-      content: "";
-      display: inline-block;
-      width: 3px;
-      height: 12px;
-      border-radius: 2px;
-      background: linear-gradient(180deg, #38bdf8, #39ffb7);
-      flex-shrink: 0;
+
+    .import-status {
+      font-size: 12px;
+      color: rgba(148, 163, 184, 0.85);
+      padding: 8px 10px;
+      border-radius: 10px;
+      border: 1px solid rgba(136, 204, 255, 0.18);
+      background: rgba(12, 22, 42, 0.65);
     }
 
     .row {
       display: flex;
-      gap: 8px;
+      gap: 10px;
       align-items: center;
     }
 
@@ -333,28 +283,26 @@
     .row input,
     .row select {
       flex: 1;
-      padding: 8px;
+      padding: 10px 12px;
       border-radius: 10px;
-      border: 1px solid rgba(51, 65, 85, 0.9);
+      border: 1px solid rgba(71, 85, 105, 0.6);
       background: rgba(8, 15, 28, 0.92);
       color: var(--text-strong);
       font-size: 13px;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
     }
 
-    .import-status {
-      font-size: 12px;
-      color: rgba(148, 163, 184, 0.85);
-      padding: 8px 10px;
-      border-radius: 10px;
-      border: 1px solid rgba(136, 204, 255, 0.18);
-      background: rgba(12, 22, 42, 0.65);
+    .row input:focus,
+    .row select:focus {
+      outline: none;
+      border-color: rgba(59, 130, 246, 0.9);
+      box-shadow: inset 0 0 0 1px rgba(59, 130, 246, 0.5);
     }
 
-    .panel-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 8px;
+    .metric-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 10px;
     }
 
     .panel-header .section-heading {
@@ -565,22 +513,19 @@
 
     .metric-empty {
       font-size: 12px;
-      color: rgba(148, 163, 184, 0.6);
-      padding: 16px 6px;
-      text-align: center;
-      font-style: italic;
-      letter-spacing: 0.02em;
+      color: rgba(148, 163, 184, 0.7);
+      padding: 8px 6px;
     }
 
     .stat {
       font-size: 12px;
-      color: rgba(129, 140, 248, 0.95);
-      background: rgba(30, 64, 175, 0.25);
+      color: rgba(148, 163, 184, 0.92);
+      background: rgba(12, 22, 42, 0.55);
       padding: 12px;
-      border-radius: 12px;
-      border: 1px solid rgba(56, 189, 248, 0.25);
-      letter-spacing: 0.02em;
-      min-height: 44px;
+      border-radius: 10px;
+      border: 1px solid rgba(136, 204, 255, 0.18);
+      min-height: 40px;
+      letter-spacing: 0.03em;
     }
 
     canvas {
@@ -595,500 +540,11 @@
       display: none;
     }
 
-    .failure-analysis {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
-    .failure-ok {
-      font-size: 12px;
-      color: rgba(52, 211, 153, 0.9);
-      padding: 6px 8px;
-      border-radius: 8px;
-      border: 1px solid rgba(52, 211, 153, 0.25);
-      background: rgba(6, 78, 59, 0.25);
-    }
-
-    .failure-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      padding: 4px 12px;
-      border-radius: 999px;
-      font-size: 10px;
-      font-weight: 800;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
-      margin-bottom: 6px;
-    }
-
-    .failure-stressed {
-      background: rgba(250, 204, 21, 0.2);
-      border: 1px solid rgba(250, 204, 21, 0.5);
-      color: #fde68a;
-    }
-
-    .failure-warning {
-      background: rgba(251, 146, 60, 0.2);
-      border: 1px solid rgba(251, 146, 60, 0.5);
-      color: #fed7aa;
-    }
-
-    .failure-critical {
-      background: rgba(239, 68, 68, 0.22);
-      border: 1px solid rgba(239, 68, 68, 0.55);
-      color: #fca5a5;
-      animation: pulse-critical 2s ease-in-out infinite;
-    }
-
-    .failure-failed {
-      background: rgba(220, 38, 38, 0.38);
-      border: 1px solid rgba(220, 38, 38, 0.75);
-      color: #fef2f2;
-      animation: pulse-failed 1.4s ease-in-out infinite;
-    }
-
-    @keyframes pulse-critical {
-      0%, 100% { box-shadow: 0 0 6px rgba(239, 68, 68, 0.3); }
-      50%       { box-shadow: 0 0 18px rgba(239, 68, 68, 0.7), 0 0 36px rgba(239, 68, 68, 0.25); }
-    }
-
-    @keyframes pulse-failed {
-      0%, 100% { box-shadow: 0 0 8px rgba(220, 38, 38, 0.45), 0 0 20px rgba(220, 38, 38, 0.2); }
-      50%       { box-shadow: 0 0 22px rgba(220, 38, 38, 0.9), 0 0 44px rgba(220, 38, 38, 0.4), 0 0 70px rgba(220, 38, 38, 0.12); }
-    }
-
-    .failure-card {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      animation: failure-card-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-    }
-
-    .failure-card-header {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 2px;
-    }
-
-    .failure-risk-meter {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 10px;
-      border-radius: 10px;
-      background: rgba(5, 8, 20, 0.6);
-      border: 1px solid rgba(136, 204, 255, 0.10);
-      margin-bottom: 4px;
-    }
-
-    .failure-risk-label {
-      font-size: 10px;
-      font-weight: 700;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: rgba(148, 163, 184, 0.7);
-      white-space: nowrap;
-    }
-
-    .failure-risk-score {
-      font-size: 20px;
-      font-weight: 900;
-      letter-spacing: -0.02em;
-      font-variant-numeric: tabular-nums;
-      line-height: 1;
-      min-width: 38px;
-    }
-    .failure-risk-score.risk-safe     { color: #34d399; }
-    .failure-risk-score.risk-stressed { color: #fde68a; }
-    .failure-risk-score.risk-warning  { color: #fb923c; }
-    .failure-risk-score.risk-critical { color: #f87171; }
-    .failure-risk-score.risk-failed   { color: #fef2f2; text-shadow: 0 0 12px rgba(239,68,68,0.8); }
-
-    .failure-risk-arc {
-      flex: 1;
-      height: 6px;
-      border-radius: 999px;
-      background: rgba(255,255,255,0.06);
-      overflow: hidden;
-    }
-
-    .failure-risk-arc-fill {
-      height: 100%;
-      border-radius: 999px;
-      transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-    .failure-risk-arc-fill.risk-safe     { background: linear-gradient(90deg, #059669, #34d399); }
-    .failure-risk-arc-fill.risk-stressed { background: linear-gradient(90deg, #b45309, #fbbf24); }
-    .failure-risk-arc-fill.risk-warning  { background: linear-gradient(90deg, #c2410c, #fb923c); box-shadow: 0 0 6px rgba(251,146,60,0.5); }
-    .failure-risk-arc-fill.risk-critical { background: linear-gradient(90deg, #991b1b, #f87171); box-shadow: 0 0 8px rgba(248,113,113,0.6); animation: bar-pulse-critical 2s ease-in-out infinite; }
-    .failure-risk-arc-fill.risk-failed   { background: linear-gradient(90deg, #7f1d1d, #ef4444, #fca5a5); box-shadow: 0 0 12px rgba(239,68,68,0.7); animation: bar-pulse-failed 1.4s ease-in-out infinite; }
-
-    @keyframes failure-card-in {
-      from { opacity: 0; transform: translateY(8px) scale(0.97); }
-      to   { opacity: 1; transform: translateY(0)   scale(1); }
-    }
-
-    .failure-severity-bar-track {
-      height: 4px;
-      border-radius: 999px;
-      background: rgba(30, 41, 59, 0.8);
-      overflow: hidden;
-      margin-bottom: 2px;
-    }
-
-    .failure-severity-bar-fill {
-      height: 100%;
-      border-radius: 999px;
-      transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    .failure-severity-bar-fill.sev-stressed {
-      background: linear-gradient(90deg, #d97706, #fbbf24);
-      box-shadow: 0 0 6px rgba(251, 191, 36, 0.6);
-    }
-
-    .failure-severity-bar-fill.sev-warning {
-      background: linear-gradient(90deg, #ea580c, #fb923c);
-      box-shadow: 0 0 6px rgba(251, 146, 60, 0.6);
-    }
-
-    .failure-severity-bar-fill.sev-critical {
-      background: linear-gradient(90deg, #dc2626, #f87171);
-      box-shadow: 0 0 8px rgba(248, 113, 113, 0.7);
-      animation: bar-pulse-critical 2s ease-in-out infinite;
-    }
-
-    .failure-severity-bar-fill.sev-failed {
-      background: linear-gradient(90deg, #991b1b, #ef4444, #fca5a5);
-      box-shadow: 0 0 10px rgba(239, 68, 68, 0.8);
-      animation: bar-pulse-failed 1.4s ease-in-out infinite;
-    }
-
-    @keyframes bar-pulse-critical {
-      0%, 100% { opacity: 0.8; }
-      50%       { opacity: 1;   box-shadow: 0 0 14px rgba(248, 113, 113, 0.9); }
-    }
-
-    @keyframes bar-pulse-failed {
-      0%, 100% { opacity: 0.85; }
-      50%       { opacity: 1;    box-shadow: 0 0 18px rgba(239, 68, 68, 1.0); }
-    }
-
-    .fuse-tag {
-      display: inline-block;
-      font-size: 0.6rem;
-      font-weight: 900;
-      letter-spacing: 0.12em;
-      padding: 2px 5px;
-      background: rgba(255, 80, 0, 0.18);
-      border: 1px solid rgba(255, 100, 20, 0.45);
-      border-radius: 4px;
-      color: #ff9944;
-      text-shadow: 0 0 6px rgba(255, 120, 20, 0.5);
-      vertical-align: middle;
-      margin-left: 4px;
-      pointer-events: auto;
-      cursor: default;
-    }
-
-    .fuse-acronym {
-      font-size: 0.58rem;
-      color: #64748b;
-      letter-spacing: 0.04em;
-      margin-bottom: 2px;
-      font-style: italic;
-    }
-
-    /* ── Live metrics badge ──────────────────────────────────────────────── */
-    .live-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      font-size: 9.5px;
-      font-weight: 800;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-      color: #34d399;
-      padding: 2px 7px;
-      border-radius: 999px;
-      border: 1px solid rgba(52, 211, 153, 0.45);
-      background: rgba(6, 78, 59, 0.35);
-      vertical-align: middle;
-      margin-left: 6px;
-    }
-    .live-badge::before {
-      content: "";
-      display: inline-block;
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: #34d399;
-      animation: live-pulse 1.2s ease-in-out infinite;
-      flex-shrink: 0;
-    }
-    @keyframes live-pulse {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50%       { opacity: 0.45; transform: scale(0.7); }
-    }
-
-    .live-badge.hidden-badge { display: none; }
-
-    /* ── Metric card live-update flash ───────────────────────────────────── */
-    @keyframes metric-live-flash {
-      0%   { background: rgba(52, 211, 153, 0.16); box-shadow: 0 0 10px rgba(52, 211, 153, 0.25); }
-      100% { background: transparent; box-shadow: none; }
-    }
-    .metric-card.live-updated {
-      animation: metric-live-flash 0.5s ease-out forwards;
-    }
-
-    /* ── Push to Failure (FUSE™ sim) ─────────────────────────────────────── */
-    .push-fail-section {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-    .push-fail-desc {
-      font-size: 11.5px;
-      color: rgba(148, 163, 184, 0.85);
-      line-height: 1.55;
-    }
-    .push-fail-controls {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-    .push-fail-btn {
-      flex: 1;
-      min-width: 140px;
-      padding: 11px 14px;
-      border-radius: 12px;
-      border: 1.5px solid rgba(239, 68, 68, 0.55);
-      background: rgba(22, 6, 6, 0.88);
-      color: #fca5a5;
-      font-size: 13px;
-      font-weight: 800;
-      letter-spacing: 0.03em;
-      cursor: pointer;
-      touch-action: manipulation;
-      transition: background 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
-      box-shadow: 0 0 12px rgba(239, 68, 68, 0.12);
-    }
-    .push-fail-btn:hover {
-      background: rgba(40, 8, 8, 0.95);
-      border-color: rgba(239, 68, 68, 0.85);
-      box-shadow: 0 0 22px rgba(239, 68, 68, 0.35), 0 6px 18px rgba(0,0,0,0.4);
-    }
-    .push-fail-btn:active { transform: scale(0.97); }
-    .push-fail-btn:disabled {
-      opacity: 0.45;
-      cursor: not-allowed;
-      transform: none;
-      box-shadow: none;
-    }
-    .push-fail-result {
-      padding: 10px 12px;
-      border-radius: 11px;
-      border: 1px solid rgba(136, 204, 255, 0.15);
-      background: rgba(5, 8, 20, 0.6);
-      font-size: 11.5px;
-      line-height: 1.55;
-      color: rgba(148, 163, 184, 0.85);
-      display: none;
-    }
-    .push-fail-result.visible { display: block; }
-    .push-fail-result.result-safe    { border-color: rgba(52, 211, 153, 0.3); color: #6ee7b7; }
-    .push-fail-result.result-warn    { border-color: rgba(251, 191, 36, 0.35); color: #fde68a; }
-    .push-fail-result.result-fail    { border-color: rgba(239, 68, 68, 0.5); color: #fca5a5; background: rgba(22, 6, 6, 0.7); }
-    .push-fail-result.result-destroyed { border-color: rgba(220, 38, 38, 0.7); color: #fef2f2; background: rgba(35, 4, 4, 0.88); animation: pulse-failed 1.4s ease-in-out infinite; }
-
-    .push-fail-btn.push-fail-btn-b {
-      border-color: rgba(168, 85, 247, 0.55);
-      color: #d8b4fe;
-      background: rgba(10, 6, 20, 0.88);
-      box-shadow: 0 0 12px rgba(168, 85, 247, 0.12);
-    }
-
-    /* ── Composition Panel ─────────────────────────────────────────────── */
-    .composition-label {
-      font-size: 10px;
-      font-weight: 600;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      color: #64748b;
-      margin-bottom: 6px;
-    }
-    .composition-note {
-      font-size: 11px;
-      color: rgba(148, 163, 184, 0.85);
-      line-height: 1.5;
-      padding: 6px 8px;
-      border-radius: 7px;
-      background: rgba(8, 15, 28, 0.45);
-      border: 1px solid rgba(136, 204, 255, 0.10);
-      margin-bottom: 8px;
-    }
-    .composition-sub-list {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      margin-bottom: 8px;
-    }
-    .composition-sub-item {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 11px;
-      line-height: 1.4;
-    }
-    .composition-sub-swatch {
-      width: 10px;
-      height: 10px;
-      border-radius: 2px;
-      flex-shrink: 0;
-      border: 1px solid rgba(255,255,255,0.18);
-    }
-    .composition-sub-name {
-      flex: 1;
-      min-width: 0;
-      color: var(--text-strong);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .composition-sub-role {
-      font-size: 10px;
-      color: #64748b;
-      white-space: nowrap;
-    }
-    .composition-critical-badge {
-      font-size: 9px;
-      font-weight: 700;
-      letter-spacing: 0.04em;
-      padding: 1px 5px;
-      border-radius: 4px;
-      background: rgba(239, 68, 68, 0.20);
-      border: 1px solid rgba(239, 68, 68, 0.45);
-      color: #fca5a5;
-      flex-shrink: 0;
-    }
-    .composition-mass-bar-wrap {
-      width: 36px;
-      height: 5px;
-      background: rgba(255,255,255,0.08);
-      border-radius: 3px;
-      flex-shrink: 0;
-    }
-    .composition-mass-bar {
-      height: 5px;
-      border-radius: 3px;
-      background: rgba(100, 200, 255, 0.55);
-    }
-    .composition-mat-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 4px;
-      margin-bottom: 8px;
-    }
-    .composition-mat-cell {
-      background: rgba(8, 15, 28, 0.50);
-      border: 1px solid rgba(136, 204, 255, 0.10);
-      border-radius: 7px;
-      padding: 5px 7px;
-    }
-    .composition-mat-label {
-      font-size: 9px;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: #64748b;
-      margin-bottom: 2px;
-    }
-    .composition-mat-value {
-      font-size: 12px;
-      font-weight: 600;
-      color: #7dd3fc;
-    }
-    .composition-mat-unit {
-      font-size: 9px;
-      color: #64748b;
-    }
-    .composition-limit-row {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 11px;
-      padding: 5px 8px;
-      border-radius: 7px;
-      background: rgba(239, 68, 68, 0.10);
-      border: 1px solid rgba(239, 68, 68, 0.25);
-      color: #fca5a5;
-    }
-    .composition-cutaway-btn {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      padding: 6px 10px;
-      border-radius: 8px;
-      background: rgba(100, 200, 255, 0.10);
-      border: 1px solid rgba(100, 200, 255, 0.30);
-      color: #7dd3fc;
-      font-size: 11px;
-      font-weight: 600;
-      cursor: pointer;
-      margin-bottom: 10px;
-      transition: background 0.18s, border-color 0.18s;
-    }
-    .composition-cutaway-btn:hover {
-      background: rgba(100, 200, 255, 0.20);
-      border-color: rgba(100, 200, 255, 0.55);
-    }
-    .composition-cutaway-btn.active {
-      background: rgba(100, 200, 255, 0.25);
-      border-color: rgba(100, 200, 255, 0.70);
-      color: #bae6fd;
-    }
-    .composition-empty {
-      font-size: 11px;
-      color: #64748b;
-      font-style: italic;
-    }
-    /* ── end Composition Panel ─────────────────────────────────────────── */
-
-    #explosion-dom-flash {
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      z-index: 50;
-      opacity: 0;
-      background: radial-gradient(circle at 50% 50%, rgba(255,230,80,0.9) 0%, rgba(255,100,10,0.55) 30%, transparent 68%);
-    }
-
-    .failure-name {
-      font-size: 12px;
-      font-weight: 700;
-      color: var(--text-strong);
-      margin-bottom: 2px;
-    }
-
-    .failure-desc {
-      font-size: 11px;
-      line-height: 1.55;
-      color: rgba(148, 163, 184, 0.9);
-      padding: 6px 8px;
-      border-radius: 8px;
-      background: rgba(8, 15, 28, 0.55);
-      border: 1px solid rgba(136, 204, 255, 0.12);
-    }
-
     @media (pointer: coarse) {
       .btn {
-        min-height: 52px;
-        padding: 14px 22px;
-        font-size: 16px;
+        min-height: 48px;
+        font-size: 15px;
+        padding: 12px 20px;
       }
 
       .row label {
@@ -1326,13 +782,87 @@
   </style>
 </head>
 <body>
-  <header class="arena-header" id="arena-header">
-    <div class="arena-brand" aria-label="CircuiTry3D">
-      <span class="arena-brand-green">Circui</span>
-      <span class="arena-brand-orange">Try</span>
-      <span class="arena-brand-green">3D</span>
-      <span class="fuse-tag" title="Failure Understanding Simulation Engine — FUSE™">FUSE™</span>
-      <button class="fuse-tier-badge fuse-tier-free" id="tier-badge" title="FUSE™ access tier — click to preview other tiers">Free</button>
+  <div class="hud">
+    <button class="btn" id="btn-reset">Reset</button>
+    <button class="btn" id="btn-run">Run Test</button>
+    <button class="btn" id="btn-export">Export Results</button>
+    <button class="btn" id="btn-import-builder">Load Builder Export</button>
+    <label class="btn file-btn">
+      Import JSON
+      <input type="file" id="input-import-json" accept="application/json" />
+    </label>
+  </div>
+  <div class="panel">
+    <div class="panel-scroll">
+      <section class="panel-section">
+        <div class="section-heading">Import Sources</div>
+        <div id="import-status" class="import-status">Using reference component library. Load a builder export to sync live components.</div>
+        <div class="row">
+          <label for="mode">Mode</label>
+          <select id="mode">
+            <option value="single">Single Component</option>
+            <option value="compare">Compare (A vs B)</option>
+          </select>
+        </div>
+      </section>
+      <section class="panel-section">
+        <div class="section-heading">Component Selection</div>
+        <div class="row">
+          <label for="component-a">Component A</label>
+          <select id="component-a"></select>
+        </div>
+        <div class="row compare-only">
+          <label for="component-b">Component B</label>
+          <select id="component-b"></select>
+        </div>
+      </section>
+      <section class="panel-section">
+        <div class="section-heading">Test Variables</div>
+        <div class="row">
+          <label for="input-voltage">Voltage (V)</label>
+          <input id="input-voltage" type="number" value="5" step="0.1" />
+        </div>
+        <div class="row">
+          <label for="input-frequency">Frequency (Hz)</label>
+          <input id="input-frequency" type="number" value="1000" step="1" />
+        </div>
+        <div class="row">
+          <label for="input-temperature">Ambient Temp (C)</label>
+          <input id="input-temperature" type="number" value="25" step="1" />
+        </div>
+        <div class="row">
+          <label for="input-humidity">Humidity (%)</label>
+          <input id="input-humidity" type="number" value="45" step="1" />
+        </div>
+        <div class="row">
+          <label for="input-duty">Duty Cycle (%)</label>
+          <input id="input-duty" type="number" value="100" step="1" />
+        </div>
+        <div class="row">
+          <label for="input-duration">Duration (s)</label>
+          <input id="input-duration" type="number" value="60" step="1" />
+        </div>
+        <div class="row">
+          <label for="input-load">Load Impedance (Ohm)</label>
+          <input id="input-load" type="number" value="100" step="1" />
+        </div>
+      </section>
+      <section class="panel-section">
+        <div class="section-heading">Metrics — Component A</div>
+        <div id="metrics-a" class="metric-grid"></div>
+      </section>
+      <section class="panel-section compare-only">
+        <div class="section-heading">Metrics — Component B</div>
+        <div id="metrics-b" class="metric-grid"></div>
+      </section>
+      <section class="panel-section compare-only">
+        <div class="section-heading">Relative Delta</div>
+        <div id="metrics-delta" class="metric-grid"></div>
+      </section>
+      <section class="panel-section">
+        <div class="section-heading">Status</div>
+        <div class="stat" id="stat-out">Ready.</div>
+      </section>
     </div>
     <div class="arena-for-everyone" aria-label="For Everyone">👥 For Everyone — to facilitate and enhance the learning</div>
     <nav class="arena-nav" aria-label="Main navigation">
@@ -1358,47 +888,9 @@
   <button class="btn" id="btn-import-builder" aria-label="Load latest builder export" title="Loads your latest circuit from the Builder">↓ Load from Builder</button>
   <button class="btn" id="btn-show-timeline" aria-label="Show stress timeline" title="Stress timeline — run a test first" style="display:none">Timeline</button>
   </div>
-  <div class="panel" id="arena-panel">
-    <div class="panel-drag-handle" id="panel-drag-handle" role="button" aria-label="Resize panel" tabindex="0"></div>
-    <div class="panel-resize-handle" id="panel-resize-handle" aria-hidden="true"></div>
-    <!-- CircuiTry3D Branded library header -->
-    <div class="ct3d-lib-brand" aria-label="CircuiTry3D Component Library">
-      <div class="ct3d-lib-brand-logo" aria-hidden="true">
-        <span class="ct3d-g">Circui</span><span class="ct3d-o">Try</span><span class="ct3d-g">3D</span>
-      </div>
-      <span class="ct3d-lib-brand-badge">Component Library</span>
-    </div>
-    <!-- Workflow step breadcrumb -->
-    <div class="workflow-steps" id="workflow-steps" aria-label="Workflow progress">
-      <div class="workflow-step" id="wf-step-1" data-tip="Select a component in the Parts tab">
-        <div class="workflow-step-num"><span>1</span></div>
-        <span>Pick</span>
-      </div>
-      <div class="workflow-step-arrow">→</div>
-      <div class="workflow-step" id="wf-step-2" data-tip="Set test variables in the Test tab">
-        <div class="workflow-step-num"><span>2</span></div>
-        <span>Configure</span>
-      </div>
-      <div class="workflow-step-arrow">→</div>
-      <div class="workflow-step" id="wf-step-3" data-tip="Press Run Test to simulate">
-        <div class="workflow-step-num"><span>3</span></div>
-        <span>Run</span>
-      </div>
-    </div>
-    <canvas id="arena"></canvas>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" crossorigin="anonymous"></script>
-    <script>
-        if (typeof window.THREE === "undefined") {
-          document.write('<script src="vendor/three.min.js"><\\/script>');
-        }
-      </script>
-      <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/examples/js/controls/OrbitControls.min.js" crossorigin="anonymous"></script>
-      <script>
-        if (typeof window.THREE === "undefined" || typeof window.THREE.OrbitControls === "undefined") {
-          document.write('<script src="vendor/OrbitControls.js"><\\/script>');
-        }
-      </script>
-    <script>
+  <canvas id="arena"></canvas>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script>
     (() => {
       "use strict";
 
@@ -1466,16 +958,6 @@
         },
       };
 
-      const COMPONENT_PALETTES = {
-        battery: { base: 0xf97316, glow: 0xffedd5, orbit: 0xf59e0b, accent: 0x1f2937 },
-        resistor: { base: 0xf97316, glow: 0xffedd5, orbit: 0xfb923c, band: 0xfacc15 },
-        capacitor: { base: 0x38bdf8, glow: 0x22d3ee, orbit: 0x0ea5e9, accent: 0xffffff },
-        inductor: { base: 0xa855f7, glow: 0xc4b5fd, orbit: 0x8b5cf6 },
-        led: { base: 0xf43f5e, glow: 0xfda4af, orbit: 0xf472b6 },
-        switch: { base: 0x2dd4bf, glow: 0x5eead4, orbit: 0x0ea5e9, accent: 0x0d9488 },
-        default: { base: 0x38bdf8, glow: 0x1d4ed8, orbit: 0x38bdf8 },
-      };
-
       const DEFAULT_COMPONENT_CATALOG = [
         {
           id: "resistor-100",
@@ -1521,202 +1003,59 @@
         },
       ];
 
-      const importTagsElement = document.getElementById("import-tags");
-      const componentSummaryElement = document.getElementById("component-summary");
-
-        let scene;
-        let camera;
-        let renderer;
-        let componentGroupA;
-        let componentGroupB;
-        let energyRing;
-        let pulseRing;
-        let particles;
-        let clock;
-        let cameraTarget;
-        let interactionCanvas;
-        let pointerControlsInitialised = false;
-
-        const cameraControls = {
-          azimuth: 0,
-          radius: 7.6,
-          minRadius: 3.6,
-          maxRadius: 16,
-          height: 2.5,
-          rotateSpeed: 0.0042,
-          zoomSpeed: 0.0012,
-          panScalar: 1.1
-        };
-
-        const pointerState = {
-          activePointers: new Map(),
-          lastSinglePosition: null,
-          lastMultiMidpoint: null,
-          lastMultiDistance: null
-        };
-
-        const WORLD_UP = new THREE.Vector3(0, 1, 0);
-        const tmpVecA = new THREE.Vector3();
-        const tmpVecB = new THREE.Vector3();
-        const tmpVecC = new THREE.Vector3();
+      const componentPalettes = {
+        resistor: { base: 0xf97316, glow: 0xffedd5, orbit: 0xfb923c, band: 0xfacc15 },
+        capacitor: { base: 0x38bdf8, glow: 0x22d3ee, orbit: 0x0ea5e9, accent: 0xffffff },
+        inductor: { base: 0xa855f7, glow: 0xc4b5fd, orbit: 0x8b5cf6 },
+        led: { base: 0xf43f5e, glow: 0xfda4af, orbit: 0xf472b6 },
+        battery: { base: 0xffd166, glow: 0xfff3bf, orbit: 0xffc06b },
+        switch: { base: 0x2dd4bf, glow: 0x5eead4, orbit: 0x14b8a6 },
+        default: { base: 0x38bdf8, glow: 0x1d4ed8, orbit: 0x38bdf8, band: 0x22d3ee },
+      };
 
       const particleSpeeds = [];
-      const COMPONENT_POSITIONS = { A: -1.65, B: 1.65 };
-      const cameraRig = {
-        target: new THREE.Vector3(0, 0.6, 0),
-        radius: 7.6,
-        azimuth: 0,
-        polar: THREE.MathUtils.degToRad(32),
-        minRadius: 3,
-        maxRadius: 16,
-      };
-      const pointerInteraction = {
-        pointers: new Map(),
-        rotateTimer: null,
-        rotateReady: false,
-        mode: "idle",
-        lastSinglePosition: null,
-        lastAveragePosition: null,
-        lastDistance: null,
-      };
-      const HOLD_DELAY_TOUCH_MS = 120;
-      const HOLD_DISTANCE_TOLERANCE = 6;
-      const ROTATION_SPEED = 0.0045;
-      const PAN_SPEED = 0.0022;
-      const ZOOM_FACTOR_PER_PIXEL = 0.003;
-      let interactionCanvas = null;
-      const tempForward = new THREE.Vector3();
-      const tempRight = new THREE.Vector3();
-      const tempOffset = new THREE.Vector3();
 
-        function initialiseCameraRig() {
-          if (!camera) {
-            return;
-          }
-          tempOffset.subVectors(camera.position, cameraRig.target);
-          cameraRig.radius = tempOffset.length();
-          const horizontal = Math.max(Math.sqrt(tempOffset.x * tempOffset.x + tempOffset.z * tempOffset.z), 1e-6);
-          cameraRig.azimuth = Math.atan2(tempOffset.x, tempOffset.z);
-          cameraRig.polar = Math.atan2(tempOffset.y, horizontal);
-          updateCameraRigPosition();
+      let scene;
+      let camera;
+      let renderer;
+      let clock;
+      let componentAGroup;
+      let componentBGroup;
+      let energyRing;
+      let pulseRing;
+      let particles;
+
+      function initThree() {
+        const canvas = document.getElementById("arena");
+        if (!canvas) {
+          return;
         }
 
-        function updateCameraRigPosition() {
-          if (!camera) {
-            return;
-          }
-          cameraRig.radius = THREE.MathUtils.clamp(cameraRig.radius, cameraRig.minRadius, cameraRig.maxRadius);
-          const radius = cameraRig.radius;
-          const polar = cameraRig.polar;
-          const azimuth = cameraRig.azimuth;
-          const sinPolar = Math.sin(polar);
-          const cosPolar = Math.cos(polar);
-          camera.position.set(
-            cameraRig.target.x + radius * Math.sin(azimuth) * cosPolar,
-            cameraRig.target.y + radius * sinPolar,
-            cameraRig.target.z + radius * Math.cos(azimuth) * cosPolar
-          );
-          camera.lookAt(cameraRig.target);
-        }
+        scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x050716);
+        scene.fog = new THREE.Fog(0x050716, 14, 36);
 
-        function setupPointerInteractions(canvas) {
-          interactionCanvas = canvas;
-          if (!interactionCanvas) {
-            return;
-          }
-          interactionCanvas.style.touchAction = "none";
-          interactionCanvas.style.userSelect = "none";
-          interactionCanvas.addEventListener("pointerdown", handlePointerDown);
-          window.addEventListener("pointermove", handlePointerMove, { passive: false });
-          window.addEventListener("pointerup", handlePointerUp);
-          window.addEventListener("pointercancel", handlePointerUp);
-        }
+        camera = new THREE.PerspectiveCamera(62, window.innerWidth / window.innerHeight, 0.1, 100);
+        camera.position.set(0, 2.8, 7.2);
 
-        function handlePointerDown(event) {
-          if (!interactionCanvas) {
-            return;
-          }
-          storePointer(event);
-          if (pointerInteraction.pointers.size === 1) {
-            pointerInteraction.mode = "single";
-            pointerInteraction.rotateReady = false;
-            pointerInteraction.lastSinglePosition = { x: event.clientX, y: event.clientY };
-            scheduleRotateReady(event.pointerType);
-          } else {
-            pointerInteraction.mode = "multi";
-            pointerInteraction.rotateReady = false;
-            clearRotateTimer();
-            pointerInteraction.lastAveragePosition = getAveragePointerPosition();
-            pointerInteraction.lastDistance = getPointersDistance();
-          }
-          interactionCanvas.setPointerCapture?.(event.pointerId);
-          if (event.pointerType === "touch") {
-            event.preventDefault();
-          }
-        }
+        renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+        renderer.setSize(window.innerWidth, window.innerHeight);
 
-        function handlePointerMove(event) {
-          if (!pointerInteraction.pointers.has(event.pointerId)) {
-            return;
-          }
-          updatePointer(event);
+        clock = new THREE.Clock();
 
-          if (pointerInteraction.mode === "single") {
-            const pointer = pointerInteraction.pointers.get(event.pointerId);
-            if (!pointer) {
-              return;
-            }
-            if (!pointerInteraction.rotateReady) {
-              const moved = Math.hypot(pointer.clientX - pointer.startX, pointer.clientY - pointer.startY);
-              if (moved > HOLD_DISTANCE_TOLERANCE) {
-                pointerInteraction.rotateReady = true;
-                clearRotateTimer();
-              }
-            }
-            const last = pointerInteraction.lastSinglePosition;
-            pointerInteraction.lastSinglePosition = { x: pointer.clientX, y: pointer.clientY };
-            if (pointerInteraction.rotateReady && last) {
-              const deltaX = pointer.clientX - last.x;
-              if (Math.abs(deltaX) > 0.15) {
-                applyRotation(deltaX);
-              }
-              if (event.pointerType === "touch") {
-                event.preventDefault();
-              }
-            }
-          } else if (pointerInteraction.mode === "multi" && pointerInteraction.pointers.size >= 2) {
-            const average = getAveragePointerPosition();
-            const previous = pointerInteraction.lastAveragePosition || average;
-            const deltaX = average.x - previous.x;
-            const deltaY = average.y - previous.y;
-            if (Math.abs(deltaX) > 0.1 || Math.abs(deltaY) > 0.1) {
-              applyPan(deltaX, deltaY);
-            }
-            pointerInteraction.lastAveragePosition = average;
+        addLights();
+        addStageElements();
+        addParticles();
 
-            const distance = getPointersDistance();
-            if (pointerInteraction.lastDistance !== null && pointerInteraction.lastDistance !== undefined) {
-              const deltaDistance = distance - pointerInteraction.lastDistance;
-              if (Math.abs(deltaDistance) > 0.25) {
-                applyZoomDelta(deltaDistance);
-              }
-            }
-            pointerInteraction.lastDistance = distance;
-            event.preventDefault();
-          }
-        }
+        componentAGroup = buildComponent("resistor", 100, true);
+        componentAGroup.position.x = -1.65;
+        scene.add(componentAGroup);
 
-        function handlePointerUp(event) {
-          if (!pointerInteraction.pointers.has(event.pointerId)) {
-            return;
-          }
-          interactionCanvas?.releasePointerCapture?.(event.pointerId);
-          pointerInteraction.pointers.delete(event.pointerId);
-
-          if (pointerInteraction.pointers.size === 0) {
-            resetInteractionState();
-            return;
-          }
+        componentBGroup = buildComponent("capacitor", 1, false);
+        componentBGroup.position.x = 1.65;
+        componentBGroup.visible = false;
+        scene.add(componentBGroup);
 
           if (pointerInteraction.pointers.size === 1) {
             const remaining = pointerInteraction.pointers.values().next().value;
@@ -1921,17 +1260,9 @@
           camera.aspect = window.innerWidth / window.innerHeight;
           camera.updateProjectionMatrix();
           renderer.setSize(window.innerWidth, window.innerHeight);
-          if (controls) {
-            controls.update();
-            if (clampControlsTarget()) {
-              controls.update();
-            }
-          }
-        }
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        updateCameraRigPosition();
+        });
+
+        animate();
       }
 
       function addLights() {
@@ -2034,6 +1365,7 @@
           positions[i * 3 + 2] = (Math.random() - 0.5) * 16;
           particleSpeeds.push(Math.random() * 0.7 + 0.25);
         }
+
         const geometry = new THREE.BufferGeometry();
         geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
 
@@ -2051,240 +1383,14 @@
         scene.add(particles);
       }
 
-      function setupInteractionControls(canvas) {
-        if (!canvas || pointerControlsInitialised) {
-          return;
-        }
-        pointerControlsInitialised = true;
-        pointerState.activePointers.clear();
-        pointerState.lastSinglePosition = null;
-        pointerState.lastMultiMidpoint = null;
-        pointerState.lastMultiDistance = null;
-        canvas.style.touchAction = "none";
-        canvas.style.userSelect = "none";
-        canvas.style.webkitUserSelect = "none";
-        canvas.style.cursor = "grab";
-        canvas.addEventListener("pointerdown", handlePointerDown, { passive: false });
-        canvas.addEventListener("pointermove", handlePointerMove, { passive: false });
-        canvas.addEventListener("pointerup", handlePointerUp, { passive: false });
-        canvas.addEventListener("pointercancel", handlePointerUp, { passive: false });
-        canvas.addEventListener("pointerleave", handlePointerUp, { passive: false });
-        canvas.addEventListener("wheel", handleWheel, { passive: false });
-        canvas.addEventListener("contextmenu", preventContextMenu);
-      }
-
-      function preventContextMenu(event) {
-        event.preventDefault();
-      }
-
-      function handlePointerDown(event) {
-        event.preventDefault();
-        if (!interactionCanvas) {
-          interactionCanvas = event.currentTarget;
-        }
-        if (interactionCanvas) {
-          try {
-            interactionCanvas.setPointerCapture(event.pointerId);
-          } catch (error) {
-            // Ignore pointer capture failures (e.g., unsupported devices)
-          }
-          interactionCanvas.style.cursor = "grabbing";
-        }
-
-        pointerState.activePointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
-
-        if (pointerState.activePointers.size === 1) {
-          pointerState.lastSinglePosition = { x: event.clientX, y: event.clientY };
-          pointerState.lastMultiMidpoint = null;
-          pointerState.lastMultiDistance = null;
-        } else if (pointerState.activePointers.size === 2) {
-          const info = getMultiTouchInfo();
-          pointerState.lastMultiMidpoint = info ? info.midpoint : null;
-          pointerState.lastMultiDistance = info ? info.distance : null;
-        }
-      }
-
-      function handlePointerMove(event) {
-        const tracked = pointerState.activePointers.get(event.pointerId);
-        if (!tracked) {
-          return;
-        }
-        event.preventDefault();
-
-        tracked.x = event.clientX;
-        tracked.y = event.clientY;
-
-        if (pointerState.activePointers.size === 1) {
-          if (!pointerState.lastSinglePosition) {
-            pointerState.lastSinglePosition = { x: tracked.x, y: tracked.y };
-            return;
-          }
-          const deltaX = tracked.x - pointerState.lastSinglePosition.x;
-          if (Math.abs(deltaX) > 0.2) {
-            rotateCamera(deltaX);
-          }
-          pointerState.lastSinglePosition = { x: tracked.x, y: tracked.y };
-        } else if (pointerState.activePointers.size >= 2) {
-          const info = getMultiTouchInfo();
-          if (!info) {
-            return;
-          }
-
-          if (pointerState.lastMultiMidpoint) {
-            const deltaMidX = info.midpoint.x - pointerState.lastMultiMidpoint.x;
-            const deltaMidY = info.midpoint.y - pointerState.lastMultiMidpoint.y;
-            if (Math.abs(deltaMidX) > 0.3 || Math.abs(deltaMidY) > 0.3) {
-              panCamera(deltaMidX, deltaMidY);
-            }
-          }
-          pointerState.lastMultiMidpoint = info.midpoint;
-
-          if (typeof pointerState.lastMultiDistance === "number") {
-            const distanceDelta = info.distance - pointerState.lastMultiDistance;
-            if (Math.abs(distanceDelta) > 0.5) {
-              zoomCamera(distanceDelta);
-            }
-          }
-          pointerState.lastMultiDistance = info.distance;
-        }
-      }
-
-      function handlePointerUp(event) {
-        if (interactionCanvas && interactionCanvas.hasPointerCapture(event.pointerId)) {
-          interactionCanvas.releasePointerCapture(event.pointerId);
-        }
-        pointerState.activePointers.delete(event.pointerId);
-
-        const remainingCount = pointerState.activePointers.size;
-        if (remainingCount === 0) {
-          pointerState.lastSinglePosition = null;
-          pointerState.lastMultiMidpoint = null;
-          pointerState.lastMultiDistance = null;
-          if (interactionCanvas) {
-            interactionCanvas.style.cursor = "grab";
-          }
-        } else if (remainingCount === 1) {
-          const remaining = getSinglePointer();
-          pointerState.lastSinglePosition = remaining ? { x: remaining.x, y: remaining.y } : null;
-          pointerState.lastMultiMidpoint = null;
-          pointerState.lastMultiDistance = null;
-          if (interactionCanvas) {
-            interactionCanvas.style.cursor = "grabbing";
-          }
-        } else {
-          const info = getMultiTouchInfo();
-          pointerState.lastMultiMidpoint = info ? info.midpoint : null;
-          pointerState.lastMultiDistance = info ? info.distance : null;
-        }
-      }
-
-      function getSinglePointer() {
-        const entries = Array.from(pointerState.activePointers.values());
-        return entries.length === 1 ? entries[0] : null;
-      }
-
-      function getMultiTouchInfo() {
-        const entries = Array.from(pointerState.activePointers.values());
-        if (entries.length < 2) {
-          return null;
-        }
-        const [first, second] = entries;
-        const midpoint = {
-          x: (first.x + second.x) / 2,
-          y: (first.y + second.y) / 2
-        };
-        const distance = Math.hypot(second.x - first.x, second.y - first.y);
-        return { midpoint, distance };
-      }
-
-      function handleWheel(event) {
-        event.preventDefault();
-        const normalized = Math.max(-1, Math.min(1, event.deltaY));
-        const zoomStep = normalized * (cameraControls.radius * 0.08);
-        cameraControls.radius = THREE.MathUtils.clamp(
-          cameraControls.radius + zoomStep,
-          cameraControls.minRadius,
-          cameraControls.maxRadius
-        );
-        updateCameraPosition();
-      }
-
-      function rotateCamera(deltaX) {
-        if (!cameraTarget) {
-          return;
-        }
-        cameraControls.azimuth -= deltaX * cameraControls.rotateSpeed;
-        const twoPi = Math.PI * 2;
-        if (cameraControls.azimuth > twoPi || cameraControls.azimuth < -twoPi) {
-          cameraControls.azimuth = ((cameraControls.azimuth % twoPi) + twoPi) % twoPi;
-        }
-        updateCameraPosition();
-      }
-
-      function panCamera(deltaX, deltaY) {
-        if (!camera || !cameraTarget) {
-          return;
-        }
-        const viewDir = tmpVecA.subVectors(cameraTarget, camera.position).normalize();
-        const right = tmpVecB.crossVectors(viewDir, WORLD_UP).normalize();
-        if (right.lengthSq() === 0) {
-          right.set(1, 0, 0);
-        }
-        const forward = tmpVecC.crossVectors(WORLD_UP, right).normalize();
-
-        const verticalFactor =
-          (2 * cameraControls.radius * Math.tan(THREE.MathUtils.degToRad(camera.fov * 0.5))) /
-          Math.max(window.innerHeight, 1);
-        const horizontalFactor = verticalFactor * camera.aspect;
-
-        cameraTarget.addScaledVector(right, -deltaX * horizontalFactor * cameraControls.panScalar);
-        cameraTarget.addScaledVector(forward, deltaY * verticalFactor * cameraControls.panScalar);
-
-        cameraTarget.x = THREE.MathUtils.clamp(cameraTarget.x, -6, 6);
-        cameraTarget.z = THREE.MathUtils.clamp(cameraTarget.z, -6, 6);
-
-        updateCameraPosition();
-      }
-
-      function zoomCamera(distanceDelta) {
-        if (!cameraTarget || Math.abs(distanceDelta) < 0.5) {
-          return;
-        }
-        const zoomAmount = distanceDelta * cameraControls.radius * cameraControls.zoomSpeed;
-        cameraControls.radius = THREE.MathUtils.clamp(
-          cameraControls.radius - zoomAmount,
-          cameraControls.minRadius,
-          cameraControls.maxRadius
-        );
-        updateCameraPosition();
-      }
-
-      function updateCameraPosition() {
-        if (!camera || !cameraTarget) {
-          return;
-        }
-        cameraControls.radius = THREE.MathUtils.clamp(
-          cameraControls.radius,
-          cameraControls.minRadius,
-          cameraControls.maxRadius
-        );
-        const x = cameraTarget.x + Math.sin(cameraControls.azimuth) * cameraControls.radius;
-        const z = cameraTarget.z + Math.cos(cameraControls.azimuth) * cameraControls.radius;
-        const y = cameraTarget.y + cameraControls.height;
-        camera.position.set(x, y, z);
-        camera.lookAt(cameraTarget);
-      }
-
-      function buildComponent(type, nominalValue, isPrimary) {
-        const palette = COMPONENT_PALETTES[type] || COMPONENT_PALETTES.default;
+      function buildComponent(type, value, isPrimary) {
+        const palette = componentPalettes[type] || componentPalettes.default;
         const group = new THREE.Group();
         group.userData = {
           palette,
-          componentType: type,
           energy: 0.3,
           bobOffset: Math.random() * Math.PI * 2,
-          baseScale: computeScale(nominalValue),
-          nominalValue,
+          baseScale: computeScale(value),
         };
 
         const material = new THREE.MeshStandardMaterial({
@@ -2315,10 +1421,10 @@
             group.add(leadL, leadR);
 
             const bandMaterial = new THREE.MeshStandardMaterial({
-              color: palette.band || 0xfacc15,
+              color: palette.band,
               metalness: 0.45,
               roughness: 0.35,
-              emissive: palette.band || palette.glow,
+              emissive: palette.band,
               emissiveIntensity: 0.22,
             });
             [-0.35, 0, 0.35].forEach((offset) => {
@@ -2380,14 +1486,11 @@
             bulb.position.y = 0.65;
             group.add(bulb);
 
-            const base = new THREE.Mesh(
-              new THREE.CylinderGeometry(0.26, 0.32, 0.28, 32),
-              new THREE.MeshStandardMaterial({
-                color: 0x1f2937,
-                metalness: 0.75,
-                roughness: 0.42,
-              })
-            );
+            const base = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.32, 0.28, 32), new THREE.MeshStandardMaterial({
+              color: 0x1f2937,
+              metalness: 0.75,
+              roughness: 0.42,
+            }));
             base.position.y = -0.35;
             group.add(base);
 
@@ -2405,45 +1508,29 @@
             break;
           }
           case "battery": {
-            core = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.65, 1.2, 48), material);
-            const capMaterial = new THREE.MeshStandardMaterial({
-              color: palette.accent || 0xffffff,
-              metalness: 0.85,
-              roughness: 0.2,
-              emissive: palette.glow,
-              emissiveIntensity: 0.18,
+            core = new THREE.Mesh(new THREE.BoxGeometry(1, 1.6, 0.6), material);
+            const strapMaterial = new THREE.MeshStandardMaterial({
+              color: 0x1f2937,
+              metalness: 0.6,
+              roughness: 0.3,
+              emissive: 0x0f172a,
+              emissiveIntensity: 0.2,
             });
-            const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.18, 32), capMaterial);
-            cap.position.y = 0.69;
-            const terminal = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.22, 24), capMaterial);
-            terminal.position.y = 0.84;
-            group.add(cap, terminal);
+            const strap = new THREE.Mesh(new THREE.BoxGeometry(1.02, 0.18, 0.62), strapMaterial);
+            strap.position.y = 0.65;
+            group.add(strap);
             break;
           }
           case "switch": {
-            core = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.3, 0.8), material);
-            const base = new THREE.Mesh(
-              new THREE.BoxGeometry(1.4, 0.1, 1),
-              new THREE.MeshStandardMaterial({
-                color: palette.accent || 0x0f766e,
-                metalness: 0.4,
-                roughness: 0.35,
-                emissive: palette.glow,
-                emissiveIntensity: 0.12,
-              })
-            );
-            base.position.y = -0.25;
-            const lever = new THREE.Mesh(
-              new THREE.CylinderGeometry(0.08, 0.04, 0.9, 24),
-              new THREE.MeshStandardMaterial({
-                color: palette.glow,
-                metalness: 0.9,
-                roughness: 0.3,
-              })
-            );
-            lever.position.set(0, 0.45, 0);
+            core = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.5, 0.5), material);
+            const lever = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.04, 1.1, 24), new THREE.MeshStandardMaterial({
+              color: 0xdbeafe,
+              metalness: 0.8,
+              roughness: 0.3,
+            }));
+            lever.position.set(0, 0.65, 0);
             lever.rotation.z = -Math.PI / 6;
-            group.add(base, lever);
+            group.add(lever);
             break;
           }
           default: {
@@ -2508,6 +1595,9 @@
           group.add(badge);
         }
 
+        group.userData.componentType = type;
+        group.userData.value = value;
+
         return group;
       }
 
@@ -2519,61 +1609,11 @@
         return THREE.MathUtils.clamp(0.75 + scaled, 0.7, 2.3);
       }
 
-      function rebuildComponentGroup(slot, type, nominalValue) {
-        const isPrimary = slot === "A";
-        const current = isPrimary ? componentGroupA : componentGroupB;
-        if (current) {
-          scene.remove(current);
-          disposeGroup(current);
-        }
-
-        const nextGroup = buildComponent(type, nominalValue, isPrimary);
-        nextGroup.position.x = COMPONENT_POSITIONS[slot];
-        nextGroup.visible = isPrimary || (state.mode === "compare" && Boolean(state.selectedB));
-        scene.add(nextGroup);
-
-        if (isPrimary) {
-          componentGroupA = nextGroup;
-        } else {
-          componentGroupB = nextGroup;
-        }
-
-        return nextGroup;
-      }
-
-      function ensureComponentGroup(slot, component) {
-        const isPrimary = slot === "A";
-        const current = isPrimary ? componentGroupA : componentGroupB;
-
-        if (!component) {
-          if (current) {
-            current.visible = false;
-          }
-          return current || null;
-        }
-
-        const paletteKey = component.type && COMPONENT_PALETTES[component.type]
-          ? component.type
-          : "default";
-        const nominalValue = extractNominalValue(component);
-        const baseScale = computeScale(nominalValue);
-
-        let group = current;
-        if (!group || group.userData.componentType !== paletteKey) {
-          group = rebuildComponentGroup(slot, paletteKey, nominalValue);
-        } else {
-          group.visible = isPrimary || (state.mode === "compare" && Boolean(state.selectedB));
-          group.userData.baseScale = baseScale;
-          group.scale.setScalar(group.userData.baseScale);
-        }
-
-        group.userData.nominalValue = nominalValue;
-        group.userData.componentType = paletteKey;
-        group.userData.bobOffset = group.userData.bobOffset ?? Math.random() * Math.PI * 2;
-        return group;
-      }
-
       function disposeGroup(group) {
+        if (!group) {
+          return;
+        }
+        scene.remove(group);
         group.traverse((child) => {
           if (child.geometry) {
             child.geometry.dispose();
@@ -2588,101 +1628,33 @@
         });
       }
 
-        function animate() {
-          requestAnimationFrame(animate);
-
-          if (!clock) {
-            if (controls) {
-              controls.update();
-              if (clampControlsTarget()) {
-                controls.update();
-              }
-            }
-            if (renderer && camera) {
-              renderer.render(scene, camera);
-            }
-            return;
-          }
-
-          const delta = clock.getDelta();
-          const elapsed = clock.elapsedTime;
-
-          updateComponentAnimation(componentGroupA, elapsed, delta);
-          if (componentGroupB && componentGroupB.visible) {
-            updateComponentAnimation(componentGroupB, elapsed + 0.6, delta);
-          }
-
-          if (energyRing) {
-            energyRing.rotation.z += delta * 0.55;
-            const energyLevel = Math.max(
-              componentGroupA ? componentGroupA.userData.energy || 0 : 0,
-              componentGroupB && componentGroupB.visible ? componentGroupB.userData.energy || 0 : 0,
-            );
-            energyRing.material.opacity = 0.35 + energyLevel * 0.35;
-            const pulse = 1 + Math.sin(elapsed * 1.4) * 0.04 + energyLevel * 0.12;
-            energyRing.scale.setScalar(pulse);
-          }
-
-          if (pulseRing && pulseRing.userData.life > 0) {
-            pulseRing.userData.life -= delta * 0.9;
-            const life = Math.max(pulseRing.userData.life, 0);
-            pulseRing.material.opacity = life * pulseRing.userData.strength;
-            const scale = 1 + (1 - life) * (1.4 + pulseRing.userData.strength * 1.2);
-            pulseRing.scale.setScalar(scale);
-          }
-
-          animateParticles(delta);
-
-          if (controls) {
-            controls.update();
-            if (clampControlsTarget()) {
-              controls.update();
-            }
-          }
-
-          if (renderer && camera) {
-            renderer.render(scene, camera);
-          }
+      function resetVisualGroup(group) {
+        if (!group) {
+          return;
         }
+        group.rotation.set(0, 0, 0);
+        group.position.y = 0.25;
+        energizeComponent(group, 0.25);
+      }
 
-        const delta = clock.getDelta();
-        const elapsed = clock.elapsedTime;
-
-        updateComponentAnimation(componentGroupA, elapsed, delta);
-        if (componentGroupB && componentGroupB.visible) {
-          updateComponentAnimation(componentGroupB, elapsed + 0.6, delta);
+      function energizeComponent(group, energy) {
+        if (!group) {
+          return;
         }
-
-        if (energyRing) {
-          energyRing.rotation.z += delta * 0.55;
-          const energyLevel = Math.max(
-            componentGroupA ? componentGroupA.userData.energy || 0 : 0,
-            componentGroupB && componentGroupB.visible ? componentGroupB.userData.energy || 0 : 0,
-          );
-          energyRing.material.opacity = 0.35 + energyLevel * 0.35;
-          const pulse = 1 + Math.sin(elapsed * 1.4) * 0.04 + energyLevel * 0.12;
-          energyRing.scale.setScalar(pulse);
+        group.userData.energy = energy;
+        const core = group.userData.core;
+        if (core && core.material) {
+          core.material.emissiveIntensity = 0.3 + energy * 1.2;
         }
-
-        if (pulseRing && pulseRing.userData.life > 0) {
-          pulseRing.userData.life -= delta * 0.9;
-          const life = Math.max(pulseRing.userData.life, 0);
-          pulseRing.material.opacity = life * pulseRing.userData.strength;
-          const scale = 1 + (1 - life) * (1.4 + pulseRing.userData.strength * 1.2);
-          pulseRing.scale.setScalar(scale);
+        group.scale.setScalar(group.userData.baseScale * (0.9 + energy * 0.45));
+        if (group.userData.halo) {
+          group.userData.halo.material.opacity = 0.22 + energy * 0.5;
+          group.userData.halo.scale.setScalar(1 + energy * 0.8);
         }
-
-        animateParticles(delta);
-
-        if (cameraTarget) {
-          camera.lookAt(cameraTarget);
-        }
-
-        renderer.render(scene, camera);
       }
 
       function updateComponentAnimation(group, elapsed, delta) {
-        if (!group) {
+        if (!group || !group.visible) {
           return;
         }
         const energy = group.userData.energy || 0.25;
@@ -2695,7 +1667,7 @@
           orb.position.set(
             Math.cos(angle) * data.radius,
             data.height + Math.sin(angle * 1.8) * 0.12,
-            Math.sin(angle) * data.radius,
+            Math.sin(angle) * data.radius
           );
         });
       }
@@ -2720,75 +1692,130 @@
         if (!pulseRing) {
           return;
         }
+        const clamped = THREE.MathUtils.clamp(intensity, 0.2, 1.1);
         pulseRing.userData.life = 1;
-        pulseRing.userData.strength = THREE.MathUtils.clamp(intensity, 0.2, 1.1);
+        pulseRing.userData.strength = clamped;
         pulseRing.scale.setScalar(1);
       }
 
-      function energizeComponent(group, energy) {
-        if (!group) {
-          return;
-        }
-        group.userData.energy = energy;
-        const core = group.userData.core;
-        if (core && core.material) {
-          core.material.emissiveIntensity = 0.3 + energy * 1.2;
-        }
-        group.scale.setScalar(group.userData.baseScale * (0.9 + energy * 0.45));
-        if (group.userData.halo) {
-          group.userData.halo.material.opacity = 0.22 + energy * 0.5;
-          group.userData.halo.scale.setScalar(1 + energy * 0.8);
-        }
-      }
-
-      function computeVisualEnergy(component, metrics) {
-        if (!component) {
-          return 0.24;
-        }
-        const fallback = Math.abs(extractNominalValue(component)) || 0.1;
-        if (!metrics) {
-          return THREE.MathUtils.clamp(Math.log10(fallback + 1.5) / 2.5, 0.18, 1);
-        }
-        const values = [
-          metrics.powerDissipation,
-          metrics.currentRms,
-          metrics.impedance,
-          metrics.storedEnergy,
-          metrics.energyDelivered,
-          metrics.thermalRise,
-        ];
-        let magnitude = Math.abs(fallback);
-        values.forEach((value) => {
-          if (Number.isFinite(value)) {
-            magnitude = Math.max(magnitude, Math.abs(value));
-          }
-        });
-        const normalized = Math.log10(magnitude + 1.5) / 2.5;
-        return THREE.MathUtils.clamp(normalized, 0.18, 1);
-      }
-
-      function extractNominalValue(component) {
-        if (!component) {
+      function deriveVisualValue(component) {
+        if (!component || typeof component !== "object") {
           return 1;
         }
         const props = component.properties || {};
-        const candidates = [
-          props.resistance,
-          props.capacitance,
-          props.inductance,
-          props.forwardVoltage,
-          props.voltage,
-          props.internalResistance,
-          props.onResistance,
-          props.seriesResistance,
-          props.capacityMah,
-        ];
-        for (const value of candidates) {
-          if (typeof value === "number" && Number.isFinite(value) && value !== 0) {
-            return Math.abs(value);
-          }
+        const type = (component.type || "default").toLowerCase();
+        if (type === "resistor") {
+          return Math.abs(props.resistance ?? props.seriesResistance ?? 100) || 1;
+        }
+        if (type === "capacitor") {
+          const capacitance = Math.abs(props.capacitance ?? 1e-6);
+          return Math.max(capacitance * 1e6, 0.001);
+        }
+        if (type === "inductor") {
+          const inductance = Math.abs(props.inductance ?? 1e-3);
+          return Math.max(inductance * 1e3, 0.001);
+        }
+        if (type === "led") {
+          return Math.abs(props.seriesResistance ?? props.forwardVoltage ?? 120) || 1;
+        }
+        if (type === "battery") {
+          return Math.abs(props.voltage ?? 9) || 1;
+        }
+        if (type === "switch") {
+          return Math.abs(props.onResistance ?? 0.05) * 1000 || 1;
+        }
+        if (typeof props.value === "number" && Number.isFinite(props.value)) {
+          return Math.abs(props.value) || 1;
+        }
+        const numeric = Object.values(props).find((value) => typeof value === "number" && Number.isFinite(value));
+        if (typeof numeric === "number") {
+          return Math.abs(numeric) || 1;
         }
         return 1;
+      }
+
+      function syncComponentGroup(slot, component) {
+        if (!scene) {
+          return;
+        }
+        const type = (component?.type || "default").toLowerCase();
+        const value = deriveVisualValue(component);
+        const current = slot === "A" ? componentAGroup : componentBGroup;
+        let group = current;
+        const shouldReplace = !current || current.userData.componentType !== type;
+
+        if (shouldReplace) {
+          group = buildComponent(type, value, slot === "A");
+          group.position.x = slot === "A" ? -1.65 : 1.65;
+          if (current) {
+            disposeGroup(current);
+          }
+          scene.add(group);
+        } else {
+          const baseScale = computeScale(value);
+          group.userData.baseScale = baseScale;
+          group.userData.value = value;
+          group.scale.setScalar(baseScale);
+        }
+
+        group.userData.componentType = type;
+        const shouldShow = Boolean(component) && (slot === "A" || state.mode === "compare");
+        group.visible = shouldShow;
+        if (shouldShow) {
+          resetVisualGroup(group);
+        } else {
+          energizeComponent(group, 0.2);
+        }
+
+        if (slot === "A") {
+          componentAGroup = group;
+        } else {
+          componentBGroup = group;
+        }
+      }
+
+      function updateMeshesForSelection() {
+        if (!scene) {
+          return;
+        }
+        syncComponentGroup("A", state.selectedA);
+        syncComponentGroup("B", state.selectedB);
+        updateCompareVisibility();
+      }
+
+      function computeVisualEnergy(metrics) {
+        if (!metrics) {
+          return 0.3;
+        }
+        const values = [
+          Math.abs(Number(metrics.powerDissipation) || 0),
+          Math.abs(Number(metrics.currentRms) || 0),
+          Math.abs(Number(metrics.energyDelivered) || 0),
+        ];
+        const magnitude = values.reduce((max, value) => (Number.isFinite(value) ? Math.max(max, value) : max), 0.1);
+        const normalized = Math.log10(magnitude + 1.5) / 2.5;
+        return THREE.MathUtils.clamp(0.2 + normalized, 0.2, 1.35);
+      }
+
+      function applyMetricsToGroup(group, metrics) {
+        if (!group) {
+          return 0;
+        }
+        const energy = computeVisualEnergy(metrics);
+        energizeComponent(group, energy);
+        return energy;
+      }
+
+      function updateMeshesForMetrics(metricsA, metricsB) {
+        if (!scene) {
+          return;
+        }
+        const energyA = applyMetricsToGroup(componentAGroup, metricsA);
+        const energyB = applyMetricsToGroup(componentBGroup, metricsB);
+        const intensity = Math.max(energyA || 0, energyB || 0);
+        if (intensity > 0.35) {
+          triggerPulse(intensity);
+        }
       }
 
       function normalizeComponent(raw, sourceLabel) {
@@ -2855,6 +1882,7 @@
           modeSelect.addEventListener("change", (event) => {
             state.mode = event.target.value === "compare" ? "compare" : "single";
             updateCompareVisibility();
+            updateMeshesForSelection();
           });
         }
 
@@ -2963,19 +1991,12 @@
         document.querySelectorAll(".compare-only").forEach((element) => {
           element.style.display = compare ? "" : "none";
         });
-        if (componentGroupB) {
-          componentGroupB.visible = compare && Boolean(state.selectedB);
-        }
-      }
-
-      function updateMeshesForSelection() {
-        const groupA = ensureComponentGroup("A", state.selectedA);
-        if (groupA) {
-          energizeComponent(groupA, 0.24);
-        }
-        const groupB = ensureComponentGroup("B", state.selectedB);
-        if (groupB) {
-          energizeComponent(groupB, 0.24);
+        if (componentBGroup) {
+          const visible = compare && Boolean(state.selectedB);
+          componentBGroup.visible = visible;
+          if (!visible) {
+            energizeComponent(componentBGroup, 0.2);
+          }
         }
         updateCompareVisibility();
       }
@@ -3230,6 +2251,7 @@
         updateCompareVisibility();
         updateImportStatus();
         setStatus("Loaded component set from import.");
+        updateMeshesForSelection();
         return true;
       }
 
@@ -3344,8 +2366,6 @@
         const deltaMetrics = metricsB ? computeDeltaMetrics(metricsA, metricsB) : null;
         renderMetricGrid("metrics-delta", deltaMetrics, { accent: "delta", isDelta: true });
 
-        updateMeshesForMetrics(metricsA, metricsB);
-
         state.lastRun = {
           timestamp: new Date().toISOString(),
           mode: state.mode,
@@ -3361,6 +2381,9 @@
           },
           importManifest: state.importManifest,
         };
+
+        updateMeshesForSelection();
+        updateMeshesForMetrics(metricsA, metricsB);
 
         const summaryParts = [`A: ${formatWithUnit(metricsA.currentRms, "A")} - ${formatWithUnit(metricsA.powerDissipation, "W")}`];
         if (metricsB) {
@@ -3656,7 +2679,124 @@
         if (currentMode === 'compare' && descriptorLabelB) {
           stat.textContent = `Preset staged: ${descriptorLabelA} vs ${descriptorLabelB}`;
         } else {
-          stat.textContent = `Preset staged: ${descriptorLabelA}`;
+          entries.push({ label: "Voltage", value: formatWithUnit(metrics.operatingVoltage, "V") });
+          entries.push({ label: "Current", value: formatWithUnit(metrics.currentRms, "A"), detail: `Peak ${formatWithUnit(metrics.currentPeak, "A")}` });
+          entries.push({ label: "Power", value: formatWithUnit(metrics.powerDissipation, "W") });
+          entries.push({ label: "Impedance", value: formatWithUnit(metrics.impedance, "Ohm"), detail: `Reactance ${formatWithUnit(metrics.reactance, "Ohm")}` });
+          entries.push({ label: "Phase", value: formatAngle(metrics.phaseAngleDegrees) });
+          entries.push({ label: "Stored Energy", value: formatWithUnit(metrics.storedEnergy, "J") });
+          entries.push({ label: "Delivered Energy", value: formatWithUnit(metrics.energyDelivered, "J") });
+          entries.push({ label: "Thermal Rise", value: formatWithUnit(metrics.thermalRise, "C") });
+          entries.push({ label: "Efficiency", value: formatPercent(metrics.efficiency) });
+        }
+
+        entries
+          .filter((entry) => entry.value !== null && entry.value !== undefined)
+          .forEach((entry) => {
+            const card = document.createElement("div");
+            card.className = "metric-card";
+            if (options?.accent === "A") {
+              card.classList.add("metric-accent-a");
+            } else if (options?.accent === "B") {
+              card.classList.add("metric-accent-b");
+            } else if (options?.accent === "delta") {
+              card.classList.add("metric-accent-delta");
+            }
+
+            const label = document.createElement("div");
+            label.className = "metric-label";
+            label.textContent = entry.label;
+
+            const value = document.createElement("div");
+            value.className = "metric-value";
+            value.textContent = entry.value;
+
+            card.appendChild(label);
+            card.appendChild(value);
+
+            if (entry.detail) {
+              const detail = document.createElement("div");
+              detail.className = "metric-detail";
+              detail.textContent = entry.detail;
+              card.appendChild(detail);
+            }
+
+            container.appendChild(card);
+          });
+      }
+
+      function resetArena() {
+        resetVisualGroup(componentAGroup);
+        resetVisualGroup(componentBGroup);
+        state.lastRun = null;
+        renderMetricGrid("metrics-a", null);
+        renderMetricGrid("metrics-b", null);
+        renderMetricGrid("metrics-delta", null);
+        setStatus("Arena reset. Metrics cleared.");
+        triggerPulse(0.35);
+      }
+
+      function exportResults() {
+        if (!state.lastRun) {
+          setStatus("Run a test before exporting results.");
+          return;
+        }
+
+        const blob = new Blob([JSON.stringify(state.lastRun, null, 2)], { type: "application/json" });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = "component-arena-results.json";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        setStatus("Exported latest results as JSON.");
+      }
+
+      function formatWithUnit(value, unit) {
+        if (!Number.isFinite(value)) {
+          return "—";
+        }
+        const abs = Math.abs(value);
+        let scaled = value;
+        let prefix = "";
+        if (abs >= 1e6) {
+          scaled = value / 1e6;
+          prefix = "M";
+        } else if (abs >= 1e3) {
+          scaled = value / 1e3;
+          prefix = "k";
+        } else if (abs > 0 && abs < 1e-3) {
+          scaled = value * 1e6;
+          prefix = "u";
+        } else if (abs > 0 && abs < 1) {
+          scaled = value * 1e3;
+          prefix = "m";
+        }
+
+        const decimals = Math.abs(scaled) < 10 ? 2 : 1;
+        return `${scaled.toFixed(decimals)} ${prefix}${unit}`;
+      }
+
+      function formatPercent(value) {
+        if (!Number.isFinite(value)) {
+          return "—";
+        }
+        const rounded = value.toFixed(1);
+        const sign = value > 0 ? "+" : "";
+        return `${sign}${rounded} %`;
+      }
+
+      function formatAngle(value) {
+        if (!Number.isFinite(value)) {
+          return "—";
+        }
+        return `${value.toFixed(1)} deg`;
+      }
+
+      function setStatus(message) {
+        const element = document.getElementById("stat-out");
+        if (element) {
+          element.textContent = message;
         }
       }
       if (currentMode === 'compare' && descriptorLabelB) {
@@ -3666,13 +2806,50 @@
       }
     }
 
-    function init() {
-      scene = new THREE.Scene();
-      scene.background = new THREE.Color(0x0a0a1a);
-      camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-      camera.position.set(0, 2, 6);
-      renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-      renderer.setSize(window.innerWidth, window.innerHeight);
+      function animate() {
+        if (!clock) {
+          return;
+        }
+        const delta = clock.getDelta();
+        const elapsed = clock.elapsedTime;
+
+        updateComponentAnimation(componentAGroup, elapsed, delta);
+        updateComponentAnimation(componentBGroup, elapsed + 0.6, delta);
+
+        if (energyRing) {
+          const energyLevel = Math.max(
+            componentAGroup?.userData?.energy || 0,
+            componentBGroup && componentBGroup.visible ? componentBGroup.userData?.energy || 0 : 0
+          );
+          energyRing.material.opacity = 0.35 + energyLevel * 0.35;
+          energyRing.rotation.z += delta * 0.55;
+          const pulse = 1 + Math.sin(elapsed * 1.4) * 0.04 + energyLevel * 0.12;
+          energyRing.scale.setScalar(pulse);
+        }
+
+        if (pulseRing && pulseRing.userData.life > 0) {
+          pulseRing.userData.life -= delta * 0.9;
+          const life = Math.max(pulseRing.userData.life, 0);
+          pulseRing.material.opacity = life * pulseRing.userData.strength;
+          const scale = 1 + (1 - life) * (1.4 + pulseRing.userData.strength * 1.2);
+          pulseRing.scale.setScalar(scale);
+        }
+
+        animateParticles(delta);
+
+        renderer.render(scene, camera);
+        requestAnimationFrame(animate);
+      }
+
+      function bootstrap() {
+        initThree();
+        registerEvents();
+        initializeCatalog();
+        populateComponentSelectors();
+        readTestVariables();
+        updateCompareVisibility();
+        updateImportStatus();
+        renderInitialMetrics();
 
           <!-- Import collapsible -->
           <button class="import-toggle-btn" id="btn-toggle-import" aria-expanded="false" aria-controls="import-methods-container">
@@ -3713,290 +2890,9 @@
       if (meshA) {
         meshA.rotation.y += 0.01;
       }
-      if (meshB && meshB.visible) {
-        meshB.rotation.y -= 0.01;
-      }
-      renderer.render(scene, camera);
-    }
 
-    function resetArena() {
-      const stat = document.getElementById(STAT_ID);
-      if (stat) {
-        stat.textContent = 'Reset arena';
-      }
-      if (meshA) {
-        meshA.rotation.set(0, 0, 0);
-      }
-      if (meshB) {
-        meshB.rotation.set(0, 0, 0);
-      }
-      const benchCount = manufacturerRoster.length;
-      reportStatus(`Arena reset to defaults. Bench holds ${benchCount} manufacturer component${benchCount === 1 ? '' : 's'}.`);
-    }
-
-    function runTest() {
-      const modeEl = document.getElementById(MODE_ID);
-      const typeAEl = document.getElementById(COMP_TYPE_A_ID);
-      const valueAEl = document.getElementById(VALUE_A_ID);
-      const typeBEl = document.getElementById(COMP_TYPE_B_ID);
-      const valueBEl = document.getElementById(VALUE_B_ID);
-      const voltageEl = document.getElementById(VOLTAGE_ID);
-      const frequencyEl = document.getElementById(FREQUENCY_ID);
-
-      const mode = modeEl ? modeEl.value : 'single';
-      const typeA = typeAEl ? typeAEl.value : 'resistor';
-      const valueA = parseFloat((valueAEl && valueAEl.value) || '0');
-      const typeB = typeBEl ? typeBEl.value : typeA;
-      const rawValueB = (valueBEl && valueBEl.value) || String(valueA);
-      const valueB = parseFloat(rawValueB);
-      const V = parseFloat((voltageEl && voltageEl.value) || '0');
-      const f = parseFloat((frequencyEl && frequencyEl.value) || '0');
-
-      const descriptorA = lookupComponent(activeComponentIds.a, typeA);
-      const descriptorB = lookupComponent(activeComponentIds.b, typeB);
-      const descriptorLabelA = formatDescriptor(descriptorA, typeA, manufacturerNames.a);
-      const descriptorLabelB = formatDescriptor(descriptorB, typeB, manufacturerNames.b);
-
-      function calc(type, value) {
-        if (type === 'resistor') {
-          const I = V / (value || 1);
-          const P = V * I;
-          return { I: Number.isFinite(I) ? Number(I.toFixed(3)) : 0, P: Number.isFinite(P) ? Number(P.toFixed(3)) : 0 };
-        }
-        if (type === 'capacitor') {
-          const X = 1 / (2 * Math.PI * f * (value || 1e-6));
-          const I = V / X;
-          return { X: Number.isFinite(X) ? Number(X.toFixed(3)) : 0, I: Number.isFinite(I) ? Number(I.toFixed(3)) : 0 };
-        }
-        if (type === 'inductor') {
-          const X = 2 * Math.PI * f * (value || 1e-3);
-          const I = V / X;
-          return { X: Number.isFinite(X) ? Number(X.toFixed(3)) : 0, I: Number.isFinite(I) ? Number(I.toFixed(3)) : 0 };
-        }
-        if (type === 'led') {
-          const Vf = 2.0;
-          const I = Math.max(0, V - Vf) / (value || 100);
-          return { Vf, I: Number.isFinite(I) ? Number(I.toFixed(3)) : 0 };
-        }
-        const payload = parseArenaPayload(event.newValue);
-        if (!payload) {
-          return;
-        }
-        const applied = applyArenaPayload(payload, {
-          source: payload.source || "builder",
-          label: payload.label || payload.sessionName || "Builder Snapshot",
-        });
-        if (applied) {
-          setStatus("Synced builder snapshot from storage.");
-        }
-      });
-
-      // ── Public bridge API ──────────────────────────────────────────────────
-      // Exposes a minimal surface to sibling scripts (the featured-catalog IIFE)
-      // that need to manipulate arena state without closure access.
-      window.ArenaAPI = {
-        registerComponent: function (raw) {
-          if (!raw || typeof raw !== "object") return null;
-          const comp = normalizeComponent(raw, raw.metadata?.vendor || raw.source || "Reference Library");
-          if (!comp) return null;
-          if (!state.components.find((c) => c.id === comp.id)) {
-            state.components.push(comp);
-            populateComponentSelectors();
-            renderImportSummary(null);
-          }
-          return comp;
-        },
-        loadComponent: function (componentId, target) {
-          const comp = state.components.find((c) => c.id === componentId);
-          if (!comp) return false;
-          if (target === "B") {
-            state.selectedB = comp;
-            const sel = document.getElementById("component-b");
-            if (sel) sel.value = componentId;
-            if (state.mode !== "compare") {
-              state.mode = "compare";
-              const modeSelect = document.getElementById("mode");
-              if (modeSelect) modeSelect.value = "compare";
-              updateCompareVisibility();
-            }
-          } else {
-            state.selectedA = comp;
-            const sel = document.getElementById("component-a");
-            if (sel) sel.value = componentId;
-          }
-          updateMeshesForSelection();
-          const ctaBtn = document.getElementById("btn-goto-test");
-          if (ctaBtn && state.selectedA) ctaBtn.style.display = "";
-          if (state.selectedA) updateWorkflowStep(2, false);
-          return true;
-        },
-      };
-
-      // ── Run History helpers ────────────────────────────────────────────────
-      function renderRunHistory() {
-        const list = document.getElementById("run-history-list");
-        if (!list) return;
-        list.innerHTML = "";
-        if (!state.runHistory || state.runHistory.length === 0) {
-          const empty = document.createElement("div");
-          empty.className = "history-empty";
-          empty.textContent = "No test runs yet — results will appear here after each run.";
-          list.appendChild(empty);
-          return;
-        }
-        const SEV_LABELS = {
-          safe: "🟢 Safe", stressed: "🟡 Stressed",
-          warning: "🟠 Warning", critical: "🔴 Critical", failed: "💀 Destroyed",
-        };
-        state.runHistory.forEach((run) => {
-          const item = document.createElement("div");
-          item.className = "history-item";
-
-          const header = document.createElement("div");
-          header.className = "history-item-header";
-
-          const name = document.createElement("div");
-          name.className = "history-item-name";
-          const displayName = run.componentBName
-            ? `${run.componentAName} vs ${run.componentBName}`
-            : run.componentAName;
-          name.textContent = displayName;
-          name.title = displayName;
-
-          const time = document.createElement("div");
-          time.className = "history-item-time";
-          try {
-            const d = new Date(run.timestamp);
-            if (!isNaN(d.getTime())) {
-              time.textContent = d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-              time.title = d.toLocaleString();
-            }
-          } catch (e) { /* ignore */ }
-
-          header.appendChild(name);
-          header.appendChild(time);
-          item.appendChild(header);
-
-          const metricsRow = document.createElement("div");
-          metricsRow.className = "history-item-metrics";
-
-          const ma = run.metricsA;
-          if (ma) {
-            if (Number.isFinite(ma.powerDissipation)) {
-              const s = document.createElement("span");
-              s.className = "history-item-metric";
-              s.textContent = `P: ${formatWithUnit(ma.powerDissipation, "W")}`;
-              metricsRow.appendChild(s);
-            }
-            if (Number.isFinite(ma.currentRms)) {
-              const s = document.createElement("span");
-              s.className = "history-item-metric";
-              s.textContent = `I: ${formatWithUnit(ma.currentRms, "A")}`;
-              metricsRow.appendChild(s);
-            }
-            if (Number.isFinite(ma.thermalRise)) {
-              const s = document.createElement("span");
-              s.className = "history-item-metric";
-              s.textContent = `ΔT: ${ma.thermalRise.toFixed(1)} °C`;
-              metricsRow.appendChild(s);
-            }
-          }
-          if (Number.isFinite(run.testVoltage)) {
-            const s = document.createElement("span");
-            s.className = "history-item-metric";
-            s.textContent = `${run.testVoltage} V / ${run.testTemperatureC} °C`;
-            metricsRow.appendChild(s);
-          }
-
-          const sevSpan = document.createElement("span");
-          sevSpan.className = `history-item-severity his-sev-${run.severityA || "safe"}`;
-          sevSpan.textContent = SEV_LABELS[run.severityA] || "🟢 Safe";
-          metricsRow.appendChild(sevSpan);
-
-          item.appendChild(metricsRow);
-          list.appendChild(item);
-        });
-      }
-
-      const stat = document.getElementById(STAT_ID);
-
-      if (mode === 'compare') {
-        const A = calc(typeA, valueA);
-        const B = calc(typeB, Number.isFinite(valueB) ? valueB : valueA);
-        if (stat) {
-          stat.textContent = `A (${descriptorLabelA}): ${JSON.stringify(A)} | B (${descriptorLabelB}): ${JSON.stringify(B)}`;
-        }
-        reportStatus(`Compare test complete: ${descriptorLabelA} vs ${descriptorLabelB}.`);
-      } else {
-        const A = calc(typeA, valueA);
-        if (stat) {
-          stat.textContent = `A (${descriptorLabelA}): ${JSON.stringify(A)}`;
-        }
-        reportStatus(`Single test complete: ${descriptorLabelA} metrics refreshed.`);
-      }
-
-    function exportResults() {
-      const statText = document.getElementById(STAT_ID)?.textContent || 'Arena export (no data)';
-      const blob = new Blob([statText], { type: 'text/plain' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = 'arena-results.txt';
-      a.click();
-      reportStatus('Exported the latest arena snapshot.');
-    }
-
-    document.getElementById(MODE_ID).addEventListener('change', (event) => {
-      const select = event.target;
-      const compare = select.value === 'compare';
-      document.querySelectorAll('.compare-only').forEach((element) => {
-        element.style.display = compare ? '' : 'none';
-      });
-      syncMeshVisibility(select.value);
-    });
-
-    window.addEventListener('message', (event) => {
-      const { data } = event;
-      if (!data || typeof data !== 'object') {
-        return;
-      }
-
-      const { type, payload } = data;
-
-      switch (type) {
-        case 'arena:configure':
-          applyConfig(payload);
-          break;
-        case 'arena:reset':
-          resetArena();
-          break;
-        case 'arena:run-test':
-          runTest();
-          break;
-        case 'arena:export':
-          exportResults();
-          break;
-        case 'arena:register-components': {
-          const payloadObject = payload && typeof payload === 'object' ? payload : {};
-          const components = Array.isArray(payloadObject.components) ? payloadObject.components : [];
-          ingestManufacturerRoster(components);
-          const count = manufacturerRoster.length;
-          reportStatus(`Registered ${count} manufacturer component${count === 1 ? '' : 's'} for arena matchups.`);
-          const stat = document.getElementById(STAT_ID);
-          if (stat) {
-            stat.textContent = `Arena bench updated (${count} components).`;
-          }
-          if (typeof window !== 'undefined' && window.parent && typeof window.parent.postMessage === 'function') {
-            window.parent.postMessage({ type: 'arena:components-registered', payload: { count } }, '*');
-          }
-          break;
-        }
-        default:
-          break;
-      }
-    });
-
-    init();
-    notifyReady();
+      bootstrap();
+    })();
   </script>
   <script>
     // ── Featured Components — real manufacturer component data ──────────────
