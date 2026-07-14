@@ -4568,76 +4568,7 @@
         let _pressedButtonComponent = null;
         let _nodeHighlightTimer = null; // Auto-dim timer for lit terminal nodes after wire-placement procedure
         let currentFlowParticles = [];
-        let currentWireGlows    = []; // additive-blended glow tubes around active wires
-        let currentLatticeAtoms = []; // Cu²⁺ lattice ion spheres (atomic zoom)
-        let currentProbabilityClouds = []; // electron probability-cloud hazes (atomic zoom)
-        let flowActivationTime  = 0;  // performance.now() when flow last activated
-        /** Default first-order thermal time constant (s) for small components with no explicit τ. */
-        const FUSE_THERMAL_TAU_DEFAULT = 5;
-        /**
-         * Cadence (ms) for thermal-state re-analyses while a circuit is live.
-         * Half of τ gives smooth severity steps without expensive per-frame re-analysis.
-         */
-        const FUSE_THERMAL_RECHECK_MS  = FUSE_THERMAL_TAU_DEFAULT * 500; // 2500 ms
-        /** performance.now() timestamp when current last began flowing (0 = not flowing). */
-        let fuseOnsetStartTime = 0;
-        /** setTimeout ID for the next scheduled FUSE thermal re-check. */
-        let fuseOnsetTimer     = null;
-        /** Last wire warning level for which a FUSE™ toast was shown — prevents repeated toasts. */
-        let _lastWireWarningToastLevel = null;
-        /** Slightly larger component meshes for readability + on-screen presence. */
-        const COMPONENT_SCALE = 1.25;
-        /** Payoff showcase only: scales the current-flow particle SPEED so the demo
-         *  reads ~25% slower and is easy to watch. User-built circuits are unaffected. */
-        const PAYOFF_FLOW_SPEED_SCALE = 0.75;
-        /** Set true at renderer init on capable (non-mobile) GPUs; gates shadow casting. */
-        let renderShadows = false;
-
-        /**
-         * Build a soft procedural "studio" environment as an equirectangular canvas
-         * texture. Fed through PMREMGenerator so the PBR (MeshStandardMaterial)
-         * components pick up believable reflections + ambient bounce instead of
-         * reading flat. Deliberately muted (no pure white) to avoid the blow-out that
-         * over-bright environments caused on the branding work.
-         */
-        function buildStudioEnvTexture() {
-            const c = document.createElement('canvas');
-            c.width = 256; c.height = 128;
-            const g = c.getContext('2d');
-            const grad = g.createLinearGradient(0, 0, 0, c.height);
-            grad.addColorStop(0.0,  '#3a4a66'); // upper sky — soft key
-            grad.addColorStop(0.45, '#202836');
-            grad.addColorStop(0.55, '#161b26');
-            grad.addColorStop(1.0,  '#0a0d14'); // ground
-            g.fillStyle = grad;
-            g.fillRect(0, 0, c.width, c.height);
-            // Soft elliptical highlight = a single believable key reflection on metal.
-            const hx = c.width * 0.32, hy = c.height * 0.26, hr = c.height * 0.55;
-            const hi = g.createRadialGradient(hx, hy, 0, hx, hy, hr);
-            hi.addColorStop(0, 'rgba(200,214,235,0.80)');
-            hi.addColorStop(1, 'rgba(200,214,235,0)');
-            g.fillStyle = hi;
-            g.fillRect(0, 0, c.width, c.height);
-            const tex = new THREE.CanvasTexture(c);
-            tex.mapping = THREE.EquirectangularReflectionMapping;
-            return tex;
-        }
-        /**
-         * True while the startup payoff showcase circuit is loaded. Used so that a
-         * F.U.S.E. branch failure in the parallel showcase degrades the flow (slow +
-         * dim) instead of opening the whole circuit the way a series failure would.
-         */
-        let isPayoffCircuit = false;
-        /**
-         * Global flow-degradation multiplier for the payoff showcase (1 = full, 0.75 =
-         * degraded). Scales both particle speed and brightness so that when a F.U.S.E.
-         * branch fails the surviving parallel paths read ~25% slower and dimmer.
-         */
-        let payoffFlowDegrade = 1;
-        // User-tunable current-flow speed multiplier, driven by the app Settings
-        // page via the 'apply-scene-settings' bridge message (1 = default speed).
-        let userFlowSpeedScale  = 1;
-        let globalFlowTime      = 0;  // monotonic per-frame counter for animation phases
+        let lastSelectionJson = null;
         let menuVisible = isEmbedded ? false : true;
         let analysisVisible = isEmbedded ? false : true;
 
@@ -4879,6 +4810,148 @@ body.android-optimized .zoom-btn {
                 } catch (error) {
                     console.warn('Builder bridge: unable to share mode state', error);
                 }
+            }
+        }
+
+        function sanitizeSelectionValue(value) {
+            if (value === null) {
+                return null;
+            }
+
+            switch (typeof value) {
+                case 'number':
+                    return Number.isFinite(value) ? Number(value) : undefined;
+                case 'string':
+                    return value;
+                case 'boolean':
+                    return value;
+                default:
+                    return undefined;
+            }
+        }
+
+        function isPlainObject(value) {
+            if (!value || typeof value !== 'object') {
+                return false;
+            }
+            const proto = Object.getPrototypeOf(value);
+            return proto === Object.prototype || proto === null;
+        }
+
+        function sanitizeSelectionObject(source) {
+            if (!isPlainObject(source)) {
+                return undefined;
+            }
+
+            const result = {};
+            Object.keys(source).forEach((key) => {
+                const rawValue = source[key];
+
+                if (Array.isArray(rawValue)) {
+                    const sanitizedArray = rawValue
+                        .map((item) => sanitizeSelectionValue(item))
+                        .filter((item) => item !== undefined);
+                    if (sanitizedArray.length > 0) {
+                        result[key] = sanitizedArray;
+                    }
+                    return;
+                }
+
+                if (isPlainObject(rawValue)) {
+                    const nested = sanitizeSelectionObject(rawValue);
+                    if (nested && Object.keys(nested).length > 0) {
+                        result[key] = nested;
+                    }
+                    return;
+                }
+
+                const sanitized = sanitizeSelectionValue(rawValue);
+                if (sanitized !== undefined) {
+                    result[key] = sanitized;
+                }
+            });
+
+            return Object.keys(result).length > 0 ? result : undefined;
+        }
+
+        function buildSelectionPayload(entity) {
+            if (!entity) {
+                return { kind: 'none' };
+            }
+
+            if (entity.type) {
+                const rotationRadians = Number.isFinite(entity.rotation) ? Number(entity.rotation) : 0;
+                const rawDegrees = rotationRadians * (180 / Math.PI);
+                const rotationDegrees = Number.isFinite(rawDegrees) ? Math.round(rawDegrees) : 0;
+
+                const identifier = typeof entity.getComponentIdentifier === 'function'
+                    ? entity.getComponentIdentifier()
+                    : null;
+
+                const properties = sanitizeSelectionObject(entity.properties) || null;
+                const metadata = sanitizeSelectionObject(entity.metadata) || null;
+
+                const connections = Array.isArray(entity.connections)
+                    ? entity.connections.map((connection) => ({
+                        wireId: connection?.wire?.id || null,
+                        targetId: connection?.connectedTo?.id || null,
+                        side: connection?.side || null
+                    })).filter((connection) => connection.wireId || connection.targetId || connection.side)
+                    : [];
+
+                return {
+                    kind: 'component',
+                    id: entity.id || null,
+                    type: entity.type || null,
+                    label: identifier || (entity.type ? entity.type.toUpperCase() : null),
+                    identifier: identifier,
+                    rotation: {
+                        radians: rotationRadians,
+                        degrees: ((rotationDegrees % 360) + 360) % 360
+                    },
+                    position: {
+                        x: Number(entity.position?.x || 0),
+                        y: Number(entity.position?.y || 0),
+                        z: Number(entity.position?.z || 0)
+                    },
+                    properties,
+                    metadata,
+                    connections
+                };
+            }
+
+            if (entity.id && entity.id.startsWith('junction')) {
+                return {
+                    kind: 'junction',
+                    id: entity.id,
+                    label: entity.id,
+                    position: {
+                        x: Number(entity.position?.x || 0),
+                        y: Number(entity.position?.y || 0),
+                        z: Number(entity.position?.z || 0)
+                    },
+                    connectionCount: Array.isArray(entity.connections) ? entity.connections.length : 0
+                };
+            }
+
+            return { kind: 'none' };
+        }
+
+        function notifyParentSelection(entity) {
+            if (!window.parent || window.parent === window) {
+                return;
+            }
+
+            try {
+                const payload = buildSelectionPayload(entity);
+                const payloadJson = JSON.stringify(payload);
+                if (payloadJson === lastSelectionJson) {
+                    return;
+                }
+                lastSelectionJson = payloadJson;
+                window.parent.postMessage({ type: 'legacy:selection', payload }, '*');
+            } catch (error) {
+                console.warn('Builder bridge: unable to share selection', error);
             }
         }
 
@@ -5185,62 +5258,38 @@ body.android-optimized .zoom-btn {
                             case 'open-arena':
                                 if (typeof openArena === 'function') openArena();
                                 break;
-                            case 'undo':
-                                if (typeof undo === 'function') undo();
-                                break;
-                            case 'redo':
-                                if (typeof redo === 'function') redo();
-                                break;
-                            case 'clear-workspace':
-                                if (typeof clearAll === 'function') clearAll();
-                                break;
-                            case 'run-simulation':
-                                if (typeof runSimulation === 'function') runSimulation();
-                                break;
-                            case 'set-wire-profile':
-                                if (typeof applyWireProfileFromBridge === 'function') {
-                                    applyWireProfileFromBridge(data.wireProfile || null);
-                                }
-                                break;
-                            case 'lock-circuit':
-                                isCircuitEditLocked = true;
-                                setStatus('🔒 Circuit locked - complete the active challenge to edit');
-                                break;
-                            case 'unlock-circuit':
-                                isCircuitEditLocked = false;
-                                setStatus('🔓 Circuit unlocked - you can now edit');
-                                break;
-                            case 'zoom-in':
-                                cameraDistance = Math.max(ZOOM_MIN, cameraDistance - Math.max(ZOOM_IN_MIN_STEP, cameraDistance * ZOOM_STEP_PROPORTIONAL));
-                                updateCameraPosition();
-                                break;
-                            case 'zoom-out':
-                                cameraDistance = Math.min(ZOOM_MAX, cameraDistance + Math.max(ZOOM_OUT_MIN_STEP, cameraDistance * ZOOM_STEP_PROPORTIONAL));
-                                updateCameraPosition();
-                                break;
-                            case 'cinematic-play':
-                                // When no keyframes are supplied, play the waypoints already
-                                // stored inside the controller (added via cinematic-add-waypoint).
-                                _cinematicCtrl.start(data.preset || null, data.keyframes || _cinematicCtrl.keyframes);
-                                break;
-                            case 'cinematic-stop':
-                                _cinematicCtrl.stop();
-                                break;
-                            case 'cinematic-capture':
-                                _cinematicCtrl.captureFrame();
-                                break;
-                            case 'cinematic-record-start':
-                                _cinematicCtrl.startRecord();
-                                break;
-                            case 'cinematic-record-stop':
-                                _cinematicCtrl.stopRecord();
-                                break;
-                            case 'cinematic-add-waypoint':
-                                _cinematicCtrl.addCurrentAsWaypoint();
-                                break;
-                            case 'cinematic-clear-waypoints':
-                                _cinematicCtrl.clearWaypoints();
-                                break;
+                              case 'clear-workspace':
+                                  if (typeof clearAll === 'function') clearAll();
+                                  break;
+                              case 'run-simulation':
+                                  if (typeof runSimulation === 'function') runSimulation();
+                                  break;
+                              case 'edit-selected-component':
+                                  if (selectedComponent && typeof showEditPopup === 'function') {
+                                      showEditPopup(selectedComponent);
+                                  } else {
+                                      setStatus('? Select a component to edit values');
+                                  }
+                                  break;
+                              case 'rotate-selected-component':
+                                  if (selectedComponent && selectedComponent.type && typeof rotateComponent === 'function') {
+                                      rotateComponent(selectedComponent, { animate: true, silent: false });
+                                  } else {
+                                      setStatus('? Select a component to rotate');
+                                  }
+                                  break;
+                              case 'open-wire-editor':
+                                  if (typeof data.wireId === 'string' && typeof showWireEditPopup === 'function') {
+                                      const targetWire = wires.find((wire) => wire?.id === data.wireId);
+                                      if (targetWire) {
+                                          const centerX = (typeof window !== 'undefined' ? window.innerWidth : 0) / 2;
+                                          const centerY = (typeof window !== 'undefined' ? window.innerHeight : 0) / 2;
+                                          showWireEditPopup(targetWire, centerX, centerY);
+                                      } else {
+                                          setStatus('? Wire not found - select a connected component terminal first');
+                                      }
+                                  }
+                                  break;
                             default:
                                 break;
                         }
@@ -14282,6 +14331,7 @@ body.android-optimized .zoom-btn {
 
             // Update component properties
             currentEditComponent.updateProperties(newProperties);
+            notifyParentSelection(currentEditComponent);
             
             // Hide popup
             hideEditPopup();
@@ -14755,6 +14805,7 @@ body.android-optimized .zoom-btn {
             }
 
             analyzeCircuit();
+            notifyParentSelection(component);
 
             if (!silent) {
                 const rotationDegrees = Math.round((nextRotation * 180) / Math.PI) % 360;
@@ -14808,6 +14859,7 @@ body.android-optimized .zoom-btn {
                 saveState(); // Save for undo
                 component.properties.isOn = !component.properties.isOn;
                 component.updateProperties({ isOn: component.properties.isOn });
+                notifyParentSelection(component);
                 const state = component.properties.isOn ? 'ON' : 'OFF';
                 setStatus(`⚡  Switch ${state} - circuit updated`);
                 analyzeCircuit();
@@ -14840,6 +14892,7 @@ body.android-optimized .zoom-btn {
             const { startDragging = false, silent = false } = options;
             selectedComponent = component;
             isDragging = Boolean(startDragging);
+            notifyParentSelection(component);
 
             if (silent) {
                 return;
@@ -14861,6 +14914,7 @@ body.android-optimized .zoom-btn {
             const { startDragging = false, silent = false } = options;
             selectedComponent = junction;
             isDragging = Boolean(startDragging);
+            notifyParentSelection(junction);
 
             if (silent) {
                 return;
@@ -15085,129 +15139,7 @@ body.android-optimized .zoom-btn {
             }
             
             selectedComponent = null;
-            const nextTool = isWireMode ? 'wire' : (isMeasureMode ? 'measure' : (isRotateMode ? 'rotate' : 'select'));
-            notifyParentToolState(nextTool);
-
-            // The ghost is committed to the grid now. Nothing else re-emits circuit
-            // state on release, so push a snapshot — otherwise the parent keeps the
-            // stale isPlacing:true from pickup and never sees the part land.
-            if (wasPlacing) {
-                updateCircuitInfo();
-            }
-        }
-
-        // Auto-insert a 2-terminal component in series into an existing wire.
-        // Removes the original wire and creates two new wires connecting through the component.
-        // Returns true on success, false if unable to insert.
-        function tryAutoInsertComponentOnWire(component, wire) {
-            if (!component || !wire) return false;
-            if (!component.connectionPoints || component.connectionPoints.length !== 2) return false;
-
-            const side0 = component.connectionPoints[0]?.userData?.side;
-            const side1 = component.connectionPoints[1]?.userData?.side;
-            if (!side0 || !side1) return false;
-
-            const oldStartObj  = wire.startObj;
-            const oldStartSide = wire.startSide;
-            const oldEndObj    = wire.endObj;
-            const oldEndSide   = wire.endSide;
-
-            try {
-                // Remove original wire (Wire.remove() also removes it from the wires array).
-                wire.remove();
-
-                const wire1 = new Wire(oldStartObj, oldStartSide, component, side0);
-                const wire2 = new Wire(component, side1, oldEndObj, oldEndSide);
-                wires.push(wire1, wire2);
-
-                analyzeCircuit();
-                updateCircuitInfo();
-                return true;
-            } catch (error) {
-                console.error('[Builder] tryAutoInsertComponentOnWire failed:', error);
-                return false;
-            }
-        }
-
-        // Standard wire-placement procedure called whenever an entity is dropped after dragging.
-        //
-        // Rules:
-        //   • Junction  → auto-split the nearest wire; light up the junction node.
-        //   • 2-terminal component → auto-insert in series into nearest wire; light up nodes.
-        //   • 3+-terminal component → light up nodes; prompt user to wire manually.
-        //
-        // Only fires for freshly placed (unwired) entities so that moving an already-connected
-        // component does not accidentally re-trigger the procedure.
-        function handleWirePlacementProcedure(entity) {
-            if (!entity) return;
-
-            // Skip if the entity already has wire connections (i.e. it's being repositioned).
-            const hasConnections = entity.connections && entity.connections.length > 0;
-            if (hasConnections) return;
-
-            if (!Array.isArray(wires) || wires.length === 0) return;
-
-            const pos = entity.position;
-            if (!pos) return;
-
-            const hit = findWireNearWorldPosition(pos, WIRE_PLACEMENT_SNAP_RADIUS);
-            if (!hit) return;
-
-            const { wire, point } = hit;
-
-            if (entity instanceof Junction) {
-                // Pass the freshly-placed junction directly to splitWireWithJunction so it is
-                // re-used as the split point instead of being discarded and immediately recreated.
-                const newJunction = splitWireWithJunction(wire, point, {
-                    saveSnapshot: false,
-                    snapToGridPosition: false,
-                    suppressStatus: true,
-                    reuseNearbyJunction: false,
-                    existingJunction: entity
-                });
-
-                if (newJunction) {
-                    // Enter wire mode (if not already) and pre-select the junction so
-                    // the user can immediately click a terminal to complete the branch.
-                    if (!isWireMode) {
-                        enableWireMode({ silent: true });
-                    }
-                    const pointData = getWireBranchStartPointData(newJunction);
-                    if (pointData) {
-                        if (wireStart) {
-                            highlightConnectionPoint(wireStart, false);
-                            wireStart = null;
-                        }
-                        wireStart = pointData;
-                        highlightConnectionPoint(wireStart, true);
-                        setStatus('⚡ Junction placed on wire — click any terminal or junction to complete the branch!');
-                    } else {
-                        setStatus('⚡ Junction placed on wire — wire split! Switch to ⚡ Wire mode to branch.');
-                    }
-                }
-                return;
-            }
-
-            if (!(entity instanceof Component)) return;
-
-            const terminalCount = entity.connectionPoints ? entity.connectionPoints.length : 0;
-            const typeLabel = getComponentFriendlyName(entity);
-
-            if (terminalCount === 2) {
-                const inserted = tryAutoInsertComponentOnWire(entity, wire);
-                lightUpConnectionNodes(entity);
-                if (inserted) {
-                    scheduleNodeDim(entity, 3000);
-                    setStatus(`⚡ ${typeLabel} auto-wired into circuit in series — connections lit!`);
-                } else {
-                    scheduleNodeDim(entity, 6000);
-                    setStatus(`⚡ ${typeLabel} placed near wire — nodes lit! Switch to ⚡ Wire mode to connect manually.`);
-                }
-            } else if (terminalCount >= 3) {
-                lightUpConnectionNodes(entity);
-                scheduleNodeDim(entity, 6000);
-                setStatus(`⚡ ${typeLabel} placed near wire — nodes lit! Switch to ⚡ Wire mode to connect each terminal manually.`);
-            }
+            notifyParentSelection(null);
         }
 
         // Menu system functions
@@ -16539,6 +16471,8 @@ body.android-optimized .zoom-btn {
             });
             
             selectedComponents.clear();
+            selectedComponent = null;
+            notifyParentSelection(null);
             updateCircuitInfo();
             setStatus('✓ Selected objects deleted');
         }
@@ -22823,6 +22757,7 @@ Made with ? for visual learners everywhere!
             hideSnapIndicator();
             measureStartPoint = null;
             currentPracticeCircuit = null; // Reset practice circuit
+            notifyParentSelection(null);
             // Note: Don't reset currentProblemIndex to allow "Clear" during practice sequence
             
             // Reset component counters
