@@ -11,10 +11,12 @@ import { useLogoAnimation } from "../hooks/builder/useLogoAnimation";
 import { useHelpModal } from "../hooks/builder/useHelpModal";
 import { useResponsiveLayout } from "../hooks/builder/useResponsiveLayout";
 import { useWorkspaceBackground } from "../hooks/builder/useWorkspaceBackground";
+import { useDraggablePanel } from "../hooks/builder/useDraggablePanel";
 import { useWorkspaceMode } from "../context/WorkspaceModeContext";
 import "../styles/builder-ui.css";
 import "../styles/schematic.css";
 import "../styles/interactive-tutorial.css";
+import "../styles/draggable-panels.css";
 import { getSchematicSymbol, type ComponentSymbol } from "../components/circuit/SchematicSymbols";
 import BrandMark from "../components/BrandMark";
 import { CompactWorksheetPanel } from "../components/builder/panels/CompactWorksheetPanel";
@@ -1281,16 +1283,69 @@ const UNIFIED_COMPONENT_ACTIONS: ComponentAction[] = [
   ...REAL_PART_LIBRARY_ACTIONS,
 ];
 
-function deriveLabelVisibilityFromShowLabels(
-  showLabels: boolean,
-  previousLevel: number | undefined,
-): number {
-  if (showLabels) {
-    return typeof previousLevel === "number" && previousLevel > 0
-      ? previousLevel
-      : 3;
-  }
-  return 0;
+// ── Drag / resize handle sub-components ────────────────────────────────────
+const RESIZE_DIRS = ["n", "s", "e", "w", "ne", "nw", "se", "sw"] as const;
+type ResizeDir = typeof RESIZE_DIRS[number];
+
+function PanelResizeHandles({
+  getProps,
+}: {
+  getProps: (dir: ResizeDir) => {
+    onPointerDown: (e: React.PointerEvent<HTMLElement>) => void;
+    onPointerMove: (e: React.PointerEvent<HTMLElement>) => void;
+    onPointerUp: (e: React.PointerEvent<HTMLElement>) => void;
+  };
+}) {
+  return (
+    <div className="panel-resize-handles" aria-hidden="true">
+      {RESIZE_DIRS.map((dir) => (
+        <div
+          key={dir}
+          className={`panel-resize-handle panel-resize-handle--${dir}`}
+          {...getProps(dir)}
+        />
+      ))}
+    </div>
+  );
+}
+
+function PanelDragHandle({
+  dragHandleProps,
+  onReset,
+}: {
+  dragHandleProps: {
+    onPointerDown: (e: React.PointerEvent<HTMLElement>) => void;
+    onPointerMove: (e: React.PointerEvent<HTMLElement>) => void;
+    onPointerUp: (e: React.PointerEvent<HTMLElement>) => void;
+  };
+  onReset: () => void;
+}) {
+  return (
+    <div
+      className="panel-drag-handle"
+      {...dragHandleProps}
+      aria-hidden="true"
+    >
+      <div className="panel-drag-handle__grip">
+        {[0, 1, 2, 3, 4, 5].map((i) => (
+          <div key={i} className="panel-drag-handle__grip-dot" />
+        ))}
+      </div>
+      <button
+        type="button"
+        className="panel-drag-handle__reset"
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={(e) => {
+          e.stopPropagation();
+          onReset();
+        }}
+        title="Reset to default position"
+        aria-label="Reset panel to default position"
+      >
+        ↩
+      </button>
+    </div>
+  );
 }
 
 export default function Builder() {
@@ -1739,6 +1794,12 @@ export default function Builder() {
     isBottomMenuOpen,
     setBottomMenuOpen,
   } = useResponsiveLayout();
+
+  const leftPanelDrag = useDraggablePanel("panel-left");
+  const rightPanelDrag = useDraggablePanel("panel-right");
+  const bottomPanelDrag = useDraggablePanel("panel-bottom");
+  const zoomDrag = useDraggablePanel("zoom-controls");
+
   const isCoarsePointer = useMemo(() => {
     if (typeof window === "undefined") {
       return false;
@@ -3674,7 +3735,17 @@ export default function Builder() {
 
       <div
         className={`builder-menu-stage builder-menu-stage-left${isLeftMenuOpen ? " open" : ""}`}
+        data-draggable-stage=""
+        data-floating={leftPanelDrag.isFloating ? "true" : undefined}
+        style={leftPanelDrag.containerStyle}
       >
+        <PanelResizeHandles getProps={leftPanelDrag.getResizeHandleProps} />
+        {leftPanelDrag.isFloating && (
+          <PanelDragHandle
+            dragHandleProps={leftPanelDrag.dragHandleProps}
+            onReset={leftPanelDrag.resetLayout}
+          />
+        )}
         <button
           type="button"
           className="builder-menu-toggle builder-menu-toggle-left"
@@ -3701,6 +3772,12 @@ export default function Builder() {
           role="navigation"
           aria-label="Component and wiring controls"
         >
+          {!leftPanelDrag.isFloating && (
+            <PanelDragHandle
+              dragHandleProps={leftPanelDrag.dragHandleProps}
+              onReset={leftPanelDrag.resetLayout}
+            />
+          )}
           <div className="builder-menu-scroll">
             {ENABLE_SCROLLER_MENU ? (
               <ScrollerMenu
@@ -3782,7 +3859,17 @@ export default function Builder() {
 
       <div
         className={`builder-menu-stage builder-menu-stage-right${isRightMenuOpen ? " open" : ""}`}
+        data-draggable-stage=""
+        data-floating={rightPanelDrag.isFloating ? "true" : undefined}
+        style={rightPanelDrag.containerStyle}
       >
+        <PanelResizeHandles getProps={rightPanelDrag.getResizeHandleProps} />
+        {rightPanelDrag.isFloating && (
+          <PanelDragHandle
+            dragHandleProps={rightPanelDrag.dragHandleProps}
+            onReset={rightPanelDrag.resetLayout}
+          />
+        )}
         <button
           type="button"
           className="builder-menu-toggle builder-menu-toggle-right"
@@ -3809,6 +3896,12 @@ export default function Builder() {
           role="complementary"
           aria-label="Mode and view controls"
         >
+          {!rightPanelDrag.isFloating && (
+            <PanelDragHandle
+              dragHandleProps={rightPanelDrag.dragHandleProps}
+              onReset={rightPanelDrag.resetLayout}
+            />
+          )}
           <div className="builder-menu-scroll">
             <div className="slider-section">
               <span className="slider-heading">Visualization</span>
@@ -4007,7 +4100,11 @@ export default function Builder() {
 
       <div
         className={`builder-menu-stage builder-menu-stage-bottom${isBottomMenuOpen ? " open" : ""}`}
+        data-draggable-stage=""
+        data-floating={bottomPanelDrag.isFloating ? "true" : undefined}
+        style={bottomPanelDrag.containerStyle}
       >
+        <PanelResizeHandles getProps={bottomPanelDrag.getResizeHandleProps} />
         <button
           type="button"
           className="builder-menu-toggle builder-menu-toggle-bottom"
@@ -4034,17 +4131,10 @@ export default function Builder() {
           role="navigation"
           aria-label="Analysis, practice, and guides"
         >
-          {isBottomMenuOpen && (
-            <button
-              type="button"
-              className="builder-menu-bottom-close"
-              onClick={() => setBottomMenuOpen(false)}
-              aria-label="Close insights panel"
-              title="Close insights"
-            >
-              ✕
-            </button>
-          )}
+          <PanelDragHandle
+            dragHandleProps={bottomPanelDrag.dragHandleProps}
+            onReset={bottomPanelDrag.resetLayout}
+          />
           <div className="builder-menu-scroll builder-menu-scroll-bottom">
             <div className="slider-section">
               <span className="slider-heading">Analysis</span>
@@ -4371,20 +4461,22 @@ export default function Builder() {
         )}
       </div>
 
-      {activeWorkspacePanelMode === "arena" && (
-        <ArenaView
-          variant="workspace"
-          panelOpen={isWorkspacePanelOpen}
-          onTogglePanel={() => setWorkspacePanelOpen((open) => !open)}
-          onNavigateBack={closeArenaWorkspace}
-        />
-      )}
-
-      {((isActiveCircuitBuildMode && !isOverlayActive) || isSettingsPanelLifted) && (
+      {isActiveCircuitBuildMode && !isOverlayActive && (
         <div
-          className={`circuit-zoom-controls${isSettingsPanelLifted ? " circuit-zoom-controls--lifted" : ""}`}
+          className="circuit-zoom-controls"
           aria-label="Zoom controls"
+          data-draggable-stage=""
+          data-floating={zoomDrag.isFloating ? "true" : undefined}
+          style={zoomDrag.containerStyle}
         >
+          <div
+            className="zoom-drag-grip"
+            {...zoomDrag.dragHandleProps}
+            title="Drag to reposition"
+            aria-hidden="true"
+          >
+            ⠿
+          </div>
           <button
             type="button"
             className="circuit-zoom-btn"
@@ -4415,52 +4507,18 @@ export default function Builder() {
           >
             −
           </button>
-          <button
-            type="button"
-            className={`circuit-zoom-btn${labelVisibilityLevel > 0 ? "" : " circuit-zoom-btn--inactive"}`}
-            onClick={() => triggerBuilderAction("toggle-labels")}
-            disabled={controlsDisabled}
-            aria-label={`Cycle component label detail (${labelVisibilityDescription})`}
-            aria-pressed={labelVisibilityLevel > 0}
-            title={labelToggleTitle}
-          >
-            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M20.59 13.41 13.42 20.6a2 2 0 0 1-2.83 0L3 13V3h10l7.59 7.59a2 2 0 0 1 0 2.82z" />
-              <circle cx="7.5" cy="7.5" r="1.2" />
-            </svg>
-          </button>
-          <button
-            type="button"
-            className={`cinematic-fab${isCinematicOpen ? " active" : ""}${cinematicIsRecording ? " cinematic-fab--recording" : ""}`}
-            onClick={() => setIsCinematicOpen((prev) => !prev)}
-            aria-label={isCinematicOpen ? "Close cinematic camera" : "Open cinematic camera"}
-            aria-expanded={isCinematicOpen}
-            title="Cinematic Camera"
-          >
-            {cinematicIsRecording ? (
-              <><span className="cinematic-rec-dot" aria-hidden="true" />REC</>
-            ) : (
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="m22 8-6 4 6 4V8z" />
-                <rect x="2" y="6" width="14" height="12" rx="2" />
-              </svg>
-            )}
-          </button>
-          {/* Settings — the gear lives out in the workspace control stack (below the
-              cinematic camera); all settings open from here. */}
-          <button
-            type="button"
-            className={`circuit-zoom-btn${isSettingsPanelOpen ? " circuit-zoom-btn--active" : ""}`}
-            onClick={() => setSettingsPanelOpen((open) => !open)}
-            aria-label={isSettingsPanelOpen ? "Close settings" : "Open settings"}
-            aria-expanded={isSettingsPanelOpen}
-            title="Settings"
-          >
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <circle cx="12" cy="12" r="3" />
-              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
-            </svg>
-          </button>
+          {zoomDrag.isFloating && (
+            <button
+              type="button"
+              className="circuit-zoom-btn zoom-reset-btn"
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={zoomDrag.resetLayout}
+              title="Reset to default position"
+              aria-label="Reset zoom controls position"
+            >
+              ↩
+            </button>
+          )}
         </div>
       )}
 
