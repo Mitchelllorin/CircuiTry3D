@@ -1501,7 +1501,155 @@ type PracticeViewportProps = {
 };
 
 function PracticeViewport({ problem }: PracticeViewportProps) {
-  const elements = useMemo(() => createPresetElements(problem), [problem]);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const problemRef = useRef<PracticeProblem>(problem);
+  problemRef.current = problem;
+
+  const applyProblemRef = useRef<((nextProblem: PracticeProblem) => void) | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    let cleanup: (() => void) | null = null;
+
+    loadThree()
+      .then((three) => {
+        if (!isMounted) {
+          return;
+        }
+
+        const container = containerRef.current;
+        if (!container) {
+          return;
+        }
+
+        setLoading(false);
+
+        const renderer = new three.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setClearColor(0xfdfdfd, 1);
+        container.appendChild(renderer.domElement);
+
+        const scene = new three.Scene();
+        scene.background = new three.Color(0xfdfdfd);
+
+        const camera = new three.PerspectiveCamera(
+          44,
+          container.clientWidth / container.clientHeight,
+          0.1,
+          200
+        );
+        camera.position.set(9.5, 7.8, 12.4);
+        camera.lookAt(new three.Vector3(0, 0, 0));
+
+        const ambient = new three.AmbientLight(0xffffff, 0.75);
+        scene.add(ambient);
+
+        const hemi = new three.HemisphereLight(0x98c7ff, 0x0a1326, 0.55);
+        hemi.position.set(0, 6, 0);
+        scene.add(hemi);
+
+        const key = new three.DirectionalLight(0x6bb7ff, 0.7);
+        key.position.set(8, 12, 6);
+        scene.add(key);
+
+        const fill = new three.DirectionalLight(0xf4c163, 0.4);
+        fill.position.set(-6, 7, -4);
+        scene.add(fill);
+
+        const boardGeometry = new three.PlaneGeometry(16, 12, 1, 1);
+        const boardMaterial = new three.MeshStandardMaterial({
+          color: 0xf3f4f6,
+          metalness: 0,
+          roughness: 0.95,
+          transparent: true,
+          opacity: 0.98,
+          side: three.DoubleSide,
+        });
+        const board = new three.Mesh(boardGeometry, boardMaterial);
+        board.rotation.x = -Math.PI / 2;
+        board.position.y = -0.05;
+        scene.add(board);
+
+        const grid = new three.GridHelper(12, 12, 0xcbd5f5, 0xe2e8f0);
+        grid.position.y = 0.02;
+        if (grid.material) {
+          grid.material.transparent = true;
+          grid.material.opacity = 0.22;
+        }
+        scene.add(grid);
+
+        let circuitGroup: any = null;
+
+        const setCircuit = (practiceProblem: PracticeProblem) => {
+          if (circuitGroup) {
+            scene.remove(circuitGroup);
+            disposeThreeObject(circuitGroup);
+            circuitGroup = null;
+          }
+          circuitGroup = buildCircuitElements(three, practiceProblem);
+          scene.add(circuitGroup);
+        };
+
+        applyProblemRef.current = setCircuit;
+        setCircuit(problemRef.current);
+
+        const clock = new three.Clock();
+        let animationFrame = 0;
+
+        const animate = () => {
+          animationFrame = window.requestAnimationFrame(animate);
+          const elapsed = clock.getElapsedTime();
+          if (circuitGroup) {
+            const wobble = Math.sin(elapsed * 0.35) * 0.12;
+            circuitGroup.rotation.y = wobble;
+            circuitGroup.position.y = Math.sin(elapsed * 0.45) * 0.04;
+          }
+          renderer.render(scene, camera);
+        };
+
+        animate();
+
+        const handleResize = () => {
+          if (!container) {
+            return;
+          }
+          renderer.setSize(container.clientWidth, container.clientHeight);
+          camera.aspect = container.clientWidth / container.clientHeight;
+          camera.updateProjectionMatrix();
+        };
+
+        window.addEventListener("resize", handleResize);
+
+        cleanup = () => {
+          window.cancelAnimationFrame(animationFrame);
+          window.removeEventListener("resize", handleResize);
+          if (container && renderer.domElement.parentNode === container) {
+            container.removeChild(renderer.domElement);
+          }
+          disposeThreeObject(scene);
+          renderer.dispose();
+        };
+      })
+      .catch((err) => {
+        if (!isMounted) {
+          return;
+        }
+        console.error("Failed to initialise schematic viewport", err);
+        setError("Unable to load the WebGL renderer. Please ensure WebGL is supported and try again.");
+        setLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+      if (cleanup) {
+        cleanup();
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (applyProblemRef.current) {
@@ -1516,6 +1664,228 @@ function PracticeViewport({ problem }: PracticeViewportProps) {
       </div>
     </div>
   );
+}
+
+type Vec2 = {
+  x: number;
+  z: number;
+};
+
+const WIRE_RADIUS = 0.08;
+const RESISTOR_RADIUS = 0.085;
+const NODE_RADIUS = 0.14;
+const WIRE_HEIGHT = 0.18;
+const COMPONENT_HEIGHT = 0.22;
+const LABEL_HEIGHT = 0.55;
+
+function buildCircuitElements(three: any, problem: PracticeProblem) {
+  const group = new three.Group();
+  group.name = `circuit-${problem.id}`;
+
+  const elements: SchematicElement[] = [];
+  const nodeMap = new Map<string, Vec2>();
+
+  const clonePoint = (point: Vec2): Vec2 => ({ x: point.x, z: point.z });
+  const nextId = (() => {
+    let counter = 0;
+    return (prefix: string) => `${problem.id}-${prefix}-${counter++}`;
+  })();
+
+  const recordNode = (point: Vec2) => {
+    nodeMap.set(pointKey(point), clonePoint(point));
+  };
+
+  const addWire = (path: Vec2[]) => {
+    if (!path || path.length < 2) {
+      return;
+    }
+    const compressed: Vec2[] = [];
+    path.forEach((point, index) => {
+      if (index === 0) {
+        compressed.push(clonePoint(point));
+        return;
+      }
+      const previous = path[index - 1];
+      if (point.x === previous.x && point.z === previous.z) {
+        return;
+      }
+      compressed.push(clonePoint(point));
+    });
+    if (compressed.length < 2) {
+      return;
+    }
+    compressed.forEach(recordNode);
+    elements.push({
+      id: nextId("wire"),
+      kind: "wire",
+      path: compressed,
+    });
+  };
+
+  const addTwoTerminal = (kind: TwoTerminalElement["kind"], start: Vec2, end: Vec2, label: string) => {
+    const orientation: Orientation =
+      Math.abs(end.x - start.x) >= Math.abs(end.z - start.z) ? "horizontal" : "vertical";
+    recordNode(start);
+    recordNode(end);
+    elements.push({
+      id: nextId(kind),
+      kind,
+      label,
+      start: clonePoint(start),
+      end: clonePoint(end),
+      orientation,
+    });
+  };
+
+  const addBattery = (start: Vec2, end: Vec2, label: string) => addTwoTerminal("battery", start, end, label);
+  const addResistor = (start: Vec2, end: Vec2, label: string) => addTwoTerminal("resistor", start, end, label);
+
+  const sourceLabel = problem.source.label ?? "Source";
+  const componentLabels = new Map(problem.components.map((component) => [component.id, component.label ?? component.id]));
+  const labelFor = (id: string) => componentLabels.get(id) ?? id;
+
+  const buildSeries = () => {
+    const left = -4.4;
+    const right = 4.4;
+    const top = 2.7;
+    const bottom = -2.7;
+
+    const start: Vec2 = { x: left, z: bottom };
+    const batteryStart: Vec2 = { x: left, z: bottom + 0.9 };
+    const batteryEnd: Vec2 = { x: left, z: top - 0.9 };
+    const topLeft: Vec2 = { x: left, z: top };
+    const topRight: Vec2 = { x: right, z: top };
+    const bottomRight: Vec2 = { x: right, z: bottom };
+
+    addWire([start, batteryStart]);
+    addBattery(batteryStart, batteryEnd, sourceLabel);
+    addWire([batteryEnd, topLeft]);
+
+    const componentCount = Math.max(problem.components.length, 1);
+    const segmentWidth = (topRight.x - topLeft.x) / componentCount;
+    const margin = Math.min(segmentWidth * 0.2, 0.5);
+
+    let previousPoint: Vec2 = clonePoint(topLeft);
+    problem.components.forEach((component, index) => {
+      const startX = topLeft.x + index * segmentWidth + margin;
+      const endX = topLeft.x + (index + 1) * segmentWidth - margin;
+      const resistorStart: Vec2 = { x: startX, z: top };
+      const resistorEnd: Vec2 = { x: endX, z: top };
+      addWire([previousPoint, resistorStart]);
+      addResistor(resistorStart, resistorEnd, component.label ?? component.id);
+      previousPoint = resistorEnd;
+    });
+
+    addWire([previousPoint, topRight]);
+    addWire([topRight, bottomRight]);
+    addWire([bottomRight, start]);
+  };
+
+  const buildParallel = () => {
+    const left = -2.6;
+    const right = 3.8;
+    const top = 2.5;
+    const bottom = -2.5;
+
+    const leftBottom: Vec2 = { x: left, z: bottom };
+    const batteryStart: Vec2 = { x: left, z: bottom + 0.9 };
+    const batteryEnd: Vec2 = { x: left, z: top - 0.9 };
+    const leftTop: Vec2 = { x: left, z: top };
+    const rightTop: Vec2 = { x: right, z: top };
+    const rightBottom: Vec2 = { x: right, z: bottom };
+
+    addWire([leftBottom, batteryStart]);
+    addBattery(batteryStart, batteryEnd, sourceLabel);
+    addWire([batteryEnd, leftTop]);
+    addWire([leftTop, rightTop]);
+    addWire([leftBottom, rightBottom]);
+
+    const branchCount = Math.max(problem.components.length, 1);
+    const spacing = (right - left) / (branchCount + 1);
+    const branchSpan = Math.min(Math.abs(top - bottom) - 1, 4.2);
+    const offset = Math.max((Math.abs(top - bottom) - branchSpan) / 2, 0.6);
+
+    problem.components.forEach((component, index) => {
+      const x = left + spacing * (index + 1);
+      const topNode: Vec2 = { x, z: top };
+      const bottomNode: Vec2 = { x, z: bottom };
+      const resistorStart: Vec2 = { x, z: top - offset };
+      const resistorEnd: Vec2 = { x, z: bottom + offset };
+
+      addWire([topNode, resistorStart]);
+      addResistor(resistorStart, resistorEnd, component.label ?? component.id);
+      addWire([resistorEnd, bottomNode]);
+    });
+  };
+
+  const buildCombination = () => {
+    const start: Vec2 = { x: -4.2, z: -2.3 };
+    const batteryStart: Vec2 = { x: -4.2, z: -1.5 };
+    const batteryEnd: Vec2 = { x: -4.2, z: 1.5 };
+    const topLeft: Vec2 = { x: -4.2, z: 2.3 };
+    const topMid: Vec2 = { x: -1.2, z: 2.3 };
+    const seriesTop: Vec2 = { x: 0.4, z: 2.3 };
+    const branchTop: Vec2 = { x: 1.4, z: 2.3 };
+    const branchRightTop: Vec2 = { x: 3.2, z: 2.3 };
+    const branchBottom: Vec2 = { x: 1.4, z: -0.3 };
+    const branchRightBottom: Vec2 = { x: 3.2, z: -0.3 };
+    const dropNode: Vec2 = { x: 1.4, z: -2.3 };
+    const bottomLeft: Vec2 = { x: -2.0, z: -2.3 };
+
+    addWire([start, batteryStart]);
+    addBattery(batteryStart, batteryEnd, sourceLabel);
+    addWire([batteryEnd, topLeft]);
+    addWire([topLeft, topMid]);
+
+    addResistor(topMid, seriesTop, labelFor("R1"));
+    addWire([seriesTop, branchTop]);
+
+    addResistor(branchTop, branchBottom, labelFor("R2"));
+    addWire([branchTop, branchRightTop]);
+
+    addResistor(branchRightTop, branchRightBottom, labelFor("R3"));
+    addWire([branchRightBottom, branchBottom]);
+    addWire([branchBottom, dropNode]);
+
+    addResistor(dropNode, bottomLeft, labelFor("R4"));
+    addWire([bottomLeft, start]);
+  };
+
+  const presetKey = problem.presetHint ?? problem.topology;
+
+  switch (presetKey) {
+    case "parallel_basic":
+      buildParallel();
+      break;
+    case "mixed_circuit":
+      buildCombination();
+      break;
+    case "series_basic":
+    default:
+      if (problem.topology === "parallel") {
+        buildParallel();
+      } else if (problem.topology === "combination") {
+        buildCombination();
+      } else {
+        buildSeries();
+      }
+      break;
+  }
+
+  elements.forEach((element) => {
+    const { group: elementGroup, terminals } = buildElement(three, element, {});
+    group.add(elementGroup);
+    terminals.forEach((point) => {
+      recordNode(point);
+    });
+  });
+
+  nodeMap.forEach((point) => {
+    const mesh = buildNodeMesh(three, point, {});
+    group.add(mesh);
+  });
+
+  return group;
 }
 
 function buildCircuit(three: any, problem: PracticeProblem) {
