@@ -1,6 +1,8 @@
 /* ── AI Helper FAB & Chat Panel ─────────────────────────────────────────────
  * Floating action button (FAB) + sliding chat panel for the in-app
- * Circuit AI assistant. Pinned to the top-right corner, just below the action bar.
+ * Circuit AI assistant.
+ * The FAB sits in the right section of the bottom perimeter bar, flush to
+ * the right edge (just left of the Controls toggle tab).
  * ─────────────────────────────────────────────────────────────────────────── */
 
 /* ── FAB ─────────────────────────────────────────────────────────────────── */
@@ -8,19 +10,21 @@
 .ai-helper-fab {
   display: none !important; /* Moved to action bar */
   position: fixed;
-  /* Right edge — top of workspace, just below the top strip */
-  right: calc(var(--builder-safe-area-right, 0px));
-  top: calc(
-    var(--builder-ticker-top, 72px) +
-    var(--builder-ticker-height, 32px) +
-    var(--builder-safe-area-top, 0px) +
-    2px
+  /* Vertically centred inside the bottom perimeter bar */
+  bottom: calc(
+    (var(--builder-perimeter-bar-height, 52px) - 40px) / 2 +
+    var(--builder-safe-area-bottom, 0px)
+  );
+  /* Sits just to the left of the Controls toggle tab */
+  right: calc(
+    var(--builder-menu-toggle-width, 28px) + 6px +
+    var(--builder-safe-area-right, 0px)
   );
   transform: none;
   z-index: var(--z-ai-helper);
-  width: 44px;
-  height: 44px;
-  border-radius: 0 0 0 10px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
   border: 1.5px solid rgba(136, 204, 255, 0.45);
   border-top: none;
   border-right: none;
@@ -30,6 +34,7 @@
     rgba(10, 26, 52, 0.95) 100%
   );
   color: #88ccff;
+  font-size: 18px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -47,6 +52,7 @@
     background 0.18s ease;
   outline: none;
   -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 .ai-helper-fab:hover {
@@ -137,13 +143,11 @@
 
 .ai-helper-panel {
   position: fixed;
-  /* Opens below and to the left of the AI FAB (top-right corner) */
-  right: calc(var(--builder-safe-area-right, 0px) + 48px);
-  top: calc(
-    var(--builder-ticker-top, 72px) +
-    var(--builder-ticker-height, 32px) +
-    var(--builder-safe-area-top, 0px) +
-    2px
+  /* Open above the FAB (40px button + 12px gap = 52px above perimeter bar) */
+  bottom: calc(
+    var(--builder-perimeter-bar-height, 52px) +
+    52px +
+    var(--builder-safe-area-bottom, 0px)
   );
   bottom: auto;
   left: auto;
@@ -479,18 +483,22 @@
 
 @media (max-width: 640px) {
   .ai-helper-fab {
-    /* On small phones: keep top-right corner, just slightly tighter */
-    top: calc(var(--builder-ticker-top, 64px) + var(--builder-ticker-height, 24px) + 6px + var(--builder-safe-area-top, 0px));
-    right: calc(6px + var(--builder-safe-area-right, 0px));
-    bottom: auto;
+    /* On small phones: stay in bottom perimeter bar, same position */
+    right: calc(
+      var(--builder-menu-toggle-width, 28px) + 6px +
+      var(--builder-safe-area-right, 0px)
+    );
+    bottom: calc(
+      (var(--builder-perimeter-bar-height, 52px) - 40px) / 2 +
+      var(--builder-safe-area-bottom, 0px)
+    );
   }
 
   .ai-helper-panel {
     right: 8px;
     bottom: calc(
-      var(--builder-menu-right-height, 220px) +
-      var(--builder-menu-toggle-height, 48px) +
-      64px +
+      var(--builder-perimeter-bar-height, 52px) +
+      48px +
       var(--builder-safe-area-bottom, 0px)
     );
     top: calc(var(--builder-ticker-top, 64px) + var(--builder-ticker-height, 24px) + 6px + var(--builder-safe-area-top, 0px));

@@ -4722,6 +4722,13 @@ export default function Builder() {
         )}
       </div>
 
+      {/* Perimeter bar background — visual base for the bottom navigation strip
+          containing zoom controls (left), Insights toggle (centre) and AI button (right).
+          pointer-events:none so the workspace iframe receives touch events in blank areas. */}
+      {isActiveCircuitBuildMode && !isOverlayActive && (
+        <div className="builder-perimeter-bar" aria-hidden="true" />
+      )}
+
       {isActiveCircuitBuildMode && !isOverlayActive && (
         <div className="circuit-zoom-controls" aria-label="Zoom controls">
           <button
@@ -5097,17 +5104,6 @@ export default function Builder() {
         </span>
       </button>
 
-      {/* Measurement Tools FAB — fixed at right edge above the Controls panel toggle */}
-      <button
-        type="button"
-        className={`measure-fab${meterState.armed ? " measure-fab--active" : ""}`}
-        onClick={() => setBottomMenuOpen(true)}
-        aria-label="Open measurement tools"
-        title="Measurement Tools — Digital Multimeter"
-      >
-        <span className="measure-fab__icon" aria-hidden="true">📐</span>
-        <span className="measure-fab__label" aria-hidden="true">Meter</span>
-      </button>
     </div>
   );
 }
