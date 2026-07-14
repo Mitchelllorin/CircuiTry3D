@@ -1096,19 +1096,6 @@ export default function Builder() {
     }
   }, [globalModeContext]);
 
-  useEffect(() => {
-    const requestedMode = new URLSearchParams(location.search).get("mode");
-    if (!requestedMode) {
-      return;
-    }
-
-    const mappedMode = WORKSPACE_QUERY_MODE_MAP[requestedMode.trim().toLowerCase()];
-    if (!mappedMode || mappedMode === workspaceMode) {
-      return;
-    }
-
-    setWorkspaceModeWithGlobalSync(mappedMode);
-  }, [location.search, setWorkspaceModeWithGlobalSync, workspaceMode]);
   const handleModeStateChange = useCallback((next: Partial<LegacyModeState>) => {
     const nextLabelVisibilityLevel =
       typeof next.labelVisibilityLevel === "number"
@@ -1522,165 +1509,6 @@ export default function Builder() {
     window.addEventListener("keydown", handleGlobalKeyDown);
     return () => window.removeEventListener("keydown", handleGlobalKeyDown);
   }, [circuitStorage, currentCircuitState, triggerBuilderAction]);
-
-  // Forward keyboard events to the iframe when focus is on the parent page.
-  // The iframe's own handleKeyDown only fires while the iframe is focused, so
-  // any interaction with React UI elements causes shortcuts to stop working.
-  // Re-dispatching the event on the iframe's contentDocument restores them.
-  useEffect(() => {
-    if (!isFrameReady) {
-      return;
-    }
-
-    const handleKeyboardForward = (event: KeyboardEvent) => {
-      const target = event.target as HTMLElement;
-
-      // Don't forward if the event already originates from inside the iframe.
-      const iframe = iframeRef.current;
-      if (!iframe) {
-        return;
-      }
-      try {
-        if (iframe.contentDocument && iframe.contentDocument.contains(target)) {
-          return;
-        }
-      } catch {
-        // Cross-origin access would throw; skip forwarding in that case.
-        return;
-      }
-
-      // Don't forward when the user is typing in an input control.
-      if (
-        target.tagName === "INPUT" ||
-        target.tagName === "TEXTAREA" ||
-        target.tagName === "SELECT" ||
-        (target as HTMLElement).isContentEditable
-      ) {
-        return;
-      }
-
-      // Don't forward shortcuts that the parent page handles itself
-      // (Ctrl/Cmd + S / O / N) to avoid double-processing.
-      const ctrl = event.ctrlKey || event.metaKey;
-      if (ctrl && ["s", "o", "n"].includes(event.key.toLowerCase())) {
-        return;
-      }
-
-      try {
-        const forwarded = new KeyboardEvent(event.type, {
-          key: event.key,
-          code: event.code,
-          ctrlKey: event.ctrlKey,
-          metaKey: event.metaKey,
-          altKey: event.altKey,
-          shiftKey: event.shiftKey,
-          bubbles: true,
-          cancelable: true,
-        });
-        iframe.contentDocument?.dispatchEvent(forwarded);
-      } catch {
-        // Swallow errors from cross-origin or detached documents.
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyboardForward);
-    return () => window.removeEventListener("keydown", handleKeyboardForward);
-  }, [isFrameReady, iframeRef]);
-
-  useEffect(() => {
-    if (!activeWorkspacePanelMode || !isWorkspacePanelOpen) {
-      return;
-    }
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== "Escape") {
-        return;
-      }
-      setWorkspacePanelOpen(false);
-      setActiveWorkspacePanelMode(null);
-      setWorkspaceModeWithGlobalSync("build");
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [
-    activeWorkspacePanelMode,
-    isWorkspacePanelOpen,
-    setWorkspaceModeWithGlobalSync,
-  ]);
-
-  // Sync circuit lock state to the iframe. The showcase/payoff also locks editing
-  // (so components can't be dragged/changed) — but via this edit-lock rather than a
-  // pointer-blocking overlay, so the camera stays free to zoom and explore it.
-  useEffect(() => {
-    if (!isFrameReady) {
-      return;
-    }
-    const lock = isCircuitLocked || isShowcaseLocked;
-    triggerBuilderAction(lock ? "lock-circuit" : "unlock-circuit");
-  }, [isCircuitLocked, isShowcaseLocked, isFrameReady, triggerBuilderAction]);
-
-  // Tutorial menu control: open/close menus based on tutorial step requirements
-  useEffect(() => {
-    const handleOpenMenu = (event: Event) => {
-      const customEvent = event as CustomEvent<{ menu: string; stepId: string }>;
-      const { menu } = customEvent.detail;
-
-      switch (menu) {
-        case "left":
-          setLeftMenuOpen(true);
-          break;
-        case "right":
-          setRightMenuOpen(true);
-          break;
-        case "bottom":
-          setBottomMenuOpen(true);
-          break;
-      }
-    };
-
-    const handleCloseMenu = (event: Event) => {
-      const customEvent = event as CustomEvent<{ menu: string; stepId: string }>;
-      const { menu } = customEvent.detail;
-
-      // Only close menus that were opened by the tutorial
-      // We could track this state if needed, but for now we'll just close them
-      switch (menu) {
-        case "left":
-          setLeftMenuOpen(false);
-          break;
-        case "right":
-          setRightMenuOpen(false);
-          break;
-        case "bottom":
-          setBottomMenuOpen(false);
-          break;
-      }
-    };
-
-    window.addEventListener("tutorial:open-menu", handleOpenMenu);
-    window.addEventListener("tutorial:close-menu", handleCloseMenu);
-
-    return () => {
-      window.removeEventListener("tutorial:open-menu", handleOpenMenu);
-      window.removeEventListener("tutorial:close-menu", handleCloseMenu);
-    };
-  }, [setLeftMenuOpen, setRightMenuOpen, setBottomMenuOpen]);
-
-  useEffect(() => {
-    if (!isTroubleshootPanelOpen) {
-      return;
-    }
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && isTroubleshootPanelOpen) {
-        exitTroubleshootMode();
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [exitTroubleshootMode, isTroubleshootPanelOpen]);
 
   // Sync circuit lock state to the iframe
   useEffect(() => {
@@ -4321,56 +4149,14 @@ export default function Builder() {
         className={`builder-panel-overlay builder-panel-overlay--workspace-section${activeWorkspaceSection ? " open" : ""}`}
         role="dialog"
         aria-modal="true"
-        aria-hidden={!activeWorkspaceSection}
-        onClick={closeWorkspaceSectionOverlay}
+        aria-hidden={!isArenaPanelOpen}
       >
         <div
           className="builder-panel-shell builder-panel-shell--workspace-section"
           onClick={(event) => event.stopPropagation()}
         >
-          <button
-            type="button"
-            className="builder-panel-close"
-            onClick={closeWorkspaceSectionOverlay}
-            aria-label={
-              activeWorkspaceSectionTitle
-                ? `Close ${activeWorkspaceSectionTitle}`
-                : "Close workspace section"
-            }
-          >
-            X
-          </button>
-          <div className="builder-panel-body builder-panel-body--workspace-section">
-            {activeWorkspaceSectionContent}
-          </div>
-        </div>
-      </div>
-
-      <div
-        className={`builder-panel-overlay builder-panel-overlay--workspace-section${activeWorkspaceSection ? " open" : ""}`}
-        role="dialog"
-        aria-modal="true"
-        aria-hidden={!activeWorkspaceSection}
-        onClick={closeWorkspaceSectionOverlay}
-      >
-        <div
-          className="builder-panel-shell builder-panel-shell--workspace-section"
-          onClick={(event) => event.stopPropagation()}
-        >
-          <button
-            type="button"
-            className="builder-panel-close"
-            onClick={closeWorkspaceSectionOverlay}
-            aria-label={
-              activeWorkspaceSectionTitle
-                ? `Close ${activeWorkspaceSectionTitle}`
-                : "Close workspace section"
-            }
-          >
-            X
-          </button>
-          <div className="builder-panel-body builder-panel-body--workspace-section">
-            {activeWorkspaceSectionContent}
+          <div className="builder-panel-body builder-panel-body--arena">
+            <ArenaView variant="embedded" />
           </div>
         </div>
       </div>

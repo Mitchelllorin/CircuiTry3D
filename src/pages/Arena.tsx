@@ -47,13 +47,9 @@ export default function Arena() {
   }, [navigate]);
 
   return (
-    <div className="arena-html-page">
-      <iframe
-        title="CircuiTry3D Component Arena"
-        src="arena.html"
-        style={{ width: "100%", height: "100%", border: 0 }}
-        sandbox="allow-scripts allow-same-origin allow-popups allow-top-navigation-by-user-activation"
-      />
-    </div>
+    <ArenaView
+      variant="page"
+      onOpenBuilder={() => navigate("/app")}
+    />
   );
 }

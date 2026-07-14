@@ -14,8 +14,12 @@
   background: var(--bg-darker);
 }
 
-.community-page > *:not(.unified-nav) {
+.community-page > *:not(.unified-nav):not(.section-workflow-strip) {
   padding: 0 32px;
+}
+
+.community-page > .section-workflow-strip {
+  margin: 0 32px;
 }
 
 .community-hero {
@@ -568,8 +572,12 @@
     padding: 0 20px 20px 20px;
   }
 
-  .community-page > *:not(.unified-nav) {
+  .community-page > *:not(.unified-nav):not(.section-workflow-strip) {
     padding: 0 20px;
+  }
+
+  .community-page > .section-workflow-strip {
+    margin: 0 20px;
   }
 }
 

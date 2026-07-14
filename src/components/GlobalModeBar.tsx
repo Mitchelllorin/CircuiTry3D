@@ -51,6 +51,18 @@ export function GlobalModeBar() {
   const isWorkspaceRoute = location.pathname === "/app";
   const isWorkspacePage = isWorkspaceRoute && !activeWorkspaceSection;
   const isLandingPage = location.pathname === "/";
+  const isPricingPage = location.pathname === "/pricing";
+  const isCommunityPage = location.pathname === "/community";
+  const isAccountPage = location.pathname === "/account";
+  const isClassroomPage = location.pathname === "/classroom";
+  const isArcadePage = location.pathname === "/arcade";
+  const isWorkspaceModeActive = (mode: WorkspaceMode) =>
+    isWorkspacePage && workspaceMode === mode;
+
+  // Don't show on landing page
+  if (isLandingPage) {
+    return null;
+  }
 
   const checkModeBarScroll = useCallback(() => {
     const container = modeBarRef.current;
@@ -182,13 +194,7 @@ export function GlobalModeBar() {
         <button
           type="button"
           className="mode-tab"
-          data-active={
-            isWorkspaceRoute &&
-            !activeWorkspaceSection &&
-            workspaceMode === "build"
-              ? "true"
-              : undefined
-          }
+          data-active={isWorkspaceModeActive("build") ? "true" : undefined}
           onClick={handleBuildClick}
           aria-label="Build mode"
           title="Component builder and circuit designer"
@@ -199,13 +205,7 @@ export function GlobalModeBar() {
         <button
           type="button"
           className="mode-tab"
-          data-active={
-            isWorkspaceRoute &&
-            !activeWorkspaceSection &&
-            workspaceMode === "practice"
-              ? "true"
-              : undefined
-          }
+          data-active={isWorkspaceModeActive("practice") ? "true" : undefined}
           onClick={handlePracticeClick}
           aria-label="Practice mode"
           title="Guided worksheets and W.I.R.E. problems"
@@ -216,13 +216,7 @@ export function GlobalModeBar() {
         <button
           type="button"
           className="mode-tab"
-          data-active={
-            isWorkspaceRoute &&
-            !activeWorkspaceSection &&
-            workspaceMode === "troubleshoot"
-              ? "true"
-              : undefined
-          }
+          data-active={isWorkspaceModeActive("troubleshoot") ? "true" : undefined}
           onClick={handleTroubleshootClick}
           aria-label="Troubleshoot mode"
           title={isTroubleshootLocked ? "Troubleshoot — Full Version" : "Fix broken circuits and restore current flow"}
@@ -234,13 +228,7 @@ export function GlobalModeBar() {
         <button
           type="button"
           className="mode-tab"
-          data-active={
-            isWorkspaceRoute &&
-            !activeWorkspaceSection &&
-            workspaceMode === "arena"
-              ? "true"
-              : undefined
-          }
+          data-active={isWorkspaceModeActive("arena") ? "true" : undefined}
           onClick={handleArenaClick}
           aria-label="Arena mode"
           title="Component testing and advanced simulation"
@@ -251,13 +239,7 @@ export function GlobalModeBar() {
         <button
           type="button"
           className="mode-tab"
-          data-active={
-            isWorkspaceRoute &&
-            !activeWorkspaceSection &&
-            workspaceMode === "learn"
-              ? "true"
-              : undefined
-          }
+          data-active={isWorkspaceModeActive("learn") ? "true" : undefined}
           onClick={handleLearnClick}
           aria-label="Learn mode"
           title="Tutorials, guides, and help resources"

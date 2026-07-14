@@ -44,6 +44,29 @@
   gap: 20px;
 }
 
+.arena-header-left .arena-brand .circuitry-brandmark__img {
+  width: clamp(18px, 3vw, 24px);
+  height: auto;
+  filter: drop-shadow(0 10px 22px rgba(0, 245, 255, 0.3))
+          drop-shadow(0 0 30px rgba(0, 245, 255, 0.2));
+  animation: logo-glow 4s ease-in-out infinite;
+}
+
+@keyframes logo-glow {
+  0%, 100% { filter: drop-shadow(0 10px 22px rgba(0, 245, 255, 0.3)) drop-shadow(0 0 30px rgba(0, 245, 255, 0.2)); }
+  50% { filter: drop-shadow(0 10px 30px rgba(0, 245, 255, 0.5)) drop-shadow(0 0 50px rgba(0, 245, 255, 0.4)); }
+}
+
+.arena-header-left .arena-brand .circuitry-wordmark {
+  font-size: clamp(14px, 2.8vw, 18px);
+  letter-spacing: 0.12em;
+  filter: drop-shadow(0 10px 22px rgba(2, 6, 23, 0.3));
+}
+
+.arena-header-left .circuitry-wordmark__3d {
+  letter-spacing: 0.14em;
+}
+
 .arena-title-group h1 {
   margin: 0;
   font-size: 1.75rem;

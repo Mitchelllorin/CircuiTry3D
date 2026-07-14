@@ -1,16 +1,39 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { useWorkspaceMode } from "../../context/WorkspaceModeContext";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { ChangeEvent, DragEvent, CSSProperties } from "react";
+import BrandSignature from "../BrandSignature";
+import SectionWorkflowStrip, {
+  type SectionWorkflowStep,
+} from "../SectionWorkflowStrip";
 import "../../styles/arena.css";
 import type { ArenaViewProps } from "./types";
 
-const ARENA_SESSION_STORAGE_PREFIX = "circuitry:arena-session:";
-const ARENA_LAST_SESSION_KEY = `${ARENA_SESSION_STORAGE_PREFIX}last`;
-const BASE_URL = import.meta.env.BASE_URL || "/";
-const EMPTY_ARENA_SESSION_KEY = "no-session";
+type ArenaViewProps = {
+  variant?: "page" | "embedded";
+  onOpenBuilder?: () => void;
+};
 
-function getArenaBasePath(): string {
-  return BASE_URL.endsWith("/") ? BASE_URL : `${BASE_URL}/`;
-}
+const ARENA_STORAGE_KEY = "circuiTry3d.arena.import";
+const DEFAULT_STATUS = "Bring in your latest circuit to drill components.";
+const ARENA_WORKFLOW_STEPS: SectionWorkflowStep[] = [
+  {
+    id: "arena-import",
+    title: "Load a circuit snapshot",
+    detail:
+      "Import components from Builder, clipboard, sample packs, or JSON before running tests.",
+  },
+  {
+    id: "arena-configure",
+    title: "Select battle conditions",
+    detail:
+      "Pick components, choose metrics, and set an environmental scenario to define the test workflow.",
+  },
+  {
+    id: "arena-evaluate",
+    title: "Run comparison and review",
+    detail:
+      "Execute the battle and compare telemetry changes to decide which component profile performs better.",
+  },
+];
 
 function readArenaSessionId(): string | null {
   if (typeof window === "undefined") {
@@ -1279,13 +1302,8 @@ function _formatTimestamp(timestamp?: number): string {
 }
 void formatTimestamp;
 
-export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuilder }: ArenaViewProps) {
+export default function ArenaView({ variant = "page", onOpenBuilder }: ArenaViewProps) {
   const isEmbedded = variant === "embedded";
-  const handleBackClick = useCallback(() => {
-    if (typeof onNavigateBack === "function") {
-      onNavigateBack();
-    }
-  }, [onNavigateBack]);
   const handleOpenBuilderClick = useCallback(() => {
     if (typeof onOpenBuilder === "function") {
       onOpenBuilder();
@@ -2263,12 +2281,7 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
     >
       <header className="arena-header">
         <div className="arena-header-left">
-          {!isEmbedded && !isWorkspace && (
-            <button className="arena-btn ghost" type="button" onClick={handleBackClick}>
-              ← Back
-            </button>
-          )}
-          <WordMark size="md" decorative />
+          <BrandSignature size="sm" decorative className="arena-brand" />
           <div className="arena-title-group">
             <h1>Component Arena</h1>
             <p>Test and compare components side-by-side</p>
@@ -2283,7 +2296,17 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
         </div>
       </header>
 
-      <div className={`arena-body${isWorkspace ? " arena-body--workspace-split" : ""}`}>
+      <SectionWorkflowStrip
+        sectionLabel="Arena"
+        steps={ARENA_WORKFLOW_STEPS}
+        syncCopy={
+          isEmbedded
+            ? "Use the top navigation bar to switch between Arena, Build, Practice, and other workspace sections."
+            : "Use the top navigation bar to move between Arena, Build, Practice, and the rest of the app workflow."
+        }
+      />
+
+      <div className="arena-body">
 
         <section className="arena-import-section">
           <div className="arena-card">

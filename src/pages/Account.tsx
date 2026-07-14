@@ -2,46 +2,34 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useDemoMode } from "../context/DemoModeContext";
 import BrandSignature from "../components/BrandSignature";
+import SectionWorkflowStrip, {
+  type SectionWorkflowStep,
+} from "../components/SectionWorkflowStrip";
 import type { FormEvent } from "react";
 import { isLifetimeTester } from "../utils/lifetimeTesterEmails";
 import "../styles/account.css";
 
-type Mode = "signin" | "signup" | "profile" | "forgot-password" | "pin";
-
-type PinSetupPhase =
-  | { active: false }
-  | { active: true; step: "enter" | "confirm"; first: string };
-
-function PinDots({ length }: { length: number }) {
-  return (
-    <div className="pin-dots" aria-hidden="true">
-      {[0, 1, 2, 3].map((i) => (
-        <span key={i} className={`pin-dot${length > i ? " is-filled" : ""}`} />
-      ))}
-    </div>
-  );
-}
-
-function PinPad({ onDigit, onBackspace }: { onDigit: (d: string) => void; onBackspace: () => void }) {
-  const keys = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "", "0", "⌫"] as const;
-  return (
-    <div className="pin-pad" role="group" aria-label="PIN keypad">
-      {keys.map((key, i) =>
-        key === "" ? (
-          <span key={i} className="pin-key-empty" aria-hidden="true" />
-        ) : key === "⌫" ? (
-          <button key={i} type="button" className="pin-key pin-key-back" onClick={onBackspace} aria-label="Delete last digit">
-            ⌫
-          </button>
-        ) : (
-          <button key={i} type="button" className="pin-key" onClick={() => onDigit(key)}>
-            {key}
-          </button>
-        )
-      )}
-    </div>
-  );
-}
+type Mode = "signin" | "signup" | "profile";
+const ACCOUNT_WORKFLOW_STEPS: SectionWorkflowStep[] = [
+  {
+    id: "account-auth",
+    title: "Authenticate your account",
+    detail:
+      "Sign in or create a profile so progress, community actions, and preferences stay linked.",
+  },
+  {
+    id: "account-profile",
+    title: "Configure profile details",
+    detail:
+      "Update display name and bio to keep your collaboration identity consistent across sections.",
+  },
+  {
+    id: "account-sync",
+    title: "Continue through app workflows",
+    detail:
+      "Use the global navigation bar to move directly into Classroom, Community, Arcade, and workspace modes.",
+  },
+];
 
 export default function Account() {
   const { currentUser, loading, signIn, signUp, signOut, updateProfile } = useAuth();
@@ -390,6 +378,11 @@ export default function Account() {
           </button>
         </div>
       </header>
+
+      <SectionWorkflowStrip
+        sectionLabel="Account"
+        steps={ACCOUNT_WORKFLOW_STEPS}
+      />
 
       {status && (
         <div className={`account-status ${status.type === "success" ? "is-success" : "is-error"}`} role="status">

@@ -1,14 +1,37 @@
 import { useMemo, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
 import practiceProblems from "../data/practiceProblems";
-import type { Classroom, ClassStudent } from "../model/classroom";
-import WordMark from "../components/WordMark";
+import type { Classroom } from "../model/classroom";
+import BrandSignature from "../components/BrandSignature";
+import SectionWorkflowStrip, {
+  type SectionWorkflowStep,
+} from "../components/SectionWorkflowStrip";
 import { useClassroom } from "../context/ClassroomContext";
 import { useAuth } from "../context/AuthContext";
 import { classroomApi } from "../services/classroomApi";
 import "../styles/classroom.css";
 
 const gradeLevels = ["8", "9-10", "11-12", "Higher Ed", "CTE / Makerspace"];
+const CLASSROOM_WORKFLOW_STEPS: SectionWorkflowStep[] = [
+  {
+    id: "classroom-roster",
+    title: "Organize classes and rosters",
+    detail:
+      "Select the active class, maintain join codes, and keep learner rosters current.",
+  },
+  {
+    id: "classroom-assign",
+    title: "Schedule targeted assignments",
+    detail:
+      "Pair practice problems to due dates and notes so classroom pacing stays predictable.",
+  },
+  {
+    id: "classroom-analytics",
+    title: "Review performance signals",
+    detail:
+      "Use completion, score, and misconception analytics to tune instruction and support.",
+  },
+];
 
 const formatPercent = (value: number) => `${Math.round(value * 100)}%`;
 
@@ -419,136 +442,12 @@ export default function ClassroomPage() {
         </div>
       )}
 
-      {viewMode === "student" ? (
-        <div className="classroom-grid">
-          <section className="classroom-panel">
-            <div className="classroom-panel-header">
-              <div>
-                <h2>Join a Class</h2>
-                <p>Enter the join code from your teacher.</p>
-              </div>
-              <small>Signed in as {currentUser?.displayName ?? "Guest"}</small>
-            </div>
+      <SectionWorkflowStrip
+        sectionLabel="Classroom"
+        steps={CLASSROOM_WORKFLOW_STEPS}
+      />
 
-            <form className="classroom-form" onSubmit={handleStudentJoin}>
-              <input
-                type="text"
-                placeholder="Join code (e.g. AB12CD)"
-                value={studentJoinCode}
-                onChange={(event) => setStudentJoinCode(event.target.value)}
-                required
-              />
-              <button type="submit" disabled={studentBusy}>
-                {studentBusy ? "Joining..." : "Join"}
-              </button>
-            </form>
-
-            {studentError && (
-              <div className="classroom-banner is-error" role="alert">
-                {studentError}
-              </div>
-            )}
-          </section>
-
-          <section className="classroom-panel">
-            <div className="classroom-panel-header">
-              <div>
-                <h2>My Classes</h2>
-                <p>Open assignments and turn them in.</p>
-              </div>
-              <small>{studentEnrollments.length} enrolled</small>
-            </div>
-
-            {studentEnrollments.length === 0 ? (
-              <div className="classroom-empty">
-                <p>No joined classes yet.</p>
-              </div>
-            ) : (
-              <div className="assignment-list">
-                {studentEnrollments.map((enrollment) => {
-                  const classSnapshot = enrollment.classSnapshot;
-                  const studentId = currentUser?.id ?? "";
-                  return (
-                    <article key={`${enrollment.joinCode}:${enrollment.classId}`} className="assignment-card">
-                      <header>
-                        <div>
-                          <strong>{classSnapshot.name}</strong>
-                          <small>
-                            Join code <strong>{enrollment.joinCode}</strong>
-                          </small>
-                        </div>
-                        <span>{classSnapshot.subject}</span>
-                      </header>
-                      <p>{classSnapshot.description || "Classroom assignments and practice sets."}</p>
-
-                      <div className="assignment-list" style={{ marginTop: 10 }}>
-                        {classSnapshot.assignments.map((assignment) => {
-                          const submission = studentId
-                            ? classSnapshot.submissions.find(
-                                (s) => s.assignmentId === assignment.id && s.studentId === studentId,
-                              )
-                            : undefined;
-                          return (
-                            <article key={assignment.id} className="assignment-card" style={{ padding: 12 }}>
-                              <header>
-                                <div>
-                                  <strong>{assignment.title}</strong>
-                                  <small>Due {new Date(assignment.dueDate).toLocaleString()}</small>
-                                </div>
-                                <span>{assignment.difficulty}</span>
-                              </header>
-                              <p>{assignment.notes || "Practice set assignment."}</p>
-                              <footer style={{ justifyContent: "space-between" }}>
-                                <div className="tag-row">
-                                  <span className="tag">
-                                    Status: {submission ? submission.status : "not submitted"}
-                                  </span>
-                                </div>
-                                <div style={{ display: "flex", gap: 8 }}>
-                                  <button type="button" onClick={() => openStudentAssignment(enrollment, assignment.id)}>
-                                    Open
-                                  </button>
-                                  <button
-                                    type="button"
-                                    className="ghost"
-                                    onClick={() => handleStudentSubmit(enrollment, assignment.id)}
-                                    disabled={studentBusy}
-                                  >
-                                    Turn in
-                                  </button>
-                                </div>
-                              </footer>
-                            </article>
-                          );
-                        })}
-                      </div>
-                    </article>
-                  );
-                })}
-              </div>
-            )}
-          </section>
-
-          <section className="classroom-panel analytics-panel">
-            <div className="classroom-panel-header">
-              <div>
-                <h2>Student Tips</h2>
-                <p>Open each assignment, then turn it in.</p>
-              </div>
-            </div>
-            <ul>
-              <li>
-                Use <strong>Open</strong> to launch the Builder on the right practice problem.
-              </li>
-              <li>
-                After finishing, hit <strong>Turn in</strong> to submit.
-              </li>
-              <li>Your submission will show as “submitted”.</li>
-            </ul>
-          </section>
-        </div>
-      ) : (
-        <div className="classroom-grid">
+      <div className="classroom-grid">
         <section className="classroom-panel">
           <div className="classroom-panel-header">
             <div className="classroom-panel-title">
