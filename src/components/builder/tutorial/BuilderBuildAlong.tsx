@@ -17,9 +17,14 @@ type BuildAlongProps = {
 
 type Rect = { top: number; left: number; width: number; height: number };
 
+type AnimationType = "tap" | "long-press" | "drag" | "info";
+
 type BuildStep = {
   id: string;
   text: string;
+  ctaLabel?: string;
+  ctaIcon?: string;
+  animationType?: AnimationType;
   // CSS selector for the control this step is about — spotlit (blur everything
   // else) and ringed while the step is active.
   target?: string;
@@ -51,6 +56,9 @@ const PAD = 8;
 const BUILD_STEPS: BuildStep[] = [
   {
     id: "intro",
+    ctaIcon: "🧭",
+    ctaLabel: "Drag to look around",
+    animationType: "drag",
     text: "Now build one yourself — I'll guide every step. Drag the canvas any time to look around.",
   },
   {
@@ -59,6 +67,9 @@ const BUILD_STEPS: BuildStep[] = [
   },
   {
     id: "battery",
+    ctaIcon: "👆",
+    ctaLabel: "Tap Battery",
+    animationType: "tap",
     text: "Tap Battery once to pick it up — it follows you as a ghost. Tap the grid to drop it. Now it's real.",
     target: '[data-tutorial-id="tutorial-add-battery"]',
     library: true,
@@ -66,14 +77,23 @@ const BUILD_STEPS: BuildStep[] = [
   },
   {
     id: "edit",
+    ctaIcon: "✋",
+    ctaLabel: "Long press Battery",
+    animationType: "long-press",
     text: "Long-press the battery to open its editor — change its voltage, and more.",
   },
   {
     id: "rotate",
+    ctaIcon: "↔",
+    ctaLabel: "Drag + long press to rotate",
+    animationType: "drag",
     text: "Drag a part to move it. Long-press and rotate to line its two terminals up with your layout.",
   },
   {
     id: "resistor",
+    ctaIcon: "👆",
+    ctaLabel: "Tap Resistor",
+    animationType: "tap",
     text: "Same two taps: pick up a Resistor, then tap the grid. It limits how much current can flow.",
     target: '[data-tutorial-id="tutorial-add-resistor"]',
     library: true,
@@ -81,34 +101,54 @@ const BUILD_STEPS: BuildStep[] = [
   },
   {
     id: "lamp",
+    ctaIcon: "👆",
+    ctaLabel: "Tap Light",
+    animationType: "tap",
     text: "Add a Light — it shows the power being used; it glows when current flows.",
+    target: '[data-tutorial-id="tutorial-add-lamp"]',
     library: true,
     isDone: (c) => placed(c, "lamp"),
   },
   {
     id: "switch",
+    ctaIcon: "👆",
+    ctaLabel: "Tap Switch",
+    animationType: "tap",
     text: "Add a Switch — it opens and closes the circuit, like a tap on the current.",
+    target: '[data-tutorial-id="tutorial-add-switch"]',
     library: true,
     isDone: (c) => placed(c, "switch"),
   },
   {
     id: "wire",
+    ctaIcon: "👆",
+    ctaLabel: "Tap Wire Tool",
+    animationType: "tap",
     text: "Tap the Wire tool, then connect the parts end to end into one complete circuit.",
     target: '[data-tutorial-id="tutorial-enable-wire"]',
     isDone: (c) => Boolean(c?.metrics?.isComplete),
   },
   {
     id: "flow",
+    ctaIcon: "✅",
+    ctaLabel: "Read W.I.R.E. metrics",
+    animationType: "info",
     text: "It's alive — current is flowing. Up top are the W.I.R.E. metrics: Watts, Amps, Ohms, Volts.",
     target: ".ticker-wire-fixed",
   },
   {
     id: "junction-intro",
+    ctaIcon: "👆",
+    ctaLabel: "Tap Junction",
+    animationType: "tap",
     text: "One part left to meet: the Junction ─●─. It's a solder node — the one place three or more wires can meet.",
     target: '[data-component-action="junction"]',
   },
   {
     id: "junction-place",
+    ctaIcon: "👆",
+    ctaLabel: "Tap Junction, then split a wire",
+    animationType: "tap",
     text: "Add a Junction, then tap a wire to split it. Current can now take two paths at once — that's a parallel circuit.",
     target: '[data-component-action="junction"]',
     isDone: (c) => (c?.counts?.junctions ?? 0) > 0,
@@ -116,13 +156,45 @@ const BUILD_STEPS: BuildStep[] = [
   },
   {
     id: "junction-kcl",
+    ctaIcon: "✅",
+    ctaLabel: "Understand the split",
+    animationType: "info",
     text: "Every amp that flows into a junction flows back out. Nothing is lost there — that's the law that makes parallel circuits solvable.",
   },
   {
     id: "done",
+    ctaIcon: "🎉",
+    ctaLabel: "Go build freely",
+    animationType: "info",
     text: "You built a working circuit. Next we'll cover the W.I.R.E. solving method and F.U.S.E. — but first, go play.",
   },
 ];
+
+function TapIndicator({ rect }: { rect: Rect }) {
+  const centerTop = rect.top + rect.height / 2;
+  const centerLeft = rect.left + rect.width / 2;
+  return (
+    <div className="tutorial-tap-indicator" style={{ top: centerTop, left: centerLeft }} aria-hidden="true">
+      <div className="tutorial-tap-ring tutorial-tap-ring--one" />
+      <div className="tutorial-tap-ring tutorial-tap-ring--two" />
+      <div className="tutorial-tap-ring tutorial-tap-ring--three" />
+      <div className="tutorial-tap-dot" />
+    </div>
+  );
+}
+
+function GestureHint({ kind }: { kind: "long-press" | "drag" }) {
+  return (
+    <div
+      className={`tutorial-gesture-hint${kind === "drag" ? " tutorial-drag-hint" : ""}`}
+      aria-hidden="true"
+    >
+      <div className="tutorial-hold-ring tutorial-hold-ring--inner" />
+      <div className="tutorial-hold-ring tutorial-hold-ring--outer" />
+      <div className="tutorial-gesture-label">{kind === "drag" ? "↔ DRAG + HOLD" : "✋ HOLD"}</div>
+    </div>
+  );
+}
 
 export function BuilderBuildAlong({
   open,
@@ -211,6 +283,9 @@ export function BuilderBuildAlong({
 
   const current = BUILD_STEPS[step];
   const isLast = step >= BUILD_STEPS.length - 1;
+  const showTapIndicator = current.animationType === "tap" && rect !== null;
+  const showLongPressHint = current.animationType === "long-press";
+  const showDragHint = current.animationType === "drag";
   // Mechanic/info steps advance via Next; so do auto-steps flagged skippable, so
   // a gesture you can't work out never traps you.
   const canManualAdvance = !current.isDone || Boolean(current.skippable);
@@ -263,6 +338,9 @@ export function BuilderBuildAlong({
           />
         </>
       )}
+      {showTapIndicator && rect && <TapIndicator rect={rect} />}
+      {showLongPressHint && <GestureHint kind="long-press" />}
+      {showDragHint && <GestureHint kind="drag" />}
 
       <div className="builder-tutorial-card builder-tutorial-card--tour">
         <div className="builder-tutorial-header">
@@ -285,6 +363,16 @@ export function BuilderBuildAlong({
           </div>
         </div>
         <div className="builder-tutorial-body">
+          {current.ctaLabel && (
+            <div className="builder-tutorial-cta-chip">
+              {current.ctaIcon && (
+                <span className="builder-tutorial-cta-chip-icon" aria-hidden="true">
+                  {current.ctaIcon}
+                </span>
+              )}
+              <span>{current.ctaLabel}</span>
+            </div>
+          )}
           <p className="builder-tutorial-text">{current.text}</p>
         </div>
         {isLast ? (

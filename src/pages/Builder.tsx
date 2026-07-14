@@ -3851,6 +3851,10 @@ export default function Builder() {
                         ? "tutorial-add-battery"
                         : component.id === "resistor"
                           ? "tutorial-add-resistor"
+                          : component.id === "lamp"
+                            ? "tutorial-add-lamp"
+                            : component.id === "switch"
+                              ? "tutorial-add-switch"
                           : undefined
                     }
                   >
