@@ -15,22 +15,14 @@
  *   scene-06-arena.webm           — Arena: 3D component battle & FUSE failure analysis
  *   scene-07-new-components.webm  — Relay, Voltage Regulator & Circuit Breaker showcase
  * Scenes recorded:
- *   scene-01-series.webm             — Series circuit: current flows successfully
- *   scene-02-parallel.webm           — Parallel circuit: multiple electron paths
- *   scene-03-overload.webm           — Overloaded resistor: thermal failure (FUSE engine)
- *   scene-04-mixed.webm              — Mixed series-parallel: advanced mastery
- *   scene-05-3d-build.webm           — 3D cinematic builder tour: atomic zoom + fly-through
- *   scene-06-arena.webm              — Arena: 3D component battle & FUSE failure analysis
- *   scene-07-new-components.webm     — Relay, Voltage Regulator & Circuit Breaker showcase
- *   scene-08-component-showcase.webm — Cinematic promo: each component appears one-by-one
- *                                       with its 3D label & metrics, then dissolves away
- *
- * Educational scenes (type: educational):
- *   scene-08-ohms-law.webm        — Ohm's Law: V=IR — three resistors, same voltage, different current
- *   scene-09-voltage-divider.webm — Voltage Divider: series resistors create a mid-point voltage tap
- *   scene-10-led-brightness.webm  — LED Brightness: resistor value controls current through an LED
- *   scene-11-kirchhoff-voltage.webm — KVL: sum of voltage drops equals the source voltage
- *   scene-12-kirchhoff-current.webm — KCL: sum of branch currents entering a node equals zero
+ *   scene-01-series.webm       — Series circuit: current flows successfully
+ *   scene-02-parallel.webm     — Parallel circuit: multiple electron paths
+ *   scene-03-overload.webm     — Overloaded resistor: thermal failure (FUSE engine)
+ *   scene-04-mixed.webm        — Mixed series-parallel: advanced mastery
+ *   scene-05-promo.webm        — Cinematic promo page sweep (public/promo8.html)
+ *   scene-06-fuse-showcase.webm — FUSE™ at work: fuse component blown by overcurrent
+ *   scene-07-arena.webm        — Component Arena: live FUSE™ analysis showcase
+ *   scene-08-practice.webm     — Practice mode: W.I.R.E. methodology walkthrough
  *
  * Usage:
  *   npm run circuit-bot                        # production site (circuitry3d.app)
@@ -84,7 +76,8 @@ for (let i = 0; i < ARGS.length; i++) {
 }
 
 const OUTPUT_DIR = join(ROOT, 'promo-footage');
-const VIEWPORT   = PORTRAIT ? { width: 412, height: 915 } : { width: 1920, height: 1080 };
+const VIEWPORT   = { width: 1920, height: 1080 };
+const PROMO_PAGE = 'promo8.html';  // FUSE-focused promo page used by scene-05
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -498,449 +491,162 @@ const SCENES = [
 
   // ──────────────────────────────────────────────────────────────────────────
   {
-    id: 'scene-05-3d-build',
-    type: 'cinematic',
-    title: 'Scene 05 — 3D Builder: Cinematic Fly-Through',
+    id: 'scene-05-promo',
+    title: 'Scene 05 — Cinematic Promo Page (promo8)',
     async record(page) {
-      await openBuilder(page);
-
-      // Start with the advanced combination circuit to maximise visual density
-      await sendAction(page, 'load-preset', { preset: 'combination_advanced' });
-      await page.waitForTimeout(1500);
-      await sendAction(page, 'fit-screen');
-      await page.waitForTimeout(1000);
-
-      // Labels on — all component values floating in 3D during the fly-through
-      await sendAction(page, 'toggle-labels');
-      await page.waitForTimeout(600);
-
-      // Opening orbit — camera circles the full lit-up network
-      await playCinematic(page, 'orbit');
-
-      // Run simulation — all electron streams light up simultaneously
-      await sendAction(page, 'run-simulation');
-      await verifyCanvas(page);
+      // Navigate to the FUSE-focused promo page for the brand reveal
+      const promoUrl = `${BASE_URL}/${PROMO_PAGE}`;
+      await page.goto(promoUrl, { waitUntil: 'networkidle', timeout: 30_000 });
       await page.waitForTimeout(1500);
 
-      // Focus push: glide into a single component for a hero close-up
-      await playCinematic(page, 'focus');
+      // Let the intro scene (scene 0) animate in
+      await page.waitForTimeout(3000);
 
-      // Lattice sweep: dolly laterally across the conductor lattice
-      await playCinematic(page, 'lattice');
+      // Step through each of the 6 scenes by clicking the next-scene button,
+      // pausing long enough for each scene's content to fully fade in and read.
+      const PROMO_SCENE_DWELL_MS = 4500; // ms to linger on each promo page scene
+      for (let i = 0; i < 5; i++) {
+        await page.click('#btn-next');
+        await page.waitForTimeout(PROMO_SCENE_DWELL_MS);
+      }
 
-      // Atom dive: deep zoom into the electron cloud, then pull back
-      await playCinematic(page, 'atom');
+      // Pause on the final CTA scene
+      await page.waitForTimeout(2000);
 
-      // Toggle conventional/electron current for a second visual burst
-      await sendAction(page, 'toggle-current-flow');
-      await page.waitForTimeout(800);
-
-      // Final orbit — labels still on for the closing wide shot
-      await playCinematic(page, 'orbit');
-
-      // Labels off for a clean fade-out
-      await sendAction(page, 'toggle-labels');
-      await page.waitForTimeout(600);
+      // Return to scene 0 for a clean loop
+      await page.click('#btn-prev');
+      await page.waitForTimeout(1500);
     },
   },
 
   // ──────────────────────────────────────────────────────────────────────────
   {
-    id: 'scene-06-arena',
-    type: 'cinematic',
-    title: 'Scene 06 — Arena: 3D Component Battle',
+    id: 'scene-06-fuse-showcase',
+    title: 'Scene 06 — FUSE™ at Work: Fuse Blown by Overcurrent',
     async record(page) {
-      // Navigate directly to the Arena page (standalone 3D scene)
+      await openBuilder(page);
+
+      // Load the overload circuit — 24 V source through a 1 Ω resistor,
+      // deliberately designed to trigger the FUSE™ thermal failure engine.
+      await sendAction(page, 'load-preset', { preset: 'overload_demo' });
+      await page.waitForTimeout(1400);
+
+      // Fit to viewport and pause so the viewer can read the circuit layout.
+      await sendAction(page, 'fit-screen');
+      await page.waitForTimeout(1200);
+
+      // Toggle labels on so component values are visible during the zoom-in.
+      await sendAction(page, 'toggle-labels');
+      await page.waitForTimeout(600);
+
+      // Slow cinematic push toward the resistor before things go wrong.
+      await smoothZoomIn(page, 9, 200);
+      await page.waitForTimeout(800);
+
+      // Start simulation — surge current begins, FUSE thermal model activates.
+      await sendAction(page, 'run-simulation');
+      await page.waitForTimeout(1800);
+
+      // Continue zooming in as the resistor heats up.
+      await smoothZoomIn(page, 7, 210);
+      await page.waitForTimeout(3000);
+
+      // Dive to the atomic level — watch electrons slam through the overloaded element.
+      await smoothZoomIn(page, 9, 155);
+      await page.waitForTimeout(4000);
+
+      // Pull back to reveal the failure state on the full circuit.
+      await smoothZoomOut(page, 18, 160);
+      await page.waitForTimeout(2200);
+
+      // Turn labels back off for a clean outro.
+      await sendAction(page, 'toggle-labels');
+      await page.waitForTimeout(800);
+    },
+  },
+
+  // ──────────────────────────────────────────────────────────────────────────
+  {
+    id: 'scene-07-arena',
+    title: 'Scene 07 — Component Arena: Live FUSE™ Analysis',
+    async record(page) {
+      // Navigate directly to the arena page — standalone layout, no React shell.
+      // The arena uses WebGL and loads additional assets, so allow extra time.
       const arenaUrl = `${BASE_URL}/arena.html`;
       await page.goto(arenaUrl, { waitUntil: 'networkidle', timeout: 45_000 });
+      await page.waitForTimeout(2500);
 
-      // Wait for THREE.js scene and component meshes to initialise
-      await page.waitForSelector('canvas#arena', { timeout: 20_000 });
-      await verifyCanvas(page);
-      await page.waitForTimeout(3500);
+      // Let the arena load and settle — give the WebGL scene time to initialise.
+      await page.waitForTimeout(2000);
 
-      // Let the idle arena animation play — camera orbits around the platform
-      await page.waitForTimeout(4000);
+      // Pan the arena viewport slightly to show the 3-D canvas is live.
+      await page.mouse.move(960, 540);
+      await page.waitForTimeout(400);
+      await page.mouse.move(1100, 480);
+      await page.waitForTimeout(500);
+      await page.mouse.move(820, 580);
+      await page.waitForTimeout(500);
+      await page.mouse.move(960, 540);
+      await page.waitForTimeout(800);
 
-      // Load component into slot A — try progressively broader selectors
-      const loadedA = await clickArenaComponentCard(page, 0);
-      if (loadedA) await page.waitForTimeout(1500);
-
-      // Load a second component into slot B for the battle comparison
-      const loadedB = await clickArenaComponentCard(page, 1);
-      if (loadedB) await page.waitForTimeout(1500);
-
-      // Trigger the analysis — try attribute-first selectors, then text-match
-      const didRun = await clickArenaRunTest(page);
-      if (didRun) await page.waitForTimeout(2000);
-
-      // Let the 3D failure animation finish
+      // Linger so the viewer can read the FUSE status badges and component cards.
       await page.waitForTimeout(5000);
 
-      // Scroll the metrics panel to show delta results
-      const metricsPanel = await page.$(
-        '[data-testid="metrics-panel"], #metrics-panel, .metrics-panel, .results-panel',
-      );
-      if (metricsPanel) {
-        await metricsPanel.evaluate((el) => el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' }));
-        await page.waitForTimeout(2000);
-        await metricsPanel.evaluate((el) => el.scrollTo({ top: 0, behavior: 'smooth' }));
-        await page.waitForTimeout(1500);
-      }
+      // Scroll down gently if the arena has a scrollable component list.
+      await page.evaluate(() => window.scrollBy({ top: 300, behavior: 'smooth' }));
+      await page.waitForTimeout(2000);
 
-      // Final orbit shot — camera slowly circles the 3D components
-      await page.waitForTimeout(4000);
-    },
-  },
-
-  // ──────────────────────────────────────────────────────────────────────────
-  {
-    id: 'scene-07-new-components',
-    type: 'cinematic',
-    title: 'Scene 07 — New Components: Relay, Voltage Regulator & Circuit Breaker',
-    async record(page) {
-      await openBuilder(page);
-
-      // Try the dedicated showcase preset; falls back gracefully if it doesn't exist
-      await sendAction(page, 'load-preset', { preset: 'relay_showcase' });
-      await page.waitForTimeout(1200);
-      await sendAction(page, 'fit-screen');
-      await page.waitForTimeout(800);
-
-      // Labels on — show Relay (K), VR, and CB designators in 3D space
-      await sendAction(page, 'toggle-labels');
-      await page.waitForTimeout(600);
-
-      // Orbit reveal — camera circles the new component family
-      await playCinematic(page, 'orbit');
-
-      // Start simulation — relay switches, VR regulates, CB trips
-      await sendAction(page, 'run-simulation');
-      await verifyCanvas(page);
+      // Scroll back up.
+      await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'smooth' }));
       await page.waitForTimeout(1500);
-
-      // Focus push: glide into the relay coil / CB bimetallic strip
-      await playCinematic(page, 'focus');
-
-      // Atom dive — electrons through relay conductor geometry
-      await playCinematic(page, 'atom');
-
-      // Toggle current flow to highlight the regulated output rail
-      await sendAction(page, 'toggle-current-flow');
-      await page.waitForTimeout(800);
-
-      // Closing orbit — labels still on, full component family in view
-      await playCinematic(page, 'orbit');
-
-      // Labels off for a clean outro
-      await sendAction(page, 'toggle-labels');
-      await page.waitForTimeout(600);
     },
   },
 
-  // ── Educational scenes ────────────────────────────────────────────────────
-
   // ──────────────────────────────────────────────────────────────────────────
   {
-    id: 'scene-08-ohms-law',
-    type: 'educational',
-    title: "Scene 08 — Ohm's Law: V = I × R",
+    id: 'scene-08-practice',
+    title: 'Scene 08 — Practice Mode: W.I.R.E. Methodology',
     async record(page) {
       await openBuilder(page);
 
-      // Load a preset with three parallel branches, each having a different
-      // resistor value so the viewer can see V=IR in action
-      await sendAction(page, 'load-preset', { preset: 'parallel_basic' });
-      await page.waitForTimeout(1200);
+      // Fit the empty workspace and orient the camera before generating a problem.
       await sendAction(page, 'fit-screen');
       await page.waitForTimeout(800);
 
-      // Labels on — shows V, I, and R annotations in 3D space
-      await sendAction(page, 'toggle-labels');
-      await page.waitForTimeout(600);
-
-      // Opening orbit — establish the scene before the concept is explained
-      await playCinematic(page, 'orbit');
-
-      // Run simulation — different currents light up each branch
-      await sendAction(page, 'run-simulation');
-      await verifyCanvas(page);
-      await page.waitForTimeout(2000);
-
-      // Focus push: camera glides into the resistor with the highest current
-      await playCinematic(page, 'focus');
-
-      // Atom dive — electrons moving through the low-resistance path at speed
-      await playCinematic(page, 'atom');
-
-      // Toggle flow convention to illustrate conventional vs. electron current
-      await sendAction(page, 'toggle-current-flow');
-      await page.waitForTimeout(800);
-
-      // Lattice sweep — lateral view of all three branches so viewer sees
-      // the current-density difference predicted by V=IR
-      await playCinematic(page, 'lattice');
-
-      // Closing orbit — all labels visible for the recap shot
-      await playCinematic(page, 'orbit');
-
-      // Labels off for clean outro
-      await sendAction(page, 'toggle-labels');
-      await page.waitForTimeout(600);
-    },
-  },
-
-  // ──────────────────────────────────────────────────────────────────────────
-  {
-    id: 'scene-09-voltage-divider',
-    type: 'educational',
-    title: 'Scene 09 — Voltage Divider: Series Resistors Create a Voltage Tap',
-    async record(page) {
-      await openBuilder(page);
-
-      // Series preset creates a two-resistor chain ideal for showing Vout = Vin × R2/(R1+R2)
+      // Load a clean series circuit as the base for the practice demonstration.
       await sendAction(page, 'load-preset', { preset: 'series_basic' });
-      await page.waitForTimeout(1200);
+      await page.waitForTimeout(1400);
+
       await sendAction(page, 'fit-screen');
-      await page.waitForTimeout(800);
+      await page.waitForTimeout(900);
 
-      // Labels on — show resistor values and node voltages
+      // Enable component labels so the viewer can read values during the walkthrough.
       await sendAction(page, 'toggle-labels');
-      await page.waitForTimeout(600);
+      await page.waitForTimeout(700);
 
-      // Orbit reveal — full series chain in view before current flows
-      await playCinematic(page, 'orbit');
+      // Gentle zoom in to the workspace so the circuit fills the screen nicely.
+      await smoothZoomIn(page, 6, 190);
+      await page.waitForTimeout(1000);
 
-      // Run simulation — voltage drops appear at each junction
+      // Generate a fresh practice problem — triggers the W.I.R.E. practice overlay.
+      await sendAction(page, 'generate-practice');
+      await page.waitForTimeout(2500);
+
+      // Simulate the circuit to show FUSE™ validating the student's wiring.
       await sendAction(page, 'run-simulation');
-      await verifyCanvas(page);
+      await page.waitForTimeout(2500);
+
+      // Zoom further in to show the current flowing through the practice circuit.
+      await smoothZoomIn(page, 8, 160);
+      await page.waitForTimeout(3000);
+
+      // Pull back to the full overview so all components and labels are visible.
+      await smoothZoomOut(page, 10, 170);
       await page.waitForTimeout(2000);
 
-      // Focus push: camera zooms into the mid-point junction (voltage tap)
-      await playCinematic(page, 'focus');
-
-      // Atom dive — electrons crossing the junction between the two resistors
-      await playCinematic(page, 'atom');
-
-      // Lattice sweep — wide view shows voltage gradient along the chain
-      await playCinematic(page, 'lattice');
-
-      // Closing orbit — labels still on so the Vout value is readable
-      await playCinematic(page, 'orbit');
-
+      // Turn labels off for the outro frame.
       await sendAction(page, 'toggle-labels');
-      await page.waitForTimeout(600);
-    },
-  },
-
-  // ──────────────────────────────────────────────────────────────────────────
-  {
-    id: 'scene-10-led-brightness',
-    type: 'educational',
-    title: 'Scene 10 — LED Brightness: Resistor Limits Current Through an LED',
-    async record(page) {
-      await openBuilder(page);
-
-      // Series preset works as a stand-in for a resistor–LED series circuit
-      await sendAction(page, 'load-preset', { preset: 'series_basic' });
-      await page.waitForTimeout(1200);
-      await sendAction(page, 'fit-screen');
       await page.waitForTimeout(800);
-
-      // Labels on — R and I values float beside each component
-      await sendAction(page, 'toggle-labels');
-      await page.waitForTimeout(600);
-
-      // Orbit — camera circles the simple series loop before simulation
-      await playCinematic(page, 'orbit');
-
-      // Simulate — current flows through the resistor then the LED element
-      await sendAction(page, 'run-simulation');
-      await verifyCanvas(page);
-      await page.waitForTimeout(2000);
-
-      // Focus push: hero shot on the LED / output component while current flows
-      await playCinematic(page, 'focus');
-
-      // Atom dive — electrons entering the light-emitting element
-      await playCinematic(page, 'atom');
-
-      // Toggle flow convention — show electron vs. conventional direction
-      await sendAction(page, 'toggle-current-flow');
-      await page.waitForTimeout(800);
-
-      // Lattice sweep — side view of the full loop showing current density
-      await playCinematic(page, 'lattice');
-
-      // Closing orbit — clean exit with labels
-      await playCinematic(page, 'orbit');
-
-      await sendAction(page, 'toggle-labels');
-      await page.waitForTimeout(600);
-    },
-  },
-
-  // ──────────────────────────────────────────────────────────────────────────
-  {
-    id: 'scene-11-kirchhoff-voltage',
-    type: 'educational',
-    title: "Scene 11 — KVL: Sum of Voltage Drops Equals Source Voltage",
-    async record(page) {
-      await openBuilder(page);
-
-      // Advanced combination circuit has multiple loops — ideal for KVL demo
-      await sendAction(page, 'load-preset', { preset: 'combination_advanced' });
-      await page.waitForTimeout(1200);
-      await sendAction(page, 'fit-screen');
-      await page.waitForTimeout(800);
-
-      // Labels on — all node voltages visible in 3D
-      await sendAction(page, 'toggle-labels');
-      await page.waitForTimeout(600);
-
-      // Wide orbit — viewer sees every loop in the network before current flows
-      await playCinematic(page, 'orbit');
-
-      // Simulate — KVL voltages resolve across all components
-      await sendAction(page, 'run-simulation');
-      await verifyCanvas(page);
-      await page.waitForTimeout(2000);
-
-      // Lattice sweep — camera traverses one complete loop, voltage labels in frame
-      await playCinematic(page, 'lattice');
-
-      // Focus push: zoom into the source to show the supply voltage
-      await playCinematic(page, 'focus');
-
-      // Atom dive — electron flow that produces the voltage drop
-      await playCinematic(page, 'atom');
-
-      // Toggle flow for a second visual pass showing conventional current direction
-      await sendAction(page, 'toggle-current-flow');
-      await page.waitForTimeout(800);
-
-      // Closing orbit — all voltage labels still on for the recap
-      await playCinematic(page, 'orbit');
-
-      await sendAction(page, 'toggle-labels');
-      await page.waitForTimeout(600);
-    },
-  },
-
-  // ──────────────────────────────────────────────────────────────────────────
-  {
-    id: 'scene-12-kirchhoff-current',
-    type: 'educational',
-    title: "Scene 12 — KCL: Currents Into a Node Sum to Zero",
-    async record(page) {
-      await openBuilder(page);
-
-      // Parallel topology has multiple branch currents meeting at nodes
-      await sendAction(page, 'load-preset', { preset: 'parallel_basic' });
-      await page.waitForTimeout(1200);
-      await sendAction(page, 'fit-screen');
-      await page.waitForTimeout(800);
-
-      // Labels on — show each branch current value in 3D
-      await sendAction(page, 'toggle-labels');
-      await page.waitForTimeout(600);
-
-      // Orbit — reveal all nodes before current flows
-      await playCinematic(page, 'orbit');
-
-      // Simulate — branch currents split and rejoin at the parallel nodes
-      await sendAction(page, 'run-simulation');
-      await verifyCanvas(page);
-      await page.waitForTimeout(2000);
-
-      // Focus push: camera dives toward the top junction node
-      await playCinematic(page, 'focus');
-
-      // Atom dive — electron streams splitting at the node
-      await playCinematic(page, 'atom');
-
-      // Lattice sweep — lateral view highlights all three parallel currents
-      await playCinematic(page, 'lattice');
-
-      // Toggle flow convention — electron → conventional, node currents unchanged
-      await sendAction(page, 'toggle-current-flow');
-      await page.waitForTimeout(800);
-
-      // Closing orbit — labels in frame for the KCL recap
-      await playCinematic(page, 'orbit');
-
-      await sendAction(page, 'toggle-labels');
-      await page.waitForTimeout(600);
-  // ──────────────────────────────────────────────────────────────────────────
-  {
-    id: 'scene-08-component-showcase',
-    title: 'Scene 08 — Component Showcase: Cinematic Promo',
-    async record(page) {
-      await openBuilder(page);
-
-      /**
-       * Components to feature, ordered for visual variety.
-       * Component labels (identifier + value) are enabled by default in the
-       * builder (the `showLabels` variable initialises to `true` in legacy.html)
-       * and are not toggled off during this scene so every component's name
-       * and metrics float in 3D space during the cinematic push-in.
-       */
-      const SHOWCASE = [
-        { type: 'battery',           label: 'Battery'            },
-        { type: 'resistor',          label: 'Resistor'           },
-        { type: 'led',               label: 'LED'                },
-        { type: 'capacitor',         label: 'Capacitor'          },
-        { type: 'inductor',          label: 'Inductor'           },
-        { type: 'switch',            label: 'Switch'             },
-        { type: 'fuse',              label: 'Fuse'               },
-        { type: 'relay',             label: 'Relay'              },
-        { type: 'motor',             label: 'Motor'              },
-        { type: 'mosfet',            label: 'MOSFET'             },
-        { type: 'opamp',             label: 'Op-Amp'             },
-        { type: 'voltage-regulator', label: 'Voltage Regulator'  },
-      ];
-
-      for (const comp of SHOWCASE) {
-        // ── Disappear: clear the previous component ───────────────────────
-        await sendAction(page, 'clear-workspace');
-        await page.waitForTimeout(600);
-
-        // ── Appear: add this component into the workspace ─────────────────
-        // builder:add-component is handled as a top-level message type (not
-        // via invoke-action), so we post directly rather than via sendAction.
-        await page.evaluate((compType) => {
-          window.postMessage(
-            { type: 'builder:add-component', payload: { componentType: compType } },
-            '*',
-          );
-        }, comp.type);
-        await page.waitForTimeout(800);
-
-        // The component is in drag-mode after addComponent().
-        // A single click on the canvas fires handleMouseUp → handleRelease(),
-        // which snaps the component to grid and exits drag mode.
-        await page.mouse.click(
-          Math.round(VIEWPORT.width  / 2),
-          Math.round(VIEWPORT.height / 2),
-        );
-        await page.waitForTimeout(500);
-
-        // ── Frame: center the camera on the lone component ────────────────
-        await sendAction(page, 'fit-screen');
-        await page.waitForTimeout(800);
-
-        // ── Cinematic: push-in reveal with label + metrics, then pull back ─
-        // The 'focus' preset pushes toward cameraTarget (set to the
-        // component center by fit-screen) and pulls back — perfect for a
-        // per-component spotlight shot.
-        await playCinematic(page, 'focus');
-
-        // Brief hold at the end of pull-back before the next component appears
-        await page.waitForTimeout(400);
-      }
-
-      // ── Outro: final orbit on the last component before fade ──────────
-      await playCinematic(page, 'orbit');
     },
   },
 ];
@@ -1113,16 +819,17 @@ async function main() {
     for (const { scene } of recorded) {
       console.log(`    promo-footage/${scene.id}.webm  —  ${scene.title}`);
     }
-    if (reelPath) {
-      const reelName = PORTRAIT ? 'promo-reel-portrait.mp4' : 'promo-reel.mp4';
-      console.log(`    promo-footage/${reelName}  —  Full promo reel`);
-    } else {
-      console.log('\n  Combine clips manually with ffmpeg:');
-      console.log('    printf "file \'%s\'\\n" promo-footage/scene-*.webm > /tmp/clips.txt');
-      console.log('    ffmpeg -f concat -safe 0 -i /tmp/clips.txt -c:v libx264 -preset fast -crf 22 -pix_fmt yuv420p promo-footage/promo-reel.mp4\n');
-      console.log('  Or import the individual .webm files into your video editor (Premiere, DaVinci, CapCut, etc.)');
-      console.log('  and add title cards, music, and colour grading for the final promo reel.\n');
-    }
+
+    console.log('\n  Combine clips with ffmpeg:');
+    console.log('    # 1. Create a concat list (FUSE-focused reel = scenes 05–08):');
+    console.log('    ls promo-footage/scene-0{5,6,7,8}-*.webm | sed "s/^/file \'/" | sed "s/$/' \\\\"/" > /tmp/fuse-clips.txt');
+    console.log('    # 2. Merge into the FUSE promo reel:');
+    console.log("    ffmpeg -f concat -safe 0 -i /tmp/fuse-clips.txt -c copy promo-footage/fuse-promo-reel.webm");
+    console.log('    # 3. Or merge ALL scenes into a full reel:');
+    console.log('    ls promo-footage/scene-*.webm | sed "s/^/file \'/" | sed "s/$/' \\\\"/" > /tmp/clips.txt');
+    console.log("    ffmpeg -f concat -safe 0 -i /tmp/clips.txt -c copy promo-footage/promo-reel.webm\n");
+    console.log('  Import the individual .webm files into your video editor (Premiere, DaVinci, CapCut, etc.)');
+    console.log('  and add title cards, music, and colour grading for the final promo reel.\n');
   } else {
     console.warn('  ⚠  No clips were saved — check the warnings above.\n');
   }
