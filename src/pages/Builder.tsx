@@ -2633,12 +2633,19 @@ export default function Builder() {
     return () => window.clearTimeout(timer);
   }, [isIntroDialogVisible, handleDismissIntroDialog]);
 
-  // Effect 2 — REMOVED. The payoff demo circuit is no longer auto-loaded on
-  // startup; first-run onboarding is the interactive tutorial (Effect 1) on a
-  // clean canvas. The payoff sequence (runCurrentFlowPayoffSequence) remains in
-  // the code but is now only reachable on demand (e.g. a future "show me" action)
-  // and never fires automatically. This also resolves the mobile bug where the
-  // payoff circuit silently failed to load on the slower Capacitor WebView.
+  // Effect 2 — RESTORED. Auto-load the payoff demo circuit on every session
+  // so returning users land on a live, animated 3D circuit instead of a black
+  // canvas. First-run visitors ALSO see this circuit — the interactive tutorial
+  // (Effect 1) runs on top of it, so newcomers get the "wow" moment AND a
+  // guided walk-through simultaneously. `runCurrentFlowPayoffSequence` sets
+  // `pendingPayoffRef` if the iframe isn't ready yet; this effect fires again
+  // once `isFrameReady` flips to true and delivers the circuit at that point.
+  useEffect(() => {
+    if (!isFrameReady) {
+      return;
+    }
+    runCurrentFlowPayoffSequence({ revealBanner: true });
+  }, [isFrameReady, runCurrentFlowPayoffSequence]);
 
   useEffect(() => {
     if (!isCurrentFlowPayoffVisible) {
