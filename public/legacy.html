@@ -10221,16 +10221,8 @@ body.android-optimized .zoom-btn {
                 const partLiftFraction = 1 / (2 * 5.0 * Math.tan((52 * Math.PI / 180) / 2));
                 const flowVisibleHeight = 2 * flowDist * Math.tan((flowFov * Math.PI / 180) / 2);
                 const flowKf = Object.assign({}, overviewKf, {
-<<<<<<< HEAD
                     distance: flowDist,
                     targetY: overviewKf.targetY - partLiftFraction * flowVisibleHeight,
-=======
-                    distance: overviewKf.distance * 0.48,
-                    // Lift the current flow into the same front-and-centre viewing
-                    // window as the other guided-tour highlights without pushing it
-                    // too far toward the top edge.
-                    targetY: overviewKf.targetY - 1,
->>>>>>> f644cde5be7fed039f93e354c69dbfe1409dcb48
                     duration: 1300, easing: 'smooth',
                 });
                 _cinematicCtrl.start(null, [cur, flowKf]);
