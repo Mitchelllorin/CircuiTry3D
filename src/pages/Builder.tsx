@@ -2695,19 +2695,55 @@ export default function Builder() {
     return () => window.clearTimeout(timer);
   }, [isIntroDialogVisible, handleDismissIntroDialog]);
 
-  // Effect 2 — RESTORED. Auto-load the payoff demo circuit on every session
-  // so returning users land on a live, animated 3D circuit instead of a black
-  // canvas. First-run visitors ALSO see this circuit — the interactive tutorial
-  // (Effect 1) runs on top of it, so newcomers get the "wow" moment AND a
-  // guided walk-through simultaneously. `runCurrentFlowPayoffSequence` sets
-  // `pendingPayoffRef` if the iframe isn't ready yet; this effect fires again
-  // once `isFrameReady` flips to true and delivers the circuit at that point.
+  // Effect 2 — RESTORED + hardened. Auto-load the payoff demo circuit on every
+  // session so returning users land on a live, animated 3D circuit instead of a
+  // black canvas. First-run visitors ALSO see this circuit — the interactive
+  // tutorial (Effect 1) runs on top of it, so newcomers get the "wow" moment
+  // AND a guided walk-through simultaneously.
+  //
+  // Hardened retry policy: fires when `isFrameReady` becomes true, then keeps
+  // re-firing every 2.5 s (up to 6 attempts total = ~15 s) until the workspace
+  // actually reports at least one component. This survives all the edge cases
+  // that used to blank the canvas: `legacy:ready` firing before React's message
+  // listener attached, a first payoff message dropped by a slow WebView, service
+  // worker serving a stale iframe, etc. As soon as ANY component appears the
+  // retries stop.
   useEffect(() => {
     if (!isFrameReady) {
       return;
     }
+    console.log("[CT3D-REACT] Effect 2: firing payoff load (frame ready)");
     runCurrentFlowPayoffSequence({ revealBanner: true });
-  }, [isFrameReady, runCurrentFlowPayoffSequence]);
+
+    let attempts = 0;
+    const MAX_ATTEMPTS = 6;
+    const retryTimer = window.setInterval(() => {
+      attempts += 1;
+      const componentCount = circuitState?.components?.length ?? 0;
+      if (componentCount > 0) {
+        console.log(
+          `[CT3D-REACT] Effect 2: payoff visible (${componentCount} components) — retries stopped`,
+        );
+        window.clearInterval(retryTimer);
+        return;
+      }
+      if (attempts >= MAX_ATTEMPTS) {
+        console.warn(
+          "[CT3D-REACT] Effect 2: payoff never appeared after " +
+            MAX_ATTEMPTS +
+            " tries — user can use the Replay Demo button to try manually",
+        );
+        window.clearInterval(retryTimer);
+        return;
+      }
+      console.log(
+        `[CT3D-REACT] Effect 2: workspace still empty, retrying payoff (attempt ${attempts}/${MAX_ATTEMPTS})`,
+      );
+      runCurrentFlowPayoffSequence({ revealBanner: true });
+    }, 2500);
+
+    return () => window.clearInterval(retryTimer);
+  }, [isFrameReady, runCurrentFlowPayoffSequence, circuitState]);
 
   useEffect(() => {
     if (!isCurrentFlowPayoffVisible) {
