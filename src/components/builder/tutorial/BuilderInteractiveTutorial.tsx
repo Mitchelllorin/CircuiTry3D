@@ -79,7 +79,14 @@ export function BuilderInteractiveTutorial(props: {
   const [stepIndex, setStepIndex] = useState(0);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [tutorialOpenedAt, setTutorialOpenedAt] = useState(() => Date.now());
+  // "Nice!" confirmation toast that briefly fades in when an objective is met
+  // and the tutorial auto-advances — so the user feels the app is responding
+  // to *their* action, not just clicking Next.
+  const [autoAdvanceToast, setAutoAdvanceToast] = useState<string | null>(null);
   const highlightedElementRef = useRef<HTMLElement | null>(null);
+  // Tracks which step we last auto-advanced from, so we don't queue multiple
+  // advances for the same completion event.
+  const lastAdvancedFromStepRef = useRef<number>(-1);
   // Spotlight: live screen rect of the element the current step points at, so we
   // can dim the whole screen except a cut-out hole around it (coach-mark style).
   const [spotlightRect, setSpotlightRect] = useState<{
@@ -325,6 +332,61 @@ export function BuilderInteractiveTutorial(props: {
     }
   }, [isOpen, stepIndex]);
 
+  // Auto-advance: when the active step's objective becomes complete and the
+  // step actually required an action (i.e. not a free-text step that can
+  // always be skipped), wait a short beat so the user sees their ✓ pop, then
+  // advance to the next step. This is what makes the tutorial *actually
+  // interactive* — every real action you take pushes the lesson forward.
+  useEffect(() => {
+    if (!isOpen) return;
+    if (isCollapsed) return;
+    if (stepIndex >= steps.length - 1) return;
+    if (lastAdvancedFromStepRef.current === stepIndex) return;
+    // We only auto-advance when the step has a *requirement*. Pure narration
+    // steps (canSkipRequirement=true with no targetId / no objectives) still
+    // need a manual Next so the user can read at their own pace.
+    const hasRequirement = !activeStep.canSkipRequirement;
+    if (!hasRequirement) return;
+    if (!completion) return;
+
+    lastAdvancedFromStepRef.current = stepIndex;
+    const stepLabel = activeStep.title;
+    const advanceTimer = window.setTimeout(() => {
+      setAutoAdvanceToast(`Nice! ${stepLabel} ✓`);
+      setStepIndex((i) => Math.min(steps.length - 1, i + 1));
+    }, 900);
+    return () => {
+      window.clearTimeout(advanceTimer);
+      // Release the latch on unmount/cleanup so StrictMode's double-invoke (and
+      // any follow-up render that flips `completion`) can re-schedule the
+      // advance instead of silently early-returning.
+      if (lastAdvancedFromStepRef.current === stepIndex) {
+        lastAdvancedFromStepRef.current = -1;
+      }
+    };
+  }, [
+    isOpen,
+    isCollapsed,
+    stepIndex,
+    completion,
+    activeStep.canSkipRequirement,
+    activeStep.title,
+    steps.length,
+  ]);
+
+  // Clear the "Nice!" toast after a moment so it doesn't linger between steps.
+  useEffect(() => {
+    if (!autoAdvanceToast) return;
+    const timer = window.setTimeout(() => setAutoAdvanceToast(null), 1800);
+    return () => window.clearTimeout(timer);
+  }, [autoAdvanceToast]);
+
+  // When the step actually changes, reset the advance latch so the next
+  // step's completion event is again eligible to advance.
+  useEffect(() => {
+    lastAdvancedFromStepRef.current = -1;
+  }, [stepIndex]);
+
   useEffect(() => {
     if (!isOpen) return;
     try {
@@ -497,50 +559,39 @@ export function BuilderInteractiveTutorial(props: {
     }
   })();
 
-  // Focus frame: blur + dim everything EXCEPT a hole around the targeted element,
-  // so the one thing you need to see/tap is the only sharp, bright thing on screen.
-  // Built from four rectangles framing the hole (reliable on mobile WebView, where
-  // a single clip-path cutout is flaky) plus a glowing ring around the target.
-  const FOCUS_PAD = 10;
+  // Coach mark: a small floating arrow + pulsing ring pointing at the target.
+  // Deliberately NO full-screen blur/dim — the user's workspace stays fully
+  // visible and usable. The ring just says "here". Sized from the live rect so
+  // it tracks the target as panels open or the library reel scrolls.
+  const RING_PAD = 8;
   const focus =
     spotlightRect && !isCollapsed
       ? {
-          top: Math.max(0, spotlightRect.top - FOCUS_PAD),
-          left: Math.max(0, spotlightRect.left - FOCUS_PAD),
-          width: spotlightRect.width + FOCUS_PAD * 2,
-          height: spotlightRect.height + FOCUS_PAD * 2,
+          top: Math.max(0, spotlightRect.top - RING_PAD),
+          left: Math.max(0, spotlightRect.left - RING_PAD),
+          width: spotlightRect.width + RING_PAD * 2,
+          height: spotlightRect.height + RING_PAD * 2,
         }
       : null;
 
+  // Decide which side of the target the arrow should sit on, so it points
+  // *into* the target instead of overlapping it. Default to "above" if there's
+  // room, otherwise "below".
+  const arrowPlacement: "above" | "below" | null = focus
+    ? focus.top > 70
+      ? "above"
+      : "below"
+    : null;
+
   return (
     <div className="builder-tutorial-layer" aria-live="polite">
+      {autoAdvanceToast && (
+        <div className="builder-tutorial-toast" role="status">
+          {autoAdvanceToast}
+        </div>
+      )}
       {focus && (
         <>
-          <div
-            className="tutorial-blur"
-            aria-hidden="true"
-            style={{ top: 0, left: 0, right: 0, height: focus.top }}
-          />
-          <div
-            className="tutorial-blur"
-            aria-hidden="true"
-            style={{ top: focus.top + focus.height, left: 0, right: 0, bottom: 0 }}
-          />
-          <div
-            className="tutorial-blur"
-            aria-hidden="true"
-            style={{ top: focus.top, left: 0, width: focus.left, height: focus.height }}
-          />
-          <div
-            className="tutorial-blur"
-            aria-hidden="true"
-            style={{
-              top: focus.top,
-              left: focus.left + focus.width,
-              right: 0,
-              height: focus.height,
-            }}
-          />
           <div
             className="tutorial-focus-ring"
             aria-hidden="true"
@@ -551,6 +602,32 @@ export function BuilderInteractiveTutorial(props: {
               height: focus.height,
             }}
           />
+          {arrowPlacement === "above" && (
+            <div
+              className="tutorial-arrow tutorial-arrow--above"
+              aria-hidden="true"
+              style={{
+                top: focus.top - 38,
+                left: focus.left + focus.width / 2 - 16,
+              }}
+            >
+              <span className="tutorial-arrow-shaft">tap here</span>
+              <span className="tutorial-arrow-head">▼</span>
+            </div>
+          )}
+          {arrowPlacement === "below" && (
+            <div
+              className="tutorial-arrow tutorial-arrow--below"
+              aria-hidden="true"
+              style={{
+                top: focus.top + focus.height + 6,
+                left: focus.left + focus.width / 2 - 16,
+              }}
+            >
+              <span className="tutorial-arrow-head">▲</span>
+              <span className="tutorial-arrow-shaft">tap here</span>
+            </div>
+          )}
         </>
       )}
       <div
