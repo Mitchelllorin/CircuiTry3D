@@ -63,6 +63,10 @@ const BUILD_STEPS: BuildStep[] = [
     text: "Now build one yourself — I'll guide every step. Drag the canvas any time to look around.",
   },
   {
+    id: "controls",
+    text: "The controls are easy and intuitive — you probably already know how to use them; they are classic camera controls.",
+  },
+  {
     id: "battery",
     text: "Tap Battery once to pick it up — it follows you as a ghost. Tap the grid to drop it. Now it's real.",
     target: '[data-tutorial-id="tutorial-add-battery"]',
