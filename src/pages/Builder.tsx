@@ -2695,6 +2695,19 @@ export default function Builder() {
     return () => window.clearTimeout(timer);
   }, [isIntroDialogVisible, handleDismissIntroDialog]);
 
+  // Mirror the latest circuit state into a ref so the payoff retry loop below can
+  // read the live component count WITHOUT taking `circuitState` as an effect
+  // dependency. Depending on it created an infinite loop: firing load-payoff runs
+  // analyzeCircuit in legacy.html, which posts a fresh circuit-state, which gives
+  // `circuitState` a new object reference, which re-ran the effect, which fired
+  // load-payoff again… Each turn tore down and rebuilt the circuit (flashing the
+  // nameplates) and snapped the camera home (teleporting mid-tour). Invisible on
+  // fast desktop, brutal on Android's slower WebView. (Regression from 015fdff.)
+  const latestCircuitStateRef = useRef(circuitState);
+  useEffect(() => {
+    latestCircuitStateRef.current = circuitState;
+  }, [circuitState]);
+
   // Effect 2 — RESTORED + hardened. Auto-load the payoff demo circuit on every
   // session so returning users land on a live, animated 3D circuit instead of a
   // black canvas. First-run visitors ALSO see this circuit — the interactive
@@ -2719,7 +2732,11 @@ export default function Builder() {
     const MAX_ATTEMPTS = 6;
     const retryTimer = window.setInterval(() => {
       attempts += 1;
-      const componentCount = circuitState?.components?.length ?? 0;
+      // Read the CORRECT field (counts.components) from the ref — the old check
+      // `circuitState?.components?.length` looked at a field that doesn't exist
+      // on LegacyCircuitState, so it was always 0 and never stopped retrying.
+      const componentCount =
+        latestCircuitStateRef.current?.counts?.components ?? 0;
       if (componentCount > 0) {
         console.log(
           `[CT3D-REACT] Effect 2: payoff visible (${componentCount} components) — retries stopped`,
@@ -2743,7 +2760,9 @@ export default function Builder() {
     }, 2500);
 
     return () => window.clearInterval(retryTimer);
-  }, [isFrameReady, runCurrentFlowPayoffSequence, circuitState]);
+    // NOTE: `circuitState` is deliberately NOT a dependency — see the ref comment
+    // above. The interval polls latestCircuitStateRef for fresh counts instead.
+  }, [isFrameReady, runCurrentFlowPayoffSequence]);
 
   useEffect(() => {
     if (!isCurrentFlowPayoffVisible) {
@@ -3112,7 +3131,14 @@ export default function Builder() {
   const shouldShowCurrentFlowPayoffBanner =
     isCurrentFlowPayoffVisible &&
     shouldShowEdgeActions &&
-    !isInteractiveTutorialOpen;
+    // The guided tour and build-along each narrate the showcase themselves, on
+    // the camera's schedule. Letting this insight banner cycle on its own 9s
+    // timer at the same time put two unsynced card systems on screen at once
+    // (the "two tutorials running at once" bug). While any walkthrough overlay
+    // is open, it is the sole narrator; the banner returns once it closes.
+    !isInteractiveTutorialOpen &&
+    !isGuidedTourOpen &&
+    !isBuildAlongOpen;
 
   // While the current-flow payoff demo is playing (sequence running OR banner
   // showing) the preset circuit must be view-only: a transparent guard sits over

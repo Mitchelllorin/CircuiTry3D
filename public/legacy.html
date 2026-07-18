@@ -10206,23 +10206,35 @@ body.android-optimized .zoom-btn {
                 return;
             }
             if (target === 'flow') {
-                // Focused view of the current flowing through the circuit — same
-                // centre and angle as the overview, zoomed in so the moving
-                // particles read clearly.
+                // Focused view of the current flowing through the whole circuit,
+                // centred in the open space ABOVE the tour card (the card covers the
+                // bottom of the screen). The current is a full LOOP, not a point, so
+                // two knobs frame it — tune these together while watching the phone:
+                //   FLOW_ZOOM      — fraction of the overview distance. Smaller = closer
+                //                    (bigger current, but the loop starts to overflow
+                //                    the frame and hide behind the card). Larger = more
+                //                    of the loop visible. 1.0 == the full overview shot.
+                //   FLOW_LIFT_FRAC — how far UP to push the loop, as a fraction of the
+                //                    frame height. Bigger = higher (clears the card);
+                //                    too big and the top runs off-screen.
                 if (!overviewKf) { if (typeof fitToScreen === 'function') fitToScreen(); return; }
-                const flowDist = overviewKf.distance * 0.48;
+                const FLOW_ZOOM = 0.72;        // size (smaller = closer/bigger)
+                const FLOW_LIFT_FRAC = 0.25;   // vertical: bigger = higher up the frame
+                const FLOW_PAN_FRAC = 0.16;    // horizontal: bigger = subject further LEFT
+                const flowDist = overviewKf.distance * FLOW_ZOOM;
                 const flowFov = overviewKf.fov || 52;
-                // Centre the current in the available space (above the tour card) by
-                // the SAME rule the component steps use: they lift the look-at point
-                // 1 world unit at distance 5.0 / fov 52, which pushes the subject up a
-                // fixed FRACTION of the frame height. Reproduce that fraction at the
-                // flow's own zoom so the current lands in the same sweet spot as every
-                // part, instead of a magic constant that drifts with the framing.
-                const partLiftFraction = 1 / (2 * 5.0 * Math.tan((52 * Math.PI / 180) / 2));
                 const flowVisibleHeight = 2 * flowDist * Math.tan((flowFov * Math.PI / 180) / 2);
+                // Screen-right in world space at this camera azimuth (see
+                // updateCameraPosition: offset = cos·cos, sin, cos·sin). Panning the
+                // AIM along +screen-right slides the subject LEFT on screen.
+                const flowPan = FLOW_PAN_FRAC * flowVisibleHeight;
+                const rightX = Math.sin(overviewKf.angleX);
+                const rightZ = -Math.cos(overviewKf.angleX);
                 const flowKf = Object.assign({}, overviewKf, {
                     distance: flowDist,
-                    targetY: overviewKf.targetY - partLiftFraction * flowVisibleHeight,
+                    targetX: overviewKf.targetX + flowPan * rightX,
+                    targetY: overviewKf.targetY - FLOW_LIFT_FRAC * flowVisibleHeight,
+                    targetZ: overviewKf.targetZ + flowPan * rightZ,
                     duration: 1300, easing: 'smooth',
                 });
                 _cinematicCtrl.start(null, [cur, flowKf]);
