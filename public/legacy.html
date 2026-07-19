@@ -18316,6 +18316,44 @@ Made with ? for visual learners everywhere!
                 };
             });
 
+            // ── Physics-honest per-segment current (Track A) ───────────────────
+            // Give each wire the REAL solved branch current of the in-line
+            // component it touches, using the same DC nodal solver that feeds the
+            // W.I.R.E. numeric readouts. Consequences, all physically correct:
+            //   • series loop  → every component carries the same current, so
+            //     every wire gets the same value and animates identically.
+            //   • parallel     → each branch wire inherits its branch component's
+            //     current, so branches split by true I=V/R (KCL-consistent).
+            //   • rails (wire between two junctions, no in-line component) → left
+            //     null, and the animation falls back to the global total current,
+            //     which is exactly what a shared rail carries.
+            // Fully guarded: if the solver is unavailable or a wire can't be
+            // resolved, branchCurrent stays null and the animation keeps its prior
+            // global-current behaviour — no regression, never a throw.
+            let _flowSolution = null;
+            try { _flowSolution = solveDCCircuitLegacy(); } catch (e) { _flowSolution = null; }
+            const _flowSolved = Boolean(_flowSolution && _flowSolution.status === 'solved');
+            const _branchCurrentForWire = (wire) => {
+                if (!_flowSolved || !wire) return null;
+                const ends = [wire.startObj, wire.endObj]
+                    .filter(o => o && o.type && o.type !== 'junction');
+                let best = null;
+                for (const comp of ends) {
+                    const amps = getComponentCurrentFromSolution(comp, _flowSolution);
+                    if (Number.isFinite(amps)) {
+                        const mag = Math.abs(amps);
+                        // Prefer the smaller branch current where a wire touches two
+                        // elements, so a wire between a rail node and a resistor
+                        // reports the resistor's branch current, not a source total.
+                        if (best == null || mag < best) best = mag;
+                    }
+                }
+                return best;
+            };
+            descriptiveWireSegments.forEach(seg => {
+                seg.branchCurrent = _branchCurrentForWire(seg.wire);
+            });
+
             const totalWirePathResistance = wireSegments.reduce((sum, segment) => {
                 if (isFinite(segment.resistance)) {
                     return sum + segment.resistance;
@@ -18383,6 +18421,7 @@ Made with ? for visual learners everywhere!
                         wireId: segment.wire?.id || null,
                         direction: segment.direction,
                         speedFactor: segment.speedFactor,
+                        branchCurrent: typeof segment.branchCurrent === 'number' ? segment.branchCurrent : null,
                         resistance: typeof segment.resistance === 'number' ? segment.resistance : null,
                         lengthMeters: typeof segment.lengthMeters === 'number' ? segment.lengthMeters : null
                     }))
@@ -19602,11 +19641,24 @@ Made with ? for visual learners everywhere!
                     console.error('[CT3D Flow] Segment ' + segmentIndex + ': createCurve FAILED:', e); console.warn('Could not create wire curve:', e); }
                 if (!wire.curve) return;
 
-                const segmentSpeed       = Math.max(0.002, baseSpeed * (segment.speedFactor || 1));
-                const flowColor          = calculateCurrentColor(flowState, segment.speedFactor);
+                // ── Track A: physics-honest per-segment flow ───────────────────
+                // When this wire's real solved branch current is known, drive its
+                // speed / colour / density from THAT current — so a series loop is
+                // uniform and parallel branches split by true I=V/R — and skip the
+                // cosmetic resistance speedFactor. Otherwise keep the prior
+                // global-current behaviour so nothing regresses.
+                const _hasBranch    = Number.isFinite(segment.branchCurrent);
+                const _segCurrent   = _hasBranch ? segment.branchCurrent : currentValue;
+                const _segSpeedFac  = _hasBranch ? 1 : (segment.speedFactor || 1);
+                const _segBaseSpeed = _hasBranch
+                    ? (calculateFlowSpeed(_segCurrent) * payoffFlowDegrade * payoffSpeedScale * userFlowSpeedScale)
+                    : baseSpeed;
+
+                const segmentSpeed       = Math.max(0.002, _segBaseSpeed * _segSpeedFac);
+                const flowColor          = calculateCurrentColor(flowState, segment.speedFactor, _hasBranch ? _segCurrent : undefined);
                 const directionMultiplier = ((segment.direction >= 0 ? 1 : -1) * (currentFlowStyle === 'misty' ? -1 : 1));
 
-                let dynamicCount = Math.floor((currentValue * (isMobile ? 24 : 42)) * (segment.speedFactor || 1));
+                let dynamicCount = Math.floor((_segCurrent * (isMobile ? 24 : 42)) * _segSpeedFac);
                 dynamicCount = Math.max(baseParticleCount, Math.min(maxParticles, dynamicCount));
                 if (FLOW_STREAM_MODE && !inAtomicZoom) {
                     // The flowing glow channel carries the current at circuit scale;
@@ -20331,7 +20383,7 @@ Made with ? for visual learners everywhere!
         }
 
 
-        function calculateCurrentColor(flowState, speedFactor) {
+        function calculateCurrentColor(flowState, speedFactor, segmentCurrentOverride) {
             if (flowState?.warning === 'short') {
                 return { hex: 0xff4444, emissive: 0x660000 };
             }
@@ -20348,22 +20400,35 @@ Made with ? for visual learners everywhere!
                 return { hex: 0xd07cff, emissive: 0x2b1244 };
             }
 
-            // Map the segment's speedFactor ([minSpeedFactor..maxSpeedFactor]) to [0..1].
-            // speedFactor is low near high-resistance components and high on free wires.
-            const sf = speedFactor ?? FLOW_CONSTANTS.maxSpeedFactor;
-            const minSF = FLOW_CONSTANTS.minSpeedFactor;
-            const maxSF = FLOW_CONSTANTS.maxSpeedFactor;
-            const sfT = Math.min(1, Math.max(0, (sf - minSF) / (maxSF - minSF)));
+            // Colour position along the spectrum, t in [0..1].
+            let t;
+            if (Number.isFinite(segmentCurrentOverride)) {
+                // ── Physics-honest path (Track A) ──────────────────────────────
+                // We know this wire's REAL solved branch current, so colour it by
+                // that current alone. Two wires carrying the same current get the
+                // same colour (series is uniform); a heavier branch runs bluer
+                // (parallel splits by true I=V/R). The resistance/speedFactor
+                // cosmetic blend is intentionally skipped here.
+                t = Math.min(1, Math.sqrt(Math.max(0, segmentCurrentOverride / CURRENT_COLOR_SATURATION_THRESHOLD)));
+            } else {
+                // ── Legacy fallback (solver unavailable for this wire) ──────────
+                // Map the segment's speedFactor ([minSpeedFactor..maxSpeedFactor]) to [0..1].
+                // speedFactor is low near high-resistance components and high on free wires.
+                const sf = speedFactor ?? FLOW_CONSTANTS.maxSpeedFactor;
+                const minSF = FLOW_CONSTANTS.minSpeedFactor;
+                const maxSF = FLOW_CONSTANTS.maxSpeedFactor;
+                const sfT = Math.min(1, Math.max(0, (sf - minSF) / (maxSF - minSF)));
 
-            // Also factor in global current magnitude so the entire circuit is dull-red
-            // at near-zero current and blue-white at high current, not just based on
-            // segment resistance alone.  Saturates at CURRENT_COLOR_SATURATION_THRESHOLD.
-            const currentValue = flowState?.currentValue ?? 0;
-            const currentT = Math.min(1, Math.sqrt(Math.max(0, currentValue / CURRENT_COLOR_SATURATION_THRESHOLD)));
+                // Also factor in global current magnitude so the entire circuit is dull-red
+                // at near-zero current and blue-white at high current, not just based on
+                // segment resistance alone.  Saturates at CURRENT_COLOR_SATURATION_THRESHOLD.
+                const currentValue = flowState?.currentValue ?? 0;
+                const currentT = Math.min(1, Math.sqrt(Math.max(0, currentValue / CURRENT_COLOR_SATURATION_THRESHOLD)));
 
-            // Blend: per-segment resistance accounts for COLOR_RESISTANCE_WEIGHT,
-            //   overall current for COLOR_CURRENT_WEIGHT.
-            const t = sfT * COLOR_RESISTANCE_WEIGHT + currentT * COLOR_CURRENT_WEIGHT;
+                // Blend: per-segment resistance accounts for COLOR_RESISTANCE_WEIGHT,
+                //   overall current for COLOR_CURRENT_WEIGHT.
+                t = sfT * COLOR_RESISTANCE_WEIGHT + currentT * COLOR_CURRENT_WEIGHT;
+            }
 
             // Color spectrum: dull red (slow, t=0) -> orange -> yellow -> cyan -> blue-white (fast, t=1)
             let displayColor;
