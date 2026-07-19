@@ -4518,7 +4518,10 @@ body.android-optimized .zoom-btn {
         let undoStack = [], redoStack = [];
         let clipboard = null;
         let selectedComponents = new Set();
-        let showGrid = true, showLabels = true, labelVisibilityLevel = 3;
+        // Default to REFERENCES-ONLY (level 1 → SW1, R1, …) so newcomers aren't hit
+        // with volts/ohms on open; W.I.R.E. metrics (level 3) are introduced in the
+        // next tutorial. Must match the React default in Builder.tsx (labelVisibilityLevel: 1).
+        let showGrid = true, showLabels = true, labelVisibilityLevel = 1;
         let gridBrightness = 45, gridLineWidth = 1, gridHue = 120;
         let currentAnalysisTab = 'wire';
         let lastKnownValues = { voltage: 0, current: 0, resistance: Infinity, power: 0 };

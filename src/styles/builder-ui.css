@@ -86,7 +86,7 @@
   --builder-floating-button-size: 46px;
   --builder-edge-actions-gap: 12px;
   --builder-edge-action-button-size: 44px;
-  --builder-edge-action-icon-size: 20px;
+  --builder-edge-action-icon-size: 26px;
 }
 
 body.builder-body {
@@ -458,11 +458,13 @@ body.builder-body::before {
   gap: 3px;
   width: var(--builder-edge-action-button-size);
   min-height: var(--builder-edge-action-button-size);
-  padding: 6px 4px;
-  /* Solid chip so the workspace (lightning, nameplate readouts) can't show
-     THROUGH the button — the transparent fill let text bleed behind every icon. */
-  background: rgba(13, 14, 38, 0.9);
-  border: 1px solid rgba(168, 216, 255, 0.14);
+  padding: 3px 2px;
+  /* No chip of its own — the icon floats directly on the action-bar glass, which
+     already backdrop-blurs the workspace behind it. Kills the old
+     "container-in-a-container" look; the icon's own drop-shadow (below) keeps it
+     legible over busy scenes, which is what the old solid fill was compensating for. */
+  background: transparent;
+  border: 1px solid transparent;
   border-radius: 12px;
   color: var(--builder-muted-soft);
   cursor: pointer;
@@ -510,6 +512,11 @@ body.builder-body::before {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  /* Dimensional depth: a dark shadow beneath + a faint top highlight makes the
+     flat glyph read as a raised, physical control instead of flat clip-art. */
+  filter:
+    drop-shadow(0 1.5px 1px rgba(0, 0, 0, 0.6))
+    drop-shadow(0 -0.5px 0 rgba(255, 255, 255, 0.28));
 }
 
 /* Emoji glyph used in place of an SVG icon (e.g. the Tour/replay button). */

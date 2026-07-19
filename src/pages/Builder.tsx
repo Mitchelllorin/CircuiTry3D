@@ -1314,7 +1314,11 @@ export default function Builder() {
     wireRoutingMode: "manhattan",
     showGrid: true,
     showLabels: true,
-    labelVisibilityLevel: 3,
+    // Open on REFERENCES-ONLY (level 1 → SW1, R1, B1, LED1) so a newcomer isn't
+    // hit with a wall of volts/ohms on first sight. The W.I.R.E. metrics (level 3)
+    // get introduced deliberately in the next tutorial. Must match legacy.html's
+    // own default (search `labelVisibilityLevel = 1`) or the legacy sync overrides it.
+    labelVisibilityLevel: 1,
     gridBrightness: 100,
     gridLineWidth: 1,
     gridHue: 240,
