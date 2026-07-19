@@ -29,10 +29,106 @@
   padding: 9px 11px 10px;
 }
 
-/* Guided tour: lift the card clear above the F.U.S.E. watermark (its top sits
-   ~92px from the bottom), with a margin. */
+/* Guided tour: bare TEXT OVERLAY — no box. Just kicker + text + Next floating
+   over the workspace, which reads cleaner and reclaims the space the glass card
+   used to eat. Legibility comes from a strong text-shadow, not a background.
+   Lifted clear above the F.U.S.E. watermark (its top sits ~92px from the
+   bottom). No height cap / no scroll — the copy is short, so it always fits. */
 .builder-tutorial-card--tour {
   bottom: calc(104px + env(safe-area-inset-bottom, 0px));
+  width: min(340px, calc(100vw - 28px));
+  max-height: none;
+  background: none;
+  border: none;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  /* Generous padding so the invisible backdrop below has room to feather out
+     around the text rather than clipping at the content edge. */
+  padding: 16px 22px 18px;
+}
+
+/* The "invisible container": a blurred, softly darkened backdrop that sits
+   BEHIND the text and has its edges masked to nothing — so the busy 3D scene
+   behind the words goes calm and the text reads clearly, yet there's no visible
+   box, border, or edge. Masking the pseudo-element (not the card) means the
+   feather never touches the text's own opacity. */
+.builder-tutorial-card--tour::before {
+  content: "";
+  position: absolute;
+  inset: -8px;
+  z-index: -1;
+  pointer-events: none;
+  border-radius: 22px;
+  background: radial-gradient(
+    120% 120% at 30% 50%,
+    rgba(2, 10, 26, 0.3) 0%,
+    rgba(2, 10, 26, 0.18) 46%,
+    rgba(2, 10, 26, 0) 78%
+  );
+  /* Lean on a STRONG blur (not a dark tint) for legibility — enough that the
+     text patch is clearly a calmer region than the scene, without dimming it. */
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  /* Feather the whole backdrop (blur + tint) out to transparent at the rim. */
+  -webkit-mask-image: radial-gradient(
+    115% 120% at 50% 50%,
+    #000 52%,
+    transparent 86%
+  );
+  mask-image: radial-gradient(115% 120% at 50% 50%, #000 52%, transparent 86%);
+}
+
+/* No box behind the text now, so it must carry its own contrast over the canvas
+   and never clip/scroll. */
+.builder-tutorial-card--tour .builder-tutorial-body {
+  margin-top: 6px;
+  overflow: visible;
+}
+
+.builder-tutorial-card--tour .builder-tutorial-text {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.5;
+  font-weight: 600;
+}
+
+/* Plain (non-term) words only. The four metric terms (.ct-term-*) are left
+   alone below so they keep their true, bold colours. Here the plain copy:
+   (1) ADAPTS — a difference blend flips it against whatever's behind each card,
+   so it stays high-contrast per card; (2) CHANGES — the source colour slowly
+   drifts so the blended result shifts and catches the eye. */
+.builder-tutorial-card--tour .ct-term-plain {
+  color: #eafbff;
+  mix-blend-mode: difference;
+  animation: tour-text-shift 5s ease-in-out infinite;
+}
+
+/* Metric terms keep their layout.css colours — never blended, never animated. */
+.builder-tutorial-card--tour .ct-term {
+  mix-blend-mode: normal;
+  animation: none;
+}
+
+@keyframes tour-text-shift {
+  0%,
+  100% {
+    color: #eafbff;
+  }
+  50% {
+    color: #7fe6ff;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .builder-tutorial-card--tour .ct-term-plain {
+    animation: none;
+  }
+}
+
+/* Kicker + close read over bare canvas too. */
+.builder-tutorial-card--tour .builder-tutorial-kicker {
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
 }
 
 /* Guided tour: persistent "skip" pill so the user can dismiss the whole tour at

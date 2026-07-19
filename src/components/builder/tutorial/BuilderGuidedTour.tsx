@@ -255,7 +255,7 @@ export function BuilderGuidedTour({
             </button>
           </div>
           <div className="builder-tutorial-body">
-            <p className="builder-tutorial-text">{highlightTerms(current.text, { symbols: true })}</p>
+            <p className="builder-tutorial-text">{highlightTerms(current.text, { symbols: true, wrapPlain: true })}</p>
           </div>
           {!isLast && (
             <button type="button" className="builder-tour-next" onClick={goNext}>

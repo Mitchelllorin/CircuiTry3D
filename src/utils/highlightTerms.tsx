@@ -75,6 +75,11 @@ type HighlightOptions = {
   // Also colour lone symbol letters E/I/R/W (formulas). Off by default — see the
   // note on SYMBOL_RULES. Only pass true for controlled, pronoun-free copy.
   symbols?: boolean;
+  // Wrap the non-term (plain) runs in <span class="ct-term-plain"> so callers can
+  // style JUST the plain words (e.g. the guided tour blends/animates them while
+  // the coloured metric terms keep their true colours). Off by default so other
+  // surfaces emit bare text nodes exactly as before.
+  wrapPlain?: boolean;
 };
 
 // Turns a plain string into React nodes with the key terms wrapped in coloured,
@@ -97,12 +102,24 @@ export function highlightTerms(text: string, options?: HighlightOptions): ReactN
   const nodes: ReactNode[] = [];
   let last = 0;
   let key = 0;
+  const pushPlain = (str: string) => {
+    if (!str) return;
+    nodes.push(
+      options?.wrapPlain ? (
+        <span key={key++} className="ct-term-plain">
+          {str}
+        </span>
+      ) : (
+        str
+      ),
+    );
+  };
   for (const span of spans) {
     if (span.start < last) {
       continue; // overlaps an already-emitted span
     }
     if (span.start > last) {
-      nodes.push(text.slice(last, span.start));
+      pushPlain(text.slice(last, span.start));
     }
     nodes.push(
       <span key={key++} className={`ct-term ct-term-${span.category}`}>
@@ -112,7 +129,7 @@ export function highlightTerms(text: string, options?: HighlightOptions): ReactN
     last = span.end;
   }
   if (last < text.length) {
-    nodes.push(text.slice(last));
+    pushPlain(text.slice(last));
   }
   return nodes;
 }
