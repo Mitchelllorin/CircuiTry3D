@@ -201,7 +201,7 @@ export function LeftToolbar({
         }
       >
         <span className="toggle-icon">{isOpen ? "◀" : "▶"}</span>
-        <span className="toggle-text">Library</span>
+        <span className="toggle-text">Components</span>
       </button>
       <nav
         className="builder-menu builder-menu-left"

@@ -145,6 +145,13 @@
   text-shadow: 0 0 10px rgba(74, 144, 255, 0.4);
 }
 
+/* Named laws / relationships (e.g. "Ohm's Law") — matched as a whole phrase and
+   given their own violet so they read as a distinct concept, not a stray quantity. */
+.ct-term-law {
+  color: #c79bff;
+  text-shadow: 0 0 10px rgba(180, 120, 255, 0.4);
+}
+
 /* ── Light mode overrides ────────────────────────────────────────────────── */
 html[data-theme="light"] {
   --bg-dark: #eef2f7;
