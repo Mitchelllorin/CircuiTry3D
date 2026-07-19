@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import type { BuilderInvokeAction } from "../types";
+import { highlightTerms } from "../../../utils/highlightTerms";
 import "../../../styles/interactive-tutorial.css";
 
 type BuilderGuidedTourProps = {
@@ -254,7 +255,7 @@ export function BuilderGuidedTour({
             </button>
           </div>
           <div className="builder-tutorial-body">
-            <p className="builder-tutorial-text">{current.text}</p>
+            <p className="builder-tutorial-text">{highlightTerms(current.text, { symbols: true })}</p>
           </div>
           {!isLast && (
             <button type="button" className="builder-tour-next" onClick={goNext}>

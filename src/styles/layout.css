@@ -115,6 +115,36 @@
   --z-storage-modal: 10000;
 }
 
+/* ── W.I.R.E. term highlighting ──────────────────────────────────────────────
+ * App-wide: the highlightTerms() helper (src/utils/highlightTerms.tsx) wraps the
+ * four electrical quantities in these spans wherever they appear in copy, so the
+ * words match the metric colours used everywhere else. Bold + a soft glow so
+ * they pop off dark glass surfaces.
+ *   Voltage = red, Current = yellow-orange, Resistance = green, Power = blue. */
+.ct-term {
+  font-weight: 700;
+}
+
+.ct-term-voltage {
+  color: var(--wire-e);
+  text-shadow: 0 0 10px rgba(255, 68, 68, 0.4);
+}
+
+.ct-term-current {
+  color: var(--wire-i);
+  text-shadow: 0 0 10px rgba(255, 214, 51, 0.4);
+}
+
+.ct-term-resistance {
+  color: var(--wire-r);
+  text-shadow: 0 0 10px rgba(0, 204, 102, 0.4);
+}
+
+.ct-term-power {
+  color: var(--wire-w);
+  text-shadow: 0 0 10px rgba(74, 144, 255, 0.4);
+}
+
 /* ── Light mode overrides ────────────────────────────────────────────────── */
 html[data-theme="light"] {
   --bg-dark: #eef2f7;
