@@ -44,6 +44,11 @@
   /* Toggle tabs - slimmer for minimal footprint */
   --builder-menu-toggle-width: 40px;
   --builder-menu-toggle-height: 72px;
+  /* The BOTTOM tab is horizontal, so its clip/height allowance is its own thing —
+     the ~32px tab body plus headroom so its top border + upward glow render
+     instead of being chopped by the stage's overflow:hidden. Constant across
+     breakpoints (the tab's min-height doesn't change). */
+  --builder-menu-toggle-bottom-h: 46px;
   /* On touch devices, toggles are widened via min-width; keep edge actions clear of that hitbox. */
   --builder-menu-toggle-hit-width: max(var(--builder-menu-toggle-width), 36px);
   /* Slimmer sidebar widths */
@@ -1921,14 +1926,14 @@ body.ct-opaque-menus {
   bottom: var(--builder-safe-area-bottom);
   flex-direction: column-reverse; /* toggle at bottom (DOM-first = bottom in reverse), menu above */
   width: var(--builder-menu-bottom-width); /* closed: slim pill */
-  height: var(--builder-menu-toggle-width); /* closed = just toggle tab */
+  height: var(--builder-menu-toggle-bottom-h); /* closed = just the horizontal tab + headroom */
   overflow: hidden; /* robust height-based clip; works even with composited children */
   transform: translateX(-50%);
   transition: height 0.36s cubic-bezier(0.34, 1.56, 0.64, 1), width 0.36s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .builder-menu-stage-bottom.open {
-  height: calc(var(--builder-menu-bottom-height) + var(--builder-menu-toggle-width));
+  height: calc(var(--builder-menu-bottom-height) + var(--builder-menu-toggle-bottom-h));
   width: calc(100vw - 16px); /* full-width: overlaps side panels */
   transform: translateX(-50%);
 }
@@ -2394,6 +2399,14 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
   color: var(--builder-cyan);
   white-space: nowrap;
   text-shadow: 0 0 8px rgba(168, 216, 255, 0.3);
+}
+
+/* The bottom drawer tab is a WIDE horizontal handle, not a slim edge tab — its
+   label must read left→right. Overrides the vertical-rl above (and the mobile
+   .toggle-text rule, via higher specificity). */
+.builder-menu-toggle-bottom .toggle-text {
+  writing-mode: horizontal-tb;
+  letter-spacing: 0.12em;
 }
 
 .builder-menu-bottom::-webkit-scrollbar {
