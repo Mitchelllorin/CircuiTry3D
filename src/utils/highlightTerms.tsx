@@ -39,14 +39,18 @@ const WORD_RULES: Rule[] = [
 
 // Lone symbol letters — matched case-SENSITIVELY (uppercase only) and only when
 // NOT part of a word or a dotted acronym, so "W.I.R.E." / "F.U.S.E." stay
-// untouched while "(E)", "E × I" and "I = E ÷ R" light up. Opt-in only: a bare
+// untouched while "(E)", "E × I" and "I = E ÷ R." light up. Opt-in only: a bare
 // "I" is also the English pronoun, so this is unsafe for arbitrary prose and is
 // enabled only where the copy is controlled (e.g. the guided tour's formulas).
+//
+// Acronym guard: reject the letter only when a dot ATTACHES it to another letter
+// (".R" or "R." followed by a letter, i.e. mid-acronym). A dot that merely ends a
+// sentence ("… ÷ R." + space/end) is NOT an acronym, so the letter still lights.
 const SYMBOL_RULES: Rule[] = [
-  { re: "(?<![.\\w])E(?![.\\w])", category: "voltage" },
-  { re: "(?<![.\\w])I(?![.\\w])", category: "current" },
-  { re: "(?<![.\\w])R(?![.\\w])", category: "resistance" },
-  { re: "(?<![.\\w])W(?![.\\w])", category: "power" },
+  { re: "(?<![.\\w])E(?!\\w)(?!\\.[A-Za-z])", category: "voltage" },
+  { re: "(?<![.\\w])I(?!\\w)(?!\\.[A-Za-z])", category: "current" },
+  { re: "(?<![.\\w])R(?!\\w)(?!\\.[A-Za-z])", category: "resistance" },
+  { re: "(?<![.\\w])W(?!\\w)(?!\\.[A-Za-z])", category: "power" },
 ];
 
 type Span = { start: number; end: number; category: Category; priority: number };
