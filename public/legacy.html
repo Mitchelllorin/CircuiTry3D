@@ -3850,6 +3850,16 @@
         let scopeBuffer = [];
         const SCOPE_BUFFER_SIZE = 220;
         let isDragging = false, selectedComponent = null;
+        // The component (or junction) the user is currently "controlling" — the one
+        // the selector ring sits under. Set when a part is selected; CLEARED when the
+        // part is placed/dropped (handleRelease) so the ring vanishes on placement and
+        // only reappears when a component is tapped/selected again. Also auto-cleared
+        // by updateSelectionRing if the part no longer exists (e.g. deleted).
+        let activeComponent = null;
+        // Set on pointer-DOWN when the press landed on empty workspace (no component
+        // hit, not placing). On pointer-UP, if the gesture stayed a tap (didn't turn
+        // into a camera-rotate drag), an empty tap dismisses the selector ring.
+        let pointerDownOnEmpty = false;
         // True while a freshly-added part is a "held ghost" waiting to be dropped
         // (from the library). In this state a single tap/click anywhere on the grid
         // snaps the part under the pointer and drops it there — one-tap placement.
@@ -5289,7 +5299,8 @@ body.android-optimized .zoom-btn {
         const WIRE_PLACEMENT_SNAP_RADIUS = 1.4; // World units: proximity threshold to trigger wire-placement procedure on drop
         let gridHelper = null;
         let snapIndicator = null;
-        
+        let selectionRing = null; // Persistent ring under the controlled component (activeComponent)
+
         // W.I.R.E. Color coding
         const WIRE_COLORS = {
             W: '#4488ff', // Power (Watts) - Blue
@@ -6275,7 +6286,11 @@ body.android-optimized .zoom-btn {
             getDefaultProperties(type) {
                 switch(type) {
                     case 'battery': return { voltage: 9 };
-                    case 'resistor': return { resistance: 100 };
+                    // 1 kΩ default: a real 1/4 W part survives a direct 9 V source here
+                    // (9 V / 1 kΩ = 9 mA → 0.081 W, well under the 0.25 W rating), so the
+                    // out-of-box battery+resistor flows gently instead of F.U.S.E.-cooking.
+                    // Lower the resistance or raise the voltage and F.U.S.E. still trips.
+                    case 'resistor': return { resistance: 1000 };
                     case 'led': return { resistance: 10 };
                     case 'switch': return { resistance: 0.1, isOn: true };
                     case 'capacitor': return { capacitance: 100 }; // μF
@@ -9004,6 +9019,11 @@ body.android-optimized .zoom-btn {
                 } catch (snapErr) {
                     console.warn('[CT3D] Snap indicator creation failed (non-fatal):', snapErr);
                 }
+                try {
+                    createSelectionRing();
+                } catch (ringErr) {
+                    console.warn('[CT3D] Selection ring creation failed (non-fatal):', ringErr);
+                }
 
                 setupEvents();
 
@@ -9105,6 +9125,7 @@ body.android-optimized .zoom-btn {
             updateWorkspaceFailureParticles();
             updateWorkspaceCameraShake();
             updateWorkspaceFlashLights();
+            updateSelectionRing();     // Keep the selector ring on the controlled part
             _updateLayerVisibility();  // Fade components/wires based on zoom level
 
             // ── Flow watchdog ─────────────────────────────────────────────────
@@ -10577,6 +10598,9 @@ body.android-optimized .zoom-btn {
                 // Check for component hit but don't block rotation setup
                 // This allows camera rotation to start if the user moves before long-press completes
                 const hitComponent = checkComponentHit(touch.clientX, touch.clientY);
+                // Remember an empty-space press so a plain tap (no rotate) can dismiss
+                // the selector ring on release.
+                pointerDownOnEmpty = !hitComponent && !isPlacing && !isDragging;
 
                 // Enable rotation for empty space touches
                 // For component touches, rotation will be enabled in touchmove if not dragging
@@ -10633,9 +10657,15 @@ body.android-optimized .zoom-btn {
                 if (isDragging && selectedComponent) {
                     handleComponentDrag(touch.clientX, touch.clientY);
                 } else {
-                    // Enable rotation if not dragging, even if we initially touched a component
-                    // This allows camera rotation when touching near components
-                    if (!isRotating && !isDragging) {
+                    // Only fall back to camera rotation for EMPTY-SPACE gestures. If a
+                    // component is selected under the finger, sub-threshold movement is
+                    // the lead-in to a DRAG (maybeStartDrag engages it above) — it must
+                    // NOT rotate the camera. Previously this rotated the scene for the
+                    // first few px of every component grab, so picking up a part felt
+                    // like the whole workspace spun. Rotation for genuine empty-space
+                    // touches is already armed in handleTouchStart.
+                    const canDragSelection = selectedComponent && !isWireMode && !isMeasureMode;
+                    if (!isRotating && !isDragging && !canDragSelection) {
                         isRotating = true;
                     }
 
@@ -10745,7 +10775,15 @@ body.android-optimized .zoom-btn {
                 isPanning = true;
 
             } else {
-                // All fingers lifted - completely reset touch state
+                // All fingers lifted. A plain tap on empty space dismisses the selector
+                // ring — check BEFORE we zero out longPressStartPos (the tap origin).
+                const lifted = e.changedTouches && e.changedTouches[0];
+                if (lifted) {
+                    maybeDismissRingOnEmptyTap(lifted.clientX, lifted.clientY);
+                } else {
+                    pointerDownOnEmpty = false;
+                }
+                // completely reset touch state
                 isRotating = false;
                 isPanning = false;
                 lastPinchDistance = 0;
@@ -10784,6 +10822,9 @@ body.android-optimized .zoom-btn {
 
                 // Check if clicking on a component first
                 const hitComponent = checkComponentHit(e.clientX, e.clientY);
+                // Remember an empty-space press so a plain tap (no rotate) can dismiss
+                // the selector ring on release.
+                pointerDownOnEmpty = !hitComponent && !isPlacing && !isDragging;
 
                 // If no component hit and not dragging, enable camera rotation
                 if (!hitComponent && !isDragging) {
@@ -10840,6 +10881,8 @@ body.android-optimized .zoom-btn {
             cancelLongPress();
             if (isDragging) {
                 handleRelease();
+            } else {
+                maybeDismissRingOnEmptyTap(e.clientX, e.clientY);
             }
         }
 
@@ -11136,15 +11179,71 @@ body.android-optimized .zoom-btn {
 
         function createSnapIndicator() {
             const geometry = new THREE.RingGeometry(0.8, 1.0, 8);
-            const material = new THREE.MeshBasicMaterial({ 
-                color: 0x00ff88, 
-                transparent: true, 
-                opacity: 0.8 
+            const material = new THREE.MeshBasicMaterial({
+                color: 0x00ff88,
+                transparent: true,
+                opacity: 0.8
             });
             snapIndicator = new THREE.Mesh(geometry, material);
             snapIndicator.rotation.x = -Math.PI / 2;
             snapIndicator.visible = false;
             scene.add(snapIndicator);
+        }
+
+        // A distinct cyan halo that sits flat on the grid under whichever component
+        // the user is controlling (activeComponent). depthTest off + a high render
+        // order so it reads clearly over the grid and the part's own base. It follows
+        // the part live and gently pulses (see updateSelectionRing in the animate loop).
+        function createSelectionRing() {
+            const geometry = new THREE.RingGeometry(0.62, 0.82, 40);
+            const material = new THREE.MeshBasicMaterial({
+                color: 0x9fd8ff,
+                transparent: true,
+                opacity: 0.38,
+                side: THREE.DoubleSide,
+                depthTest: false
+            });
+            selectionRing = new THREE.Mesh(geometry, material);
+            selectionRing.rotation.x = -Math.PI / 2;
+            selectionRing.renderOrder = 999;
+            selectionRing.visible = false;
+            scene.add(selectionRing);
+        }
+
+        // A tap on empty workspace (not a rotate-drag) clears the controlled part so
+        // the selector ring is dismissed. Called from pointer-up; the DOWN must have
+        // been on empty space, the gesture must have barely moved, and we must not be
+        // mid-drag/placement or in wire/measure mode (where empty taps mean something).
+        function maybeDismissRingOnEmptyTap(clientX, clientY) {
+            const wasEmpty = pointerDownOnEmpty;
+            pointerDownOnEmpty = false;
+            if (!wasEmpty || isDragging || isPlacing || isWireMode || isMeasureMode) return;
+            const dx = Math.abs(clientX - longPressStartPos.x);
+            const dy = Math.abs(clientY - longPressStartPos.y);
+            if (dx > 8 || dy > 8) return; // moved too far — that was a camera rotate
+            selectedComponent = null;
+            activeComponent = null; // updateSelectionRing hides the ring next frame
+        }
+
+        // Keep the selector ring glued to the controlled component each frame. If that
+        // part has been deleted (no longer in components/junctions) the ring hides and
+        // activeComponent is released.
+        function updateSelectionRing() {
+            if (!selectionRing) return;
+            const a = activeComponent;
+            const stillExists = a && a.position &&
+                (components.indexOf(a) !== -1 || junctions.indexOf(a) !== -1);
+            if (!stillExists) {
+                if (a && (components.indexOf(a) === -1 && junctions.indexOf(a) === -1)) {
+                    activeComponent = null;
+                }
+                selectionRing.visible = false;
+                return;
+            }
+            selectionRing.position.set(a.position.x, 0.03, a.position.z);
+            const s = 1 + Math.sin(performance.now() * 0.004) * 0.06; // gentle breathe
+            selectionRing.scale.set(s, s, s);
+            selectionRing.visible = true;
         }
 
         function snapToGrid(position) {
@@ -13108,7 +13207,7 @@ body.android-optimized .zoom-btn {
 
             const junction = splitWireWithJunction(wire, splitPoint, {
                 saveSnapshot: true,
-                snapToGridPosition: false,
+                snapToGridPosition: true, // grid-snap so hand-built layouts stay orthogonal
                 suppressStatus: true
             });
 
@@ -13400,7 +13499,7 @@ body.android-optimized .zoom-btn {
                     const hadWireStart = Boolean(wireStart);
                     const junction = splitWireWithJunction(wireHit.wire, wireHit.point, {
                         saveSnapshot: true,
-                        snapToGridPosition: false,
+                        snapToGridPosition: true, // grid-snap so hand-built layouts stay orthogonal
                         suppressStatus: true
                     });
 
@@ -13804,6 +13903,7 @@ body.android-optimized .zoom-btn {
 
             const { startDragging = false, silent = false } = options;
             selectedComponent = component;
+            activeComponent = component; // ring follows the part you're controlling
             isDragging = Boolean(startDragging);
 
             if (silent) {
@@ -13825,6 +13925,7 @@ body.android-optimized .zoom-btn {
 
             const { startDragging = false, silent = false } = options;
             selectedComponent = junction;
+            activeComponent = junction; // ring follows the part you're controlling
             isDragging = Boolean(startDragging);
 
             if (silent) {
@@ -14049,6 +14150,9 @@ body.android-optimized .zoom-btn {
             }
             
             selectedComponent = null;
+            // Placed now → stop "controlling" it, so the selector ring vanishes. It
+            // comes back the moment the user taps/selects a component again.
+            activeComponent = null;
             const nextTool = isWireMode ? 'wire' : (isMeasureMode ? 'measure' : (isRotateMode ? 'rotate' : 'select'));
             notifyParentToolState(nextTool);
 
@@ -16051,6 +16155,60 @@ Made with ? for visual learners everywhere!
         }
 
         // UI Functions
+        // World point at the CENTRE of the currently-VISIBLE workspace — the canvas
+        // centre shifted by whatever UI insets the host reports (viewInsets), so a
+        // freshly-spawned part lands where the user can actually reach it and never
+        // under the top menu bar, side drawer, or bottom sheet. A left inset pushes the
+        // reachable centre right, a bottom inset pushes it up, etc. Falls back to the
+        // camera target if the canvas / screenToWorld isn't ready yet.
+        function getVisibleSpawnAnchor() {
+            const canvasRect = (renderer && renderer.domElement)
+                ? renderer.domElement.getBoundingClientRect() : null;
+            const fallback = () => (cameraTarget.clone ? cameraTarget.clone() : cameraTarget);
+            if (!canvasRect || !(canvasRect.width > 0) || typeof screenToWorld !== 'function') {
+                return fallback();
+            }
+            const { top, right, bottom, left } = viewInsets;
+            const cx = canvasRect.left + canvasRect.width  / 2 + (left - right) / 2;
+            const cy = canvasRect.top  + canvasRect.height / 2 + (top  - bottom) / 2;
+            return screenToWorld(cx, cy) || fallback();
+        }
+
+        // Nudge a spawn point to the nearest free grid cell so a new part never lands
+        // on top of an existing one — walks outward ring-by-ring from the anchor,
+        // reusing the same obstacle helpers the wire router uses. Returns a clamped,
+        // grid-snapped point.
+        function findFreeSpawnCell(startX, startZ) {
+            const obstacles = (typeof getObstacleRects === 'function')
+                ? getObstacleRects(GRID_SIZE * 0.9) : [];
+            const free = (px, pz) => typeof cellBlocked !== 'function' || !cellBlocked(px, pz, obstacles);
+            let position = snapToGrid(new THREE.Vector3(startX, 0, startZ));
+            if (!free(position.x, position.z)) {
+                let found = false;
+                const MAX_RING = 14;
+                for (let ring = 1; ring <= MAX_RING && !found; ring++) {
+                    for (let dx = -ring; dx <= ring && !found; dx++) {
+                        for (let dz = -ring; dz <= ring && !found; dz++) {
+                            // Only walk the perimeter of each ring (interior already tried).
+                            if (Math.abs(dx) !== ring && Math.abs(dz) !== ring) continue;
+                            const cand = snapToGrid(new THREE.Vector3(
+                                startX + dx * GRID_SIZE, 0, startZ + dz * GRID_SIZE));
+                            if (free(cand.x, cand.z)) { position = cand; found = true; }
+                        }
+                    }
+                }
+                // Pathological fallback (everything in range occupied): staggered slot
+                // so a part is always placed.
+                if (!found) {
+                    const sX = (componentPlacementIndex % 4) * 2 - 3;
+                    const sZ = Math.floor(componentPlacementIndex / 4) * 2;
+                    position = snapToGrid(new THREE.Vector3(startX + sX, 0, startZ + sZ));
+                    componentPlacementIndex = (componentPlacementIndex + 1) % 16;
+                }
+            }
+            return clampToWorkspace(position);
+        }
+
         function addComponent(type, _retryCount, initialProperties) {
             console.log('[CT3D-DIAG] addComponent called:', { type, _retryCount, sceneExists: !!scene, rendererExists: !!renderer, canvasOk: !!(renderer && renderer.domElement) });
             try { window.parent.postMessage({ type: 'legacy:diag', msg: 'addComponent', detail: { compType: type, sceneOk: !!scene, rendererOk: !!renderer } }, '*'); } catch(e) {}
@@ -16094,60 +16252,11 @@ Made with ? for visual learners everywhere!
                 hideSnapIndicator();
             }
 
-            // Choose a spawn cell that won't collide. Anchor at the view centre (below)
-            // and nudge to the nearest free cell so the held ghost never spawns on top
-            // of an existing part — reusing the same obstacle helpers the wire router
-            // uses. The user then taps to drop it wherever they actually want it.
-            const placementObstacles = (typeof getObstacleRects === 'function')
-                ? getObstacleRects(GRID_SIZE * 0.9)
-                : [];
-            const _cellFree = (px, pz) =>
-                typeof cellBlocked !== 'function' || !cellBlocked(px, pz, placementObstacles);
-
-            // Spawn the new part as a held GHOST on the UPPER-LEFT — about 3/4 of the
-            // way up, just beside the left-hand drawer/library — so it appears right
-            // where the user pulled it from and reads as "here's your part, drag it
-            // into place" (or tap where you want it). We convert a screen point to
-            // world so it stays visible at any camera angle/zoom; the free-cell search
-            // below nudges it off any occupied cell.
-            let _anchor = null;
-            const _canvasRect = (renderer && renderer.domElement)
-                ? renderer.domElement.getBoundingClientRect() : null;
-            if (_canvasRect && _canvasRect.width > 0 && typeof screenToWorld === 'function') {
-                // 22% across (just right of the drawer), 25% down (~3/4 up the side).
-                _anchor = screenToWorld(
-                    _canvasRect.left + _canvasRect.width * 0.22,
-                    _canvasRect.top + _canvasRect.height * 0.25);
-            }
-            const _spawn = clampToWorkspace(snapToGrid(_anchor || cameraTarget));
-            let startX = _spawn.x, startZ = _spawn.z;
-
-            let position = snapToGrid(new THREE.Vector3(startX, 0, startZ));
-            if (!_cellFree(position.x, position.z)) {
-                let found = false;
-                const MAX_RING = 14;
-                for (let ring = 1; ring <= MAX_RING && !found; ring++) {
-                    for (let dx = -ring; dx <= ring && !found; dx++) {
-                        for (let dz = -ring; dz <= ring && !found; dz++) {
-                            // Only walk the perimeter of each ring (interior already tried).
-                            if (Math.abs(dx) !== ring && Math.abs(dz) !== ring) continue;
-                            const cand = snapToGrid(new THREE.Vector3(
-                                startX + dx * GRID_SIZE, 0, startZ + dz * GRID_SIZE));
-                            if (_cellFree(cand.x, cand.z)) { position = cand; found = true; }
-                        }
-                    }
-                }
-                // Pathological fallback (everything in range occupied): use the old
-                // staggered slot so a component is always placed.
-                if (!found) {
-                    const sX = (componentPlacementIndex % 4) * 2 - 3;
-                    const sZ = Math.floor(componentPlacementIndex / 4) * 2;
-                    position = snapToGrid(new THREE.Vector3(startX + sX, 0, startZ + sZ));
-                    componentPlacementIndex = (componentPlacementIndex + 1) % 16;
-                }
-            }
-
-            position = clampToWorkspace(position);
+            // Spawn the new part as a held GHOST at the CENTRE of the visible workspace
+            // (inset-aware, so never under the menu bar / drawer / bottom sheet), then
+            // nudge it off any occupied cell. The user taps to drop it where they want.
+            const _spawn = getVisibleSpawnAnchor();
+            const position = findFreeSpawnCell(_spawn.x, _spawn.z);
             const component = new Component(type, position);
             // Apply real-world branded component properties if provided
             if (initialProperties && typeof initialProperties === 'object') {
@@ -16187,20 +16296,11 @@ Made with ? for visual learners everywhere!
                 hideSnapIndicator();
             }
 
-            // Use same staggered center-right placement as components
-            const staggerX = (componentPlacementIndex % 4) * 2 - 3;
-            const staggerZ = Math.floor(componentPlacementIndex / 4) * 2;
-
-            const position = snapToGrid(new THREE.Vector3(
-                2 + staggerX,
-                0,
-                staggerZ
-            ));
-
-            componentPlacementIndex++;
-            if (componentPlacementIndex >= 16) {
-                componentPlacementIndex = 0;
-            }
+            // Spawn at the CENTRE of the visible workspace (inset-aware, so never
+            // off-screen or under the menu bar / drawer), nudged off any occupied cell —
+            // same placement path as components. Drag to reposition, tap to place.
+            const _spawn = getVisibleSpawnAnchor();
+            const position = findFreeSpawnCell(_spawn.x, _spawn.z);
 
             const junction = new Junction(position);
             junctions.push(junction);
@@ -16219,7 +16319,7 @@ Made with ? for visual learners everywhere!
 
             const {
                 saveSnapshot = true,
-                snapToGridPosition = false,
+                snapToGridPosition = true, // default grid-snap: keeps hand-built junction layouts orthogonal
                 suppressStatus = false,
                 reuseNearbyJunction = true,
                 existingJunction = null  // Re-use a pre-existing junction instead of creating a new one
@@ -16351,6 +16451,16 @@ Made with ? for visual learners everywhere!
             exitMeasureMode({ silent: true, skipNotify: true });
             isWireMode = true;
             isRotateMode = false;
+
+            // Wire mode operates on NODES ONLY. Drop any component selection carried in
+            // from select mode so nothing stays "grabbed"/ringed and no stray drag can
+            // begin (component select/drag is already gated to !isWireMode elsewhere).
+            if (selectedComponent || isDragging) {
+                selectedComponent = null;
+                activeComponent = null;
+                isDragging = false;
+                hideSnapIndicator();
+            }
 
             if (wireStart) {
                 highlightConnectionPoint(wireStart, false);
