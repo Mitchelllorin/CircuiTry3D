@@ -23,6 +23,12 @@
     radial-gradient(circle at 80% 18%, rgba(249, 115, 22, 0.14), transparent 28%),
     linear-gradient(180deg, #020617 0%, #0f172a 100%);
   color: var(--arena-text);
+  /* Suppress the native text-selection highlight and the mobile tap flash so a
+     part under test never reads as "highlighted to copy" — matches the builder,
+     schematic, and practice surfaces which already do this. */
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .arena-view--page,
