@@ -4,6 +4,7 @@ import type {
   LegacyCircuitState,
   LegacyModeState,
 } from "../types";
+import { highlightTerms } from "../../../utils/highlightTerms";
 import "../../../styles/interactive-tutorial.css";
 
 type BuildAlongProps = {
@@ -51,20 +52,21 @@ const PAD = 8;
 const BUILD_STEPS: BuildStep[] = [
   {
     id: "welcome",
-    text: "I can show you how to build a circuit — it's easy as Pi (3.14 repeating). Ha, math joke! This is your CircuiTry3D workspace. The camera controls are so intuitive you probably already know how.",
+    text: "I can show you how to build a circuit — it's easy as Pi (3.14 repeating). Ha, math joke! This is your CircuiTry3D workspace. The camera controls are so intuitive you probably already know how to use them, they are classic camera controls.",
   },
   {
     id: "camera",
-    // Narrated by CAMERA_BEATS below — this text shows before the demo starts.
+    // Narrated by CAMERA_BEATS — this text shows before the demo starts.
     text: "Let me show you the camera controls — watch the buttons on the right.",
+  },
+  {
+    id: "tools",
+    // Narrated by TOOL_BEATS — the three buttons stacked under Zoom Out.
+    text: "Three more tools sit just under Zoom Out — labels, the cinematic camera, and settings. I'll open each one.",
   },
   {
     id: "intro",
     text: "Now build one yourself — I'll guide every step. Drag the canvas any time to look around.",
-  },
-  {
-    id: "controls",
-    text: "The controls are easy and intuitive — you probably already know how to use them; they are classic camera controls.",
   },
   {
     id: "battery",
@@ -133,17 +135,22 @@ const BUILD_STEPS: BuildStep[] = [
   },
 ];
 
-// The "camera" step plays these beats in order: name a control, pulse its button,
-// and run the real camera move so the user sees exactly what it does. The
-// workspace is NOT blurred here (no spotlight target) so the motion is visible.
-type CameraBeat = {
+// A demo step plays these beats in order: name a control, pulse its real button,
+// and actually USE it so the user sees exactly what it does. The workspace is NOT
+// blurred during a demo step (no spotlight target) so the effect is visible.
+type DemoBeat = {
   text: string;
   selector: string;
-  action: BuilderInvokeAction;
-  // How many times to fire the action for a clearly visible move.
-  reps: number;
+  // EITHER fire a builder action (camera moves), `reps` times…
+  action?: BuilderInvokeAction;
+  reps?: number;
+  // …OR click the real button. `toggle` = it opens a panel, so click it shut again
+  // near the end of the beat (and on cleanup) so the demo never leaves it hanging.
+  click?: boolean;
+  toggle?: boolean;
 };
-const CAMERA_BEATS: CameraBeat[] = [
+
+const CAMERA_BEATS: DemoBeat[] = [
   {
     text: "This is Zoom In — tap + (or pinch out) to move closer.",
     selector: '.circuit-zoom-controls button[aria-label="Zoom in"]',
@@ -163,8 +170,34 @@ const CAMERA_BEATS: CameraBeat[] = [
     reps: 3,
   },
 ];
-// How long each beat holds before the next one.
-const BEAT_MS = 2400;
+
+// The three buttons stacked under Zoom Out — pulsed and explained, NOT pressed.
+// We deliberately do NOT open the Cinematic or Settings panels here: flashing a
+// whole panel open and shut mid-tour was jarring. Just point and describe; the
+// user opens them when they're ready.
+const TOOL_BEATS: DemoBeat[] = [
+  {
+    text: "The tag button toggles your component labels — part names and live W.I.R.E. numbers — on and off. Tap it any time to declutter the view.",
+    selector: '.circuit-zoom-controls button[aria-label^="Cycle component label detail"]',
+  },
+  {
+    text: "The film icon is the Cinematic Camera — line up a smooth fly-through of your circuit and record a clip to share.",
+    selector: ".circuit-zoom-controls .cinematic-fab",
+  },
+  {
+    text: "The gear opens Settings — grid colour, current-flow style, themes, and every other preference lives in here.",
+    selector: '.circuit-zoom-controls button[title="Settings"]',
+  },
+];
+
+// Which steps are beat-driven demos, and how long each beat holds. Tool beats run
+// a touch longer so an opened panel is visible before it closes again.
+const STEP_DEMOS: Record<string, { beats: DemoBeat[]; beatMs: number }> = {
+  camera: { beats: CAMERA_BEATS, beatMs: 2400 },
+  // Tool beats only pulse + explain (no panel opens), so this is pure reading
+  // time for the caption — comfortable, not rushed.
+  tools: { beats: TOOL_BEATS, beatMs: 3800 },
+};
 
 export function BuilderBuildAlong({
   open,
@@ -217,34 +250,102 @@ export function BuilderBuildAlong({
     }
   }, [open, step, onInvokeAction]);
 
-  // The "camera" step narrates the camera controls: for each beat, pulse the
-  // button and run its real move. -1 = not running (show the step's own text).
-  const [cameraBeat, setCameraBeat] = useState(-1);
+  // Disco grid: on the opening "welcome" step the workspace grid strobes through
+  // a rainbow so the empty canvas announces itself. It's the GRID's real hue we
+  // cycle (via the same set-grid-style action the settings sliders use), and we
+  // snapshot + restore the user's actual grid style when the step ends or the
+  // walkthrough closes. Colour is the star; the brightness swing is kept mild and
+  // the whole thing is skipped under prefers-reduced-motion — a harsh full-screen
+  // luminance strobe is a real photosensitive-seizure risk.
   useEffect(() => {
-    if (!open || BUILD_STEPS[step]?.id !== "camera") {
-      setCameraBeat(-1);
+    if (!open || BUILD_STEPS[step]?.id !== "welcome") {
       return;
     }
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
+      return;
+    }
+    const original = {
+      brightness: modeState.gridBrightness ?? 100,
+      lineWidth: modeState.gridLineWidth ?? 1,
+      hue: modeState.gridHue ?? 240,
+    };
+    let hue = 0;
+    let tick = 0;
+    const id = window.setInterval(() => {
+      hue = (hue + 53) % 360; // hop around the wheel each beat = rainbow disco
+      tick += 1;
+      onInvokeAction("set-grid-style", {
+        brightness: tick % 2 ? 100 : 78, // gentle shimmer, not an on/off strobe
+        lineWidth: 2,
+        hue,
+      });
+    }, 180);
+    return () => {
+      window.clearInterval(id);
+      onInvokeAction("set-grid-style", original); // put the real grid back
+    };
+    // Snapshot original grid style at entry only; onInvokeAction is stable.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, step, onInvokeAction]);
+
+  // Beat-driven demo steps (camera, tools): for each beat, pulse the real button
+  // and actually use it — fire an action, or click the button (closing any opened
+  // panel again). -1 = not running (show the step's own text).
+  const [beat, setBeat] = useState(-1);
+  useEffect(() => {
+    const demo = STEP_DEMOS[BUILD_STEPS[step]?.id ?? ""];
+    if (!open || !demo) {
+      setBeat(-1);
+      return;
+    }
+    const { beats, beatMs } = demo;
     const timers: number[] = [];
     const clearPulse = () =>
       document
         .querySelectorAll(".tutorial-control-pulse")
         .forEach((el) => el.classList.remove("tutorial-control-pulse"));
-    CAMERA_BEATS.forEach((beat, i) => {
+    // Click any demo-opened panel shut (its toggle button reports aria-expanded).
+    const closeOpenPanels = () =>
+      beats.forEach((b) => {
+        if (!b.toggle) return;
+        const el = document.querySelector(b.selector);
+        if (el?.getAttribute("aria-expanded") === "true") {
+          (el as HTMLElement).click();
+        }
+      });
+    beats.forEach((b, i) => {
       timers.push(
         window.setTimeout(() => {
-          setCameraBeat(i);
+          setBeat(i);
           clearPulse();
-          document.querySelector(beat.selector)?.classList.add("tutorial-control-pulse");
-          for (let r = 0; r < beat.reps; r++) {
-            timers.push(window.setTimeout(() => onInvokeAction(beat.action), r * 300));
+          const el = document.querySelector(b.selector);
+          el?.classList.add("tutorial-control-pulse");
+          if (b.action) {
+            for (let r = 0; r < (b.reps ?? 1); r++) {
+              timers.push(window.setTimeout(() => onInvokeAction(b.action!), r * 300));
+            }
+          } else if (b.click) {
+            (el as HTMLElement | null)?.click();
+            if (b.toggle) {
+              // Reopen-safe: re-query (label may have flipped) and close near the
+              // end of this beat so the panel doesn't cover the next one.
+              timers.push(
+                window.setTimeout(() => {
+                  const now = document.querySelector(b.selector);
+                  if (now?.getAttribute("aria-expanded") === "true") {
+                    (now as HTMLElement).click();
+                  }
+                }, Math.max(600, beatMs - 900)),
+              );
+            }
           }
-        }, i * BEAT_MS),
+        }, i * beatMs),
       );
     });
     return () => {
       timers.forEach((t) => window.clearTimeout(t));
       clearPulse();
+      closeOpenPanels();
     };
   }, [open, step, onInvokeAction]);
 
@@ -370,7 +471,16 @@ export function BuilderBuildAlong({
         </div>
         <div className="builder-tutorial-body">
           <p className="builder-tutorial-text">
-            {cameraBeat >= 0 ? CAMERA_BEATS[cameraBeat].text : current.text}
+            {/* Same as the guided tour: colour the W.I.R.E. reference words and
+                wrap the plain copy so it gets the adaptive blend/shift. Symbols
+                OFF — this copy uses the pronoun "I", which symbol-mode would
+                wrongly light up as current. */}
+            {highlightTerms(
+              beat >= 0
+                ? (STEP_DEMOS[current.id]?.beats[beat]?.text ?? current.text)
+                : current.text,
+              { wrapPlain: true },
+            )}
           </p>
         </div>
         {isLast ? (
