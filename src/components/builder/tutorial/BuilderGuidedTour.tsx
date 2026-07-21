@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { BuilderInvokeAction } from "../types";
 import { highlightTerms } from "../../../utils/highlightTerms";
+import { Logo3D } from "../branding/Logo3D";
 import "../../../styles/interactive-tutorial.css";
 
 type BuilderGuidedTourProps = {
@@ -244,7 +245,7 @@ export function BuilderGuidedTour({
       {showCard && (
         <div className="builder-tutorial-card builder-tutorial-card--tour">
           <div className="builder-tutorial-header">
-            <span className="builder-tutorial-kicker">CircuiTry3D</span>
+            <Logo3D className="builder-tutorial-logo" />
             <button
               type="button"
               className="builder-tutorial-close"

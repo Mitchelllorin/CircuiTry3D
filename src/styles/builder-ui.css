@@ -327,6 +327,15 @@ body.builder-body::before {
   display: block;
 }
 
+/* 3D CircuiTry3D wordmark as the nav home/brand mark (replaces the old icon). */
+.mode-brand-logo {
+  display: block;
+  height: 22px;
+  width: auto;
+  max-width: 110px;
+  object-fit: contain;
+}
+
 /* Scroll indicator for mode bar */
 .mode-bar-scroll-indicator {
   display: flex;

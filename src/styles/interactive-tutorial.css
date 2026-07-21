@@ -259,6 +259,15 @@
   color: rgba(136, 204, 255, 0.9);
 }
 
+/* 3D CircuiTry3D wordmark on tour cards (replaces the plain kicker text). */
+.builder-tutorial-logo {
+  display: block;
+  height: 18px;
+  width: auto;
+  max-width: 130px;
+  object-fit: contain;
+}
+
 .builder-tutorial-close {
   width: 34px;
   height: 34px;
