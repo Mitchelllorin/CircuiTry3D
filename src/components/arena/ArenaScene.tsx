@@ -42,13 +42,6 @@ type ArenaSceneProps = {
   solo?: boolean;
 };
 
-const PHASE_BAR_COLOR: Record<string, string> = {
-  nominal: "",
-  stressed: "#fbbf24",
-  critical: "#fb923c",
-  failed: "#ef4444",
-};
-
 const PHASE_LABEL: Record<string, string> = {
   nominal: "OK",
   stressed: "STRESS",
@@ -73,12 +66,18 @@ type OrbitControlsInstance = {
   maxDistance: number;
   minPolarAngle: number;
   maxPolarAngle: number;
+  autoRotate: boolean;
+  autoRotateSpeed: number;
   target: import("three").Vector3;
   update: () => void;
   dispose: () => void;
+  addEventListener: (type: string, listener: () => void) => void;
 };
 
-const ARENA_RADIUS = 7.5;
+// How far the gladiators ring out from the centre. Kept fairly tight so parts
+// stay clustered near the middle and their floating readouts don't drift off the
+// frame edges (the dome/floor sizing is independent of this).
+const ARENA_RADIUS = 4.5;
 
 function createCanvasTexture(
   THREE: typeof import("three"),
@@ -205,8 +204,10 @@ function createComponentGroup(
   const outlineRing = new THREE.Mesh(
     new THREE.TorusGeometry(1.1, 0.045, 12, 48),
     new THREE.MeshStandardMaterial({
-      color: accent,
-      emissive: new THREE.Color(accent).multiplyScalar(1.25),
+      // Muted physical ring, NOT a lit halo — the bright accent glow here read as
+      // a permanent "selected/highlighted blue" state on every part.
+      color: "#475569",
+      emissive: new THREE.Color(accent).multiplyScalar(0.12),
       metalness: 0.2,
       roughness: 0.15,
     }),
@@ -354,10 +355,12 @@ export function ArenaScene({
 
       const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 200);
       const entryPosition = new THREE.Vector3(0, 17, 24);
-      const arenaPosition = new THREE.Vector3(11, 8.5, 11);
+      // Pulled back so the WHOLE dome + all gladiators frame in by default; the
+      // user can zoom in freely once they take control.
+      const arenaPosition = new THREE.Vector3(14, 11, 14);
       // Workspace flow poses: a framed cinematic preview held behind the open
       // panel, and a pulled-back pose used for the exit sweep.
-      const previewPosition = new THREE.Vector3(0, 15, 21);
+      const previewPosition = new THREE.Vector3(0, 17, 24);
       const exitPosition = new THREE.Vector3(0, 22, 32);
       const cameraTarget = new THREE.Vector3(0, 1.8, 0);
       camera.position.copy(isWorkspace ? previewPosition : entryPosition);
@@ -383,6 +386,22 @@ export function ArenaScene({
         controls.minPolarAngle = Math.PI / 5;
         controls.maxPolarAngle = Math.PI / 2.05;
       }
+
+      // ── Cinematic idle sweep ──────────────────────────────────────────────
+      // When nobody is touching the camera, the dome slowly orbits itself so the
+      // scene is never a frozen still. The instant the user grabs it (OrbitControls
+      // fires 'start'), the sweep cuts out and they get full manual 360°; it resumes
+      // a couple of seconds after they let go. autoRotate is toggled per-frame in
+      // the animate loop (only while the user actually holds control).
+      const IDLE_RESUME_MS = 2600;
+      let lastCameraInteract = Number.NEGATIVE_INFINITY;
+      const orbit = controls; // non-null here; stable ref for the deferred listener
+      orbit.autoRotate = false;
+      orbit.autoRotateSpeed = 1.4;
+      orbit.addEventListener("start", () => {
+        lastCameraInteract = performance.now();
+        orbit.autoRotate = false;
+      });
 
 
       const ambientLight = new THREE.AmbientLight("#60a5fa", 1.6);
@@ -491,7 +510,12 @@ export function ArenaScene({
           group,
           core: group.getObjectByName("core") ?? null,
           materials,
-          baseColor: new THREE.Color(agent.accent),
+          // Resting emissive is a NEUTRAL near-black, NOT the accent — otherwise the
+          // heat loop bathes the whole part in its team colour at rest (one all
+          // orange, one all blue), which read as a permanent "highlighted" state.
+          // Parts now show their real materials and only glow HOT (orange→white) as
+          // they're actually stressed.
+          baseColor: new THREE.Color("#141821"),
         });
       });
 
@@ -591,8 +615,10 @@ export function ArenaScene({
               controls.update();
             }
           } else {
-            // Sweep complete: full orbit + zoom in the user's hands.
+            // Sweep complete: full orbit + zoom in the user's hands, with the
+            // cinematic idle sweep resuming whenever they haven't touched it.
             controls.enabled = true;
+            controls.autoRotate = time - lastCameraInteract > IDLE_RESUME_MS;
             controls.update();
           }
         } else {
@@ -609,6 +635,8 @@ export function ArenaScene({
             camera.position.lerpVectors(entryPosition, arenaPosition, cinematicT);
           }
           controls.enabled = phase === "active";
+          controls.autoRotate =
+            controls.enabled && time - lastCameraInteract > IDLE_RESUME_MS;
           controls.update();
         }
 
@@ -740,9 +768,16 @@ export function ArenaScene({
           tempVector.set(seatX, 3.2, seatZ);
           tempVector.project(camera);
 
-          const x = (tempVector.x * 0.5 + 0.5) * root.clientWidth;
-          const y = (-tempVector.y * 0.5 + 0.5) * root.clientHeight;
+          const rawX = (tempVector.x * 0.5 + 0.5) * root.clientWidth;
+          const rawY = (-tempVector.y * 0.5 + 0.5) * root.clientHeight;
           const isVisible = tempVector.z < 1.2 && tempVector.z > -1;
+          // Keep the readout fully on-screen even when a part sits near the frame
+          // edge — clamp the anchor inward by the plate's own half-size (+ margin)
+          // so labels never clip off the left / right / top.
+          const halfW = (healthBar.offsetWidth || 140) / 2 + 6;
+          const halfH = (healthBar.offsetHeight || 44) / 2 + 6;
+          const x = Math.min(Math.max(rawX, halfW), root.clientWidth - halfW);
+          const y = Math.min(Math.max(rawY, halfH), root.clientHeight - halfH);
           healthBar.style.opacity = isVisible ? "1" : "0";
           healthBar.style.transform = `translate3d(${x}px, ${y}px, 0) translate(-50%, -50%)`;
         });
@@ -776,6 +811,18 @@ export function ArenaScene({
   return (
     <div ref={rootRef} className="arena-scene">
       <canvas ref={canvasRef} className="arena-scene__canvas" />
+      {/* F.U.S.E.™ mark — the engine powering the failure physics, same little
+          corner watermark the main builder UI carries. */}
+      <div
+        className="arena-fuse-watermark"
+        role="img"
+        aria-label="Powered by F.U.S.E.™ — Failure Understanding Simulation Engine"
+      >
+        ⚡ F.U.S.E.™
+        <span className="arena-fuse-watermark__sub">
+          Failure Understanding Simulation Engine
+        </span>
+      </div>
       {/* The BATTLE control lives ON the 3D stage in immersive workspace mode, so
           the test is started and watched entirely in 3D. When the params panel is
           open the panel carries the controls instead. */}
@@ -796,8 +843,6 @@ export function ArenaScene({
       ) : null}
       <div className="arena-scene__healthbars">
         {healthBarAgents.map((agent) => {
-          const integrityPercent = Math.max(0, (agent.integrity / agent.maxIntegrity) * 100);
-          const barColor = PHASE_BAR_COLOR[agent.phase] || agent.accent;
           const isFailed = agent.phase === "failed";
           // Live current at the present load — a failed (open) part carries none.
           const liveAmps = isFailed ? 0 : agent.metrics.current * stressFactor;
@@ -814,22 +859,30 @@ export function ArenaScene({
             >
               <div className="arena-nameplate__head">
                 <span className="arena-nameplate__name">
-                  {agent.componentNumber ?? agent.name}
+                  {(agent.componentType || "part").toUpperCase()}
                 </span>
                 <span className="arena-nameplate__status">{PHASE_LABEL[agent.phase]}</span>
               </div>
-              <div className="arena-nameplate__track">
-                <span style={{ width: `${integrityPercent}%`, backgroundColor: barColor }} />
+              <div className="arena-nameplate__ident">
+                {agent.componentNumber ?? ""}
+                {agent.name && agent.name !== agent.componentNumber
+                  ? `${agent.componentNumber ? " · " : ""}${agent.name}`
+                  : ""}
               </div>
               <div className="arena-nameplate__metrics">
                 <span className={overTemp ? "is-hot" : undefined}>
-                  <b>{Math.round(agent.tempC)}</b>°C
+                  <em>Temp</em>
+                  <b>
+                    {Math.round(agent.tempC)}°<i>/{Math.round(agent.ratings.junctionLimitC)}°</i>
+                  </b>
                 </span>
                 <span className={agent.loadPercent > 100 ? "is-hot" : undefined}>
-                  <b>{Math.round(agent.loadPercent)}</b>%
+                  <em>Load</em>
+                  <b>{Math.round(agent.loadPercent)}%</b>
                 </span>
                 <span className={isFailed ? "is-open" : undefined}>
-                  {isFailed ? "OPEN" : fmtAmps(liveAmps)}
+                  <em>Current</em>
+                  <b>{isFailed ? "OPEN" : fmtAmps(liveAmps)}</b>
                 </span>
               </div>
             </div>

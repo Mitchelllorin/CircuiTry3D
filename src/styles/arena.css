@@ -75,23 +75,45 @@
   pointer-events: none;
 }
 
+/* F.U.S.E.™ corner watermark — matches the main builder UI's little mark. */
+.arena-fuse-watermark {
+  position: absolute;
+  bottom: 10px;
+  left: 12px;
+  z-index: 4;
+  font-size: 0.5rem;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  color: rgba(255, 153, 68, 0.55);
+  text-shadow: 0 0 8px rgba(255, 120, 20, 0.28);
+  pointer-events: none;
+  user-select: none;
+  text-transform: uppercase;
+  line-height: 1.3;
+}
+.arena-fuse-watermark__sub {
+  display: block;
+  font-size: 0.42rem;
+  letter-spacing: 0.1em;
+  opacity: 0.85;
+}
+
 /* Live instrument nameplate that floats above each component in the 3D scene. */
 .arena-nameplate {
   position: absolute;
-  min-inline-size: 118px;
-  max-inline-size: 152px;
-  padding: 6px 9px;
-  /* Use a slate panel that is clearly lighter than the scene background
-     (#020617) so the readout reads against the dark 3D stage. A near-black
-     panel on a near-black scene was nearly invisible. */
-  border: 1px solid rgba(148, 163, 184, 0.5);
-  border-radius: 11px;
-  background: rgba(15, 23, 42, 0.92);
-  box-shadow: 0 12px 24px rgba(2, 6, 23, 0.55);
-  backdrop-filter: blur(10px);
-  transition:
-    opacity 180ms ease,
-    border-color 180ms ease;
+  min-inline-size: 0;
+  max-inline-size: 180px;
+  padding: 1px 3px;
+  /* NO panel — float the readout directly over the 3D like the main builder's
+     component labels. A tight text-shadow carries legibility against the dark
+     dome instead of a padded slate slab (which obscured the models). */
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  text-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.92),
+    0 0 2px rgba(0, 0, 0, 0.85);
+  transition: opacity 180ms ease;
   font-variant-numeric: tabular-nums;
 }
 .arena-nameplate.is-defeated {
@@ -102,10 +124,7 @@
   border-color: rgba(251, 191, 36, 0.45);
 }
 .arena-nameplate--critical {
-  border-color: rgba(251, 146, 60, 0.6);
-  box-shadow:
-    0 12px 24px rgba(2, 6, 23, 0.4),
-    0 0 14px rgba(251, 146, 60, 0.25);
+  box-shadow: none;
 }
 .arena-nameplate--failed {
   border-color: rgba(239, 68, 68, 0.6);
@@ -119,18 +138,18 @@
   margin-block-end: 5px;
 }
 .arena-nameplate__name {
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.03em;
+  font-size: 0.92rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 .arena-nameplate__status {
   flex: none;
-  font-size: 0.56rem;
+  font-size: 0.64rem;
   font-weight: 800;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.07em;
   color: var(--arena-muted);
 }
 .arena-nameplate--stressed .arena-nameplate__status {
@@ -161,15 +180,42 @@
 .arena-nameplate__metrics {
   display: flex;
   justify-content: space-between;
-  gap: 6px;
-  margin-block-start: 5px;
-  font-size: 0.62rem;
-  color: rgba(200, 220, 255, 0.85);
+  gap: 10px;
+  margin-block-start: 7px;
+}
+.arena-nameplate__metrics span {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.05;
+  color: rgba(200, 220, 255, 0.9);
 }
 .arena-nameplate__metrics b {
-  font-size: 0.72rem;
-  font-weight: 700;
+  font-size: 1rem;
+  font-weight: 800;
   color: #ffffff;
+}
+.arena-nameplate__metrics em {
+  font-style: normal;
+  font-size: 0.5rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--arena-muted);
+}
+.arena-nameplate__metrics b i {
+  font-style: normal;
+  font-size: 0.62rem;
+  font-weight: 600;
+  color: var(--arena-muted);
+}
+.arena-nameplate__ident {
+  margin-block-start: 2px;
+  font-size: 0.62rem;
+  color: var(--arena-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .arena-nameplate__metrics .is-hot,
 .arena-nameplate__metrics .is-hot b {
@@ -177,7 +223,7 @@
 }
 .arena-nameplate__metrics .is-open {
   color: #fca5a5;
-  font-weight: 700;
+  font-weight: 800;
 }
 
 /* The BATTLE control floating ON the 3D stage (immersive workspace mode). */
@@ -390,12 +436,14 @@
 
 .arena-card {
   position: relative;
-  padding: 14px 16px;
-  border: 1px solid rgba(148, 163, 184, 0.16);
-  border-radius: 20px;
-  background: var(--arena-panel-strong);
-  box-shadow: var(--arena-shadow);
-  backdrop-filter: blur(12px);
+  padding: 10px 12px;
+  border: 1px solid rgba(148, 163, 184, 0.1);
+  border-radius: 14px;
+  /* Near-transparent — the dome shows through, matching the floating-label
+     treatment; no more opaque slabs (see floating-labels-no-panels rule). */
+  background: rgba(15, 23, 42, 0.26);
+  box-shadow: none;
+  backdrop-filter: blur(3px);
 }
 
 .arena-card.is-active {
@@ -1460,4 +1508,115 @@
   font-size: 0.66rem;
   color: var(--arena-muted);
   font-variant-numeric: tabular-nums;
+}
+
+/* ── Live Thermal Scope ─────────────────────────────────────────────────────
+   Chart-recorder instrument: temperature traces (per part, accent-coloured)
+   climbing toward a dashed redline at 100% of each part's thermal limit. */
+.arena-scope {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px 11px;
+  border: 1px solid var(--arena-border);
+  border-radius: 14px;
+  background: var(--arena-panel-strong);
+}
+.arena-scope__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+.arena-scope__title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #38bdf8;
+}
+.arena-scope__sub {
+  font-size: 0.6rem;
+  letter-spacing: 0.04em;
+  color: var(--arena-muted);
+  font-variant-numeric: tabular-nums;
+}
+.arena-scope__screen {
+  position: relative;
+  height: 128px;
+  border-radius: 10px;
+  overflow: hidden;
+  background:
+    radial-gradient(120% 100% at 50% 0%, rgba(56, 189, 248, 0.08), transparent 60%),
+    #020617;
+  box-shadow: inset 0 0 0 1px rgba(56, 189, 248, 0.12);
+}
+.arena-scope__svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.arena-scope__grid {
+  stroke: rgba(148, 163, 184, 0.14);
+  stroke-width: 0.5;
+}
+.arena-scope__redline {
+  stroke: #f43f5e;
+  stroke-width: 0.8;
+  stroke-dasharray: 3 2.5;
+  opacity: 0.85;
+}
+.arena-scope__trace {
+  stroke-width: 1.6;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 2px currentColor);
+}
+.arena-scope__trace.is-failed {
+  stroke-width: 1;
+  opacity: 0.45;
+  filter: none;
+}
+.arena-scope__head-dot {
+  filter: drop-shadow(0 0 3px currentColor);
+}
+.arena-scope__idle {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 16px;
+  text-align: center;
+  font-size: 0.66rem;
+  letter-spacing: 0.03em;
+  color: var(--arena-muted);
+}
+.arena-scope__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px 10px;
+}
+.arena-scope__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.62rem;
+  letter-spacing: 0.02em;
+  color: var(--arena-text);
+}
+.arena-scope__chip.is-failed {
+  color: var(--arena-muted);
+}
+.arena-scope__chip strong {
+  font-variant-numeric: tabular-nums;
+  color: var(--arena-muted);
+}
+.arena-scope__chip.is-failed strong {
+  color: #f43f5e;
+}
+.arena-scope__swatch {
+  width: 9px;
+  height: 3px;
+  border-radius: 2px;
+  box-shadow: 0 0 4px currentColor;
 }

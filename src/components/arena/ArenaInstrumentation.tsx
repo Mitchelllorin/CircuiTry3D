@@ -221,8 +221,8 @@ export function ArenaTestCard({
         <div className={`arena-card__verdict${isWinner ? " is-winner" : ""}`}>
           <span className="arena-card__verdict-rank">{rankLabel(agent.rank)}</span>
           <span className="arena-card__verdict-score">
-            <strong>{agent.score.toFixed(1)}</strong>
-            <em>score</em>
+            <strong>{agent.score.toFixed(0)}</strong>
+            <em>/ 100 toughness</em>
           </span>
           <span className="arena-card__verdict-held">
             {isFailed
@@ -289,8 +289,8 @@ export function ArenaPodium({
           </p>
           <h3 className="arena-podium__winner">{winner.name}</h3>
           <p className="arena-podium__score">
-            Robustness {winner.score.toFixed(1)} · peak {summary.peakLoad.toFixed(1)}× ·{" "}
-            {formatEnergy(summary.totalEnergyJ)} dissipated
+            Toughness {winner.score.toFixed(0)}/100 · held {summary.peakLoad.toFixed(1)}× its
+            normal load · gave off {formatEnergy(summary.totalEnergyJ)} of heat
           </p>
           <ArenaBuyLink agent={winner} variant="winner" />
         </div>
