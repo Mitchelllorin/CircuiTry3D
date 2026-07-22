@@ -8,10 +8,13 @@ import com.android.billingclient.api.BillingClientStateListener;
 import com.android.billingclient.api.BillingFlowParams;
 import com.android.billingclient.api.BillingResult;
 import com.android.billingclient.api.ProductDetails;
+import com.android.billingclient.api.PendingPurchasesParams;
 import com.android.billingclient.api.Purchase;
 import com.android.billingclient.api.PurchasesUpdatedListener;
 import com.android.billingclient.api.QueryProductDetailsParams;
+import com.android.billingclient.api.QueryProductDetailsResult;
 import com.android.billingclient.api.QueryPurchasesParams;
+import com.android.billingclient.api.UnfetchedProduct;
 
 import com.getcapacitor.JSArray;
 import com.getcapacitor.JSObject;
@@ -53,7 +56,13 @@ public class BillingPlugin extends Plugin implements PurchasesUpdatedListener {
         try {
             billingClient = BillingClient.newBuilder(getContext())
                     .setListener(this)
-                    .enablePendingPurchases()
+                    // Billing Library 8 removed the no-arg enablePendingPurchases().
+                    // We sell one-time products (premium_unlock), so opt those in.
+                    .enablePendingPurchases(
+                            PendingPurchasesParams.newBuilder()
+                                    .enableOneTimeProducts()
+                                    .build()
+                    )
                     .build();
         } catch (Exception e) {
             android.util.Log.w("BillingPlugin", "Failed to create BillingClient - billing will be unavailable", e);
@@ -118,11 +127,14 @@ public class BillingPlugin extends Plugin implements PurchasesUpdatedListener {
 
         billingClient.queryProductDetailsAsync(
                 QueryProductDetailsParams.newBuilder().setProductList(products).build(),
-                (billingResult, productDetailsList) -> {
+                (billingResult, queryResult) -> {
                     if (billingResult.getResponseCode() != BillingClient.BillingResponseCode.OK) {
                         call.reject("Product query failed: " + billingResult.getDebugMessage());
                         return;
                     }
+
+                    List<ProductDetails> productDetailsList = queryResult.getProductDetailsList();
+                    logUnfetched("getProducts", queryResult);
 
                     JSArray resultArray = new JSArray();
                     for (ProductDetails detail : productDetailsList) {
@@ -191,11 +203,14 @@ public class BillingPlugin extends Plugin implements PurchasesUpdatedListener {
 
         billingClient.queryProductDetailsAsync(
                 QueryProductDetailsParams.newBuilder().setProductList(products).build(),
-                (billingResult, productDetailsList) -> {
+                (billingResult, queryResult) -> {
                     if (billingResult.getResponseCode() != BillingClient.BillingResponseCode.OK) {
                         call.reject("In-app product query failed: " + billingResult.getDebugMessage());
                         return;
                     }
+
+                    List<ProductDetails> productDetailsList = queryResult.getProductDetailsList();
+                    logUnfetched("getInAppProducts", queryResult);
 
                     JSArray resultArray = new JSArray();
                     for (ProductDetails detail : productDetailsList) {
@@ -249,9 +264,11 @@ public class BillingPlugin extends Plugin implements PurchasesUpdatedListener {
 
         billingClient.queryProductDetailsAsync(
                 QueryProductDetailsParams.newBuilder().setProductList(products).build(),
-                (billingResult, productDetailsList) -> {
+                (billingResult, queryResult) -> {
+                    List<ProductDetails> productDetailsList = queryResult.getProductDetailsList();
                     if (billingResult.getResponseCode() != BillingClient.BillingResponseCode.OK
                             || productDetailsList.isEmpty()) {
+                        logUnfetched("purchase", queryResult);
                         call.reject("Product not found: " + sku);
                         return;
                     }
@@ -323,9 +340,11 @@ public class BillingPlugin extends Plugin implements PurchasesUpdatedListener {
 
         billingClient.queryProductDetailsAsync(
                 QueryProductDetailsParams.newBuilder().setProductList(products).build(),
-                (billingResult, productDetailsList) -> {
+                (billingResult, queryResult) -> {
+                    List<ProductDetails> productDetailsList = queryResult.getProductDetailsList();
                     if (billingResult.getResponseCode() != BillingClient.BillingResponseCode.OK
                             || productDetailsList.isEmpty()) {
+                        logUnfetched("purchaseInApp", queryResult);
                         call.reject("Product not found: " + sku);
                         return;
                     }
@@ -486,6 +505,22 @@ public class BillingPlugin extends Plugin implements PurchasesUpdatedListener {
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────
+
+    /**
+     * Billing Library 8 reports products it could NOT fetch instead of silently
+     * omitting them. Log them — an unfetched SKU almost always means the product
+     * is missing/inactive in the Play Console, which is otherwise invisible.
+     */
+    private void logUnfetched(String source, QueryProductDetailsResult queryResult) {
+        List<UnfetchedProduct> unfetched = queryResult.getUnfetchedProductList();
+        if (unfetched == null || unfetched.isEmpty()) {
+            return;
+        }
+        for (UnfetchedProduct product : unfetched) {
+            android.util.Log.w("BillingPlugin", source + ": could not fetch product "
+                    + product.getProductId() + " (status " + product.getStatusCode() + ")");
+        }
+    }
 
     private void acknowledgePurchaseIfNeeded(Purchase purchase) {
         if (!purchase.isAcknowledged()) {
