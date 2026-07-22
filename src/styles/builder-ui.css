@@ -330,10 +330,11 @@ body.builder-body::before {
 /* 3D CircuiTry3D wordmark as the nav home/brand mark (replaces the old icon). */
 .mode-brand-logo {
   display: block;
-  height: 22px;
+  height: 26px;
   width: auto;
-  max-width: 110px;
+  max-width: 132px;
   object-fit: contain;
+  filter: brightness(1.25);
 }
 
 /* Scroll indicator for mode bar */

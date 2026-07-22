@@ -262,10 +262,11 @@
 /* 3D CircuiTry3D wordmark on tour cards (replaces the plain kicker text). */
 .builder-tutorial-logo {
   display: block;
-  height: 18px;
+  height: 22px;
   width: auto;
-  max-width: 130px;
+  max-width: 156px;
   object-fit: contain;
+  filter: brightness(1.25);
 }
 
 .builder-tutorial-close {
