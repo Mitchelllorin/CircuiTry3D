@@ -121,15 +121,20 @@
 }
 
 /* ── Arena mode: steel sword styling on the title ── */
-/* Arena canvas must fill the panel body — same pattern as circuit mode */
+/* The arena panel is a TALL, SCROLLABLE list of controls + live instruments
+   (meta → environment → BATTLE → live graph → cards → log) — NOT a single
+   fill-the-body canvas like circuit mode. It MUST scroll; the previous
+   `overflow: hidden` clipped everything below the fold (the BATTLE button, the
+   graph, the cards) and made the panel un-scrollable. */
 .workspace-mode-panel--arena .workspace-mode-panel-body {
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
   display: flex;
   flex-direction: column;
 }
 
 .workspace-mode-panel--arena .workspace-mode-panel-content {
-  flex: 1;
+  flex: 0 0 auto;
   min-height: 0;
   display: flex;
   flex-direction: column;

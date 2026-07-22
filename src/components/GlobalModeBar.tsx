@@ -3,9 +3,9 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useWorkspaceMode } from "../context/WorkspaceModeContext";
 import { useTheme } from "../context/ThemeContext";
 import type { WorkspaceMode } from "./builder/types";
-import BrandMark from "./BrandMark";
 import "../styles/builder-ui.css";
 import wireResourceLogo from "../assets/wire-resource-logo.svg";
+import { Logo3D } from "./builder/branding/Logo3D";
 
 type TabConfig = {
   mode: WorkspaceMode;
@@ -111,7 +111,7 @@ export function GlobalModeBar() {
           aria-label="CircuiTry3D – Home"
           title="Home"
         >
-          <BrandMark size="xs" decorative />
+          <Logo3D className="mode-brand-logo" />
         </Link>
 
         {NAV_TABS.map((tab) => (

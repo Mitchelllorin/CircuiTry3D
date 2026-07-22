@@ -157,7 +157,7 @@ export default function ArenaView({
               </p>
               <strong>{winner.name}</strong>
               <span className="arena-winner-banner__score">
-                Robustness {winner.score.toFixed(1)} ·{" "}
+                Toughness {winner.score.toFixed(0)}/100 ·{" "}
                 {survivorCount > 0
                   ? `${survivorCount}/${agents.length} survived`
                   : `held ${(winner.failedAtLoad ?? 0).toFixed(1)}×`}

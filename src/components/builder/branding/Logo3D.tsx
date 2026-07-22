@@ -89,6 +89,10 @@ function buildWordmark(font: Font): THREE.Group {
       color: w.c,
       metalness: 0.25,
       roughness: 0.85,
+      // Self-illuminate so the letters glow in their own colour — the deep brand
+      // hues + dim lights rendered too dark to read/pop otherwise.
+      emissive: w.c,
+      emissiveIntensity: 0.85,
     });
     const mesh = new THREE.Mesh(geo, material);
     mesh.position.x = cursor - bb.min.x;
@@ -113,8 +117,8 @@ async function renderLogo(): Promise<string> {
     const { canvas, renderer } = getRenderer();
 
     const scene = new THREE.Scene();
-    scene.add(new THREE.HemisphereLight(0x9fb0cc, 0x0a0e1a, 0.85));
-    const key = new THREE.DirectionalLight(0xffffff, 0.35);
+    scene.add(new THREE.HemisphereLight(0x9fb0cc, 0x0a0e1a, 1.15));
+    const key = new THREE.DirectionalLight(0xffffff, 0.6);
     key.position.set(2, 4, 3);
     scene.add(key);
 
