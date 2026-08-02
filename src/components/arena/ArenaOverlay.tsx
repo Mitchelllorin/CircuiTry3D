@@ -2,12 +2,9 @@ import WordMark from "../WordMark";
 import {
   ArenaPodium,
   ArenaScenarioSelect,
-  ArenaTestCards,
-  ArenaTestControls,
   ArenaTestLog,
 } from "./ArenaInstrumentation";
 import type { ArenaScenario } from "./scenarios";
-import { overdriveCeiling } from "./stressTest";
 import type {
   ArenaBattleAgent,
   ArenaBattleLogEntry,
@@ -36,21 +33,20 @@ type ArenaOverlayProps = {
   onOpenBuilder?: () => void;
 };
 
+// `mostStressedId`, `progress`, `survivorCount` and `onStartTest` stay in the
+// props type (callers still pass them) but are no longer read here: the cards
+// that used them are gone, and starting the test is the switch's job now.
 export function ArenaOverlay({
   agents,
   log,
-  mostStressedId,
   status,
   stressFactor,
-  progress,
   sessionLabel,
   transitionPhase,
   winnerName,
-  survivorCount,
   scenario,
   summary,
   onSelectScenario,
-  onStartTest,
   onResetTest,
   onReturnToWorkspace,
   onOpenBuilder,
@@ -106,21 +102,14 @@ export function ArenaOverlay({
         </div>
       </div>
 
+      {/* Scenario chips only. The BATTLE console that used to sit beside them is
+          gone: the switch on the board starts the test now, and the load ramp it
+          carried reads out on the stage without a container around it. */}
       <div className="arena-overlay__console">
         <ArenaScenarioSelect
           scenario={scenario}
           onSelect={onSelectScenario}
           disabled={status === "battling"}
-        />
-        <ArenaTestControls
-          status={status}
-          stressFactor={stressFactor}
-          progress={progress}
-          winnerName={winnerName}
-          survivorCount={survivorCount}
-          totalCount={agents.length}
-          stressMax={overdriveCeiling(scenario)}
-          onStartTest={onStartTest}
         />
       </div>
 
@@ -130,7 +119,10 @@ export function ArenaOverlay({
         <ArenaPodium agents={agents} summary={summary} />
       ) : null}
 
-      <ArenaTestCards agents={agents} mostStressedId={mostStressedId} />
+      {/* The per-component cards are gone. Every number they carried — temp
+          against its limit, load, live current — already floats on the part
+          itself in the scene, where you can see WHICH part it belongs to. A grid
+          of boxed duplicates below the stage just ate the screen. */}
     </div>
   );
 }

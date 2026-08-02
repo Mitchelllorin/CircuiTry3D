@@ -62,6 +62,7 @@ export default function ArenaBenchView({
     startTest,
     resetTest,
     selectScenario,
+    setLoad,
   } = useBenchSession({ component, stressor });
 
   const running = status === "battling";
@@ -94,6 +95,7 @@ export default function ArenaBenchView({
         stressMax={scenario.stressMax}
         progress={progress}
         onStartTest={startTest}
+        onLoadChange={setLoad}
         winnerName={null}
         survivorCount={agent && agent.phase !== "failed" ? 1 : 0}
         workspaceMode

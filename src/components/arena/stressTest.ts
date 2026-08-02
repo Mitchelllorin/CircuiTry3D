@@ -76,6 +76,30 @@ export function stressFactorAt(
   return Math.min(ceiling, scenario.stressMax + overdrive);
 }
 
+/**
+ * Inverse of `stressFactorAt`: the point on the ramp that produces `factor`.
+ *
+ * This is what lets the load dial be a real control instead of a second source
+ * of truth. Turning the dial scrubs elapsed time, so the bench keeps one
+ * definition of load — if a test is running it simply carries on ramping from
+ * wherever the dial was left, and thermal accumulation stays consistent with it.
+ */
+export function elapsedMsForStressFactor(
+  factor: number,
+  scenario: ArenaScenario = DEFAULT_SCENARIO,
+): number {
+  const span = scenario.stressMax - 1;
+  if (span <= 0) return 0;
+  const ceiling = overdriveCeiling(scenario);
+  const clamped = Math.min(Math.max(factor, 1), ceiling);
+  if (clamped <= scenario.stressMax) {
+    return ((clamped - 1) / span) * scenario.rampMs;
+  }
+  // Past the rated peak the slope doubles, so invert that leg separately.
+  const overdrive = clamped - scenario.stressMax;
+  return (1 + overdrive / (span * 2)) * scenario.rampMs;
+}
+
 /** Fraction of steady-state heat accumulated so far (0 → 1). */
 export function thermalFractionAt(elapsedMs: number): number {
   return 1 - Math.exp(-Math.max(0, elapsedMs) / THERMAL_TAU_MS);

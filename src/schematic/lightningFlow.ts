@@ -1,0 +1,329 @@
+/**
+ * Lightning flow — the app's current visualisation.
+ *
+ * Copied from the main workspace (public/legacy.html, the FLOW_STREAM_MODE
+ * path: _createLightningBolt / _updateLightning / _tubeIndices). That builder
+ * runs with FLOW_STREAM_DOT_RATIO = 0 — "lightning only" — so this bolt, not a
+ * stream of dots, is what current looks like across the app.
+ *
+ * Current is rendered as a living, glowing TUBE of light that undulates, twists
+ * and crackles down each conductor. Energy — thickness, amplitude, brightness,
+ * travel speed, strand count — scales with the branch CURRENT, so Ohm's law
+ * reads at a glance: a high-resistance / low-current branch is a thin gentle
+ * wisp, a high-current branch is a fat writhing flare. The bolt travels in the
+ * active current direction.
+ *
+ * Colour comes from getFlowSpectrumColors() so a given amperage is the same
+ * colour here as it is on every other surface.
+ */
+
+import { getFlowSpectrumColors } from "./currentFlowAnimation";
+import { isMobile } from "../utils/mobilePerformance";
+
+// ── Constants, copied verbatim from legacy.html:5865 ────────────────────────
+/** Rings along each bolt. */
+const LIGHTNING_SEGS = isMobile() ? 20 : 28;
+/** Radial faces — low-poly glowing tube. */
+const LIGHTNING_TUBE_SIDES = 5;
+/** Base tube radius (scaled by current). */
+const LIGHTNING_RADIUS = 0.075;
+/** Perpendicular displacement, world units. */
+const LIGHTNING_BASE_AMP = 0.2;
+/** How fast the bolt rotates around the conductor. */
+const LIGHTNING_TWIST = 1.4;
+/** Twist added per ring (spatial helix). */
+const LIGHTNING_TWIST_PITCH = 0.5;
+/** Undulation / travel speed — lower is more flowing. */
+const LIGHTNING_WAVE_FREQ = 4.2;
+/** Undulation wavelength along the bolt. */
+const LIGHTNING_SPATIAL = 1.8;
+/** Intertwining bolts per conductor (3 at high current). */
+const LIGHTNING_STRANDS = 2;
+
+/** Triangle indices for an (N rings × M sides) open tube — built once per bolt. */
+function tubeIndices(N: number, M: number): number[] {
+  const idx: number[] = [];
+  for (let i = 0; i < N; i++) {
+    for (let j = 0; j < M; j++) {
+      const a = i * (M + 1) + j;
+      const b = (i + 1) * (M + 1) + j;
+      const c = (i + 1) * (M + 1) + (j + 1);
+      const d = i * (M + 1) + (j + 1);
+      idx.push(a, b, d, b, c, d);
+    }
+  }
+  return idx;
+}
+
+type Bolt = {
+  mesh: any;
+  geom: any;
+  mat: any;
+  pos: Float32Array;
+  basePts: any[];
+  normals: any[];
+  binormals: any[];
+  N: number;
+  M: number;
+  ring: [number, number][];
+  radius: number;
+  amp: number;
+  twist: number;
+  twistOffset: number;
+  travel: number;
+  waveFreq: number;
+  phase: number;
+  baseOpacity: number;
+  crackleAt: number;
+  crackleEnd: number;
+  crackleBoost: number;
+};
+
+export type LightningPathPoint = { x: number; y?: number; z: number };
+
+export class LightningFlowSystem {
+  private three: any;
+  private parentGroup: any;
+  private bolts: Bolt[] = [];
+  /** Set false while the switch is open, so geometry survives but nothing shows. */
+  private visible = true;
+
+  constructor(three: any, parentGroup: any) {
+    this.three = three;
+    this.parentGroup = parentGroup;
+  }
+
+  /**
+   * Lay a bolt along `path`.
+   *
+   * @param path        Points the conductor follows. `y` defaults to 0.
+   * @param currentAmps This branch's real current — drives colour AND energy.
+   * @param speedFactor Cosmetic resistance damping; 1 when the current is known.
+   * @param directionMul +1 or -1 for the direction current travels.
+   */
+  public addBolt(
+    path: LightningPathPoint[],
+    currentAmps: number,
+    speedFactor = 1,
+    directionMul = 1,
+    options: {
+      /**
+       * Draw regardless of depth — for the span that passes INSIDE a component
+       * body, so the current is visibly running through the part instead of
+       * being swallowed by its opaque shell. Use only for that short span:
+       * applied to a whole loop it would let far-side bolts draw over near
+       * parts.
+       */
+      drawThrough?: boolean;
+      /** Scales tube radius — a thinner filament reads better inside a body. */
+      radiusScale?: number;
+    } = {},
+  ): void {
+    const THREE = this.three;
+    try {
+      if (!path || path.length < 2) return;
+
+      // A real Curve, so computeFrenetFrames() is available — the builder needs
+      // the same thing and builds a CatmullRomCurve3 for exactly this reason.
+      //
+      // But a Catmull-Rom through bare corner points does NOT follow the
+      // conductor: it rounds every corner off and bows outside the rails on the
+      // long runs, so the bolt visibly leaves the wire. Densifying each straight
+      // leg first pins the spline to the polyline — with control points every
+      // ~0.25 units the curve has no freedom to wander, while still being a
+      // smooth Curve that can produce Frenet frames.
+      const pts: any[] = [];
+      const STEP = 0.25;
+      for (let i = 0; i < path.length - 1; i++) {
+        const a = path[i];
+        const b = path[i + 1];
+        const ax = a.x;
+        const ay = a.y ?? 0;
+        const az = a.z;
+        const bx = b.x;
+        const by = b.y ?? 0;
+        const bz = b.z;
+        const legLength = Math.hypot(bx - ax, by - ay, bz - az);
+        const steps = Math.max(1, Math.ceil(legLength / STEP));
+        for (let s = 0; s < steps; s++) {
+          const t = s / steps;
+          pts.push(
+            new THREE.Vector3(ax + (bx - ax) * t, ay + (by - ay) * t, az + (bz - az) * t),
+          );
+        }
+      }
+      const last = path[path.length - 1];
+      pts.push(new THREE.Vector3(last.x, last.y ?? 0, last.z));
+      if (pts.length < 2) return;
+      const curve = new THREE.CatmullRomCurve3(pts);
+
+      // The builder's LIGHTNING_SEGS is per-WIRE — a short run. These paths are
+      // whole loops, and stretching the same ring count over a loop makes the
+      // undulation coarse and the corners faceted. Scale the rings with length
+      // so detail per unit stays the same, with a ceiling for the phone's sake.
+      const curveLength = curve.getLength();
+      const N = Math.max(
+        LIGHTNING_SEGS,
+        Math.min(isMobile() ? 96 : 160, Math.ceil(curveLength * (isMobile() ? 3 : 4.5))),
+      );
+      const M = LIGHTNING_TUBE_SIDES;
+      let frames;
+      try {
+        frames = curve.computeFrenetFrames(N, false);
+      } catch {
+        return;
+      }
+      const basePts: any[] = [];
+      for (let i = 0; i <= N; i++) basePts.push(curve.getPoint(i / N));
+
+      // Pre-compute the unit ring (cos/sin per radial face).
+      const ring: [number, number][] = [];
+      for (let j = 0; j <= M; j++) {
+        const a = (Math.PI * 2 * j) / M;
+        ring.push([Math.cos(a), Math.sin(a)]);
+      }
+
+      // Energy from current; resistance (low speedFactor) tames it.
+      const energy = Math.max(
+        0.12,
+        Math.min(1.5, Math.sqrt(Math.max(0, currentAmps)) * 1.6 * (speedFactor || 1)),
+      );
+      // Several thin bolts braid down each conductor; more current → more strands.
+      const strands = energy > 0.95 ? LIGHTNING_STRANDS + 1 : LIGHTNING_STRANDS;
+
+      const colors = getFlowSpectrumColors(currentAmps);
+
+      for (let s = 0; s < strands; s++) {
+        const positions = new Float32Array((N + 1) * (M + 1) * 3);
+        const geom = new THREE.BufferGeometry();
+        geom.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+        geom.setIndex(tubeIndices(N, M));
+        const mat = new THREE.MeshBasicMaterial({
+          color: colors.core,
+          transparent: true,
+          opacity: 0.8,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false,
+          depthTest: !options.drawThrough,
+          side: THREE.DoubleSide,
+        });
+        const mesh = new THREE.Mesh(geom, mat);
+        mesh.frustumCulled = false;
+        mesh.visible = this.visible;
+        this.parentGroup.add(mesh);
+        this.bolts.push({
+          mesh,
+          geom,
+          mat,
+          pos: positions,
+          basePts,
+          normals: frames.normals,
+          binormals: frames.binormals,
+          N,
+          M,
+          ring,
+          // Thinner per strand so the braid stays sharp, not bulky.
+          radius:
+            ((LIGHTNING_RADIUS * (0.55 + energy * 0.45)) / Math.sqrt(strands)) *
+            (options.radiusScale ?? 1),
+          amp: LIGHTNING_BASE_AMP * (0.55 + energy),
+          // Alternate twist direction + start angle so the strands intertwine.
+          twist: LIGHTNING_TWIST * (s % 2 === 0 ? 1 : -0.85),
+          twistOffset: (Math.PI * 2 * s) / strands,
+          travel: (directionMul >= 0 ? 1 : -1) * (1.0 + energy * 1.8),
+          waveFreq: LIGHTNING_WAVE_FREQ * (0.75 + energy * 0.4) * (1 + s * 0.09),
+          phase: Math.random() * Math.PI * 2 + s * 1.9,
+          baseOpacity: Math.min(1, 0.45 + energy * 0.4),
+          crackleAt: 0,
+          crackleEnd: 0,
+          crackleBoost: 1,
+        });
+      }
+    } catch {
+      /* skip degenerate path */
+    }
+  }
+
+  /** @param time Milliseconds, monotonic (performance.now()). */
+  public update(time: number): void {
+    if (!this.bolts.length) return;
+    const t = time * 0.001; // seconds
+    for (let b = 0; b < this.bolts.length; b++) {
+      const L = this.bolts[b];
+      if (!L || !L.geom) continue;
+      // Occasional crackle: a brief amplitude + brightness spike.
+      if (time > L.crackleAt) {
+        L.crackleAt = time + 110 + Math.random() * 380;
+        L.crackleBoost = 1.35 + Math.random() * 1.1;
+        L.crackleEnd = time + 80 + Math.random() * 90;
+      }
+      const crackling = time < L.crackleEnd;
+      const ampNow = L.amp * (crackling ? L.crackleBoost : 1);
+      const pos = L.pos;
+      const N = L.N;
+      const M = L.M;
+      const ring = L.ring;
+      const R = L.radius;
+      for (let i = 0; i <= N; i++) {
+        const bp = L.basePts[i];
+        const nrm = L.normals[i] || L.normals[N - 1];
+        const bin = L.binormals[i] || L.binormals[N - 1];
+        // Taper to zero at the ends so the bolt stays pinned to the terminals.
+        const taper = Math.sin(Math.PI * (i / N));
+        // Smooth undulation that TRAVELS along the conductor (liquid, not spiky).
+        const wave =
+          Math.sin(i * LIGHTNING_SPATIAL - t * L.waveFreq * L.travel + L.phase) +
+          0.35 * Math.sin(i * 2.7 - t * L.waveFreq * 1.5 + L.phase * 1.6);
+        const jitter = crackling ? (Math.random() - 0.5) * 0.6 : 0;
+        const disp = ampNow * taper * (wave + jitter);
+        // Twist the displacement around the conductor axis (helix). Per-strand
+        // twist rate/direction + start angle make the strands intertwine.
+        const ang = t * L.twist + i * LIGHTNING_TWIST_PITCH + L.twistOffset;
+        const ca = Math.cos(ang);
+        const sa = Math.sin(ang);
+        // Displaced centre of this ring.
+        const cx = bp.x + (nrm.x * ca + bin.x * sa) * disp;
+        const cy = bp.y + (nrm.y * ca + bin.y * sa) * disp;
+        const cz = bp.z + (nrm.z * ca + bin.z * sa) * disp;
+        // Tube ring around the displaced centre (slim at the ends).
+        const rr = R * (0.45 + 0.55 * taper);
+        const base = i * (M + 1) * 3;
+        for (let j = 0; j <= M; j++) {
+          const cj = ring[j][0];
+          const sj = ring[j][1];
+          const ox = (nrm.x * cj + bin.x * sj) * rr;
+          const oy = (nrm.y * cj + bin.y * sj) * rr;
+          const oz = (nrm.z * cj + bin.z * sj) * rr;
+          const o = base + j * 3;
+          pos[o] = cx + ox;
+          pos[o + 1] = cy + oy;
+          pos[o + 2] = cz + oz;
+        }
+      }
+      L.geom.attributes.position.needsUpdate = true;
+      L.mat.opacity = Math.min(1, L.baseOpacity * (crackling ? 1.5 : 1));
+    }
+  }
+
+  /** Hide the current without tearing the bolts down — an open switch. */
+  public setVisible(visible: boolean): void {
+    this.visible = visible;
+    for (const bolt of this.bolts) {
+      if (bolt.mesh) bolt.mesh.visible = visible;
+    }
+  }
+
+  public clear(): void {
+    for (const L of this.bolts) {
+      if (!L) continue;
+      if (L.geom) L.geom.dispose();
+      if (L.mat) L.mat.dispose();
+      if (L.mesh && this.parentGroup) this.parentGroup.remove(L.mesh);
+    }
+    this.bolts = [];
+  }
+
+  public dispose(): void {
+    this.clear();
+  }
+}

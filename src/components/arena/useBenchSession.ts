@@ -4,6 +4,7 @@ import { DEFAULT_SCENARIO, getScenario } from "./scenarios";
 import {
   AMBIENT_C,
   TICK_MS,
+  elapsedMsForStressFactor,
   evaluateStress,
   overdriveCeiling,
   stressFactorAt,
@@ -387,6 +388,18 @@ export function useBenchSession({
     });
   }, []);
 
+  /** The load dial — scrubs the ramp, same as the battle bench. */
+  const setLoad = useCallback((factor: number) => {
+    setState((previous) => {
+      const elapsedMs = elapsedMsForStressFactor(factor, previous.scenario);
+      const stressFactor = stressFactorAt(elapsedMs, previous.scenario);
+      if (Math.abs(stressFactor - previous.stressFactor) < 1e-4) {
+        return previous;
+      }
+      return { ...previous, elapsedMs, stressFactor };
+    });
+  }, []);
+
   const resetTest = useCallback(() => {
     setState((previous) =>
       createInitialState(previous.agent, previous.scenario, previous.stressor),
@@ -431,5 +444,6 @@ export function useBenchSession({
     startTest,
     resetTest,
     selectScenario,
+    setLoad,
   };
 }

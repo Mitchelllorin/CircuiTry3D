@@ -3,6 +3,7 @@ import type { ArenaScenario } from "./scenarios";
 import { DEFAULT_SCENARIO, getScenario } from "./scenarios";
 import {
   TICK_MS,
+  elapsedMsForStressFactor,
   evaluateStress,
   overdriveCeiling,
   stressFactorAt,
@@ -350,6 +351,22 @@ export function useArenaBattle({ initialAgents }: UseArenaBattleOptions) {
     });
   }, []);
 
+  /**
+   * The load dial. Scrubs the ramp rather than overriding it, so `stressFactor`
+   * keeps exactly one definition and a running test carries on from wherever
+   * the dial was left.
+   */
+  const setLoad = useCallback((factor: number) => {
+    setState((previous) => {
+      const elapsedMs = elapsedMsForStressFactor(factor, previous.scenario);
+      const stressFactor = stressFactorAt(elapsedMs, previous.scenario);
+      if (Math.abs(stressFactor - previous.stressFactor) < 1e-4) {
+        return previous;
+      }
+      return { ...previous, elapsedMs, stressFactor };
+    });
+  }, []);
+
   const resetTest = useCallback(() => {
     setState((previous) =>
       createInitialBattleState(stableAgents, previous.scenario),
@@ -399,5 +416,6 @@ export function useArenaBattle({ initialAgents }: UseArenaBattleOptions) {
     startTest,
     resetTest,
     selectScenario,
+    setLoad,
   };
 }

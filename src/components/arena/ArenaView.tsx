@@ -74,6 +74,7 @@ export default function ArenaView({
     startTest,
     resetTest,
     selectScenario,
+    setLoad,
   } = useArenaBattle({ initialAgents: arenaAgents });
 
   const handleExitComplete = useCallback(() => {
@@ -139,6 +140,7 @@ export default function ArenaView({
           stressMax={scenario.stressMax}
           progress={progress}
           onStartTest={startTest}
+          onLoadChange={setLoad}
           winnerName={winnerName}
           survivorCount={survivorCount}
           workspaceMode
@@ -209,6 +211,8 @@ export default function ArenaView({
         status={status}
         stressFactor={stressFactor}
         stressMax={scenario.stressMax}
+        onStartTest={startTest}
+        onLoadChange={setLoad}
         onExitTransitionComplete={handleExitComplete}
       />
       <ArenaOverlay

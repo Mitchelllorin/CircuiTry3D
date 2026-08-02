@@ -1,5 +1,5 @@
 import { Vec2 } from "./types";
-import { getPerformanceTier } from "../utils/mobilePerformance";
+import { getPerformanceTier, isMobile } from "../utils/mobilePerformance";
 import { LOGO_COLORS } from "./visualConstants";
 
 /**
@@ -54,11 +54,117 @@ export const CURRENT_FLOW_COLOR_RAMP = {
   fast: BRAND_FLOW_COLORS.positive,
 } as const;
 
+/**
+ * The main workspace's current-flow spectrum — the single source of truth for
+ * "how much current is this?" across the whole app.
+ *
+ * Ported verbatim from the builder (public/legacy.html, FLOW_SPECTRUM_COLORS)
+ * so a branch carrying 40 mA is the same colour in the arena as it is on the
+ * bench. Anything else teaches two contradictory colour codes.
+ *
+ * Reads dull-red (barely moving) → orange → yellow → cyan → blue-white (fast).
+ * Deliberately NOT the blue/orange/green brand ramp above: those are the
+ * app's accent/selection colours, and tinting carriers with them made every
+ * energised part look permanently selected.
+ */
+const FLOW_SPECTRUM = {
+  dullRed: 0x8b0000,
+  orange: 0xff6600,
+  yellow: 0xffff00,
+  cyan: 0x00ddff,
+  blueWhite: 0xaaddff,
+} as const;
+
+/**
+ * Current (A) at which the spectrum saturates to blue-white. 2 A spans the
+ * practical range of hobby/educational circuits (typically 0.01–1 A), matching
+ * CURRENT_COLOR_SATURATION_THRESHOLD in the builder.
+ */
+const CURRENT_COLOR_SATURATION_THRESHOLD = 2.0;
+
+/**
+ * Tuned in the builder so ~0.001 A is a barely-visible drift and ~2 A hits the
+ * speed cap — a ~73× range.
+ */
+const SPEED_SQRT_MULTIPLIER = 40;
+
+/**
+ * The builder animates per-frame; this system integrates per-second. Used to
+ * carry its speed/cap constants across without retuning them.
+ */
+const FRAMES_PER_SECOND = 60;
+
+/**
+ * The electron bloom sprite, copied from the builder's getElectronGlowTexture().
+ * A white-hot core fading through electric blue to nothing — additively blended
+ * behind every carrier, this is what makes an electron read as a point of light
+ * instead of a shaded ball. Built once and shared by every particle.
+ */
+let electronGlowTexture: import("three").CanvasTexture | null = null;
+function getElectronGlowTexture(three: typeof import("three")): import("three").CanvasTexture | null {
+  if (electronGlowTexture) return electronGlowTexture;
+  if (typeof document === "undefined") return null;
+  const size = 64;
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return null;
+  const g = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+  g.addColorStop(0.0, "rgba(255,255,255,1.0)");   // white-hot core
+  g.addColorStop(0.22, "rgba(255,255,255,0.85)");
+  g.addColorStop(0.5, "rgba(180,225,255,0.35)");  // electric-blue mid
+  g.addColorStop(1.0, "rgba(140,205,255,0.0)");   // fade to nothing
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, size, size);
+  electronGlowTexture = new three.CanvasTexture(canvas);
+  return electronGlowTexture;
+}
+
 const CURRENT_FLOW_OFF_COLORS = {
   core: 0x6b7280,     // Gray - no current
   glow: 0x9ca3af,
   emissive: 0x4b5563
 } as const;
+
+/**
+ * The app-wide answer to "what colour is this much current?".
+ *
+ * Copied from calculateCurrentColor() in the builder. Every surface that draws
+ * current — carriers, lightning bolts, glow channels — must resolve its colour
+ * through here so the same amperage is the same colour everywhere.
+ */
+export function getFlowSpectrumColors(amps: number): { core: number; glow: number; emissive: number } {
+  const absAmps = Math.abs(amps);
+  if (absAmps < CURRENT_FLOW_PHYSICS.ZERO_CURRENT_THRESHOLD) {
+    return CURRENT_FLOW_OFF_COLORS;
+  }
+
+  // Position along the spectrum, matching the builder exactly: a square-root
+  // curve on the branch's OWN current, so two wires carrying the same current
+  // are the same colour (series reads uniform) and a heavier parallel branch
+  // runs visibly hotter. Not a log curve — log flattened everything between
+  // 10 mA and 1 A into the same orange.
+  const t = Math.min(1, Math.sqrt(absAmps / CURRENT_COLOR_SATURATION_THRESHOLD));
+
+  // Four equal quarters: dullRed → orange → yellow → cyan → blueWhite.
+  let base: number;
+  if (t < 0.25) {
+    base = lerpColor(FLOW_SPECTRUM.dullRed, FLOW_SPECTRUM.orange, t / 0.25);
+  } else if (t < 0.5) {
+    base = lerpColor(FLOW_SPECTRUM.orange, FLOW_SPECTRUM.yellow, (t - 0.25) / 0.25);
+  } else if (t < 0.75) {
+    base = lerpColor(FLOW_SPECTRUM.yellow, FLOW_SPECTRUM.cyan, (t - 0.5) / 0.25);
+  } else {
+    base = lerpColor(FLOW_SPECTRUM.cyan, FLOW_SPECTRUM.blueWhite, (t - 0.75) / 0.25);
+  }
+
+  return {
+    core: base,
+    glow: lerpColor(base, 0xffffff, 0.45),
+    emissive: lerpColor(base, 0x000000, 0.25),
+  };
+}
 
 /**
  * Particle appearance based on flow mode
@@ -298,38 +404,8 @@ export class CurrentFlowAnimationSystem {
     return this.flowMode === "electron" ? flowsForward : !flowsForward;
   }
 
-  /**
-   * Calculate physics-based speed from current magnitude
-   * Higher current = faster drift velocity = faster particles
-   * Uses logarithmic scaling to handle wide current ranges (mA to A)
-   */
-  private calculateNormalizedCurrent(amps: number): number {
-    const absAmps = Math.abs(amps);
-    if (absAmps < CURRENT_FLOW_PHYSICS.ZERO_CURRENT_THRESHOLD) {
-      return 0;
-    }
-
-    const logCurrent = Math.log10(absAmps + 0.001);
-    return clamp01((logCurrent + 3) / 4);
-  }
-
   private getCurrentFlowColors(amps: number): { core: number; glow: number; emissive: number } {
-    const absAmps = Math.abs(amps);
-    if (absAmps < CURRENT_FLOW_PHYSICS.ZERO_CURRENT_THRESHOLD) {
-      return CURRENT_FLOW_OFF_COLORS;
-    }
-
-    const normalized = this.calculateNormalizedCurrent(absAmps);
-    const base =
-      normalized <= 0.5
-        ? lerpColor(CURRENT_FLOW_COLOR_RAMP.slow, CURRENT_FLOW_COLOR_RAMP.mid, normalized / 0.5)
-        : lerpColor(CURRENT_FLOW_COLOR_RAMP.mid, CURRENT_FLOW_COLOR_RAMP.fast, (normalized - 0.5) / 0.5);
-
-    return {
-      core: base,
-      glow: lerpColor(base, 0xffffff, 0.45),
-      emissive: lerpColor(base, 0x000000, 0.25),
-    };
+    return getFlowSpectrumColors(amps);
   }
 
   private calculateResistanceMultiplier(resistanceOhms: number): number {
@@ -375,6 +451,18 @@ export class CurrentFlowAnimationSystem {
     return Math.max(minSpeed, baseSpeed * multiplier);
   }
 
+  /**
+   * calculateFlowSpeed, copied from the main workspace (legacy.html).
+   *
+   * The builder's numbers are progress-per-FRAME; this system integrates in
+   * progress-per-SECOND (update() takes deltaTime in seconds), so each constant
+   * is the builder's value × FRAMES_PER_SECOND. Nothing else is changed: same
+   * square-root curve, same SPEED_SQRT_MULTIPLIER, same cap.
+   *
+   * The old implementation used a log10 curve between a 0.15 floor and a 1.5
+   * ceiling — a 10× range. This is ~73×, which is what makes a 5 mA trickle
+   * read as near-stationary and an amp read as blazing.
+   */
   private calculateSpeedFromCurrent(amps: number): number {
     const absAmps = Math.abs(amps);
 
@@ -383,13 +471,12 @@ export class CurrentFlowAnimationSystem {
       return 0;
     }
 
-    const normalizedCurrent = this.calculateNormalizedCurrent(absAmps);
+    const mobile = isMobile();
+    const baseSpeed = (mobile ? 0.00075 : 0.0011) * FRAMES_PER_SECOND;
+    const speedMultiplier = 1 + Math.sqrt(absAmps) * SPEED_SQRT_MULTIPLIER;
+    const cap = (mobile ? 0.056 : 0.082) * FRAMES_PER_SECOND;
 
-    // Calculate speed with minimum and maximum bounds
-    const baseSpeed = CURRENT_FLOW_PHYSICS.MIN_VISIBLE_SPEED +
-      normalizedCurrent * (CURRENT_FLOW_PHYSICS.MAX_SPEED - CURRENT_FLOW_PHYSICS.MIN_VISIBLE_SPEED);
-
-    return Math.min(CURRENT_FLOW_PHYSICS.MAX_SPEED, Math.max(CURRENT_FLOW_PHYSICS.MIN_VISIBLE_SPEED, baseSpeed));
+    return Math.min(baseSpeed * speedMultiplier, cap);
   }
 
   /**
@@ -397,23 +484,37 @@ export class CurrentFlowAnimationSystem {
    * Higher current = more charge carriers = more visible particles
    * This creates a denser "stream" of particles for higher currents
    */
-  private calculateParticleCount(pathLength: number, amps: number): number {
+  /**
+   * Stream density, copied from the main workspace (legacy.html):
+   *
+   *   dynamicCount = floor(I * (isMobile ? 24 : 42))
+   *   clamped to [11..28] on mobile, [18..50] on desktop
+   *
+   * The builder's floor is deliberately high — "a denser stream floor so even
+   * low-current circuits read as a continuous energized current rather than a
+   * few sparse dots". The old bounds here were [2..15], which is why the same
+   * circuit looked like a trickle of dots outside the builder.
+   *
+   * Path length is no longer a factor: the builder counts per wire segment, so
+   * a long rail and a short branch stub carrying the same current show the same
+   * carrier count. Density means current, not distance.
+   */
+  private calculateParticleCount(_pathLength: number, amps: number): number {
     const absAmps = Math.abs(amps);
 
     if (absAmps < CURRENT_FLOW_PHYSICS.ZERO_CURRENT_THRESHOLD) {
       return 0;
     }
 
-    // Get performance-adjusted limits for particle count
-    const limits = getParticleLimits();
+    const mobile = isMobile();
+    const floorCount = mobile ? 11 : 18;
+    const ceilCount = mobile ? 28 : 50;
+    const dynamicCount = Math.floor(absAmps * (mobile ? 24 : 42));
 
-    // Base count on path length and current magnitude
-    // Use square root scaling so particle density doesn't explode at high currents
-    const densityFactor = Math.sqrt(absAmps) * CURRENT_FLOW_PHYSICS.PARTICLES_PER_UNIT_LENGTH_PER_AMP;
-    const baseCount = Math.round(pathLength * densityFactor);
-
-    // Clamp to performance-adjusted bounds
-    return Math.min(limits.max, Math.max(limits.min, baseCount));
+    // Still respect the performance tier's ceiling on weak devices, but never
+    // let it drop the stream below the builder's continuity floor.
+    const tierMax = getParticleLimits().max;
+    return Math.max(floorCount, Math.min(Math.max(ceilCount, tierMax), Math.max(floorCount, dynamicCount)));
   }
 
   /**
@@ -660,7 +761,13 @@ export class CurrentFlowAnimationSystem {
       metalness: inResistorZone ? 0.92 : 0.3,
       roughness: inResistorZone ? 0.04 : 0.2,
       transparent: true,
-      opacity: appearance.opacity
+      opacity: appearance.opacity,
+      // Additive, copied from the builder: overlapping carriers ACCUMULATE
+      // brightness instead of occluding each other, which is what turns a row of
+      // dots into one continuous luminous stream. depthWrite off so the
+      // transparent spheres don't punch holes in geometry drawn after them.
+      blending: this.three.AdditiveBlending,
+      depthWrite: false
     });
     const mesh = new this.three.Mesh(geometry, material);
     mesh.position.set(particle.position.x, 0.2, particle.position.z);
@@ -682,17 +789,45 @@ export class CurrentFlowAnimationSystem {
     const glow = new this.three.Mesh(glowGeometry, glowMaterial);
     glow.name = "glow";
     glow.scale.setScalar(inResistorZone ? 2.6 : 1.9);
+    glowMaterial.blending = this.three.AdditiveBlending;
+    glowMaterial.depthWrite = false;
     mesh.add(glow);
+
+    // ── Additive bloom halo (fake-bloom) ──────────────────────────────────
+    // Copied from the builder. The shaded sphere above is the carrier; THIS is
+    // what makes it luminous. Scale is the builder's particleSize * 7.5,
+    // expressed relative to this mesh's unit geometry.
+    const bloomTexture = getElectronGlowTexture(this.three);
+    if (bloomTexture) {
+      const bloom = new this.three.Sprite(
+        new this.three.SpriteMaterial({
+          map: bloomTexture,
+          color: colors.core,
+          transparent: true,
+          opacity: 0.375,
+          blending: this.three.AdditiveBlending,
+          depthWrite: false
+        })
+      );
+      bloom.name = "bloom";
+      bloom.scale.setScalar(7.5);
+      bloom.frustumCulled = false;
+      mesh.add(bloom);
+    }
 
     // Add a comet tail (stacked translucent spheres that trail behind)
     const tailGroup = new this.three.Group();
     tailGroup.name = "tail";
+    // Head and trail are BOTH the carrier's own flow colour — the tail is the
+    // same current, so it cannot be a different colour. It previously blended
+    // toward the brand green/positive and blue/negative accents, which put a
+    // green-to-blue gradient on every particle and contradicted the spectrum.
     const tailHeadColor = inResistorZone
       ? lerpColor(colors.glow, 0xffffff, 0.5)
-      : lerpColor(colors.glow, BRAND_FLOW_COLORS.positive, 0.3);
+      : lerpColor(colors.glow, 0xffffff, 0.3);
     const tailTrailColor = inResistorZone
       ? lerpColor(colors.core, 0x88aaff, 0.4)
-      : lerpColor(colors.glow, BRAND_FLOW_COLORS.negative, 0.6);
+      : colors.core;
 
     for (let i = 0; i < COMET_TAIL.segments; i++) {
       const t = i / Math.max(COMET_TAIL.segments - 1, 1); // 0..1
@@ -757,11 +892,18 @@ export class CurrentFlowAnimationSystem {
         glow.scale.setScalar(1.9);
       }
 
+      const bloom = mesh.children.find((child: any) => child?.name === "bloom");
+      if (bloom?.material) {
+        bloom.material.color.setHex(colors.core);
+      }
+
       const tail = mesh.children.find((child: any) => child?.name === "tail");
       if (tail) {
         const COMET_TAIL = getCometTailConfig();
-        const tailHeadColor = lerpColor(colors.glow, BRAND_FLOW_COLORS.positive, 0.3);
-        const tailTrailColor = lerpColor(colors.glow, BRAND_FLOW_COLORS.negative, 0.6);
+        // Same rule as createParticleMesh: the tail is the carrier's own flow
+        // colour, never a brand accent.
+        const tailHeadColor = lerpColor(colors.glow, 0xffffff, 0.3);
+        const tailTrailColor = colors.core;
         const tailChildCount = tail.children?.length || 0;
         tail.children?.forEach?.((seg: any, index: number) => {
           if (!seg?.material) return;
