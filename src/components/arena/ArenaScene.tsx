@@ -911,18 +911,25 @@ const NAMEPLATE_ANCHOR_Y = CIRCUIT_RAIL_Y + 2.5;
 const NAMEPLATE_GAP_PX = 4;
 
 /**
- * Extra height per part, so no two nameplates hang at the same altitude.
+ * Minimum clear space between two stacked nameplates, px.
  *
- * Every plate used to anchor at exactly `NAMEPLATE_ANCHOR_Y`. The parts are
- * spread along the rails, which separates the plates fine while you are looking
- * across the board — but orbit until the rails point at the camera and every
- * part projects to nearly the same screen position, so the plates stacked
- * exactly on top of one another and became unreadable.
+ * Plates used to be separated by lifting each part's anchor in WORLD space. That
+ * could not work: a fixed world offset projects to a different number of pixels
+ * at every camera distance and angle, so it was either invisible (plates still
+ * overlapping) or enormous (plates floating so far above the board they no
+ * longer read as belonging to any particular part). It also lifted plates that
+ * were never in danger of colliding.
  *
- * Staggering the ANCHOR fixes it in world space, which means it holds at every
- * camera angle. Screen-space collision resolution would fight the orbit forever.
+ * Overlap is a SCREEN problem, so it is solved in screen space: every plate
+ * anchors directly over its own part, and only the ones that actually collide
+ * get stepped up, by exactly the amount needed to clear. The pass is stateless —
+ * it re-derives the whole stack from the current projection each frame, so the
+ * same camera always yields the same layout and there is nothing to oscillate.
  */
-const NAMEPLATE_STAGGER_Y = 0.66;
+const NAMEPLATE_STACK_GAP_PX = 5;
+
+/** Horizontal slack before two plates count as sharing a column. */
+const NAMEPLATE_COLUMN_PAD_PX = 4;
 
 /**
  * Height to keep clear at the bottom of the scene, px. The collapsed bench bar
@@ -2602,6 +2609,22 @@ export function ArenaScene({
       resizeObserver.observe(root);
 
       const tempVector = new THREE.Vector3();
+      /**
+       * Scratch list for the nameplate stacking pass. Declared out here and
+       * emptied at the end of each frame rather than allocated inside the
+       * animate loop — this runs 60 times a second.
+       */
+      /** Lazily-cached W.I.R.E. strip nodes — see the readout block below. */
+      let wireEls: Record<"w" | "i" | "r" | "e", HTMLElement | null> | null =
+        null;
+      const plateLayout: {
+        element: HTMLElement;
+        x: number;
+        bottom: number;
+        width: number;
+        height: number;
+        visible: boolean;
+      }[] = [];
       // Reusable target for the panel-open preview: a slow cinematic sway that
       // keeps the framed hero shot feeling alive without handing over control.
       const previewDrift = new THREE.Vector3();
@@ -2830,25 +2853,32 @@ export function ArenaScene({
         // Auto-ranged: a bench reading "0.019 A" then "0.000 A" tells you
         // nothing, where "19 mA" then "0 mA" reads at a glance. Each tile skips
         // its redraw when the text is unchanged, so a steady bench is free.
-        if (readoutUpdaters) {
-          readoutUpdaters.w?.(
+        //
+        // Formatted ONCE and fed to both readouts. The lit tiles on the panel
+        // and the text strip under it are the same four circuit totals, so a
+        // second copy of this auto-ranging would eventually drift and show the
+        // bench two different currents.
+        const wireText = {
+          w:
             benchWatts >= 1
               ? `${benchWatts.toFixed(2)} W`
               : `${(benchWatts * 1000).toFixed(0)} mW`,
-          );
-          readoutUpdaters.i?.(
+          i:
             benchAmps >= 1
               ? `${benchAmps.toFixed(2)} A`
               : `${(benchAmps * 1000).toFixed(0)} mA`,
-          );
-          readoutUpdaters.r?.(
-            !Number.isFinite(benchOhms)
-              ? "∞ Ω"
-              : benchOhms >= 1000
-                ? `${(benchOhms / 1000).toFixed(1)} kΩ`
-                : `${benchOhms.toFixed(0)} Ω`,
-          );
-          readoutUpdaters.e?.(`${benchVolts.toFixed(1)} V`);
+          r: !Number.isFinite(benchOhms)
+            ? "∞ Ω"
+            : benchOhms >= 1000
+              ? `${(benchOhms / 1000).toFixed(1)} kΩ`
+              : `${benchOhms.toFixed(0)} Ω`,
+          e: `${benchVolts.toFixed(1)} V`,
+        };
+        if (readoutUpdaters) {
+          readoutUpdaters.w?.(wireText.w);
+          readoutUpdaters.i?.(wireText.i);
+          readoutUpdaters.r?.(wireText.r);
+          readoutUpdaters.e?.(wireText.e);
         }
 
         const ratedMax = stressMaxRef.current ?? 3;
@@ -2885,7 +2915,25 @@ export function ArenaScene({
           // every child — mixing the raw constant in here would offset every
           // indicator by (1 - scale) × the centre.
           const target = panelColumnCenterZ + (1 - t * 2) * panelTrackHalfZ;
-          column.handle.position.z += (target - column.handle.position.z) * 0.16;
+
+          // The handle under your finger is NOT smoothed. Easing a control you
+          // are physically touching is the thing that makes it feel unresponsive
+          // — the cap visibly trails the finger, and on a phone that reads as
+          // the app being slow rather than as weight. A real fader is a solid
+          // object: it is exactly where you are holding it.
+          if (column.fader && column.fader === draggingFader) {
+            column.handle.position.z = target;
+            continue;
+          }
+
+          // Everything else still eases: the two GAUGES are solver output, which
+          // steps whenever a branch opens, and an instrument needle that
+          // teleports reads as a glitch. Time-based rather than per-frame, so
+          // the damping feels identical at 60 and 120 fps instead of being
+          // twice as fast on a better phone.
+          const ease = 1 - Math.exp(-frameDelta * 0.014);
+          column.handle.position.z +=
+            (target - column.handle.position.z) * ease;
         }
 
         // The readout. Both values in ONE floating block anchored above the
@@ -2942,6 +2990,30 @@ export function ArenaScene({
               seriesOhms >= 1000
                 ? `${(seriesOhms / 1000).toFixed(2)} kΩ`
                 : `${seriesOhms.toFixed(0)} Ω`;
+          }
+
+          // The circuit's own four totals, in crisp DOM text. The lit tiles on
+          // the panel carry the same figures, but they are canvas textures on a
+          // small object twenty units from the camera — legible as instruments,
+          // not as numbers you can actually read on a phone. These are.
+          // Cached on first use: querying four nodes every frame, forever, to
+          // re-find markup that never changes is pure waste.
+          if (!wireEls) {
+            wireEls = {
+              w: dialLabel.querySelector<HTMLElement>("[data-wire='w']"),
+              i: dialLabel.querySelector<HTMLElement>("[data-wire='i']"),
+              r: dialLabel.querySelector<HTMLElement>("[data-wire='r']"),
+              e: dialLabel.querySelector<HTMLElement>("[data-wire='e']"),
+            };
+          }
+          for (const key of ["w", "i", "r", "e"] as const) {
+            const element = wireEls[key];
+            const next = wireText[key];
+            // Only touch the DOM when the string actually changed — a steady
+            // bench should cost nothing.
+            if (element && element.textContent !== next) {
+              element.textContent = next;
+            }
           }
         }
 
@@ -3385,12 +3457,9 @@ export function ArenaScene({
           // Anchor the floating metric nameplate to the part's STABLE seat, not its
           // live (jittering) group position — so the component shakes under stress
           // but its readout stays put and legible.
-          // Staggered per seat so plates never share an altitude — see
-          // NAMEPLATE_STAGGER_Y. Centred on the roster so a full bench fans
-          // evenly above the board instead of climbing off the top of frame.
-          const stagger =
-            (seatIndex - (agentsRef.current.length - 1) / 2) * NAMEPLATE_STAGGER_Y;
-          tempVector.set(seatX, NAMEPLATE_ANCHOR_Y + stagger, seatZ);
+          // Every plate anchors over its OWN part; separation is resolved in
+          // screen space once all of them have been projected, below.
+          tempVector.set(seatX, NAMEPLATE_ANCHOR_Y, seatZ);
           tempVector.project(camera);
 
           const rawX = (tempVector.x * 0.5 + 0.5) * root.clientWidth;
@@ -3413,9 +3482,59 @@ export function ArenaScene({
           const highest = plateH + NAMEPLATE_GAP_PX + 6;
           const y = Math.min(Math.max(rawY, highest), lowest);
           healthBar.style.opacity = isVisible ? "1" : "0";
-          healthBar.style.transform =
-            `translate3d(${x}px, ${y - NAMEPLATE_GAP_PX}px, 0) translate(-50%, -100%)`;
+          // Collected rather than written: a plate cannot know whether it
+          // overlaps another until every plate has been projected. The stack is
+          // resolved once, after this loop.
+          plateLayout.push({
+            element: healthBar,
+            x,
+            bottom: y - NAMEPLATE_GAP_PX,
+            width: plateW,
+            height: plateH,
+            visible: isVisible,
+          });
         });
+
+        // ── Step overlapping nameplates apart ──────────────────────────────
+        // Lowest plate on screen keeps its place and everything that collides
+        // with it climbs, so the stack grows AWAY from the board and no plate
+        // is pushed down over the parts. Only plates sharing a column move:
+        // two plates side by side are already readable and lifting them would
+        // just break the link between a readout and the part it belongs to.
+        plateLayout.sort((a, b) => b.bottom - a.bottom);
+        for (let i = 1; i < plateLayout.length; i += 1) {
+          const plate = plateLayout[i]!;
+          if (!plate.visible) {
+            continue;
+          }
+          for (let j = 0; j < i; j += 1) {
+            const placed = plateLayout[j]!;
+            if (!placed.visible) {
+              continue;
+            }
+            const columnGap =
+              (plate.width + placed.width) / 2 + NAMEPLATE_COLUMN_PAD_PX;
+            if (Math.abs(plate.x - placed.x) >= columnGap) {
+              continue; // side by side — no collision to resolve
+            }
+            const placedTop = placed.bottom - placed.height;
+            const overlaps =
+              plate.bottom > placedTop - NAMEPLATE_STACK_GAP_PX &&
+              plate.bottom - plate.height < placed.bottom;
+            if (overlaps) {
+              plate.bottom = placedTop - NAMEPLATE_STACK_GAP_PX;
+            }
+          }
+          // Never let the stack climb out of frame: the topmost plate stops at
+          // the top edge rather than silently leaving the screen.
+          plate.bottom = Math.max(plate.bottom, plate.height + 6);
+        }
+
+        for (const plate of plateLayout) {
+          plate.element.style.transform =
+            `translate3d(${plate.x}px, ${plate.bottom}px, 0) translate(-50%, -100%)`;
+        }
+        plateLayout.length = 0;
 
         if (
           !workspaceModeRef.current &&
@@ -3505,12 +3624,46 @@ export function ArenaScene({
         to say "of what" or "2.40×" means nothing.
       */}
       {/*
-        What the two faders are set to, and what each is OUT OF — a bare number
-        is not a metric. The bench's four live W.I.R.E. figures are NOT here:
-        they are lit displays built into the dashboard itself, beside the
-        controls, where an instrument carries its own screens.
+        The bench's own instrument block: what the circuit IS doing on top, what
+        the controls are SET to underneath.
+
+        The four live figures used to live only as lit displays on the dashboard
+        itself. That is the right place for them on a real instrument, and they
+        are still there — but they are canvas textures on a small object twenty
+        units from the camera, so on a phone they read as "this thing has
+        screens" rather than as numbers. The totals are the whole point of a
+        bench, so they also get crisp DOM text here.
       */}
       <div ref={dialLabelRef} className="arena-dial-label">
+        {/* Colour IS the label — the same ct-term-* coding used everywhere else
+            in the app — so the letter can stay tiny and the value gets the
+            weight. These are CIRCUIT TOTALS, not any one part's numbers. */}
+        <span className="arena-wire-strip">
+          <span className="arena-wire-cell">
+            <i className="ct-term-power">W</i>
+            <b className="ct-term-power" data-wire="w">
+              0 mW
+            </b>
+          </span>
+          <span className="arena-wire-cell">
+            <i className="ct-term-current">I</i>
+            <b className="ct-term-current" data-wire="i">
+              0 mA
+            </b>
+          </span>
+          <span className="arena-wire-cell">
+            <i className="ct-term-resistance">R</i>
+            <b className="ct-term-resistance" data-wire="r">
+              0 Ω
+            </b>
+          </span>
+          <span className="arena-wire-cell">
+            <i className="ct-term-voltage">E</i>
+            <b className="ct-term-voltage" data-wire="e">
+              0.0 V
+            </b>
+          </span>
+        </span>
         {/* Only the series resistance. The supply's volts used to be here too,
             but that is the SAME number the E tile on the panel already shows
             (both are nominal × load) — printing it twice just gave the scene
