@@ -74,6 +74,8 @@ type Bolt = {
   waveFreq: number;
   phase: number;
   baseOpacity: number;
+  /** Optional group name, so a caller can dim a subset — see `setFade`. */
+  tag?: string;
   crackleAt: number;
   crackleEnd: number;
   crackleBoost: number;
@@ -87,6 +89,19 @@ export class LightningFlowSystem {
   private bolts: Bolt[] = [];
   /** Set false while the switch is open, so geometry survives but nothing shows. */
   private visible = true;
+  /** Per-tag dimming, 0 = full strength, 1 = invisible. See `setFade`. */
+  private fades = new Map<string, number>();
+
+  /**
+   * Dim every bolt carrying `tag`, 0 → 1.
+   *
+   * Used to pull the current back inside a component as that component starts
+   * to react, so the scorching and incandescence win the pixels rather than
+   * competing with a bolt drawn straight through the body.
+   */
+  public setFade(tag: string, fade: number): void {
+    this.fades.set(tag, Math.max(0, Math.min(1, fade)));
+  }
 
   constructor(three: any, parentGroup: any) {
     this.three = three;
@@ -117,6 +132,16 @@ export class LightningFlowSystem {
       drawThrough?: boolean;
       /** Scales tube radius — a thinner filament reads better inside a body. */
       radiusScale?: number;
+      /**
+       * Groups this bolt under a name that `setFade` can dim later.
+       *
+       * The span running through a component is the one place the current
+       * competes with the thing it is causing: the part's own scorching and
+       * incandescence. Tagging that span lets the caller pull it back as the
+       * part reacts, so early on you watch current arrive, and once the part is
+       * in trouble you watch the PART.
+       */
+      tag?: string;
     } = {},
   ): void {
     const THREE = this.three;
@@ -233,6 +258,7 @@ export class LightningFlowSystem {
           travel: (directionMul >= 0 ? 1 : -1) * (1.0 + energy * 1.8),
           waveFreq: LIGHTNING_WAVE_FREQ * (0.75 + energy * 0.4) * (1 + s * 0.09),
           phase: Math.random() * Math.PI * 2 + s * 1.9,
+          tag: options.tag,
           baseOpacity: Math.min(1, 0.45 + energy * 0.4),
           crackleAt: 0,
           crackleEnd: 0,
@@ -301,7 +327,11 @@ export class LightningFlowSystem {
         }
       }
       L.geom.attributes.position.needsUpdate = true;
-      L.mat.opacity = Math.min(1, L.baseOpacity * (crackling ? 1.5 : 1));
+      // Tagged bolts can be pulled back by the caller — the span inside a
+      // component gives way to that component's own reaction.
+      const fade = L.tag ? (this.fades.get(L.tag) ?? 0) : 0;
+      L.mat.opacity =
+        Math.min(1, L.baseOpacity * (crackling ? 1.5 : 1)) * (1 - fade);
     }
   }
 

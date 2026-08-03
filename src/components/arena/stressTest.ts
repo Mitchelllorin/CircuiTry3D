@@ -52,6 +52,17 @@ export type StressOutcome = {
   failed: boolean;
   failureName: string | null;
   failureVisual: string | null;
+  /**
+   * F.U.S.E.'s own narrative of what is happening inside the part.
+   *
+   * The engine has always returned this and the arena has always thrown it
+   * away, which meant a part could die on screen with no explanation of why.
+   * It is the whole reason F.U.S.E. is a simulation engine and not a
+   * failure-threshold check.
+   */
+  failureDescription: string | null;
+  /** The physics family F.U.S.E. resolved the part to, e.g. "resistive". */
+  failureFamily: string | null;
   /** Instantaneous dissipation at this tick, W — used to integrate energy. */
   powerW: number;
 };
@@ -188,6 +199,8 @@ export function evaluateStress(
     failed: severity >= 2,
     failureName: result.name,
     failureVisual: result.visual,
+    failureDescription: result.description,
+    failureFamily: result.family,
     powerW: instantaneousPower,
   };
 }

@@ -259,6 +259,8 @@ export function buildArenaRoster(
       phase: "nominal",
       failureName: null,
       failureVisual: null,
+      failureDescription: null,
+      failureFamily: null,
 
       // accumulated metrics — reset at the start of every run
       peakTempC: AMBIENT_C,

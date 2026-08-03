@@ -98,11 +98,123 @@
   opacity: 0.85;
 }
 
+/* ── The F.U.S.E.™ failure readout ──────────────────────────────────────────
+   Appears when a part dies, and says why. NO card, NO panel — floating text
+   over the 3D, exactly like the nameplates and the main builder's component
+   labels. It describes a failure that is happening right behind it, so a
+   background slab would hide the very thing it is narrating; a tight
+   text-shadow carries legibility against the dark dome instead.
+
+   Sits above the F.U.S.E. watermark, not merely above the bench bar: the mark
+   starts at 72px and stands ~20px tall (two lines), so anything bottoming out
+   below ~92px lands right on top of it. */
+.arena-fuse-card {
+  position: absolute;
+  inset-block-end: 104px;
+  inset-inline: 10px;
+  margin-inline: auto;
+  max-inline-size: 420px;
+  z-index: 6;
+  padding: 1px 3px;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  text-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.92),
+    0 0 2px rgba(0, 0, 0, 0.85);
+  animation: arena-fuse-card-in 220ms ease-out;
+}
+@keyframes arena-fuse-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+.arena-fuse-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.arena-fuse-card__mark {
+  font-size: 0.5rem;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  color: rgba(255, 153, 68, 0.9);
+}
+.arena-fuse-card__close {
+  flex: none;
+  padding: 0 4px;
+  border: none;
+  background: transparent;
+  color: rgba(226, 235, 247, 0.6);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.arena-fuse-card__title {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 3px 8px;
+  margin-block-start: 2px;
+}
+.arena-fuse-card__title b {
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+.arena-fuse-card__mode {
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  color: #fca5a5;
+  text-transform: uppercase;
+}
+.arena-fuse-card__why {
+  margin-block: 4px 0;
+  font-size: 0.7rem;
+  line-height: 1.4;
+  color: rgba(226, 235, 247, 0.86);
+}
+/* The conditions at the moment it let go. Every figure carries what it is
+   measured AGAINST — a bare "187°C" is not a finding. */
+.arena-fuse-card__facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 14px;
+  margin-block-start: 6px;
+  font-variant-numeric: tabular-nums;
+}
+.arena-fuse-card__facts span {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+}
+.arena-fuse-card__facts i {
+  font-style: normal;
+  font-size: 0.55rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.arena-fuse-card__facts b {
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+.arena-fuse-card__facts em {
+  font-style: normal;
+  font-size: 0.58rem;
+  color: rgba(226, 235, 247, 0.6);
+}
+
 /* Live instrument nameplate that floats above each component in the 3D scene. */
 .arena-nameplate {
   position: absolute;
   min-inline-size: 0;
-  max-inline-size: 180px;
+  /* Narrower than it was (180px). With a full roster these plates are the
+     densest thing on screen, and a wide plate collides with its neighbours long
+     before a narrow one does. */
+  max-inline-size: 138px;
   padding: 1px 3px;
   /* NO panel — float the readout directly over the 3D like the main builder's
      component labels. A tight text-shadow carries legibility against the dark
@@ -158,6 +270,9 @@
   align-items: center;
   gap: 1px;
   padding: 1px 3px;
+  /* Bounded so the strip wraps instead of spilling past the scene edges and
+     over the corner watermark on a portrait phone. */
+  max-inline-size: min(88vw, 26rem);
   border: none;
   background: transparent;
   box-shadow: none;
@@ -183,14 +298,47 @@
   color: rgba(226, 235, 247, 0.82);
   letter-spacing: 0.02em;
 }
-/* One row per fader: what it is, what it is set to, and what that is out of.
-   Laid out as a row so the two rows' values line up under each other and the
-   block reads as an instrument rather than three loose lines. */
+/* The bench's four live W.I.R.E. figures, in one compact strip. Colour IS the
+   label here — the same ct-term-* coding used everywhere else in the app — so
+   the single letter can stay tiny and the value gets the weight. */
+.arena-wire-strip {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.2em 0.7em;
+  /* Wraps to 2x2 on a portrait phone rather than running off the side of the
+     scene and across the F.U.S.E. watermark in the corner. */
+  flex-wrap: wrap;
+}
+.arena-wire-cell {
+  display: flex;
+  align-items: baseline;
+  gap: 0.22em;
+}
+.arena-wire-cell i {
+  font-style: normal;
+  font-size: 0.6rem;
+  font-weight: 700;
+  opacity: 0.75;
+}
+.arena-wire-cell b {
+  font-size: 0.92rem;
+  font-weight: 700;
+  line-height: 1.1;
+  /* Fixed width so values changing magnitude do not shuffle the strip
+     sideways while a test is ramping. */
+  min-inline-size: 3.6em;
+  text-align: start;
+}
+
+/* The fader settings, under the live figures: what each control is set to and
+   what that is OUT OF. One row, so the dashboard stays compact. */
 .arena-supply-row {
   display: flex;
   align-items: baseline;
-  gap: 0.4em;
-  white-space: nowrap;
+  justify-content: center;
+  gap: 0.15em 0.35em;
+  flex-wrap: wrap;
 }
 .arena-supply-row__name {
   font-size: 0.58rem;
@@ -199,12 +347,12 @@
   opacity: 0.85;
 }
 .arena-supply-row__value {
-  font-size: 0.98rem;
+  font-size: 0.72rem;
   font-weight: 700;
   line-height: 1.15;
   /* Fixed width so a value changing from 9.9 V to 10.0 V does not shove the
      reference text sideways while you are dragging. */
-  min-inline-size: 4.2em;
+  min-inline-size: 3.1em;
   text-align: start;
 }
 .arena-supply-row__ref {
@@ -221,16 +369,6 @@
   color: rgba(226, 235, 247, 0.55);
   letter-spacing: 0.06em;
   text-transform: uppercase;
-}
-
-/* The switch's hint. Brighter than the dial's, and tinted to its halo, because
-   this is the one control that starts the whole test — it has to be the thing
-   you notice first. Still no slab. */
-.arena-dial-label--switch .arena-dial-label__hint {
-  font-size: 0.68rem;
-  font-weight: 700;
-  color: rgba(125, 211, 252, 0.95);
-  letter-spacing: 0.12em;
 }
 
 .arena-nameplate.is-defeated {
@@ -255,7 +393,7 @@
   margin-block-end: 5px;
 }
 .arena-nameplate__name {
-  font-size: 0.92rem;
+  font-size: 0.74rem;
   font-weight: 800;
   letter-spacing: 0.02em;
   white-space: nowrap;
@@ -264,7 +402,7 @@
 }
 .arena-nameplate__status {
   flex: none;
-  font-size: 0.64rem;
+  font-size: 0.55rem;
   font-weight: 800;
   letter-spacing: 0.07em;
   color: var(--arena-muted);
@@ -349,8 +487,9 @@
 .arena-nameplate__wire {
   display: flex;
   flex-wrap: wrap;
-  gap: 2px 8px;
-  margin-block-start: 3px;
+  gap: 1px 6px;
+  margin-block-start: 2px;
+  font-size: 0.78rem;
   font-variant-numeric: tabular-nums;
 }
 .arena-nameplate__wire .ct-term {

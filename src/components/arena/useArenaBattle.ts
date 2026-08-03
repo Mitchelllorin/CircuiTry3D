@@ -182,6 +182,8 @@ function step(prev: ArenaBattleState): ArenaBattleState {
       phase: out.phase,
       failureName: out.failureName ?? agent.failureName,
       failureVisual: out.failureVisual ?? agent.failureVisual,
+      failureDescription: out.failureDescription ?? agent.failureDescription,
+      failureFamily: out.failureFamily ?? agent.failureFamily,
       // accumulate performance metrics across the run
       peakTempC: Math.max(agent.peakTempC, out.tempC),
       peakLoadPercent: Math.max(agent.peakLoadPercent, out.loadPercent),

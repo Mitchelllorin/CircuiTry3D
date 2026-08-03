@@ -114,6 +114,10 @@ export type ArenaBattleAgent = {
   failureName: string | null;
   /** F.U.S.E. visual key for the failure effect (char/melt/arc/burst/…). */
   failureVisual: string | null;
+  /** F.U.S.E.'s physics narrative of what happened inside the part. */
+  failureDescription: string | null;
+  /** The physics family F.U.S.E. resolved the part to. */
+  failureFamily: string | null;
 
   // ── accumulated performance metrics, carried across the whole run ──
   /** Hottest body temperature reached, °C. */

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getComponent3D } from "../circuit/Component3DLibrary";
 import { CurrentFlowAnimationSystem } from "../../schematic/currentFlowAnimation";
 import { LightningFlowSystem } from "../../schematic/lightningFlow";
@@ -766,21 +766,25 @@ function createWire(
 }
 
 /**
- * The supply panel's two faders.
+ * The dashboard is four COLUMNS, one per W.I.R.E. quantity, each with its
+ * readout at the bottom and a vertical control or gauge standing above it.
  *
- * These replace the single rotary load dial. A knob and a thumb disagree:
- * turning a circle twenty units from the camera is not a gesture a phone can do
- * precisely, while sliding along a track is the one drag a thumb is genuinely
- * good at. They also let the bench say what it actually has — a supply voltage
- * and a series resistance — rather than one abstract "load" multiple standing in
- * for both. Both are real to the solver.
- *
- * Tracks run along the panel's X and are stacked in Z, so the brand mark sits
- * between them.
+ * The two faders replaced the old rotary load dial: a knob and a thumb disagree,
+ * because turning a circle twenty units from the camera is not a gesture a phone
+ * can do precisely. They run up and down rather than side to side so each one
+ * sits directly above the metric it moves — the E fader over the E display, the
+ * series-R fader over R — and W and I get gauges of the same shape, because they
+ * are the two quantities you cannot set, only watch. The panel reads as one
+ * instrument rather than as controls in one place and numbers in another.
  */
-const FADER_TRACK_HALF = 1.55;
-/** Half the gap between the two tracks — the CT3D mark lives in it. */
-const FADER_Z = 1.02;
+/** Half the X span across which the four columns are spread. */
+const PANEL_SPAN_HALF = 1.5;
+/** Half the Z travel of each vertical track. */
+const FADER_TRACK_HALF = 0.6;
+/** Centre of the column band, in the panel's Z. */
+const COLUMN_CENTER_Z = -0.15;
+/** Where the row of lit displays sits — the panel's front edge, facing you. */
+const TILE_ROW_Z = 0.92;
 
 /**
  * Width of the bay on the right of the faceplate that carries the switch.
@@ -792,29 +796,82 @@ const FADER_Z = 1.02;
  * its series resistance. Electrically nothing is lost — it still gates the whole
  * bench, because an open supply switch means no current anywhere.
  */
-const SWITCH_BAY = 2.2;
+const SWITCH_BAY = 1.5;
+
+/** Lever angle with the switch open (off) and thrown closed (running). */
+const SWITCH_ROT_OPEN = 0.42;
+const SWITCH_ROT_CLOSED = -0.72;
+/**
+ * How long one throw takes, ms.
+ *
+ * 420, not the 240 this started at. The heaviness of a toggle is carried by the
+ * CONTRAST between a slow wind-up and a fast snap — and at 240ms the wind-up was
+ * about six frames, which the eye reads as an instant jump with no weight at
+ * all. Stretching the resist while keeping the snap short is what makes it a
+ * throw rather than a state change.
+ */
+const SWITCH_THROW_MS = 420;
+
+/**
+ * The "ka-chunk" curve: progress along the throw, 0 → 1, given normalised time.
+ *
+ * Three acts, because that is what a heavy over-centre toggle actually does:
+ *  1. **Resist** — over half the DURATION covering a sixth of the TRAVEL. This
+ *     lopsidedness is the whole trick: it is what apparent mass looks like.
+ *  2. **Go over** — past the tipping point the spring takes it, and it crosses
+ *     the remaining five sixths in a quarter of the time, OVERSHOOTING its stop
+ *     rather than creeping up to it.
+ *  3. **Land** — a damped bounce as it rings down onto the stop.
+ *
+ * A symmetric ease would read as a servo. The asymmetry IS the mechanism.
+ */
+function kaChunk(t: number): number {
+  if (t < 0.52) {
+    const u = t / 0.52;
+    return 0.16 * u * u * u;
+  }
+  if (t < 0.8) {
+    const u = (t - 0.52) / 0.28;
+    // Decelerating into the stop, overshooting past it to 1.10.
+    return 0.16 + (1.1 - 0.16) * (1 - (1 - u) * (1 - u));
+  }
+  const u = (t - 0.8) / 0.2;
+  // Rings down onto 1. Starts at exactly 1.10, so it joins act 2 seamlessly.
+  return 1 + 0.1 * Math.cos(u * Math.PI * 2.4) * (1 - u);
+}
 
 type SupplyFaderKey = "volts" | "ohms";
 
 /**
- * One fader's geometry, declared once and read by BOTH the builder and the drag
- * handler. Two copies of these numbers would let the handle you see and the
- * value you set drift apart.
+ * One dashboard column, declared once and read by the builder, the drag handler
+ * AND the render loop. Two copies of these numbers would let the handle you see
+ * and the value you set drift apart.
+ *
+ * `fader` marks the two you can drag. The other two are gauges: same silhouette,
+ * but their indicator is driven by the solve rather than by your thumb, so the
+ * panel never implies you can set a quantity that the circuit decides.
  */
-type SupplyFaderSpec = {
-  key: SupplyFaderKey;
-  z: number;
-  /** Accent colour — the W.I.R.E. coding, so the fader matches its own units. */
+type PanelColumn = {
+  key: "w" | "i" | "r" | "e";
+  letter: string;
+  /** W.I.R.E. coding (`ct-term-*`), so colour identifies the quantity. */
   color: string;
+  fader?: SupplyFaderKey;
 };
 
-const SUPPLY_FADERS: SupplyFaderSpec[] = [
-  // Voltage red and resistance green: the same coding the readouts and the
-  // tutorial copy use (`ct-term-*`), so a fader's colour already tells you what
-  // quantity it moves before you read a word.
-  { key: "volts", z: -FADER_Z, color: "#ff4444" },
-  { key: "ohms", z: FADER_Z, color: "#00cc66" },
+/** Left to right: W I R E, the mnemonic the whole app teaches. */
+const PANEL_COLUMNS: PanelColumn[] = [
+  { key: "w", letter: "W", color: "#4a90ff" },
+  { key: "i", letter: "I", color: "#ffd633" },
+  { key: "r", letter: "R", color: "#00cc66", fader: "ohms" },
+  { key: "e", letter: "E", color: "#ff4444", fader: "volts" },
 ];
+
+/** X centre of column `index`, in the panel's own space. */
+function columnX(index: number): number {
+  const step = (PANEL_SPAN_HALF * 2) / PANEL_COLUMNS.length;
+  return -PANEL_SPAN_HALF + step * (index + 0.5);
+}
 
 /**
  * The CT3D wordmark's per-letter colours, matching `.circuitry-wordmark__*` in
@@ -854,6 +911,20 @@ const NAMEPLATE_ANCHOR_Y = CIRCUIT_RAIL_Y + 2.5;
 const NAMEPLATE_GAP_PX = 4;
 
 /**
+ * Extra height per part, so no two nameplates hang at the same altitude.
+ *
+ * Every plate used to anchor at exactly `NAMEPLATE_ANCHOR_Y`. The parts are
+ * spread along the rails, which separates the plates fine while you are looking
+ * across the board — but orbit until the rails point at the camera and every
+ * part projects to nearly the same screen position, so the plates stacked
+ * exactly on top of one another and became unreadable.
+ *
+ * Staggering the ANCHOR fixes it in world space, which means it holds at every
+ * camera angle. Screen-space collision resolution would fight the orbit forever.
+ */
+const NAMEPLATE_STAGGER_Y = 0.66;
+
+/**
  * Height to keep clear at the bottom of the scene, px. The collapsed bench bar
  * ("SOLO BENCH" / the load readout) is drawn OVER the canvas rather than beside
  * it, so anything anchored near the bottom edge disappears underneath it.
@@ -870,15 +941,28 @@ const BENCH_BAR_CLEARANCE_PX = 52;
  * lands in the foreground of the opening shot, runs parallel to the rails, and
  * faces the operator, which is where the controls on real gear live.
  */
-const SUPPLY_PANEL_OUTBOARD = 2.7;
+const SUPPLY_PANEL_OUTBOARD = 1.95;
 /**
  * The two controls are deliberately bigger than any component on the board.
  * They are the only things on the bench the user operates, and on a phone a
  * part-sized control seen from twenty units out is not a control — it is a
  * speck. Size is the first thing that says "this one is yours to touch".
  */
-const SUPPLY_PANEL_SCALE = 1.28;
-const SWITCH_SCALE = 1.75;
+/**
+ * Sized against the board, not by eye. A solo bench is 7.5 units wide
+ * (`circuitHalfX(1) * 2`), and the panel's own width is
+ * `2 * plateHalfX + SWITCH_BAY` = 5.1 before scaling — so at 1.28 the dashboard
+ * was 6.5 units, 87% of the circuit it serves, and read as the main event.
+ * At 0.75 it comes out around half the board's width: unmistakably a control
+ * panel attached to the bench rather than a second bench.
+ */
+const SUPPLY_PANEL_SCALE = 0.75;
+/**
+ * The switch has to FIT its bay: `SWITCH_BAY * SUPPLY_PANEL_SCALE` is 1.13
+ * units, and the toggle is about 0.9 wide at this scale, so it sits inside the
+ * bay instead of hanging off the end of the faceplate.
+ */
+const SWITCH_SCALE = 1.1;
 
 /**
  * A glowing ring on the floor under each control. This is what carries "this is
@@ -908,6 +992,235 @@ function createControlHalo(
   halo.name = "controlHalo";
   return halo;
 }
+/**
+ * One lit readout tile on the dashboard: a small self-illuminated display
+ * showing a single W.I.R.E. figure, the way a bench instrument carries its own
+ * little screen rather than reporting into a caption somewhere off to the side.
+ *
+ * Unlit material on purpose — a display EMITS, so the scene's lighting must not
+ * be able to dim it. The canvas is only redrawn when the text actually changes,
+ * so a steady bench costs nothing per frame.
+ */
+function createReadoutTile(
+  THREE: typeof import("three"),
+  letter: string,
+  color: string,
+): { mesh: import("three").Group; update: (value: string) => void } {
+  const group = new THREE.Group();
+
+  // Bezel — the recess the display sits in, so it reads as inset hardware
+  // rather than a decal printed on the faceplate.
+  const bezel = new THREE.Mesh(
+    new THREE.BoxGeometry(0.68, 0.07, 0.44),
+    new THREE.MeshStandardMaterial({
+      color: "#0b0f16",
+      metalness: 0.35,
+      roughness: 0.75,
+    }),
+  );
+  group.add(bezel);
+
+  const canvas = document.createElement("canvas");
+  canvas.width = 256;
+  canvas.height = 160;
+  const ctx = canvas.getContext("2d");
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.anisotropy = 4;
+
+  const face = new THREE.Mesh(
+    new THREE.PlaneGeometry(0.6, 0.38),
+    new THREE.MeshBasicMaterial({ map: texture, transparent: true }),
+  );
+  face.rotation.x = -Math.PI / 2;
+  face.position.y = 0.038;
+  group.add(face);
+
+  // A pinch of light spilling out of the display, tinted to its own metric.
+  // This is what sells "lit up" rather than "printed".
+  const spill = new THREE.PointLight(color, 0.5, 1.1, 2);
+  spill.position.y = 0.22;
+  group.add(spill);
+
+  let lastValue: string | null = null;
+  const update = (value: string) => {
+    if (!ctx || value === lastValue) {
+      return;
+    }
+    lastValue = value;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // Display glass.
+    ctx.fillStyle = "#05080d";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    // The metric's letter, small and top-left the way a panel legend sits.
+    ctx.font = "bold 34px system-ui, -apple-system, 'Segoe UI', sans-serif";
+    ctx.textAlign = "left";
+    ctx.textBaseline = "top";
+    ctx.fillStyle = color;
+    ctx.globalAlpha = 0.7;
+    ctx.fillText(letter, 10, 4);
+    ctx.globalAlpha = 1;
+    // The value, as big as the glass allows — this is the thing being read, and
+    // the tile is only a few dozen pixels across on a phone. Condensed to fit
+    // rather than clipped, so "172 mW" and "1.24 kΩ" both stay whole.
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 20;
+    ctx.fillStyle = color;
+    let size = 74;
+    do {
+      ctx.font = `bold ${size}px system-ui, -apple-system, 'Segoe UI', sans-serif`;
+      size -= 4;
+    } while (size > 34 && ctx.measureText(value).width > canvas.width - 16);
+    ctx.fillText(value, canvas.width / 2, canvas.height / 2 + 26);
+    ctx.shadowBlur = 0;
+    texture.needsUpdate = true;
+  };
+  update("--");
+
+  return { mesh: group, update };
+}
+
+/**
+ * The bench's power toggle: a heavy panel switch, built rather than borrowed.
+ *
+ * The library's switch is a small part meant to sit in a circuit among other
+ * parts. This one is the single control that starts the test, and it has to LOOK
+ * like something you throw — no motion curve fully compensates for a lever that
+ * reads as weightless. Old-style mechanism, modern build: a machined bezel, a
+ * long lever on a visible pivot pin, and a knurled grip.
+ *
+ * The lever is a child group named "switchLever" pivoting about X, which is the
+ * contract the render loop's `kaChunk` throw drives.
+ */
+function createPanelToggle(THREE: typeof import("three")): import("three").Group {
+  const group = new THREE.Group();
+
+  const steel = new THREE.MeshStandardMaterial({
+    color: "#9aa7b8",
+    metalness: 0.85,
+    roughness: 0.28,
+  });
+  const darkSteel = new THREE.MeshStandardMaterial({
+    color: "#5c6879",
+    metalness: 0.8,
+    roughness: 0.34,
+  });
+  const housing = new THREE.MeshStandardMaterial({
+    color: "#1b222d",
+    metalness: 0.35,
+    roughness: 0.7,
+  });
+
+  // Machined bezel — a chamfered collar sunk into the panel. This is most of
+  // what says "modern hardware" rather than "period prop".
+  const bezel = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.4, 0.46, 0.1, 28),
+    steel,
+  );
+  bezel.position.y = CIRCUIT_RAIL_Y + 0.02;
+  group.add(bezel);
+
+  // The body below it, matte and dark so the bezel reads as the machined face.
+  const body = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.34, 0.38, 0.16, 24),
+    housing,
+  );
+  body.position.y = CIRCUIT_RAIL_Y - 0.05;
+  group.add(body);
+
+  // The pivot pin, lying along X — the axis the lever actually turns about.
+  // Visible on purpose: a hinge you can see is what makes the throw legible.
+  const pin = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.055, 0.055, 0.42, 14),
+    darkSteel,
+  );
+  pin.rotation.z = Math.PI / 2;
+  pin.position.y = CIRCUIT_RAIL_Y + 0.14;
+  group.add(pin);
+
+  // ── The lever ─────────────────────────────────────────────────────────────
+  const lever = new THREE.Group();
+  lever.name = "switchLever";
+  lever.position.y = CIRCUIT_RAIL_Y + 0.14;
+
+  // Yoke: the fork that grips the pin, so the lever is attached to something.
+  for (const side of [-1, 1]) {
+    const cheek = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.2, 0.16), darkSteel);
+    cheek.position.set(side * 0.11, 0.07, 0);
+    lever.add(cheek);
+  }
+
+  // Shaft — LONG. This is the single biggest reason the old one felt light:
+  // there was barely any lever to throw. Tapered, because a real lever is
+  // thicker where the load is.
+  const shaft = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.052, 0.075, 0.62, 16),
+    steel,
+  );
+  shaft.position.y = 0.44;
+  lever.add(shaft);
+
+  // Collar where the shaft meets the grip — a machined step, not a blend.
+  const collar = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.1, 0.1, 0.05, 18),
+    darkSteel,
+  );
+  collar.position.y = 0.75;
+  lever.add(collar);
+
+  // Knurled grip: the part your thumb actually meets.
+  const grip = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.125, 0.125, 0.24, 20),
+    darkSteel,
+  );
+  grip.position.y = 0.89;
+  lever.add(grip);
+  // The knurl itself — ridges standing proud around the grip. Modelled rather
+  // than textured so it catches the scene's light and reads at a glance from
+  // twenty units out, which a normal map at this size would not.
+  const knurlMaterial = new THREE.MeshStandardMaterial({
+    color: "#8590a1",
+    metalness: 0.75,
+    roughness: 0.42,
+  });
+  const KNURLS = 16;
+  for (let i = 0; i < KNURLS; i++) {
+    const angle = (i / KNURLS) * Math.PI * 2;
+    const ridge = new THREE.Mesh(
+      new THREE.BoxGeometry(0.022, 0.22, 0.03),
+      knurlMaterial,
+    );
+    ridge.position.set(Math.sin(angle) * 0.126, 0.89, Math.cos(angle) * 0.126);
+    ridge.rotation.y = angle;
+    lever.add(ridge);
+  }
+
+  // Domed cap, so the lever ends deliberately instead of being cut off.
+  const cap = new THREE.Mesh(
+    new THREE.SphereGeometry(0.125, 18, 12, 0, Math.PI * 2, 0, Math.PI / 2),
+    steel,
+  );
+  cap.position.y = 1.01;
+  lever.add(cap);
+
+  group.add(lever);
+
+  // A generous invisible target. The lever is a few millimetres of geometry
+  // seen from twenty units out — on a phone that is not a tappable thing, and
+  // this is the control that starts the whole test.
+  const hit = new THREE.Mesh(
+    new THREE.SphereGeometry(1.15, 12, 8),
+    new THREE.MeshBasicMaterial({ visible: false }),
+  );
+  hit.position.y = CIRCUIT_RAIL_Y + 0.3;
+  hit.name = "switchHit";
+  group.add(hit);
+
+  group.userData.halfSpan = 0.46;
+  return group;
+}
+
 /**
  * Silkscreen a CT3D mark onto a canvas texture — C blue, T orange, 3D green,
  * the same per-letter split the app's wordmark uses. Drawn on a canvas rather
@@ -974,8 +1287,10 @@ function createSupplyPanel(
 ): import("three").Group {
   const group = new THREE.Group();
 
-  const plateHalfX = FADER_TRACK_HALF + 0.5;
-  const plateHalfZ = FADER_Z + 0.62;
+  // Tight margins on purpose: this is a compact instrument panel, not a tray
+  // with the controls floating in the middle of it.
+  const plateHalfX = PANEL_SPAN_HALF + 0.3;
+  const plateHalfZ = TILE_ROW_Z + 0.38;
 
   // Faceplate — the chassis the controls are mounted in. Sitting proud of the
   // floor is what makes it read as equipment rather than paint on the board.
@@ -995,10 +1310,13 @@ function createSupplyPanel(
   plate.position.y = CIRCUIT_RAIL_Y - 0.02;
   group.add(plate);
 
-  // The CT3D mark, between the two faders — the one place on the panel that is
-  // neither track nor scale, which is exactly where a brand goes on real gear.
+  // The CT3D mark along the panel's BACK edge. It used to sit between the two
+  // faders; now that the faders stand as columns there is no gap between them to
+  // live in, and the strip behind the columns is the one part of the plate that
+  // is neither control nor readout — which is exactly where a brand goes on real
+  // gear.
   const mark = new THREE.Mesh(
-    new THREE.PlaneGeometry(1.5, 0.47),
+    new THREE.PlaneGeometry(1.0, 0.3),
     new THREE.MeshBasicMaterial({
       map: createBrandMarkTexture(THREE),
       transparent: true,
@@ -1008,7 +1326,7 @@ function createSupplyPanel(
     }),
   );
   mark.rotation.x = -Math.PI / 2;
-  mark.position.set(0, CIRCUIT_RAIL_Y + 0.08, 0);
+  mark.position.set(0, CIRCUIT_RAIL_Y + 0.08, -plateHalfZ + 0.24);
   mark.name = "supplyBrandMark";
   group.add(mark);
 
@@ -1021,80 +1339,84 @@ function createSupplyPanel(
   const tickMaterial = new THREE.MeshBasicMaterial({ color: "#7c8798" });
   const majorMaterial = new THREE.MeshBasicMaterial({ color: "#e8eef7" });
 
-  for (const fader of SUPPLY_FADERS) {
-    // Track — a recessed groove, deliberately dark so the lit handle reads
-    // against it.
+  PANEL_COLUMNS.forEach((column, index) => {
+    const x = columnX(index);
+
+    // Track — a recessed groove running FRONT-TO-BACK, so the control travels
+    // the way the eye reads a level: up is more. Identical for gauges and
+    // faders, because the user asked for one shape across all four columns.
     const track = new THREE.Mesh(
-      new THREE.BoxGeometry(FADER_TRACK_HALF * 2 + 0.14, 0.06, 0.2),
+      new THREE.BoxGeometry(0.2, 0.06, FADER_TRACK_HALF * 2 + 0.14),
       trackMaterial,
     );
-    track.position.set(0, trackY, fader.z);
-    track.name = `supplyTrack-${fader.key}`;
+    track.position.set(x, trackY, COLUMN_CENTER_Z);
+    track.name = `supplyTrack-${column.key}`;
     group.add(track);
 
-    // The scale. Nine ticks with the ends and the middle called out, so the
-    // handle's position is a value and not a vibe.
-    const TICKS = 9;
+    // The scale. Seven ticks with the ends and the middle called out, so a
+    // handle's position is a value and not a vibe — and so a gauge's indicator
+    // is being read against something.
+    const TICKS = 7;
     for (let i = 0; i < TICKS; i++) {
       const t = i / (TICKS - 1);
       const major = i === 0 || i === TICKS - 1 || i === (TICKS - 1) / 2;
       const tick = new THREE.Mesh(
-        new THREE.BoxGeometry(0.035, 0.012, major ? 0.17 : 0.1),
+        new THREE.BoxGeometry(major ? 0.15 : 0.09, 0.012, 0.03),
         major ? majorMaterial : tickMaterial,
       );
       tick.position.set(
-        -FADER_TRACK_HALF + t * FADER_TRACK_HALF * 2,
+        // Ticks sit beside the track, so the indicator never covers the scale
+        // it is being read against.
+        x + 0.21,
         trackY + 0.04,
-        // Ticks sit on the outboard side of each track, so the handle never
-        // covers the scale it is being read against.
-        fader.z + Math.sign(fader.z) * 0.24,
+        COLUMN_CENTER_Z - FADER_TRACK_HALF + t * FADER_TRACK_HALF * 2,
       );
       group.add(tick);
     }
 
-    // Handle — the thing you actually drag. Emissive in the fader's own W.I.R.E.
-    // colour: on a dim board the brightest object is the one that reads as
-    // grabbable, and the colour says which quantity it moves.
+    // The indicator. Emissive in the column's own W.I.R.E. colour: on a dim
+    // board the brightest object is the one that reads as grabbable, and the
+    // colour says which quantity it belongs to. A gauge gets the same body so
+    // the four columns match, but a dimmer cap — it is a needle, not a grip.
     const handle = new THREE.Group();
-    handle.name = `supplyHandle-${fader.key}`;
-    handle.position.set(0, trackY, fader.z);
+    handle.name = `supplyHandle-${column.key}`;
+    handle.position.set(x, trackY, COLUMN_CENTER_Z);
     const cap = new THREE.Mesh(
-      new THREE.BoxGeometry(0.26, 0.2, 0.44),
+      new THREE.BoxGeometry(0.42, 0.18, 0.24),
       new THREE.MeshStandardMaterial({
-        color: "#414d5e",
+        color: column.fader ? "#414d5e" : "#2a3341",
         metalness: 0.55,
         roughness: 0.38,
       }),
     );
-    cap.position.y = 0.12;
+    cap.position.y = 0.11;
     handle.add(cap);
-    // A bright index line across the cap — the fader's equivalent of the dial's
-    // pointer, so you can see exactly which tick it is sitting on.
-    const index = new THREE.Mesh(
-      new THREE.BoxGeometry(0.06, 0.05, 0.46),
+    const index2 = new THREE.Mesh(
+      new THREE.BoxGeometry(0.44, 0.05, 0.06),
       new THREE.MeshStandardMaterial({
-        color: fader.color,
-        emissive: new THREE.Color(fader.color),
-        emissiveIntensity: 0.85,
+        color: column.color,
+        emissive: new THREE.Color(column.color),
+        emissiveIntensity: column.fader ? 0.9 : 0.55,
         metalness: 0.3,
         roughness: 0.35,
       }),
     );
-    index.position.y = 0.22;
-    handle.add(index);
+    index2.position.y = 0.21;
+    handle.add(index2);
     group.add(handle);
 
-    // Oversized invisible grab target, spanning the whole track: tapping
-    // anywhere along a fader should take the handle there, the way every slider
-    // in the world behaves.
-    const hit = new THREE.Mesh(
-      new THREE.BoxGeometry(FADER_TRACK_HALF * 2 + 0.8, 0.9, 0.9),
-      new THREE.MeshBasicMaterial({ visible: false }),
-    );
-    hit.position.set(0, trackY + 0.2, fader.z);
-    hit.name = `supplyHit-${fader.key}`;
-    group.add(hit);
-  }
+    // Only the faders take a grab target. A gauge that responded to a drag
+    // would be lying about what you control.
+    if (column.fader) {
+      const hit = new THREE.Mesh(
+        new THREE.BoxGeometry(0.7, 0.9, FADER_TRACK_HALF * 2 + 0.5),
+        new THREE.MeshBasicMaterial({ visible: false }),
+      );
+      hit.position.set(x, trackY + 0.2, COLUMN_CENTER_Z);
+      hit.name = `supplyHit-${column.fader}`;
+      group.add(hit);
+    }
+  });
 
   // Scale everything but the mount height, so a bigger panel still sits ON the
   // board instead of floating above it.
@@ -1109,7 +1431,24 @@ function createSupplyPanel(
 
   // What the drag handler needs to turn a world position into a value, recorded
   // once here so the handle you see and the number you set cannot disagree.
-  group.userData.trackHalfX = FADER_TRACK_HALF * scale;
+  // ── The four lit W.I.R.E. displays ────────────────────────────────────────
+  // Built INTO the dashboard next to the controls, rather than reported in a
+  // caption floating somewhere else on screen. Ordered W I R E left to right so
+  // the row spells the mnemonic the whole app teaches, and each one is tinted
+  // to the same ct-term-* colour that quantity carries everywhere else.
+  const updaters: Record<string, (value: string) => void> = {};
+  PANEL_COLUMNS.forEach((column, index) => {
+    const tile = createReadoutTile(THREE, column.letter, column.color);
+    // Directly BELOW its own column, so each control or gauge stands over the
+    // number it belongs to and the panel reads column by column.
+    tile.mesh.position.set(columnX(index), CIRCUIT_RAIL_Y + 0.07, TILE_ROW_Z);
+    group.add(tile.mesh);
+    updaters[column.key] = tile.update;
+  });
+  group.userData.readoutUpdaters = updaters;
+
+  group.userData.trackHalfZ = FADER_TRACK_HALF * scale;
+  group.userData.columnCenterZ = COLUMN_CENTER_Z * scale;
   group.userData.trackY = trackY;
   // Half-spans describe the WHOLE faceplate, switch bay included, so the halo
   // that rings it and the readout that clears it both cover the real object.
@@ -1176,10 +1515,7 @@ function createCircuitBoard(
   const switchX =
     panelX + (FADER_TRACK_HALF + 0.5 + SWITCH_BAY / 2) * SUPPLY_PANEL_SCALE;
 
-  const switchPart = createComponentGroup(THREE, "switch", "#ffffff", {
-    ring: false,
-    axis: "x",
-  });
+  const switchPart = createPanelToggle(THREE);
   switchPart.position.set(switchX, 0, panelZ);
   switchPart.name = "switch";
   // The switch IS the test button, so it is sized like a control rather than
@@ -1288,35 +1624,9 @@ function createCircuitBoard(
   board.add(createWire(THREE, wireMaterial, -halfX - 1.1, 0, -halfX, 0));
   addNode(-halfX - 1.1, 0);
 
-  // Put the toggle's lever on its own pivot so it can actually be thrown. The
-  // library models the lever as loose meshes sitting above the body; anything
-  // clear of the body's top face is lever, everything below is the housing.
-  const switchCore = switchPart.getObjectByName("core");
-  if (switchCore) {
-    const lever = new THREE.Group();
-    lever.name = "switchLever";
-    const PIVOT_Y = 0.28;
-    lever.position.y = PIVOT_Y;
-    for (const child of [...switchCore.children]) {
-      if (child.position.y > PIVOT_Y) {
-        child.position.y -= PIVOT_Y;
-        lever.add(child);
-      }
-    }
-    switchCore.add(lever);
-  }
-
-  // A generous invisible target around the switch. The lever itself is a few
-  // millimetres of geometry seen from twenty units out — on a phone that is not
-  // a tappable thing, and this is the control that starts the whole test.
-  const switchHit = new THREE.Mesh(
-    new THREE.SphereGeometry(1.15, 12, 8),
-    new THREE.MeshBasicMaterial({ visible: false }),
-  );
-  switchHit.position.y = CIRCUIT_RAIL_Y;
-  switchHit.name = "switchHit";
-  switchPart.add(switchHit);
-
+  // The lever, its pivot and its grab target are all built into
+  // `createPanelToggle` now — there is no library part left to adapt.
+  //
   // No beads either side of the switch any more — it no longer taps into a
   // rail, so there is no junction there to mark.
 
@@ -1338,7 +1648,9 @@ export function ArenaScene({
   onExitTransitionComplete,
   workspaceMode = false,
   panelOpen = false,
-  solo = false,
+  // `solo` is still part of the props contract and callers pass it, but nothing
+  // in here reads it any more: the only thing that varied on it was the switch
+  // caption ("throw to test" vs "throw to battle"), and that caption is gone.
 }: ArenaSceneProps) {
   const rootRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -1362,10 +1674,36 @@ export function ArenaScene({
   onStartTestRef.current = onStartTest;
   const onLoadChangeRef = useRef(onLoadChange);
   onLoadChangeRef.current = onLoadChange;
-  /** The dial's own floating readout — its angle needs a number beside it. */
+  /** The supply faders' floating readout — a handle position needs a number. */
   const dialLabelRef = useRef<HTMLDivElement | null>(null);
-  /** The switch's hint — says what throwing it does, without shouting it. */
-  const switchLabelRef = useRef<HTMLDivElement | null>(null);
+
+  /**
+   * The F.U.S.E. card: what the engine says about a part that just died.
+   *
+   * Snapshotted at the moment of failure rather than read live, because the
+   * agent keeps updating afterwards (it cools) — the card has to report the
+   * conditions that KILLED it, not the conditions once it is dead.
+   */
+  const [fuseCard, setFuseCard] = useState<ArenaBattleAgent | null>(null);
+  const reportedFailuresRef = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    // A fresh run gets a clean slate, so re-running the bench explains its
+    // failures again instead of staying silent because it already did once.
+    if (status === "ready") {
+      reportedFailuresRef.current.clear();
+      setFuseCard(null);
+      return;
+    }
+    for (const agent of agents) {
+      if (agent.phase !== "failed") continue;
+      if (reportedFailuresRef.current.has(agent.id)) continue;
+      reportedFailuresRef.current.add(agent.id);
+      setFuseCard(agent);
+    }
+  }, [agents, status]);
+
+  const dismissFuseCard = useCallback(() => setFuseCard(null), []);
 
   const healthBarAgents = useMemo(() => agents, [agents]);
   const sceneAgentSignature = useMemo(
@@ -1451,6 +1789,14 @@ export function ArenaScene({
         // difference between "it blew up" and "it got selected".
         flashLight: import("three").PointLight;
         flashCore: import("three").Sprite;
+        /**
+         * The expanding shell of the event — what actually reads at arena
+         * distance. The glare core is under a unit across on a board twenty
+         * units wide, so on a phone it was a speck however bright it got:
+         * brightness does not carry across a wide shot, SIZE and MOTION do.
+         * This blows out past the part, thins as it goes, and is gone.
+         */
+        flashHalo: import("three").Sprite;
         /**
          * Lights the part makes ITSELF (LED lens, lamp envelope) — empty for
          * every part that isn't an emitter. Distinct from flashLight, which is
@@ -1740,9 +2086,33 @@ export function ArenaScene({
 
         // A real light at the failure site. Created up front (intensity 0) so
         // three.js never has to recompile shaders mid-battle.
-        const flashLight = new THREE.PointLight("#ffe2b0", 0, 6, 2);
+        //
+        // Reach is 16, not the 6 it was: at 6 the light died before it got off
+        // the part, so a part could blow up without the rails, the floor or the
+        // parts either side of it registering anything. A failure has to light
+        // the ROOM — that is what makes the other parts look like bystanders to
+        // it instead of unrelated objects that happen to be nearby.
+        const flashLight = new THREE.PointLight("#ffe2b0", 0, 16, 2);
         flashLight.position.set(0, CIRCUIT_RAIL_Y, 0);
         group.add(flashLight);
+
+        // The expanding shell. Additive and unlit, so it reads as light in the
+        // air rather than as an object, and it is added BEFORE the core so the
+        // core stays the brightest thing at the centre of it.
+        const flashHalo = new THREE.Sprite(
+          new THREE.SpriteMaterial({
+            map: smokeTexture,
+            color: "#ffffff",
+            transparent: true,
+            opacity: 0,
+            depthWrite: false,
+            blending: THREE.AdditiveBlending,
+          }),
+        );
+        flashHalo.position.set(0, CIRCUIT_RAIL_Y, 0);
+        flashHalo.scale.setScalar(0.6);
+        flashHalo.visible = false;
+        group.add(flashHalo);
 
         // The glare core — the bit of the event too bright to resolve.
         const flashCore = new THREE.Sprite(
@@ -1765,6 +2135,7 @@ export function ArenaScene({
           core: group.getObjectByName("core") ?? null,
           flashLight,
           flashCore,
+          flashHalo,
           emitterLights,
           materials,
           materialColors: materials.map((material) => material.color.clone()),
@@ -1803,12 +2174,20 @@ export function ArenaScene({
       // Each one's handle, its grab target, and the span the handle slides
       // along, resolved once. The span comes off the panel rather than being
       // recomputed here, so the geometry stays the single source of truth.
-      const panelTrackHalfX = (panelObject?.userData.trackHalfX as number) ?? 2;
+      const readoutUpdaters = panelObject?.userData.readoutUpdaters as
+        | Record<string, (value: string) => void>
+        | undefined;
+      const panelTrackHalfZ = (panelObject?.userData.trackHalfZ as number) ?? 0.6;
+      const panelColumnCenterZ =
+        (panelObject?.userData.columnCenterZ as number) ?? 0;
       const panelTrackY = (panelObject?.userData.trackY as number) ?? CIRCUIT_RAIL_Y;
-      const faders = SUPPLY_FADERS.map((fader) => ({
-        ...fader,
-        handle: board.getObjectByName(`supplyHandle-${fader.key}`) ?? null,
-        hit: board.getObjectByName(`supplyHit-${fader.key}`) ?? null,
+      /** Every column's indicator, plus the grab target on the two that drag. */
+      const columns = PANEL_COLUMNS.map((column) => ({
+        ...column,
+        handle: board.getObjectByName(`supplyHandle-${column.key}`) ?? null,
+        hit: column.fader
+          ? (board.getObjectByName(`supplyHit-${column.fader}`) ?? null)
+          : null,
       }));
 
       /**
@@ -1817,6 +2196,28 @@ export function ArenaScene({
        * runs. `ohms` has no other driver, so this IS its value.
        */
       let seriesOhms = 0;
+
+      /**
+       * The bench's live W.I.R.E. figures, refreshed by every solve and read by
+       * the dashboard readout. Held here rather than recomputed in the render
+       * loop so the panel shows exactly what the solver produced.
+       */
+      let benchVolts = 0;
+      let benchAmps = 0;
+      let benchOhms = Number.POSITIVE_INFINITY;
+      let benchWatts = 0;
+
+      // ── The throw ────────────────────────────────────────────────────────
+      // The lever used to ease between its two positions on an exponential
+      // lerp, which is the motion of something weightless — it arrived
+      // apologetically and read as nothing happening. A real panel toggle has
+      // mass and an over-centre spring: it RESISTS, tips, then goes on its own
+      // and slams into the stop. That shape is the whole feel of the control,
+      // so it is spelled out as a curve rather than left to a damping factor.
+      let leverFrom = SWITCH_ROT_OPEN;
+      let leverTo = SWITCH_ROT_OPEN;
+      let leverStartedAt = -Infinity;
+      let leverWasClosed = false;
 
       /**
        * The bench's nominal supply, V — the highest voltage any part on the
@@ -1907,9 +2308,12 @@ export function ArenaScene({
         if (!raycaster.ray.intersectPlane(panelPlane, planeHit)) {
           return null;
         }
-        // Into the panel's own space, then along its track.
-        const localX = planeHit.x - ((board.userData.panelX as number) ?? 0);
-        return clampNum((localX + panelTrackHalfX) / (panelTrackHalfX * 2), 0, 1);
+        // Into the panel's own space, then along the column. The tracks run
+        // front-to-back now, so this reads Z, and it is INVERTED: -Z is away
+        // from the camera, which is up the screen, which has to mean more.
+        const localZ = planeHit.z - ((board.userData.panelZ as number) ?? 0);
+        const top = panelColumnCenterZ - panelTrackHalfZ;
+        return clampNum((localZ - top) / (panelTrackHalfZ * 2), 0, 1) * -1 + 1;
       };
 
       const applyFader = (event: PointerEvent) => {
@@ -1942,10 +2346,10 @@ export function ArenaScene({
           return;
         }
         raycaster.setFromCamera(ndcFor(event), camera);
-        for (const fader of faders) {
-          if (!fader.hit) continue;
-          if (raycaster.intersectObject(fader.hit, true).length === 0) continue;
-          draggingFader = fader.key;
+        for (const column of columns) {
+          if (!column.hit || !column.fader) continue;
+          if (raycaster.intersectObject(column.hit, true).length === 0) continue;
+          draggingFader = column.fader;
           // Undo the divider currently in force, so the drag's base is the load
           // the volts fader alone is asking for.
           const bank = parallelOhms();
@@ -2084,6 +2488,23 @@ export function ArenaScene({
         // If the solve fails, fall back to the old per-part figure rather than
         // killing the current entirely — a dead board reads as a bug, and the
         // ramp is still meaningful even without the exact distribution.
+        // ── The bench's live W.I.R.E. figures ─────────────────────────────
+        // Published for the dashboard readout BEFORE the throttle below, so the
+        // four metrics keep updating even on frames where the flow paths are
+        // unchanged and do not need rebuilding. Every one of them comes off the
+        // solve rather than being recomputed here, so the numbers on the panel
+        // and the current in the wires cannot disagree.
+        //
+        // E is the rail voltage, I the total the supply delivers, R what it
+        // sees, and W the product. NOT the sum of the parts' rated draws.
+        benchVolts = railVolts;
+        benchAmps = solution.status === "solved" ? solution.totalAmps : 0;
+        benchOhms =
+          solution.status === "solved"
+            ? solution.equivalentOhms
+            : Number.POSITIVE_INFINITY;
+        benchWatts = benchVolts * benchAmps;
+
         const branchAmps =
           solution.status === "solved"
             ? solution.branchAmps
@@ -2129,9 +2550,14 @@ export function ArenaScene({
             { x: seat.x, y: CIRCUIT_RAIL_Y, z: 0 },
             { x: seat.x, y: CIRCUIT_RAIL_Y, z: seat.halfZ },
           ];
+          // Tagged per seat so the render loop can pull it back as this part
+          // reacts. Current arriving at a cool part is worth seeing; current
+          // painted over a part that is scorching and glowing is competing with
+          // the very thing it is causing.
           lightningRef?.addBolt(through, amps, 1, 1, {
             drawThrough: true,
             radiusScale: 0.7,
+            tag: `part-${index}`,
           });
         });
 
@@ -2318,13 +2744,41 @@ export function ArenaScene({
         ring.rotation.z += 0.0015;
         particles.rotation.y += 0.0011;
 
-        // The switch shows the bench's state: thrown closed while the test runs,
-        // back open when it is over. Eased rather than snapped so you can see it
-        // move — this is the moment the circuit comes alive.
+        // ── Throwing the switch ─────────────────────────────────────────────
+        // The bench's state, and the moment the circuit comes alive. Driven by
+        // `kaChunk` rather than a lerp so the lever has mass: it resists, goes
+        // over centre, and slams into its stop.
         const switchClosed = statusRef.current === "battling";
+        if (switchClosed !== leverWasClosed) {
+          leverWasClosed = switchClosed;
+          // Start from wherever the lever actually IS, so a throw reversed
+          // mid-swing picks up from there instead of snapping to an end stop.
+          leverFrom = switchLever ? switchLever.rotation.x : SWITCH_ROT_OPEN;
+          leverTo = switchClosed ? SWITCH_ROT_CLOSED : SWITCH_ROT_OPEN;
+          leverStartedAt = time;
+        }
+        const throwT = clampNum((time - leverStartedAt) / SWITCH_THROW_MS, 0, 1);
         if (switchLever) {
-          const target = switchClosed ? -0.72 : 0.42;
-          switchLever.rotation.x += (target - switchLever.rotation.x) * 0.18;
+          switchLever.rotation.x = leverFrom + (leverTo - leverFrom) * kaChunk(throwT);
+        }
+        // The impact: everything that says the lever hit something solid. Peaks
+        // the instant it lands — act 3 of the curve, at t = 0.8 — and decays
+        // fast. A jolt you register rather than an animation you watch.
+        const impact = throwT > 0.8 && throwT < 1 ? 1 - (throwT - 0.8) / 0.2 : 0;
+        const jolt = impact * impact;
+        if (switchObject) {
+          // Recoil into the panel. Always ASSIGNED, never accumulated, so it
+          // cannot drift the switch off its mount over repeated throws.
+          switchObject.position.y = -jolt * 0.11;
+        }
+        if (panelObject && jolt > 0) {
+          // The whole dashboard takes the hit, because a switch heavy enough to
+          // clunk is bolted to something. Rebuilt from the panel's recorded base
+          // position every frame rather than nudged, for the same reason.
+          const basePanelX = (board.userData.panelX as number) ?? 0;
+          const basePanelZ = (board.userData.panelZ as number) ?? 0;
+          panelObject.position.x = basePanelX + Math.sin(time * 0.09) * jolt * 0.045;
+          panelObject.position.z = basePanelZ + Math.cos(time * 0.075) * jolt * 0.03;
         }
 
         // ── Control affordance ──────────────────────────────────────────────
@@ -2351,8 +2805,12 @@ export function ArenaScene({
             material.opacity = draggingFader ? 0.72 : dialPulse;
           }
           if (switchGlowLight) {
+            // The contacts closing. A hard spike on impact — the flash IS the
+            // "chunk", since the switch makes no sound: light doing the job the
+            // audio would. Sits on top of the idle breathing rather than
+            // replacing it, so it reads as an event, not a state change.
             (switchGlowLight as unknown as { intensity: number }).intensity =
-              1.4 + switchPulse * 2.4;
+              1.4 + switchPulse * 2.4 + jolt * 14;
           }
           if (panelGlowLight) {
             (panelGlowLight as unknown as { intensity: number }).intensity =
@@ -2368,6 +2826,31 @@ export function ArenaScene({
         //
         // The volts fader has no state of its own — it IS the load, so the ramp
         // drives it while a test runs, exactly as the old dial's pointer worked.
+        // ── The dashboard's four lit displays ───────────────────────────────
+        // Auto-ranged: a bench reading "0.019 A" then "0.000 A" tells you
+        // nothing, where "19 mA" then "0 mA" reads at a glance. Each tile skips
+        // its redraw when the text is unchanged, so a steady bench is free.
+        if (readoutUpdaters) {
+          readoutUpdaters.w?.(
+            benchWatts >= 1
+              ? `${benchWatts.toFixed(2)} W`
+              : `${(benchWatts * 1000).toFixed(0)} mW`,
+          );
+          readoutUpdaters.i?.(
+            benchAmps >= 1
+              ? `${benchAmps.toFixed(2)} A`
+              : `${(benchAmps * 1000).toFixed(0)} mA`,
+          );
+          readoutUpdaters.r?.(
+            !Number.isFinite(benchOhms)
+              ? "∞ Ω"
+              : benchOhms >= 1000
+                ? `${(benchOhms / 1000).toFixed(1)} kΩ`
+                : `${benchOhms.toFixed(0)} Ω`,
+          );
+          readoutUpdaters.e?.(`${benchVolts.toFixed(1)} V`);
+        }
+
         const ratedMax = stressMaxRef.current ?? 3;
         // Matches the drag mapping above: the track runs nominal → rated peak.
         const voltsT = clampNum(
@@ -2376,11 +2859,33 @@ export function ArenaScene({
           1,
         );
         const ohmsT = clampNum(Math.sqrt(seriesOhms / SERIES_OHMS_MAX), 0, 1);
-        for (const fader of faders) {
-          if (!fader.handle) continue;
-          const t = fader.key === "volts" ? voltsT : ohmsT;
-          const target = (t * 2 - 1) * panelTrackHalfX;
-          fader.handle.position.x += (target - fader.handle.position.x) * 0.16;
+        // The two GAUGES track what the circuit is doing, not what you set.
+        // Referenced against the bench's own ceiling — the supply at full rated
+        // load into the present resistance — so "full scale" means something
+        // rather than being an arbitrary number the needle is divided by.
+        const ceilingVolts = nominalVoltsFor() * ratedMax;
+        const ceilingAmps =
+          Number.isFinite(benchOhms) && benchOhms > 0 ? ceilingVolts / benchOhms : 0;
+        const ampsT = ceilingAmps > 0 ? clampNum(benchAmps / ceilingAmps, 0, 1) : 0;
+        const ceilingWatts = ceilingVolts * ceilingAmps;
+        const wattsT = ceilingWatts > 0 ? clampNum(benchWatts / ceilingWatts, 0, 1) : 0;
+
+        for (const column of columns) {
+          if (!column.handle) continue;
+          const t =
+            column.fader === "volts"
+              ? voltsT
+              : column.fader === "ohms"
+                ? ohmsT
+                : column.key === "i"
+                  ? ampsT
+                  : wattsT;
+          // Inverted: t = 1 is the top of the column, which is -Z. Uses the
+          // SCALED centre, because the panel's scale pass has already moved
+          // every child — mixing the raw constant in here would offset every
+          // indicator by (1 - scale) × the centre.
+          const target = panelColumnCenterZ + (1 - t * 2) * panelTrackHalfZ;
+          column.handle.position.z += (target - column.handle.position.z) * 0.16;
         }
 
         // The readout. Both values in ONE floating block anchored above the
@@ -2431,12 +2936,7 @@ export function ArenaScene({
           dialLabel.style.transform =
             `translate3d(${lx}px, ${labelY}px, 0) translate(-50%, 0)`;
 
-          const voltsEl = dialLabel.querySelector<HTMLElement>("[data-fader='volts']");
           const ohmsEl = dialLabel.querySelector<HTMLElement>("[data-fader='ohms']");
-          if (voltsEl) {
-            voltsEl.textContent =
-              `${(nominalVoltsFor() * stressFactorRef.current).toFixed(1)} V`;
-          }
           if (ohmsEl) {
             ohmsEl.textContent =
               seriesOhms >= 1000
@@ -2445,45 +2945,10 @@ export function ArenaScene({
           }
         }
 
-        // The switch's hint, anchored the same way as the fader readout —
-        // BELOW its control, in the foreground. It used to hang above the
-        // switch, which was right while the switch was wired into the top rail
-        // and wrong the moment it moved onto the front panel: from there,
-        // screen-up points back across the board and the hint landed on the
-        // bottom rail. Same trap as the readout, same fix.
-        const switchLabel = switchLabelRef.current;
-        if (switchLabel && switchObject) {
-          tempVector.set(
-            switchObject.position.x,
-            CIRCUIT_RAIL_Y,
-            switchObject.position.z,
-          );
-          tempVector.project(camera);
-          const sx = (tempVector.x * 0.5 + 0.5) * root.clientWidth;
-          const sy = (-tempVector.y * 0.5 + 0.5) * root.clientHeight;
-          const onScreen = tempVector.z < 1.2 && tempVector.z > -1;
-          // Clear the switch by its own projected height, so it works at any
-          // camera pitch rather than at one hard-coded world offset.
-          tempVector.set(
-            switchObject.position.x,
-            CIRCUIT_RAIL_Y + ((board.userData.switchHalf as number) ?? 0.8) * 1.6,
-            switchObject.position.z,
-          );
-          tempVector.project(camera);
-          const switchTopY = (-tempVector.y * 0.5 + 0.5) * root.clientHeight;
-          const switchClear = Math.max(Math.abs(sy - switchTopY), 20) + 10;
-          const hintHeight = switchLabel.offsetHeight || 18;
-          const maxHintY = root.clientHeight - hintHeight - BENCH_BAR_CLEARANCE_PX;
-          const hintY = Math.min(sy + switchClear, maxHintY);
-          // Dim once the bench is running: the hint has done its job.
-          switchLabel.style.opacity = onScreen
-            ? statusRef.current === "ready"
-              ? "1"
-              : "0.45"
-            : "0";
-          switchLabel.style.transform =
-            `translate3d(${sx}px, ${hintY}px, 0) translate(-50%, 0)`;
-        }
+        // No caption on the switch. It is a lit, breathing toggle sitting on the
+        // supply panel next to two faders — it already reads as the thing you
+        // operate, and narrating the gesture ("throw to test") said out loud
+        // what the geometry was already saying.
 
         // ── Current flow ────────────────────────────────────────────────────
         // The switch is literally the circuit-closed flag: open switch, no
@@ -2672,16 +3137,39 @@ export function ArenaScene({
             // blows out, the far face stays dark, and the dais catches it.
             const flashLight = objectEntry.flashLight;
             const flashCore = objectEntry.flashCore;
+            const flashHalo = objectEntry.flashHalo;
             if (popping && flashT > 0) {
               flashLight.color.copy(sig.hot ? heatHot : heatWhite);
               flashLight.intensity = flashT * sig.flash * 7;
               flashCore.visible = true;
               flashCore.material.color.copy(sig.hot ? heatHot : heatWhite);
               flashCore.material.opacity = Math.min(flashT * 1.2, 1);
-              flashCore.scale.setScalar(0.25 + flashT * 0.7);
+              // Scaled by the family's own violence: a vented battery's core is
+              // not the same size as a fuse quietly opening. Was a flat 0.95 max
+              // for every part on the board.
+              flashCore.scale.setScalar(
+                0.3 + flashT * (0.5 + sig.flash * 0.42),
+              );
+
+              // The shell runs on the INVERSE of the flash: flashT counts 1 → 0
+              // over the pop, so (1 - flashT) is time-since-detonation, and the
+              // shell grows the whole way out while the core is collapsing.
+              // Growing it WITH the core would just be a bigger core.
+              const shellT = 1 - flashT;
+              flashHalo.visible = true;
+              flashHalo.material.color.copy(sig.hot ? heatHot : heatWhite);
+              // Thins as it expands — the same light spread over more area. It
+              // has to be gone by the end or it reads as a lingering bubble
+              // sitting on the part rather than as a blast passing through.
+              flashHalo.material.opacity =
+                Math.min(flashT * 0.85, 0.6) * (1 - shellT * shellT);
+              flashHalo.scale.setScalar(
+                0.5 + shellT * (2.2 + sig.flash * 1.3),
+              );
             } else {
               flashLight.intensity = 0;
               flashCore.visible = false;
+              flashHalo.visible = false;
             }
 
             let failEmissive: number;
@@ -2767,6 +3255,17 @@ export function ArenaScene({
                 0,
                 1.3,
               ) * coolT;
+
+            // Hand the part's body back to the part. The current running THROUGH
+            // this component fades out as the component starts reacting, so what
+            // you watch at the part is the scorch, the glow and the failure —
+            // not a bolt drawn over the top of them. The current in the rails
+            // and leads is untouched; it is only the span inside the body that
+            // gives way. A failed part is an open branch and has no bolt at all.
+            lightningRef?.setFade(
+              `part-${seatIndex}`,
+              clampNum(stressLevel * 1.15, 0, 0.92),
+            );
             // A small, quick tremor on the BODY only — reads as "straining" in
             // place. The dais and the metrics nameplate never move; the heat
             // glow (below) does the heavy lifting of showing stress.
@@ -2871,6 +3370,7 @@ export function ArenaScene({
               });
               objectEntry.flashLight.intensity = 0;
               objectEntry.flashCore.visible = false;
+              objectEntry.flashHalo.visible = false;
               if (objectEntry.smoke) {
                 objectEntry.smoke.object.visible = false;
               }
@@ -2885,7 +3385,12 @@ export function ArenaScene({
           // Anchor the floating metric nameplate to the part's STABLE seat, not its
           // live (jittering) group position — so the component shakes under stress
           // but its readout stays put and legible.
-          tempVector.set(seatX, NAMEPLATE_ANCHOR_Y, seatZ);
+          // Staggered per seat so plates never share an altitude — see
+          // NAMEPLATE_STAGGER_Y. Centred on the roster so a full bench fans
+          // evenly above the board instead of climbing off the top of frame.
+          const stagger =
+            (seatIndex - (agentsRef.current.length - 1) / 2) * NAMEPLATE_STAGGER_Y;
+          tempVector.set(seatX, NAMEPLATE_ANCHOR_Y + stagger, seatZ);
           tempVector.project(camera);
 
           const rawX = (tempVector.x * 0.5 + 0.5) * root.clientWidth;
@@ -2941,6 +3446,7 @@ export function ArenaScene({
       agentObjects.forEach((entry) => {
         entry.smoke?.dispose();
         entry.flashCore.material.dispose();
+        entry.flashHalo.material.dispose();
       });
       renderer?.dispose();
     };
@@ -2998,44 +3504,84 @@ export function ArenaScene({
         its units, and what it is a multiple OF, with no background slab. It has
         to say "of what" or "2.40×" means nothing.
       */}
+      {/*
+        What the two faders are set to, and what each is OUT OF — a bare number
+        is not a metric. The bench's four live W.I.R.E. figures are NOT here:
+        they are lit displays built into the dashboard itself, beside the
+        controls, where an instrument carries its own screens.
+      */}
       <div ref={dialLabelRef} className="arena-dial-label">
-        <span className="arena-supply-row">
-          <span className="arena-supply-row__name ct-term-voltage">supply</span>
-          <b className="arena-supply-row__value ct-term-voltage" data-fader="volts">
-            0.0 V
-          </b>
-          <em className="arena-supply-row__ref">of {stressMax.toFixed(1)}× rated</em>
-        </span>
+        {/* Only the series resistance. The supply's volts used to be here too,
+            but that is the SAME number the E tile on the panel already shows
+            (both are nominal × load) — printing it twice just gave the scene
+            one more label to collide with. Series R has no tile of its own:
+            the R tile reads the whole circuit's resistance, which is a
+            different quantity from what this fader is dialling in. */}
         <span className="arena-supply-row">
           <span className="arena-supply-row__name ct-term-resistance">series R</span>
           <b className="arena-supply-row__value ct-term-resistance" data-fader="ohms">
             0 Ω
           </b>
           <em className="arena-supply-row__ref">
-            0 → {(SERIES_OHMS_MAX / 1000).toFixed(1)} kΩ in series
+            of {(SERIES_OHMS_MAX / 1000).toFixed(1)} kΩ
           </em>
         </span>
-        <span className="arena-dial-label__hint">drag a fader</span>
       </div>
       {/*
-        The switch's hint. Same containerless treatment as the dial's, so the
-        two read as the pair of controls. It names the ACTION rather than
-        stencilling "BATTLE" on the toggle — the switch closing the circuit is
-        what starts the test, and saying "throw to …" teaches that, where a
-        button label would just paper over it. Fades out once it is running,
-        because by then you know.
+        The F.U.S.E. card. A part dying on screen used to be the end of the
+        story; this is the engine saying WHY. Every line of it comes from
+        F.U.S.E. itself — the failure mode it identified, its own narrative of
+        what happened inside the part, and the conditions at the moment it let
+        go — rather than from copy written here.
+
+        A bottom sheet, not a modal: it explains the thing you are watching, so
+        it must not cover it. Sits above the collapsed bench bar.
       */}
-      <div ref={switchLabelRef} className="arena-dial-label arena-dial-label--switch">
-        <span className="arena-dial-label__hint">
-          {status === "ready"
-            ? solo
-              ? "throw to test"
-              : "throw to battle"
-            : status === "battling"
-              ? "running"
-              : "throw to re-run"}
-        </span>
-      </div>
+      {fuseCard ? (
+        <div className="arena-fuse-card" role="status" aria-live="polite">
+          <div className="arena-fuse-card__head">
+            <span className="arena-fuse-card__mark">⚡ F.U.S.E.™</span>
+            <button
+              type="button"
+              className="arena-fuse-card__close"
+              onClick={dismissFuseCard}
+              aria-label="Dismiss failure report"
+            >
+              ×
+            </button>
+          </div>
+          <div className="arena-fuse-card__title">
+            <b>{fuseCard.name}</b>
+            <span className="arena-fuse-card__mode">
+              {fuseCard.failureName ?? "Destroyed"}
+            </span>
+          </div>
+          {fuseCard.failureDescription ? (
+            <p className="arena-fuse-card__why">{fuseCard.failureDescription}</p>
+          ) : null}
+          {/* The conditions that killed it — each against what it was rated for,
+              because "187°C" alone is not a finding. */}
+          <div className="arena-fuse-card__facts">
+            <span>
+              <i className="ct-term-power">peak</i>
+              <b>{Math.round(fuseCard.peakTempC)}°C</b>
+              <em>/ {Math.round(fuseCard.ratings.junctionLimitC)}°C rated</em>
+            </span>
+            <span>
+              <i className="ct-term-current">load</i>
+              <b>{Math.round(fuseCard.peakLoadPercent)}%</b>
+              <em>of rating</em>
+            </span>
+            {fuseCard.failedAtLoad != null ? (
+              <span>
+                <i className="ct-term-voltage">failed at</i>
+                <b>{fuseCard.failedAtLoad.toFixed(1)}×</b>
+                <em>nominal</em>
+              </span>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
       <div className="arena-scene__healthbars">
         {healthBarAgents.map((agent) => {
           const isFailed = agent.phase === "failed";
@@ -3071,10 +3617,20 @@ export function ArenaScene({
                   power goes as the SQUARE of that — which is exactly why parts
                   cook long before the load number looks alarming. A failed part
                   is an open branch: no current, no power. */}
+              {/* Ordered W I R E, and power is labelled W — not P. The app
+                  teaches this mnemonic everywhere else (the term highlighting,
+                  the builder's readout, the dashboard's lit tiles), so calling
+                  the same quantity P here taught a second name for no reason.
+                  Both letters are of course real notation; W.I.R.E. is the one
+                  this app committed to. */}
               <div className="arena-nameplate__wire">
-                <span className="ct-term ct-term-voltage">
-                  <em>E</em>
-                  <b>{isFailed ? "—" : fmtVolts(agent.metrics.voltage * stressFactor)}</b>
+                <span className="ct-term ct-term-power">
+                  <em>W</em>
+                  <b>
+                    {isFailed
+                      ? "—"
+                      : fmtWatts(agent.metrics.power * stressFactor * stressFactor)}
+                  </b>
                 </span>
                 <span className="ct-term ct-term-current">
                   <em>I</em>
@@ -3084,13 +3640,9 @@ export function ArenaScene({
                   <em>R</em>
                   <b>{fmtOhms(agent.metrics.resistance)}</b>
                 </span>
-                <span className="ct-term ct-term-power">
-                  <em>P</em>
-                  <b>
-                    {isFailed
-                      ? "—"
-                      : fmtWatts(agent.metrics.power * stressFactor * stressFactor)}
-                  </b>
+                <span className="ct-term ct-term-voltage">
+                  <em>E</em>
+                  <b>{isFailed ? "—" : fmtVolts(agent.metrics.voltage * stressFactor)}</b>
                 </span>
               </div>
               {/* Temperature is not a W.I.R.E. quantity, but it is what actually
