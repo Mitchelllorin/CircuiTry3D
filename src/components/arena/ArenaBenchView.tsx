@@ -1,11 +1,7 @@
 import { useMemo, useState } from "react";
 import { WorkspaceModePanel } from "../builder/panels/WorkspaceModePanel";
 import { ArenaScene } from "./ArenaScene";
-import {
-  ArenaScenarioSelect,
-  ArenaTestCard,
-  ArenaTestLog,
-} from "./ArenaInstrumentation";
+import { ArenaScenarioSelect, ArenaTestLog } from "./ArenaInstrumentation";
 import type { BenchStressor } from "./useBenchSession";
 import { useBenchSession } from "./useBenchSession";
 import type { ArenaBattleAgent } from "./types";
@@ -285,9 +281,12 @@ export default function ArenaBenchView({
             </div>
           ) : null}
 
-          {agent ? (
-            <ArenaTestCard agent={agent} isMostStressed={running} />
-          ) : null}
+          {/* The per-part test card is gone. It was the last survivor of the
+              old card grid, and on the solo bench it restated what the scene
+              already says better: the floating nameplate carries the part's
+              live W.I.R.E. figures and its temperature against its own limit,
+              and the F.U.S.E. readout carries WHY it died. A panel repeating
+              all of that is just a second place to look. */}
 
           <ArenaTestLog log={log} winnerName={null} heading="Test Log" />
         </div>

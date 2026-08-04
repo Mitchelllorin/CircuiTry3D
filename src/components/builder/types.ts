@@ -45,6 +45,7 @@ export type BuilderInvokeAction =
   | "set-grid-style"
   | "apply-scene-settings"
   | "set-view-insets"
+  | "set-ui-busy"
   | "load-payoff"
   | "run-payoff-flow";
 

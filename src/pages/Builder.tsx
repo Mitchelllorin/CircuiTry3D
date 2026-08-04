@@ -1881,6 +1881,35 @@ export default function Builder() {
     isSettingsPanelOpen,
     isExplainPanelOpen,
   ]);
+
+  // The workspace's idle turntable (legacy.html: updateIdleOrbit) must not start
+  // drifting while any of the host's UI owns the screen — those panels, modals and
+  // tutorials render out here in React, so the iframe cannot see them for itself.
+  // NOTE: this list is enumerated by hand. A new panel that isn't added here will
+  // still suppress the drift while it's being touched, but not once it sits open
+  // and idle.
+  const isHostUiBusy =
+    isWorkspacePanelOpen ||
+    isTroubleshootPanelOpen ||
+    isGuidesPanelOpen ||
+    isEnvironmentalPanelOpen ||
+    isSettingsPanelOpen ||
+    isExplainPanelOpen ||
+    isCompactWorksheetOpen ||
+    isSaveModalOpen ||
+    isLoadModalOpen ||
+    isAIHelperOpen ||
+    isMeasureWidgetOpen ||
+    isCinematicOpen ||
+    isGuidedTourOpen ||
+    isBuildAlongOpen;
+  useEffect(() => {
+    if (!isFrameReady) {
+      return;
+    }
+    triggerBuilderAction("set-ui-busy", { busy: isHostUiBusy });
+  }, [isFrameReady, isHostUiBusy, triggerBuilderAction]);
+
   // Create a mock circuit state for demo (in production, extract from iframe)
   const currentCircuitState = useMemo(() => ({
     nodes: [],

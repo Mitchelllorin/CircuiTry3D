@@ -2443,6 +2443,13 @@ export function ArenaScene({
       const lightningGroup = new THREE.Group();
       scene.add(lightningGroup);
       lightningRef = new LightningFlowSystem(THREE, lightningGroup);
+      // Backed off from the app-wide standard on purpose. The bench runs a rung
+      // per part between two rails and you see every one of them at once, so
+      // full-strength bolts stack into a curtain of light that the components
+      // fail behind — and watching the part fail IS the arena. The builder has
+      // no such problem, which is why this is set here and the standard's own
+      // constants are left alone. See setIntensity.
+      lightningRef.setIntensity(0.72);
 
       // Per-branch paths are rebuilt when the currents move enough to matter:
       // the system bakes each path's current in at creation, and the whole point

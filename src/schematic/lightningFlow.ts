@@ -91,6 +91,23 @@ export class LightningFlowSystem {
   private visible = true;
   /** Per-tag dimming, 0 = full strength, 1 = invisible. See `setFade`. */
   private fades = new Map<string, number>();
+  /** Whole-system opacity scale, 1 = the standard. See `setIntensity`. */
+  private intensity = 1;
+
+  /**
+   * Scale every bolt's opacity, 1 = the app-wide standard strength.
+   *
+   * Exists so a surface can dial the flow back WITHOUT editing the shared
+   * constants above, which are the standard the whole app matches. The builder
+   * shows a handful of bolts across a wide canvas; the arena stacks a rung per
+   * part between two rails and views the lot from one camera, so the same
+   * per-bolt strength adds up to a curtain of light there and nowhere else.
+   * Backing the arena off is a property of that scene, not a correction to the
+   * standard — which is why it lives here rather than in the constants.
+   */
+  public setIntensity(intensity: number): void {
+    this.intensity = Math.max(0, Math.min(1, intensity));
+  }
 
   /**
    * Dim every bolt carrying `tag`, 0 → 1.
@@ -331,7 +348,9 @@ export class LightningFlowSystem {
       // component gives way to that component's own reaction.
       const fade = L.tag ? (this.fades.get(L.tag) ?? 0) : 0;
       L.mat.opacity =
-        Math.min(1, L.baseOpacity * (crackling ? 1.5 : 1)) * (1 - fade);
+        Math.min(1, L.baseOpacity * (crackling ? 1.5 : 1)) *
+        (1 - fade) *
+        this.intensity;
     }
   }
 

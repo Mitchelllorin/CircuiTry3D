@@ -4325,6 +4325,15 @@ body.android-optimized .zoom-btn {
                                 if (typeof updateCameraPosition === 'function') updateCameraPosition();
                                 break;
                             }
+                            case 'set-ui-busy': {
+                                // React tells us when one of its panels, modals or
+                                // tutorials owns the screen, and the idle turntable
+                                // holds while it does. Needed because the host's
+                                // bottom sheets render outside this iframe, so the
+                                // DOM checks in idleOrbitBlocked() cannot see them.
+                                _hostUiBusy = !!(data && data.busy);
+                                break;
+                            }
                             case 'tour-focus':
                                 // Guided-tour camera sweep: focus on a named component
                                 // (data.target = 'battery' | 'resistor' | 'switch' |
@@ -5565,6 +5574,54 @@ body.android-optimized .zoom-btn {
         const _viewOffsetDir = new THREE.Vector3();
         const _viewAim = new THREE.Vector3();
         let isRotating = false, isPanning = false;
+
+        // ── Idle turntable ───────────────────────────────────────────────────
+        // A workspace nobody has touched for a few seconds slowly turns itself, so
+        // the board reads as a 3D object sitting in space rather than a picture of
+        // one. Azimuth ONLY: the tip (cameraAngleY) and the zoom (cameraDistance)
+        // are left alone, so the drift never changes how much of the circuit you
+        // can see — only which side you are looking from.
+        //
+        // It yields to the user completely. Any input at all resets the clock, and
+        // it will not start while a part is selected or a panel is open: the camera
+        // sliding out from under a part you are placing, or behind a sheet you are
+        // reading, is worse than a board that simply sits still.
+        const IDLE_ORBIT_DELAY_MS  = 8000;   // stillness required before it starts
+        const IDLE_ORBIT_PERIOD_MS = 90000;  // one full revolution
+        let _lastUserInputAt   = 0;      // 0 = unseeded; set on the first animate frame
+        let _idleOrbitPrevTime = 0;      // 0 = not currently drifting
+        let _hostUiBusy        = false;  // React panels/modals/tutorials, over the bridge
+        let _idleUiCheckedAt   = -1;     // throttle stamp for the DOM checks
+        let _idleUiBlocked     = false;  // last result of those checks
+        // True on frames where the turntable actually moved the camera. The animate
+        // loop reads this to lift its two throttles for the duration of the drift —
+        // see the frame-rate and label notes there.
+        let _idleOrbitActive   = false;
+
+        // Payoff-circuit safety net — see ensurePayoffCircuitLoaded. Declared here
+        // because `_userTouchedWorkspace` is set by the input handler just below.
+        let _payoffSelfLoadArmed  = true;   // false once a payoff circuit has been built
+        let _userTouchedWorkspace = false;  // any real input disarms the safety net
+
+        // Any sign of life resets the idle clock. Capture phase, so it still counts
+        // when a handler downstream stops propagation; passive, so it can never cost
+        // a scroll or pinch frame.
+        function noteWorkspaceInput() {
+            _lastUserInputAt = performance.now();
+            // Also disarms the payoff safety net — see ensurePayoffCircuitLoaded.
+            // Once the user has touched anything, an empty workspace is their doing.
+            _userTouchedWorkspace = true;
+        }
+        ['pointerdown', 'pointerup', 'wheel', 'keydown', 'touchstart', 'touchmove'].forEach(
+            (evt) => document.addEventListener(evt, noteWorkspaceInput, { capture: true, passive: true })
+        );
+        // Mouse movement counts only while a button is held. An idle desktop mouse
+        // emits stray moves, and a cursor merely passing over the canvas is not the
+        // same as somebody working.
+        document.addEventListener('pointermove', function (e) {
+            if (e.buttons) noteWorkspaceInput();
+        }, { capture: true, passive: true });
+
         let lastTouchPos = { x: 0, y: 0 };
         let lastTwoFingerCenter = { x: 0, y: 0 };
         let lastPinchDistance = 0;
@@ -9109,12 +9166,23 @@ body.android-optimized .zoom-btn {
             // Handle first call where currentTime might be undefined
             if (!currentTime) currentTime = performance.now();
 
-            // Throttle to target FPS to reduce CPU/GPU load on slower devices
+            // Throttle to target FPS to reduce CPU/GPU load on slower devices.
+            // EXCEPT while the idle turntable is drifting: Android's 30 fps cap is
+            // there to survive a busy interactive scene, and a slow continuous pan
+            // is the one thing it reads badly on — halving the frame rate doubles
+            // the per-frame camera step, which is exactly what shows up as judder.
+            // Nobody is interacting during the drift, so the headroom is free, and
+            // any touch ends the drift and restores the cap on the same frame.
             const elapsed = currentTime - lastFrameTime;
-            if (elapsed < TARGET_FRAME_INTERVAL * 0.9) {
+            if (elapsed < TARGET_FRAME_INTERVAL * 0.9 && !_idleOrbitActive) {
                 return; // Skip frame if we're running faster than target
             }
             lastFrameTime = currentTime;
+
+            // Runs BEFORE the label pass below, not after the render: the camera has
+            // to settle first, or every label spends the frame projected against the
+            // camera's previous position and trails the board it is pinned to.
+            updateIdleOrbit(currentTime);
 
             globalFlowTime++;
             updateFlowParticles(currentTime);
@@ -9158,9 +9226,13 @@ body.android-optimized .zoom-btn {
                 }
             }
 
-            // Only update labels every few frames to reduce DOM manipulation overhead
+            // Only update labels every few frames to reduce DOM manipulation
+            // overhead — but NOT while the turntable is drifting. At the Android
+            // interval that is one label move every 200 ms: the board glides and the
+            // text pinned to it jumps five times a second, which reads as the whole
+            // rotation being choppy even though the 3D itself is smooth.
             labelUpdateCounter++;
-            if (labelUpdateCounter >= LABEL_UPDATE_INTERVAL) {
+            if (labelUpdateCounter >= LABEL_UPDATE_INTERVAL || _idleOrbitActive) {
                 labelUpdateCounter = 0;
                 updateComponentLabels();
             }
@@ -9849,6 +9921,69 @@ body.android-optimized .zoom-btn {
                 aim.z + z
             );
             camera.lookAt(aim);
+        }
+
+        // Is anything on screen that the idle turntable must not move behind?
+        // Called every frame, so the DOM half is throttled — it only has to be fresh
+        // to within a fraction of a second.
+        function idleOrbitBlocked(now) {
+            if (_hostUiBusy) return true;
+            if (typeof _cinematicCtrl !== 'undefined' && _cinematicCtrl && _cinematicCtrl.isPlaying) return true;
+            if (isDragging || isRotating || isPanning) return true;
+            if (activeComponent || selectedComponent) return true;
+            if (selectedComponents && selectedComponents.size > 0) return true;
+            if (now - _idleUiCheckedAt > 250) {
+                _idleUiCheckedAt = now;
+                // This iframe's own chrome: an open menu tab, or the W.I.R.E.
+                // analysis panel expanded. (The host's bottom sheets are outside
+                // this document entirely — those arrive as _hostUiBusy.)
+                const analysis = document.getElementById('wire-analysis');
+                _idleUiBlocked = !!document.querySelector('.submenu.active') ||
+                                 !!(analysis && !analysis.classList.contains('collapsed'));
+            }
+            return _idleUiBlocked;
+        }
+
+        function updateIdleOrbit(now) {
+            // Cleared up front so every early return below leaves it false — the
+            // turntable is "active" only on frames where it genuinely moved.
+            _idleOrbitActive = false;
+            // Unseeded: the very first frame starts the countdown, so an untouched
+            // workspace begins turning IDLE_ORBIT_DELAY_MS after it opens.
+            if (!_lastUserInputAt) {
+                _lastUserInputAt = now;
+                return;
+            }
+            // Blocked → hold, and restart the countdown from here, so the drift
+            // always waits the full delay after the blocker clears rather than
+            // resuming the instant a panel closes.
+            if (idleOrbitBlocked(now)) {
+                _lastUserInputAt = now;
+                _idleOrbitPrevTime = 0;
+                return;
+            }
+            if (now - _lastUserInputAt < IDLE_ORBIT_DELAY_MS) {
+                _idleOrbitPrevTime = 0;
+                return;
+            }
+            // The first qualifying frame only seeds the timestamp: with no previous
+            // frame there is no honest delta to advance by, and using one would jump
+            // the camera by the whole idle delay.
+            if (!_idleOrbitPrevTime) {
+                _idleOrbitPrevTime = now;
+                return;
+            }
+            // Time-based, not per-frame, so a turn takes 90 s whether the device is
+            // rendering at 30, 60 or 120 fps.
+            const dt = now - _idleOrbitPrevTime;
+            _idleOrbitPrevTime = now;
+            _idleOrbitActive = true;
+            cameraAngleX += (Math.PI * 2) * (dt / IDLE_ORBIT_PERIOD_MS);
+            // Keep the angle bounded. CinematicController snapshots cameraAngleX and
+            // interpolates against it, so an angle left to grow without limit would
+            // eventually send those tweens the long way around.
+            if (cameraAngleX > Math.PI * 2) cameraAngleX -= Math.PI * 2;
+            updateCameraPosition();
         }
 
         function zoomIn() {
@@ -20953,6 +21088,39 @@ Made with ? for visual learners everywhere!
          *   6. analyzeCircuit() to spawn the current-flow particles.
          *   7. setStatus() with a user-facing message.
          */
+        // ── Payoff circuit: self-loading safety net ──────────────────────────
+        // The showcase circuit used to exist ONLY if a postMessage arrived from the
+        // React host. That is why it kept vanishing in the Play Store build while
+        // working in dev: the host already fires load-payoff from two separate
+        // effects, each with two or three timed retries, plus a six-attempt poller —
+        // and a build where all of that still loses the race is a build where adding
+        // a seventh retry changes nothing. The dependency itself is the bug.
+        //
+        // So the frame that OWNS the scene now guarantees its own default content:
+        // if the workspace is still empty a moment after init, it loads the circuit
+        // itself. No message has to arrive for the user to land on a live circuit.
+        // The host's messages still work and are harmless — loading twice just
+        // rebuilds the same circuit, and the checks below stop once one succeeds.
+        // (`_payoffSelfLoadArmed` and `_userTouchedWorkspace` are declared up with
+        // the input tracking, which is where the second one gets set.)
+        function ensurePayoffCircuitLoaded(reason) {
+            if (!_payoffSelfLoadArmed) return;
+            // Somebody's circuit is already on screen — the host's message landed,
+            // or a saved circuit was restored. Either way, leave it alone.
+            if (components.length > 0 || junctions.length > 0 || wires.length > 0) {
+                _payoffSelfLoadArmed = false;
+                return;
+            }
+            // The user has already done something (including deliberately clearing
+            // the workspace). Never put a circuit back under their hands.
+            if (_userTouchedWorkspace) {
+                _payoffSelfLoadArmed = false;
+                return;
+            }
+            console.warn('[CT3D Payoff] Workspace still empty (' + reason + ') — loading the showcase circuit locally.');
+            loadPayoffCircuit();
+        }
+
         function loadPayoffCircuit() {
             if (!scene || !renderer) {
                 console.warn('[CT3D Payoff] loadPayoffCircuit: scene/renderer not ready — retrying in 800 ms (aligns with React retry at 480 ms + 1200 ms)');
@@ -21082,6 +21250,9 @@ Made with ? for visual learners everywhere!
                 scene.updateMatrixWorld(true);
                 analyzeCircuit();
                 setStatus('⚡ A simple series circuit — battery, resistor, switch, light. The switch is closed, so current flows and the light is on.');
+                // Built successfully — the safety net has nothing left to do, whether
+                // this call came from the host or from the net itself.
+                _payoffSelfLoadArmed = false;
                 console.log('[CT3D Payoff] Payoff circuit loaded — wires:', wires.length, 'flow:', currentFlowState?.hasFlow);
             } catch (err) {
                 console.error('[CT3D Payoff] loadPayoffCircuit error:', err);
@@ -22595,11 +22766,59 @@ Need more detail? Open the Table Method Guide in the Builder sidebar for printab
             }
         }
 
+        // ── How each family dies ─────────────────────────────────────────────
+        // Ported from the arena bench (ArenaScene.tsx, FAIL_SIGNATURE_BY_FAMILY) so
+        // a part dies the SAME way on both surfaces. Keyed by component type, which
+        // IS the family: a resistor cooks, an electrolytic vents, an LED's junction
+        // flashes out. `flash` is how violently it lets go, `ember` how hot it stays
+        // afterwards, `hot` whether that light is fire-orange rather than white, and
+        // `popMs` how long the letting-go itself lasts.
+        const WORKSPACE_FAIL_SIGNATURE = {
+            resistor:  { popMs: 1400, flash: 2.2, ember: 0.5,  hot: false },
+            capacitor: { popMs: 1100, flash: 3.4, ember: 0.35, hot: true  },
+            led:       { popMs:  260, flash: 4.2, ember: 0,    hot: false },
+            diode:     { popMs:  420, flash: 3.2, ember: 0.1,  hot: false },
+            inductor:  { popMs: 1800, flash: 1.8, ember: 0.6,  hot: true  },
+            battery:   { popMs: 2000, flash: 2.6, ember: 0.85, hot: true  },
+            fuse:      { popMs:  340, flash: 2.8, ember: 0.05, hot: false },
+            lamp:      { popMs:  300, flash: 4.5, ember: 0,    hot: false },
+            mosfet:    { popMs:  500, flash: 3.8, ember: 0.2,  hot: false },
+            bjt:       { popMs:  500, flash: 3.6, ember: 0.2,  hot: false },
+        };
+        const WORKSPACE_FAIL_DEFAULT = { popMs: 900, flash: 2.6, ember: 0.3, hot: false };
+        function workspaceFailSignature(component) {
+            return WORKSPACE_FAIL_SIGNATURE[component && component.type] || WORKSPACE_FAIL_DEFAULT;
+        }
+
+        // The arena's thermal palette, same values. Allocated once — these are read
+        // on every failing part on every analysis pass.
+        const _failScorchColor = new THREE.Color('#4a2a11'); // baked-brown, no light
+        const _failDullRed     = new THREE.Color('#8c1400'); // first visible light, ~600 °C
+        const _failHot         = new THREE.Color('#ff5512');
+        const _failWhite       = new THREE.Color('#ffe2b0');
+        const _failCharColor   = new THREE.Color('#140d06'); // burnt through
+        const _failScratch     = new THREE.Color();
+        const _clamp01 = (v) => (v < 0 ? 0 : v > 1 ? 1 : v);
+
         /**
          * Apply failure visual effects to a component's THREE.js mesh.
-         * Mutates existing Phong/Lambert materials — no new geometry needed.
-         * Colors and emissive intensity encode the physical failure state and
-         * animate over time to simulate fire flicker, arc flash, and melt glow.
+         * Mutates existing materials — no new geometry needed.
+         *
+         * This follows the arena bench's model exactly, because the previous one had
+         * the physics backwards: it stamped ONE flat colour and ONE emissive value
+         * across every material in the part — body, leads, bands alike — from the
+         * moment it was merely stressed. A part lit uniformly with no falloff and no
+         * shading variation is precisely what a selection highlight looks like, and
+         * that is how a cooking resistor read.
+         *
+         * Nothing in a circuit glows because it is warm. A resistor well past its
+         * rating and on its way out emits no visible light whatsoever — it
+         * DISCOLOURS, and that discolouration is the only thing there is to see. So
+         * heat shows in two physically separate stages:
+         *   1. SCORCH — the body browns as it bakes, from each material's own
+         *               colour, and the finish goes matte. No light at all.
+         *   2. GLOW   — only past the rated limit does it incandesce, and it starts
+         *               at dull cherry red, not orange.
          */
         function applyWorkspaceFailureVisuals(component, failure) {
             if (!component.mesh) return;
@@ -22613,66 +22832,78 @@ Need more detail? Open the Table Method Guide in the Builder sidebar for printab
                         color: child.material.color ? child.material.color.getHex() : null,
                         emissive: child.material.emissive ? child.material.emissive.getHex() : null,
                         emissiveIntensity: child.material.emissiveIntensity,
+                        // Baking a surface takes the gloss off it, so roughness is
+                        // part of the failure look — and therefore part of what has
+                        // to be put back when the failure clears.
+                        roughness: child.material.roughness,
                     };
                 });
             }
 
             // Severity color ramp per visual type:
-            //   index 0 = stressed (sev ≈ 1), index 1 = destroyed (sev = 3)
-            const SEVERITY_COLORS = {
-                char:    [0xff6600, 0x120400],  // orange fire → near-black char
-                blowout: [0xffffff, 0x050000],  // white-hot flash → black
-                melt:    [0xff8800, 0x2a0800],  // bright orange → dark char
-                arc:     [0xddeeff, 0x050510],  // blue-white discharge → dark
-                burst:   [0xff6600, 0x180300],  // explosive orange → charred black
-                vent:    [0xffdd88, 0x1c0800],  // pale fire glow → dark
-                smoke:   [0x555566, 0x111827],  // gray → dark slate
-                glow:    [0xff6600, 0xcc2200],  // orange → deep red (still hot)
-            };
+            const sig  = workspaceFailSignature(component);
+            const sev  = Math.min(failure.severity, 3);
+            const dead = !!failure.failed;
+            // The bench measures heat as "× the part's own limit"; this pass counts
+            // severity 0–3 with 2 as the rated limit. Halving lines the two scales
+            // up, so the stage thresholds below mean the same thing on both surfaces.
+            const heatShown = sev / 2;
 
-            const visual = failure.visual || 'char';
-            const sev    = Math.min(failure.severity, 3);
-            const t      = Math.min(sev / 3, 1);
-            const colors = SEVERITY_COLORS[visual] || SEVERITY_COLORS.char;
-            const baseC  = colors[0];
-            const destC  = colors[1];
+            // Stage 1 — scorch. Begins at half the limit, saturates at the limit.
+            // Capped at 0.6 so even a badly cooked part keeps some of its own colour
+            // and stays identifiable; only actually dying takes it to char.
+            const scorchT = _clamp01((heatShown - 0.5) / 0.5) * 0.6;
+            // Stage 2 — incandescence. Zero AT the limit, full about 40% past it.
+            const glowT   = _clamp01((heatShown - 1) / 0.4);
 
-            // Lerp body color between stressed and destroyed states
-            const r = Math.round(((baseC >> 16) & 0xff) * (1 - t) + ((destC >> 16) & 0xff) * t);
-            const g = Math.round(((baseC >>  8) & 0xff) * (1 - t) + ((destC >>  8) & 0xff) * t);
-            const b = Math.round(( baseC        & 0xff) * (1 - t) + ( destC        & 0xff) * t);
-            const targetColor = (r << 16) | (g << 8) | b;
+            // A part that has let go is not "very scorched", it is burnt: take the
+            // body most of the way to char. Families that stay dangerously hot
+            // afterwards (electrolytics, coils, cells) keep a low ember; the ones
+            // that simply open (LED, lamp) go stone cold and dark.
+            const bodyTarget = dead ? _failCharColor : _failScorchColor;
+            const bodyT      = dead ? 0.88 : scorchT;
 
-            // Emissive color and animated intensity per visual type
-            const now = Date.now();
-            const emissiveColor =
-                visual === 'arc'    ? 0x4466ff :  // blue electrical discharge
-                visual === 'glow'   ? 0xff3300 :  // deep red thermal
-                visual === 'burst'  ? 0xff6600 :  // orange explosion
-                visual === 'blowout'? 0xffaa00 :  // amber burnout
-                visual === 'melt'   ? 0xff5500 :  // orange-red melt
-                visual === 'vent'   ? 0xff8800 :  // warm venting glow
-                visual === 'char'   ? 0xff4400 :  // fire orange
-                                      0x220800;   // dim ember (smoke)
+            if (dead && sig.ember > 0) {
+                _failScratch.copy(_failCharColor).lerp(_failHot, sig.ember * 0.7);
+            } else if (glowT > 0) {
+                // Dull red first, THEN orange, and white only when it is truly about
+                // to let go — the real colour-temperature sequence.
+                _failScratch
+                    .copy(_failDullRed)
+                    .lerp(_failHot,   _clamp01(glowT / 0.6))
+                    .lerp(_failWhite, _clamp01((glowT - 0.75) / 0.25));
+            }
+            const emissiveIntensity = dead ? sig.ember * 0.6 : glowT * 2.2;
+            const lit = (dead && sig.ember > 0) || (!dead && glowT > 0);
 
-            const emissiveIntensity =
-                visual === 'glow'    ? t * 1.8 :
-                visual === 'arc'     ? 1.2  + Math.sin(now / FAIL_FLICKER_ARC)   * 0.65 :  // rapid arc flicker
-                visual === 'burst'   ? 1.0  + Math.sin(now / FAIL_FLICKER_BURST) * 0.60 :  // explosion pulse
-                visual === 'blowout' ? t * 1.1 :
-                visual === 'melt'    ? 0.55 + t * 0.80 + Math.sin(now / FAIL_FLICKER_MELT) * 0.28 : // melt glow
-                visual === 'char'    ? 0.35 + t * 0.65 + Math.sin(now / FAIL_FLICKER_CHAR) * 0.22 : // fire flicker
-                visual === 'vent'    ? t * 0.65 :
-                                       0.08 + t * 0.28;
-
-            // Apply to all body materials in the mesh group
+            const originals = component.mesh.userData.originalColors;
             component.mesh.traverse(child => {
                 if (!child.isMesh || !child.material) return;
                 if (child.userData && child.userData.isSelectionBox) return;
                 const m = child.material;
-                if (m.color)               m.color.setHex(targetColor);
-                if (m.emissive)            m.emissive.setHex(emissiveColor);
-                if (m.emissiveIntensity !== undefined) m.emissiveIntensity = emissiveIntensity;
+                const orig = originals && originals[child.uuid];
+                if (!orig) return;
+                // Each material browns from ITS OWN colour. One flat colour stamped
+                // across all of them is what flattened the part into a single
+                // luminous shape with no shading left to read.
+                if (m.color && orig.color != null) {
+                    m.color.setHex(orig.color).lerp(bodyTarget, bodyT);
+                }
+                if (m.roughness !== undefined && orig.roughness != null) {
+                    m.roughness = orig.roughness + (0.9 - orig.roughness) * bodyT;
+                }
+                if (lit) {
+                    if (m.emissive) m.emissive.copy(_failScratch);
+                    if (m.emissiveIntensity !== undefined) m.emissiveIntensity = emissiveIntensity;
+                } else {
+                    // Below incandescence a part emits exactly what it always did —
+                    // an LED's lens keeps making its own light right up until the
+                    // body is hot enough to out-shine it.
+                    if (m.emissive && orig.emissive != null) m.emissive.setHex(orig.emissive);
+                    if (m.emissiveIntensity !== undefined && orig.emissiveIntensity != null) {
+                        m.emissiveIntensity = orig.emissiveIntensity;
+                    }
+                }
             });
         }
 
@@ -22691,6 +22922,10 @@ Need more detail? Open the Table Method Guide in the Builder sidebar for printab
                 if (child.material.emissive && orig.emissive != null) child.material.emissive.setHex(orig.emissive);
                 if (child.material.emissiveIntensity !== undefined && orig.emissiveIntensity != null) {
                     child.material.emissiveIntensity = orig.emissiveIntensity;
+                }
+                // Undo the matte finish that baking left behind.
+                if (child.material.roughness !== undefined && orig.roughness != null) {
+                    child.material.roughness = orig.roughness;
                 }
             });
             component.mesh.userData.originalColors = null;
@@ -22754,17 +22989,25 @@ Need more detail? Open the Table Method Guide in the Builder sidebar for printab
                         // Trigger dramatic screen effects when a component newly enters high failure
                         const wasLowSev = !prev || prev.severity < 2;
                         if (wasLowSev && failure.severity >= 2) {
+                            // EVERY family now gets the let-go moment, sized by its
+                            // own violence. Previously only 'burst' and 'blowout'
+                            // did, so the quiet deaths — a resistor cooking, an
+                            // inductor's windings charring, anything mapped to
+                            // 'smoke' or 'char' — produced no flash, no light and no
+                            // shake whatsoever. Just a puff of smoke, which is
+                            // exactly how they read: like nothing had happened.
+                            const sig = workspaceFailSignature(component);
+                            spawnWorkspaceFailFlash(component, sig);
+                            triggerCameraShake(0.06 + sig.flash * 0.055, 0.22 + sig.flash * 0.08);
+
+                            // The loud families keep their extra screen-level drama
+                            // on top of the shared flash.
                             if (failure.visual === 'burst') {
-                                // Full explosion: bright flash + strong camera shake + hazard warning
                                 triggerExplosionFlash(component, 'burst');
-                                triggerCameraShake(0.35, 0.7);
                                 showHazardWarning();
                             } else if (failure.visual === 'blowout') {
-                                // Blowout: moderate flash + light shake + shockwave
                                 triggerExplosionFlash(component, 'blowout');
-                                triggerCameraShake(0.18, 0.45);
                             } else if (failure.visual === 'arc' || failure.visual === 'melt') {
-                                // Arc / melt: blue-white arc flash + light
                                 triggerShortCircuitFlash(component);
                             }
                         }
@@ -22797,6 +23040,8 @@ Need more detail? Open the Table Method Guide in the Builder sidebar for printab
                 for (const fl of workspaceFlashLights) {
                     scene.remove(fl.light);
                     fl.light.dispose();
+                    if (fl.core) { scene.remove(fl.core); fl.core.material.dispose(); }
+                    if (fl.halo) { scene.remove(fl.halo); fl.halo.material.dispose(); }
                 }
             }
             workspaceFlashLights.length = 0;
@@ -22846,12 +23091,36 @@ Need more detail? Open the Table Method Guide in the Builder sidebar for printab
                 if (fl.age >= fl.maxAge) {
                     scene.remove(fl.light);
                     fl.light.dispose();
+                    if (fl.core) { scene.remove(fl.core); fl.core.material.dispose(); }
+                    if (fl.halo) { scene.remove(fl.halo); fl.halo.material.dispose(); }
                     workspaceFlashLights.splice(i, 1);
                     continue;
                 }
                 const progress = fl.age / fl.maxAge;
-                // Quadratic decay: bright at start, dims fast
-                fl.light.intensity = fl.peakIntensity * (1 - progress * progress);
+                if (fl.core || fl.halo) {
+                    // flashT counts 1 → 0 across the pop, so it is "how much of the
+                    // detonation is left"; progress is time SINCE it, which is what
+                    // the expanding shell rides on.
+                    const flashT = 1 - progress;
+                    fl.light.intensity = flashT * fl.flash * 7;
+                    if (fl.core) {
+                        fl.core.material.opacity = Math.min(flashT * 1.2, 1);
+                        // Scaled by the family's own violence — a vented cell's core
+                        // is not the size of a fuse quietly opening.
+                        fl.core.scale.setScalar(0.3 + flashT * (0.5 + fl.flash * 0.42));
+                    }
+                    if (fl.halo) {
+                        // Thins as it expands — the same light over more area. It has
+                        // to be gone by the end, or it reads as a bubble sitting on
+                        // the part rather than a blast passing through it.
+                        fl.halo.material.opacity =
+                            Math.min(flashT * 0.85, 0.6) * (1 - progress * progress);
+                        fl.halo.scale.setScalar(0.5 + progress * (2.2 + fl.flash * 1.3));
+                    }
+                } else {
+                    // Quadratic decay: bright at start, dims fast
+                    fl.light.intensity = fl.peakIntensity * (1 - progress * progress);
+                }
             }
         }
 
@@ -22912,6 +23181,57 @@ Need more detail? Open the Table Method Guide in the Builder sidebar for printab
                 component.mesh.getWorldPosition(wp);
                 createWorkspaceExplosionFx(wp, visual || 'burst');
             }
+        }
+
+        /**
+         * The moment a part lets go: a point light AT the failure site, a bright
+         * core, and a shell that blows outward as that core collapses.
+         *
+         * Ported from the arena bench, where two details turned out to be the whole
+         * difference between "it died" and "nothing happened", and both are kept:
+         *   • The light REACHES (16, not 6). At 6 it expired before it left the
+         *     part, so nothing around it registered the failure. Light landing on
+         *     the neighbouring parts and the grid is what sells it.
+         *   • The shell runs on the INVERSE of the flash, so it expands while the
+         *     core shrinks. Growing it along WITH the core is just a bigger core.
+         *
+         * Brightness alone does not carry — size and motion do.
+         */
+        function spawnWorkspaceFailFlash(component, sig) {
+            if (!scene || !component || !component.mesh) return;
+            const worldPos = new THREE.Vector3();
+            component.mesh.getWorldPosition(worldPos);
+            const tint = sig.hot ? 0xff5512 : 0xffe2b0;
+
+            const light = new THREE.PointLight(tint, sig.flash * 7, 16, 2);
+            light.position.copy(worldPos);
+            scene.add(light);
+
+            const tex = getFailSparkTexture();
+            const makeSprite = (opacity) => {
+                const sprite = new THREE.Sprite(new THREE.SpriteMaterial({
+                    map: tex,
+                    color: tint,
+                    transparent: true,
+                    opacity,
+                    depthWrite: false,
+                    blending: THREE.AdditiveBlending,
+                }));
+                sprite.position.copy(worldPos);
+                sprite.scale.setScalar(0.3);
+                scene.add(sprite);
+                return sprite;
+            };
+
+            workspaceFlashLights.push({
+                light,
+                core: makeSprite(1),
+                halo: makeSprite(0),
+                flash: sig.flash,
+                age: 0,
+                maxAge: sig.popMs / 1000,
+                peakIntensity: sig.flash * 7,
+            });
         }
 
         /** Show the persistent AC/DC hazard warning panel. */
@@ -23046,12 +23366,32 @@ Need more detail? Open the Table Method Guide in the Builder sidebar for printab
         // selectable).  The ping-pong bridge (builder:ping → legacy:ready)
         // guards readiness with the _builderReady flag, so this deferral does
         // not cause the React host to unlock the UI before the scene is ready.
+        // Arm the payoff safety net once init has run, whichever way it ran. Three
+        // widely-spaced checks rather than one: the first covers the normal case,
+        // the later two cover a WebView that was still creating its GL context when
+        // the first fired. Each is a no-op the moment a circuit exists, so on a
+        // healthy launch only the 1.5 s check does anything and it does nothing.
+        function armPayoffSafetyNet() {
+            [1500, 4000, 9000].forEach(function (delay) {
+                window.setTimeout(function () {
+                    try {
+                        ensurePayoffCircuitLoaded(delay + ' ms after init');
+                    } catch (e) {
+                        console.warn('[CT3D Payoff] safety net check failed:', e);
+                    }
+                }, delay);
+            });
+        }
+
         (function scheduleInit(retries) {
             var w = window.innerWidth  || document.documentElement.clientWidth;
             var h = window.innerHeight || document.documentElement.clientHeight;
             if (retries === 120) console.log('[CT3D] scheduleInit: waiting for viewport... w='+w+' h='+h);
             if (w > 0 && h > 0) {
-                init();
+                // try/finally: if init() throws (e.g. every WebGL strategy failed)
+                // the net still gets armed, so a scene that recovers later still
+                // ends up with its circuit instead of staying blank forever.
+                try { init(); } finally { armPayoffSafetyNet(); }
             } else if (retries > 0) {
                 // Dimensions not ready yet — try again next frame.
                 requestAnimationFrame(function() { scheduleInit(retries - 1); });
@@ -23060,7 +23400,7 @@ Need more detail? Open the Table Method Guide in the Builder sidebar for printab
                 // init() falls back to safe minimum dimensions (360×640) so the
                 // renderer is never created with a 0×0 framebuffer.
                 console.warn('scheduleInit: viewport dimensions still 0 after max retries — forcing init()');
-                init();
+                try { init(); } finally { armPayoffSafetyNet(); }
             }
         })(120); // allow up to ~120 frames (~2 s) before forcing init
     </script>
