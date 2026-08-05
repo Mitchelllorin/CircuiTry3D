@@ -5586,7 +5586,7 @@ body.android-optimized .zoom-btn {
         // it will not start while a part is selected or a panel is open: the camera
         // sliding out from under a part you are placing, or behind a sheet you are
         // reading, is worse than a board that simply sits still.
-        const IDLE_ORBIT_DELAY_MS  = 8000;   // stillness required before it starts
+        const IDLE_ORBIT_DELAY_MS  = 6000;   // stillness required before it starts
         const IDLE_ORBIT_PERIOD_MS = 90000;  // one full revolution
         let _lastUserInputAt   = 0;      // 0 = unseeded; set on the first animate frame
         let _idleOrbitPrevTime = 0;      // 0 = not currently drifting
@@ -5601,7 +5601,11 @@ body.android-optimized .zoom-btn {
         // Payoff-circuit safety net — see ensurePayoffCircuitLoaded. Declared here
         // because `_userTouchedWorkspace` is set by the input handler just below.
         let _payoffSelfLoadArmed  = true;   // false once a payoff circuit has been built
-        let _userTouchedWorkspace = false;  // any real input disarms the safety net
+        let _userTouchedWorkspace = false;  // real input, after the grace window, disarms it
+        let _payoffNetStartedAt   = 0;      // performance.now() when the net was armed
+        // A tap inside this window after startup is dismissing a splash or prodding a
+        // blank canvas — not "I deliberately emptied my workspace".
+        const PAYOFF_TOUCH_GRACE_MS = 10000;
 
         // Any sign of life resets the idle clock. Capture phase, so it still counts
         // when a handler downstream stops propagation; passive, so it can never cost
@@ -9926,28 +9930,45 @@ body.android-optimized .zoom-btn {
         // Is anything on screen that the idle turntable must not move behind?
         // Called every frame, so the DOM half is throttled — it only has to be fresh
         // to within a fraction of a second.
+        // Live diagnostic, mutated in place (never reallocated — this runs every
+        // frame). Readable from the host as `iframe.contentWindow.__ct3dIdle`, which
+        // is the only way to find out WHY the turntable is holding: every blocker
+        // below looks identical from the outside, namely a workspace that sits still.
+        const __ct3dIdle = { blocked: false, reason: 'none', msSinceInput: 0, drifting: false };
+        window.__ct3dIdle = __ct3dIdle;
+
         function idleOrbitBlocked(now) {
-            if (_hostUiBusy) return true;
-            if (typeof _cinematicCtrl !== 'undefined' && _cinematicCtrl && _cinematicCtrl.isPlaying) return true;
-            if (isDragging || isRotating || isPanning) return true;
-            if (activeComponent || selectedComponent) return true;
-            if (selectedComponents && selectedComponents.size > 0) return true;
-            if (now - _idleUiCheckedAt > 250) {
-                _idleUiCheckedAt = now;
-                // This iframe's own chrome: an open menu tab, or the W.I.R.E.
-                // analysis panel expanded. (The host's bottom sheets are outside
-                // this document entirely — those arrive as _hostUiBusy.)
-                const analysis = document.getElementById('wire-analysis');
-                _idleUiBlocked = !!document.querySelector('.submenu.active') ||
-                                 !!(analysis && !analysis.classList.contains('collapsed'));
+            let reason = null;
+            if (_hostUiBusy) reason = 'host-ui-busy (React panel, modal, tour or build-along open)';
+            else if (typeof _cinematicCtrl !== 'undefined' && _cinematicCtrl && _cinematicCtrl.isPlaying) reason = 'cinematic-playing';
+            else if (isDragging || isRotating || isPanning) reason = 'user-manipulating-camera-or-part';
+            else if (activeComponent) reason = 'activeComponent set (a part is carried/selected)';
+            else if (selectedComponent) reason = 'selectedComponent set';
+            else if (selectedComponents && selectedComponents.size > 0) reason = 'multi-selection active';
+            else {
+                if (now - _idleUiCheckedAt > 250) {
+                    _idleUiCheckedAt = now;
+                    // This iframe's own chrome: an open menu tab, or the W.I.R.E.
+                    // analysis panel expanded. (The host's bottom sheets are outside
+                    // this document entirely — those arrive as _hostUiBusy.)
+                    const analysis = document.getElementById('wire-analysis');
+                    _idleUiBlocked = !!document.querySelector('.submenu.active') ||
+                                     !!(analysis && !analysis.classList.contains('collapsed'));
+                }
+                if (_idleUiBlocked) reason = 'legacy chrome open (menu submenu or W.I.R.E. analysis panel)';
             }
-            return _idleUiBlocked;
+
+            __ct3dIdle.blocked = reason !== null;
+            __ct3dIdle.reason = reason || 'none';
+            __ct3dIdle.msSinceInput = Math.round(now - _lastUserInputAt);
+            return reason !== null;
         }
 
         function updateIdleOrbit(now) {
             // Cleared up front so every early return below leaves it false — the
             // turntable is "active" only on frames where it genuinely moved.
             _idleOrbitActive = false;
+            __ct3dIdle.drifting = false;
             // Unseeded: the very first frame starts the countdown, so an untouched
             // workspace begins turning IDLE_ORBIT_DELAY_MS after it opens.
             if (!_lastUserInputAt) {
@@ -9978,6 +9999,7 @@ body.android-optimized .zoom-btn {
             const dt = now - _idleOrbitPrevTime;
             _idleOrbitPrevTime = now;
             _idleOrbitActive = true;
+            __ct3dIdle.drifting = true;
             cameraAngleX += (Math.PI * 2) * (dt / IDLE_ORBIT_PERIOD_MS);
             // Keep the angle bounded. CinematicController snapshots cameraAngleX and
             // interpolates against it, so an angle left to grow without limit would
@@ -21111,9 +21133,12 @@ Made with ? for visual learners everywhere!
                 _payoffSelfLoadArmed = false;
                 return;
             }
-            // The user has already done something (including deliberately clearing
-            // the workspace). Never put a circuit back under their hands.
-            if (_userTouchedWorkspace) {
+            // The user has already done something — but only treat that as "they
+            // cleared it on purpose" once the app has been up long enough for that
+            // to be a real possibility. During startup a tap is somebody dismissing
+            // a splash or poking a canvas that has not drawn anything yet, and
+            // disarming on that would reinstate the exact bug this exists to kill.
+            if (_userTouchedWorkspace && (performance.now() - _payoffNetStartedAt) > PAYOFF_TOUCH_GRACE_MS) {
                 _payoffSelfLoadArmed = false;
                 return;
             }
@@ -23372,7 +23397,14 @@ Need more detail? Open the Table Method Guide in the Builder sidebar for printab
         // the first fired. Each is a no-op the moment a circuit exists, so on a
         // healthy launch only the 1.5 s check does anything and it does nothing.
         function armPayoffSafetyNet() {
-            [1500, 4000, 9000].forEach(function (delay) {
+            _payoffNetStartedAt = performance.now();
+            // Spread wide rather than clustered. The failure this exists to catch has
+            // only ever shown up on real hardware under a cold Play Store launch,
+            // where the WebView, the GPU and the JS bundle are all contending at
+            // once — the exact conditions under which a 1.5 s check is optimistic.
+            // Every check after the first is free: they no-op the instant a circuit
+            // exists, which on a healthy launch is before the second one runs.
+            [1500, 3000, 5000, 8000, 12000, 18000, 25000].forEach(function (delay) {
                 window.setTimeout(function () {
                     try {
                         ensurePayoffCircuitLoaded(delay + ' ms after init');

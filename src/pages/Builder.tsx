@@ -1900,9 +1900,16 @@ export default function Builder() {
     isLoadModalOpen ||
     isAIHelperOpen ||
     isMeasureWidgetOpen ||
-    isCinematicOpen ||
-    isGuidedTourOpen ||
-    isBuildAlongOpen;
+    isCinematicOpen;
+  // NOT in that list, deliberately: isGuidedTourOpen / isBuildAlongOpen. Effect 1
+  // opens the guided tour on EVERY launch, so counting it as "a panel is open"
+  // meant the turntable was blocked from the moment the app started and never
+  // recovered until the user closed the tour — which reads as the feature simply
+  // not working. The reason it's safe to leave out: the tour's camera sweeps run
+  // through the CinematicController (tourFocusCamera → _cinematicCtrl.start), and
+  // idleOrbitBlocked() already holds on _cinematicCtrl.isPlaying. So the drift
+  // still yields whenever the tour is actually MOVING the camera, and only turns
+  // while the tour is sitting idle waiting for the user to read a step.
   useEffect(() => {
     if (!isFrameReady) {
       return;
