@@ -8841,6 +8841,73 @@ body.android-optimized .zoom-btn {
             setStatus('⚡ Circuit centered and aligned to grid for professional schematic appearance');
         }
 
+        // ── Init failure: retry, then tell the user ──────────────────────────
+        // The WebView can refuse to create a WebGL context on the first attempt of
+        // a cold start (GPU process not up yet, canvas not composited yet), and
+        // that attempt is currently the ONLY one. A second try a second later
+        // usually succeeds — and if it genuinely cannot, a black rectangle that
+        // says nothing is the worst possible outcome, because it is
+        // indistinguishable from "the circuit failed to load" and sends everyone
+        // hunting in the wrong place. Which is exactly what happened.
+        let _initAttempts = 0;
+        const INIT_MAX_ATTEMPTS = 4;
+
+        function reportInitFailure(error) {
+            const detail = (error && error.message) ? String(error.message) : String(error || 'unknown');
+            try {
+                window.parent.postMessage({
+                    type: 'legacy:diag',
+                    msg: 'init failed',
+                    detail: { error: detail, attempt: _initAttempts, sceneOk: !!scene, rendererOk: !!renderer },
+                }, '*');
+            } catch (e) { /* no parent, standalone */ }
+
+            // Only the early stages (scene/camera/renderer) are worth retrying —
+            // past that the scene exists and a partial failure is not fixed by
+            // starting over.
+            if ((!scene || !renderer) && _initAttempts < INIT_MAX_ATTEMPTS) {
+                _initAttempts++;
+                console.warn('[CT3D] init failed (' + detail + ') — retry ' + _initAttempts + '/' + INIT_MAX_ATTEMPTS + ' in 900 ms');
+                window.setTimeout(init, 900);
+                return;
+            }
+            if (scene && renderer) return;  // came up on a later attempt
+            showInitFailureNotice(detail);
+        }
+
+        // Deliberately visible and deliberately ugly. This is not app UI — it only
+        // ever appears when the 3D workspace is dead, and when that happens the one
+        // thing that matters is that a screenshot of the screen explains why.
+        function showInitFailureNotice(detail) {
+            if (document.getElementById('ct3d-init-failed')) return;
+            const box = document.createElement('div');
+            box.id = 'ct3d-init-failed';
+            box.style.cssText = [
+                'position:fixed', 'left:12px', 'right:12px', 'top:50%',
+                'transform:translateY(-50%)', 'z-index:99999',
+                'font:600 13px/1.45 system-ui,sans-serif', 'color:#ffd9d9',
+                'background:rgba(40,0,0,0.92)', 'border:1px solid #ff5555',
+                'border-radius:10px', 'padding:12px 14px', 'text-align:left',
+            ].join(';');
+            box.innerHTML =
+                '<div style="color:#ff8888;font-weight:800;margin-bottom:6px;">3D workspace failed to start</div>' +
+                '<div>The circuit cannot be drawn because the 3D view never initialised. ' +
+                'This is not a problem with the circuit itself.</div>' +
+                '<div style="margin-top:8px;color:#ffb3b3;font-family:monospace;font-size:11px;word-break:break-word;">' +
+                _escapeHtmlBasic(detail) + '</div>' +
+                '<div style="margin-top:8px;opacity:0.8;">Screenshot this and send it — the line above says exactly what failed.</div>';
+            document.body.appendChild(box);
+            try {
+                window.parent.postMessage({ type: 'legacy:diag', msg: 'init failed permanently', detail: { error: detail } }, '*');
+            } catch (e) { /* standalone */ }
+        }
+
+        function _escapeHtmlBasic(text) {
+            return String(text).replace(/[&<>]/g, function (c) {
+                return c === '&' ? '&amp;' : c === '<' ? '&lt;' : '&gt;';
+            });
+        }
+
         // Initialize the scene
         function init() {
             try {
@@ -9128,7 +9195,13 @@ body.android-optimized .zoom-btn {
 
             } catch (error) {
                 console.error('Initialization error:', error);
-                console.error('Error loading. Please refresh.');
+                // A swallowed init failure is why "no grid, no circuit" could happen
+                // with the app still looking alive: scene/renderer stay null, so
+                // loadPayoffCircuit sits on its !scene guard retrying every 800 ms
+                // forever, and the finally block below still reports ready. Nothing
+                // anywhere said a word — and on a Play build there is no console to
+                // read. So: retry, and if it will not come up, SAY SO on screen.
+                reportInitFailure(error);
             } finally {
                 // Mark the builder as ready regardless of whether init() succeeded
                 // or encountered a non-fatal error.  The flag must be set here —
@@ -21147,9 +21220,21 @@ Made with ? for visual learners everywhere!
             loadPayoffCircuit();
         }
 
+        let _payoffWaitAttempts = 0;
         function loadPayoffCircuit() {
             if (!scene || !renderer) {
-                console.warn('[CT3D Payoff] loadPayoffCircuit: scene/renderer not ready — retrying in 800 ms (aligns with React retry at 480 ms + 1200 ms)');
+                // Bounded, and it SPEAKS when it gives up. This used to retry every
+                // 800 ms forever without a word, which meant a dead 3D scene looked
+                // identical to a broken payoff circuit — the circuit got blamed for
+                // an init failure it had nothing to do with.
+                _payoffWaitAttempts++;
+                if (_payoffWaitAttempts > 25) {   // ~20 s
+                    showInitFailureNotice(
+                        'The 3D scene never came up (scene=' + !!scene + ', renderer=' + !!renderer + ').'
+                    );
+                    return;
+                }
+                console.warn('[CT3D Payoff] loadPayoffCircuit: scene/renderer not ready — retry ' + _payoffWaitAttempts + '/25 in 800 ms');
                 window.setTimeout(loadPayoffCircuit, 800);
                 return;
             }
