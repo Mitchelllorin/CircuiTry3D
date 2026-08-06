@@ -9195,6 +9195,7 @@ body.android-optimized .zoom-btn {
             updateProbabilityClouds();
             updateJunctionGlows(currentTime);
             updateWorkspaceFailureParticles();
+            updateWorkspaceFailureMotion(currentTime);
             updateWorkspaceCameraShake();
             updateWorkspaceFlashLights();
             updateSelectionRing();     // Keep the selector ring on the controlled part
@@ -22798,19 +22799,29 @@ Need more detail? Open the Table Method Guide in the Builder sidebar for printab
         // flashes out. `flash` is how violently it lets go, `ember` how hot it stays
         // afterwards, `hot` whether that light is fire-orange rather than white, and
         // `popMs` how long the letting-go itself lasts.
+        // `motion` is HOW the body behaves as it goes — see updateWorkspaceFailureMotion.
         const WORKSPACE_FAIL_SIGNATURE = {
-            resistor:  { popMs: 1400, flash: 2.2, ember: 0.5,  hot: false },
-            capacitor: { popMs: 1100, flash: 3.4, ember: 0.35, hot: true  },
-            led:       { popMs:  260, flash: 4.2, ember: 0,    hot: false },
-            diode:     { popMs:  420, flash: 3.2, ember: 0.1,  hot: false },
-            inductor:  { popMs: 1800, flash: 1.8, ember: 0.6,  hot: true  },
-            battery:   { popMs: 2000, flash: 2.6, ember: 0.85, hot: true  },
-            fuse:      { popMs:  340, flash: 2.8, ember: 0.05, hot: false },
-            lamp:      { popMs:  300, flash: 4.5, ember: 0,    hot: false },
-            mosfet:    { popMs:  500, flash: 3.8, ember: 0.2,  hot: false },
-            bjt:       { popMs:  500, flash: 3.6, ember: 0.2,  hot: false },
+            // Cooks and slumps. An overloaded film resistor never explodes.
+            resistor:  { motion: 'smoulder', popMs: 1400, flash: 2.2, ember: 0.5,  hot: false },
+            // Electrolytics bulge, split the scored top and vent.
+            capacitor: { motion: 'vent',     popMs: 1100, flash: 3.4, ember: 0.35, hot: true  },
+            // Junction opens: one over-bright flash, then dark. Nothing deforms.
+            led:       { motion: 'flashOut', popMs:  260, flash: 4.2, ember: 0,    hot: false },
+            diode:     { motion: 'burst',    popMs:  420, flash: 3.2, ember: 0.1,  hot: false },
+            // Insulation cooks off the windings and the coil sags.
+            inductor:  { motion: 'smoulder', popMs: 1800, flash: 1.8, ember: 0.6,  hot: true  },
+            battery:   { motion: 'vent',     popMs: 2000, flash: 2.6, ember: 0.85, hot: true  },
+            // Doing exactly its job — the element melts quietly.
+            fuse:      { motion: 'flashOut', popMs:  340, flash: 2.8, ember: 0.05, hot: false },
+            lamp:      { motion: 'flashOut', popMs:  300, flash: 4.5, ember: 0,    hot: false },
+            // Silicon lets go hard enough to split the package.
+            mosfet:    { motion: 'burst',    popMs:  500, flash: 3.8, ember: 0.2,  hot: false },
+            bjt:       { motion: 'burst',    popMs:  500, flash: 3.6, ember: 0.2,  hot: false },
+            // Contacts arc; the body itself is undamaged, so it must not deform.
+            switch:    { motion: 'arc',      popMs: 1500, flash: 3.0, ember: 0,    hot: false },
+            relay:     { motion: 'arc',      popMs: 1200, flash: 2.4, ember: 0.15, hot: false },
         };
-        const WORKSPACE_FAIL_DEFAULT = { popMs: 900, flash: 2.6, ember: 0.3, hot: false };
+        const WORKSPACE_FAIL_DEFAULT = { motion: 'smoulder', popMs: 900, flash: 2.6, ember: 0.3, hot: false };
         function workspaceFailSignature(component) {
             return WORKSPACE_FAIL_SIGNATURE[component && component.type] || WORKSPACE_FAIL_DEFAULT;
         }
@@ -22937,6 +22948,8 @@ Need more detail? Open the Table Method Guide in the Builder sidebar for printab
          */
         function clearWorkspaceFailureVisuals(component) {
             if (!component.mesh) return;
+            // Put the body back where it was before it slumped/split/swelled.
+            endWorkspaceFailMotion(component.id);
             const originals = component.mesh.userData.originalColors;
             if (!originals) return;
             component.mesh.traverse(child => {
@@ -23023,6 +23036,7 @@ Need more detail? Open the Table Method Guide in the Builder sidebar for printab
                             // exactly how they read: like nothing had happened.
                             const sig = workspaceFailSignature(component);
                             spawnWorkspaceFailFlash(component, sig);
+                            beginWorkspaceFailMotion(component, sig);
                             triggerCameraShake(0.06 + sig.flash * 0.055, 0.22 + sig.flash * 0.08);
 
                             // The loud families keep their extra screen-level drama
@@ -23256,6 +23270,109 @@ Need more detail? Open the Table Method Guide in the Builder sidebar for printab
                 age: 0,
                 maxAge: sig.popMs / 1000,
                 peakIntensity: sig.flash * 7,
+            });
+        }
+
+        // ── Death throes ─────────────────────────────────────────────────────
+        // Until now the part itself never moved when it died: the only motion was
+        // the CAMERA shake, which is why every death looked the same no matter what
+        // was dying. The family decides HOW a body goes — a resistor cooks and
+        // slumps, an electrolytic swells and splits, an LED's junction just opens
+        // with no deformation at all, silicon splits its package. Ported from the
+        // arena bench so the two surfaces agree.
+        //
+        // CRITICAL: every case ASSIGNS from the stored base transform each frame and
+        // never accumulates onto the live one. Accumulating would walk the part off
+        // its position a little further on every frame it spends dead.
+        const workspaceFailMotion = new Map();  // componentId → { startedAt, sig, base }
+
+        function beginWorkspaceFailMotion(component, sig) {
+            if (!component || !component.mesh || workspaceFailMotion.has(component.id)) return;
+            const m = component.mesh;
+            workspaceFailMotion.set(component.id, {
+                startedAt: performance.now(),
+                sig,
+                base: {
+                    x: m.position.x, y: m.position.y, z: m.position.z,
+                    rotZ: m.rotation.z,
+                    sx: m.scale.x, sy: m.scale.y, sz: m.scale.z,
+                },
+            });
+        }
+
+        function endWorkspaceFailMotion(componentId) {
+            const entry = workspaceFailMotion.get(componentId);
+            if (!entry) return;
+            const comp = components.find(c => c.id === componentId);
+            if (comp && comp.mesh) {
+                const b = entry.base;
+                comp.mesh.position.set(b.x, b.y, b.z);
+                comp.mesh.rotation.z = b.rotZ;
+                comp.mesh.scale.set(b.sx, b.sy, b.sz);
+            }
+            workspaceFailMotion.delete(componentId);
+        }
+
+        function updateWorkspaceFailureMotion(now) {
+            if (workspaceFailMotion.size === 0) return;
+            workspaceFailMotion.forEach((entry, id) => {
+                const comp = components.find(c => c.id === id);
+                if (!comp || !comp.mesh) { workspaceFailMotion.delete(id); return; }
+                const m = comp.mesh, b = entry.base, sig = entry.sig;
+                const elapsed = now - entry.startedAt;
+                const popping = elapsed < sig.popMs;
+                // Counts 1 → 0 across the pop: "how much of the letting-go is left".
+                const popT = popping ? 1 - (elapsed / sig.popMs) : 0;
+
+                let ox = 0, oy = 0, oz = 0, rotZ = b.rotZ, sx = 1, sy = 1, sz = 1;
+
+                switch (sig.motion) {
+                    case 'vent': {
+                        // Swells hard, splits, then jets — it puffs up before it goes.
+                        const swell = Math.sin((1 - popT) * Math.PI); // 0 → 1 → 0
+                        oy = popping ? swell * 0.12 : 0;
+                        sx = 1 + swell * 0.22; sy = 1 + swell * 0.45; sz = sx;
+                        break;
+                    }
+                    case 'burst': {
+                        // Splits the package: one hard punch, left small and crooked.
+                        const shake = popping ? 0.3 * popT : 0;
+                        ox = (Math.random() - 0.5) * shake;
+                        oz = (Math.random() - 0.5) * shake;
+                        oy = popping ? 0.1 + popT * 0.5 : 0;
+                        rotZ = b.rotZ + (popping ? (Math.random() - 0.5) * 0.7 * popT : 0.3);
+                        sx = sy = sz = popping ? 0.7 + Math.sin(popT * Math.PI) * 0.85 : 0.66;
+                        break;
+                    }
+                    case 'arc': {
+                        // Contacts arcing. The body is untouched, so it must NOT move
+                        // or deform — only the (invisible) contacts are pitted.
+                        break;
+                    }
+                    case 'flashOut': {
+                        // One bright flash and it is simply, cleanly, open circuit.
+                        // This is how a filament or a junction goes: nothing deforms.
+                        break;
+                    }
+                    case 'smoulder':
+                    default: {
+                        // Cooks and slumps: a brief convulsion, then settles charred.
+                        const shake = popping ? 0.1 * popT : 0;
+                        const slump = 1 - popT;
+                        ox = (Math.random() - 0.5) * shake;
+                        oz = (Math.random() - 0.5) * shake;
+                        oy = popping ? 0.04 * popT : 0;
+                        rotZ = b.rotZ + (popping ? (Math.random() - 0.5) * 0.18 * popT : 0);
+                        sx = 1 + slump * 0.08;
+                        sy = 1 - slump * 0.12;   // squashes as it settles
+                        sz = sx;
+                        break;
+                    }
+                }
+
+                m.position.set(b.x + ox, b.y + oy, b.z + oz);
+                m.rotation.z = rotZ;
+                m.scale.set(b.sx * sx, b.sy * sy, b.sz * sz);
             });
         }
 

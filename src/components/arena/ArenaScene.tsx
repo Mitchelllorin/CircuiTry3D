@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getComponent3D } from "../circuit/Component3DLibrary";
+import { useAppSettings } from "../../context/AppSettingsContext";
 import { CurrentFlowAnimationSystem } from "../../schematic/currentFlowAnimation";
 import { LightningFlowSystem } from "../../schematic/lightningFlow";
 import { solveArenaCircuit } from "./arenaCircuitSolve";
@@ -907,6 +908,44 @@ const ARENA_SOURCE_OHMS = 0.5;
  * — never on top of it." Centring the plate on the anchor is what buried the
  * parts under their own readouts.
  */
+/**
+ * Ambient motes drifting in the air of the dome.
+ *
+ * The count the arena has always shipped is 240, and that is what the default
+ * density of 50 produces — so the setting arrives without changing how the scene
+ * looks for anyone. The scale is deliberately linear in COUNT rather than in
+ * anything perceptual: this is a "how much stuff is in the air" dial, and users
+ * reach for it to clear the air (0) or thicken it, not to hit a target number.
+ */
+const ATMOSPHERE_MAX_MOTES = 480;
+
+function atmosphereCountFor(density: number): number {
+  const clamped = Math.max(0, Math.min(100, density));
+  return Math.round((clamped / 100) * ATMOSPHERE_MAX_MOTES);
+}
+
+/**
+ * (Re)fill a geometry with `count` motes in the dome's air column. Replaces the
+ * position attribute outright, so it doubles as the rebuild path for the slider.
+ */
+function fillAtmosphere(
+  THREE: typeof import("three"),
+  geometry: import("three").BufferGeometry,
+  count: number,
+): void {
+  const positions = new Float32Array(Math.max(0, count) * 3);
+  for (let index = 0; index < count; index += 1) {
+    const stride = index * 3;
+    const radius = 5 + Math.random() * 11;
+    const angle = Math.random() * Math.PI * 2;
+    positions[stride] = Math.cos(angle) * radius;
+    positions[stride + 1] = 1.5 + Math.random() * 8;
+    positions[stride + 2] = Math.sin(angle) * radius;
+  }
+  geometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setDrawRange(0, count);
+}
+
 const NAMEPLATE_ANCHOR_Y = CIRCUIT_RAIL_Y + 2.5;
 const NAMEPLATE_GAP_PX = 4;
 
@@ -1693,6 +1732,31 @@ export function ArenaScene({
    */
   const [fuseCard, setFuseCard] = useState<ArenaBattleAgent | null>(null);
   const reportedFailuresRef = useRef<Set<string>>(new Set());
+  // The drifting motes in the air of the dome. Held out here so the density
+  // slider can rebuild just this buffer — rebuilding the whole scene on a slider
+  // drag would tear down the circuit and the running test with it.
+  const atmosphereRef = useRef<import("three").Points | null>(null);
+  const threeRef = useRef<typeof import("three") | null>(null);
+  const { settings: appSettings } = useAppSettings();
+  const atmosphereDensity = appSettings.workspace.atmosphereDensity;
+  // Read by the scene-init effect, which must NOT list the density as a
+  // dependency — doing so would rebuild the entire dome on every slider tick.
+  const atmosphereDensityRef = useRef(atmosphereDensity);
+  useEffect(() => {
+    atmosphereDensityRef.current = atmosphereDensity;
+  }, [atmosphereDensity]);
+
+  // Rebuild just the mote buffer when the slider moves. The scene, the circuit
+  // and any running test are untouched.
+  useEffect(() => {
+    const THREE = threeRef.current;
+    const points = atmosphereRef.current;
+    if (!THREE || !points) {
+      return;
+    }
+    fillAtmosphere(THREE, points.geometry, atmosphereCountFor(atmosphereDensity));
+    points.visible = atmosphereDensity > 0;
+  }, [atmosphereDensity]);
 
   useEffect(() => {
     // A fresh run gets a clean slate, so re-running the bench explains its
@@ -1820,6 +1884,10 @@ export function ArenaScene({
       if (isDisposed || !rootRef.current || !canvasRef.current) {
         return;
       }
+
+      // Kept so the dust-mote slider can rebuild its buffer without re-entering
+      // this effect (and tearing down the scene) just to get at the module.
+      threeRef.current = THREE;
 
       const { OrbitControls } = controlsModule;
       const root = rootRef.current;
@@ -1996,18 +2064,10 @@ export function ArenaScene({
       scene.add(ring);
 
       const particleGeometry = new THREE.BufferGeometry();
-      const particlePositions = new Float32Array(240 * 3);
-      for (let index = 0; index < 240; index += 1) {
-        const stride = index * 3;
-        const radius = 5 + Math.random() * 11;
-        const angle = Math.random() * Math.PI * 2;
-        particlePositions[stride] = Math.cos(angle) * radius;
-        particlePositions[stride + 1] = 1.5 + Math.random() * 8;
-        particlePositions[stride + 2] = Math.sin(angle) * radius;
-      }
-      particleGeometry.setAttribute(
-        "position",
-        new THREE.Float32BufferAttribute(particlePositions, 3),
+      fillAtmosphere(
+        THREE,
+        particleGeometry,
+        atmosphereCountFor(atmosphereDensityRef.current),
       );
       particleTexture = createCanvasTexture(THREE, "rgba(96, 165, 250, 0.95)");
       const particleMaterial = new THREE.PointsMaterial({
@@ -2021,6 +2081,7 @@ export function ArenaScene({
       });
       const particles = new THREE.Points(particleGeometry, particleMaterial);
       scene.add(particles);
+      atmosphereRef.current = particles;
 
       // One soft round puff, shared by every plume and tinted per family.
       const smokeTexture = createCanvasTexture(THREE, "rgba(255,255,255,0.85)");

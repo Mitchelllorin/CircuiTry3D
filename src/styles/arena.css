@@ -484,12 +484,23 @@
 /* W.I.R.E. metrics on the nameplate — E / I / R / P live, each in its own
    metric colour. No container, no bars: a tight row of glyph + value floating
    straight over the 3D, carried by text-shadow like the builder's labels. */
+/* Stacked, one quantity per row, reading W.I.R.E. top to bottom — the same
+   layout the main workspace's floating nameplates use (legacy.html,
+   getRuntimeMetricMarkup: flex column, one colour-coded row per metric,
+   white-space: nowrap). It was a wrapping horizontal row here, which put the
+   metrics in a different order on every plate depending on how the values
+   happened to wrap — so the eye could not learn where to look for current.
+   A column always has current in the same place.
+   Gap is tighter than the workspace's 10px because these plates float over the
+   parts themselves and four rows at that spacing turns a label into a panel. */
 .arena-nameplate__wire {
   display: flex;
-  flex-wrap: wrap;
-  gap: 1px 6px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
   margin-block-start: 2px;
   font-size: 0.78rem;
+  line-height: 1.35;
   font-variant-numeric: tabular-nums;
 }
 .arena-nameplate__wire .ct-term {
@@ -497,6 +508,7 @@
   align-items: baseline;
   gap: 3px;
   font-weight: 700;
+  white-space: nowrap;
 }
 /* The glyph carries the metric colour it inherits from .ct-term-*; the value
    stays near-white so the number is the readable thing and the colour is the

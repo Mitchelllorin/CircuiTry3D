@@ -71,6 +71,7 @@ const CONFIG: CategoryConfig[] = [
       { kind: "slider", key: "gridBrightness", label: "Grid brightness", min: 0, max: 100, step: 1, format: pct },
       { kind: "slider", key: "gridLineWidth", label: "Grid line width", min: 1, max: 5, step: 1, format: (v) => `${v}px` },
       { kind: "slider", key: "gridHue", label: "Grid color (hue)", min: 0, max: 360, step: 1, format: (v) => `${v}°` },
+      { kind: "slider", key: "atmosphereDensity", label: "Dust motes", min: 0, max: 100, step: 1, format: pct, hint: "Specks drifting in the air of the 3D scene. 0 clears the air entirely" },
       { kind: "slider", key: "cameraSensitivity", label: "Camera sensitivity", min: 0, max: 100, step: 1, format: pct },
       { kind: "toggle", key: "snapToGrid", label: "Snap components to grid" },
       { kind: "toggle", key: "centerInView", label: "Center circuit in available space", hint: "Keep the circuit centered in the area left visible by open panels" },

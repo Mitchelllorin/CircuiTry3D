@@ -39,6 +39,10 @@ export type AppSettings = {
     gridBrightness: number; // 0-100
     gridLineWidth: number; // 1-5
     gridHue: number; // 0-360
+    // Density of the ambient motes drifting in the air of the 3D scene, 0-100.
+    // 0 clears the air completely; 50 is the count the arena has always used, so
+    // the default leaves the scene exactly as it was while allowing twice as many.
+    atmosphereDensity: number; // 0-100
     snapToGrid: boolean;
     cameraSensitivity: number; // 0-100
     centerInView: boolean; // keep the circuit centered in the space panels leave
@@ -80,6 +84,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
     gridBrightness: 50,
     gridLineWidth: 1,
     gridHue: 210,
+    atmosphereDensity: 50,
     snapToGrid: true,
     cameraSensitivity: 50,
     centerInView: true,
@@ -118,6 +123,7 @@ const BOUNDS: Record<string, [number, number]> = {
   "workspace.gridBrightness": [0, 100],
   "workspace.gridLineWidth": [1, 5],
   "workspace.gridHue": [0, 360],
+  "workspace.atmosphereDensity": [0, 100],
   "workspace.cameraSensitivity": [0, 100],
   "simulation.currentFlowSpeed": [0, 100],
   "accessibility.uiScale": [80, 140],

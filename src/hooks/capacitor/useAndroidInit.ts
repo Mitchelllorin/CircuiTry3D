@@ -156,6 +156,45 @@ export function registerServiceWorker(): void {
     return;
   }
 
+  // NATIVE (Capacitor/Play Store): actively evict any service worker, exactly as
+  // DEV does above. Not registering one is NOT the same as not having one.
+  //
+  // This is the "it works right up until I upload it" bug. An older release
+  // registered a SW inside the WebView, and a Play Store UPDATE does not clear
+  // WebView storage — so that worker survives every update and goes on serving
+  // its cached index.html, JS bundle and legacy.html. The device ends up running
+  // a build from before the current one, which is why a long-dead tutorial card
+  // reappeared and the payoff circuit was missing: neither is a bug in this
+  // build, they are the previous build still executing.
+  //
+  // Assets are local here, so there is nothing a SW can usefully cache anyway —
+  // it is pure downside.
+  if ('serviceWorker' in navigator && isCapacitor()) {
+    const wasControlled = Boolean(navigator.serviceWorker.controller);
+    navigator.serviceWorker
+      .getRegistrations()
+      .then(async (regs) => {
+        if (regs.length === 0) return;
+        await Promise.all(regs.map((r) => r.unregister().catch(() => false)));
+        if (typeof caches !== 'undefined' && caches.keys) {
+          const keys = await caches.keys().catch(() => [] as string[]);
+          await Promise.all(keys.map((k) => caches.delete(k).catch(() => false)));
+        }
+        // Unregistering does not evict the worker already controlling THIS page,
+        // so the current load is still the stale one — reload once to pick up the
+        // real bundle. Guarded by a session flag: if anything about this goes
+        // wrong we get one wasted reload, never a boot loop.
+        const RELOAD_FLAG = 'ct3d:sw-evicted-reload';
+        if (wasControlled && !sessionStorage.getItem(RELOAD_FLAG)) {
+          sessionStorage.setItem(RELOAD_FLAG, '1');
+          console.warn('[SW] Stale service worker evicted in native app — reloading for fresh assets');
+          window.location.reload();
+        }
+      })
+      .catch(() => {});
+    return;
+  }
+
   if ('serviceWorker' in navigator && !isCapacitor()) {
     // Only register service worker for web, not native app
     window.addEventListener('load', async () => {
