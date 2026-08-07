@@ -2548,6 +2548,15 @@ export default function Builder() {
     currentFlowPayoffTimersRef.current = [];
   }, []);
 
+  // Once the user has put the payoff banner away — by ×, by Edit, or by letting it
+  // time out — a retry must NOT shove it back on screen. Effect 2 re-fires the
+  // payoff every 2.5 s for as long as the workspace reports zero components, so on
+  // a build where the circuit never loads that meant six forced re-reveals: dismiss
+  // it, it comes straight back, over and over (reported from the Play build). The
+  // retries exist to reload the CIRCUIT, not to re-narrate it. Only an explicit
+  // Replay clears this.
+  const payoffBannerDismissedRef = useRef(false);
+
   const runCurrentFlowPayoffSequence = useCallback(
     (
       options: {
@@ -2578,7 +2587,7 @@ export default function Builder() {
       const retryTimer = window.setTimeout(() => {
         triggerBuilderAction("run-payoff-flow");
         triggerSimulationPulse();
-        if (revealBanner) {
+        if (revealBanner && !payoffBannerDismissedRef.current) {
           setCurrentFlowPayoffVisible(true);
         }
       }, PAYOFF_FIRST_RETRY_MS);
@@ -2614,6 +2623,8 @@ export default function Builder() {
   );
 
   const handleReplayCurrentFlowPayoff = useCallback(() => {
+    // Explicit user request — this is the one path that earns the banner back.
+    payoffBannerDismissedRef.current = false;
     setBottomMenuOpen(true);
     runCurrentFlowPayoffSequence({ revealBanner: true });
   }, [runCurrentFlowPayoffSequence, setBottomMenuOpen]);
@@ -2814,7 +2825,9 @@ export default function Builder() {
       // (isOnboardingLocked) so the user can't accidentally move components;
       // a "tap to edit" chip appears instead, requiring an explicit tap to
       // begin editing. Long enough to read a few of the slow-rotating tips and
-      // act on the "zoom in" prompt.
+      // act on the "zoom in" prompt. Timing out counts as dismissed: having sat
+      // through it once, the user should not have it re-revealed by a retry.
+      payoffBannerDismissedRef.current = true;
       setCurrentFlowPayoffVisible(false);
     }, 30000);
 
@@ -3745,6 +3758,7 @@ export default function Builder() {
               type="button"
               className="current-flow-payoff-strip__btn current-flow-payoff-strip__btn--primary"
               onClick={() => {
+                payoffBannerDismissedRef.current = true;
                 setCurrentFlowPayoffVisible(false);
                 setOnboardingLocked(false);
                 setCircuitLocked(false);
@@ -3769,6 +3783,7 @@ export default function Builder() {
               className="current-flow-payoff-strip__close"
               aria-label="Dismiss"
               onClick={() => {
+                payoffBannerDismissedRef.current = true;
                 setCurrentFlowPayoffVisible(false);
                 setOnboardingLocked(false);
                 setCircuitLocked(false);
