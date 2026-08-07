@@ -3359,6 +3359,21 @@ html.is-embedded .lib-toggle {
         const scratchVec2B = new THREE.Vector2();
         const scratchVec2C = new THREE.Vector2();
 
+        // ── Cinematic zoom state ─────────────────────────────────────────────
+        const cinematicZoom = {
+          active: false,
+          elapsed: 0,
+          duration: 1.6,        // seconds for the sweep-in
+          holdDuration: 0.55,   // seconds to hold at the target before releasing
+          phase: "in",          // "in" | "hold"
+          fromSpherical: new THREE.Spherical(),
+          toSpherical: new THREE.Spherical(),
+          fromTarget: new THREE.Vector3(),
+          toTarget: new THREE.Vector3(),
+          fromFov: 62,
+          toFov: 62,
+        };
+
       const particleSpeeds = [];
       const COMPONENT_POSITIONS = { A: -1.65, B: 1.65 };
       const failureParticleSystems = [];
@@ -3627,6 +3642,88 @@ html.is-embedded .lib-toggle {
           updateCamera(true);
         }
 
+        // ── Cinematic zoom: trigger & per-frame tick ─────────────────────────
+
+        function triggerCinematicZoom() {
+          if (!camera) return;
+
+          const isCompare = state && state.mode === "compare" &&
+            componentGroupB && componentGroupB.visible;
+
+          // Destination target — centred between active components
+          const destTargetX = isCompare ? 0 : (COMPONENT_POSITIONS.A);
+          cinematicZoom.toTarget.set(destTargetX, 0.45, 0);
+
+          // Destination spherical — close, slightly elevated, dramatic angle
+          // Keep current theta so the sweep comes from where the user already is
+          const destRadius  = isCompare ? 4.8 : 3.2;
+          const destPhi     = THREE.MathUtils.degToRad(42); // low, sweeping angle
+          const currentTheta = cameraState.spherical.theta;
+
+          cinematicZoom.toSpherical.set(destRadius, destPhi, currentTheta);
+
+          // Destination FOV — narrow for a telephoto "push-in" feel
+          cinematicZoom.toFov = 38;
+
+          // Capture current state as the animation origin
+          cinematicZoom.fromSpherical.copy(cameraState.spherical);
+          cinematicZoom.fromTarget.copy(cameraState.target);
+          cinematicZoom.fromFov = camera.fov;
+
+          cinematicZoom.elapsed = 0;
+          cinematicZoom.phase   = "in";
+          cinematicZoom.active  = true;
+        }
+
+        // Smooth step (ease-in/out) — maps t∈[0,1] to a smooth S-curve
+        function smoothstep(t) {
+          t = Math.max(0, Math.min(1, t));
+          return t * t * (3 - 2 * t);
+        }
+
+        // Called every frame from animate(); returns true while active
+        function tickCinematicZoom(delta) {
+          if (!cinematicZoom.active || !camera) return;
+
+          cinematicZoom.elapsed += delta;
+
+          if (cinematicZoom.phase === "in") {
+            const t = smoothstep(Math.min(cinematicZoom.elapsed / cinematicZoom.duration, 1));
+
+            // Lerp spherical components
+            cameraState.spherical.radius = THREE.MathUtils.lerp(
+              cinematicZoom.fromSpherical.radius, cinematicZoom.toSpherical.radius, t);
+            cameraState.spherical.phi    = THREE.MathUtils.lerp(
+              cinematicZoom.fromSpherical.phi,    cinematicZoom.toSpherical.phi,    t);
+            cameraState.spherical.theta  = THREE.MathUtils.lerp(
+              cinematicZoom.fromSpherical.theta,  cinematicZoom.toSpherical.theta,  t);
+
+            // Lerp look-at target
+            cameraState.target.lerpVectors(
+              cinematicZoom.fromTarget, cinematicZoom.toTarget, t);
+
+            // Lerp FOV for that telephoto punch-in effect
+            camera.fov  = THREE.MathUtils.lerp(cinematicZoom.fromFov, cinematicZoom.toFov, t);
+            camera.updateProjectionMatrix();
+
+            cameraState.needsUpdate = true;
+
+            if (cinematicZoom.elapsed >= cinematicZoom.duration) {
+              cinematicZoom.elapsed = 0;
+              cinematicZoom.phase   = "hold";
+            }
+          } else {
+            // Hold phase — just wait, then release
+            if (cinematicZoom.elapsed >= cinematicZoom.holdDuration) {
+              cinematicZoom.active = false;
+              // Restore default FOV so user controls feel normal again
+              camera.fov = cinematicZoom.fromFov;
+              camera.updateProjectionMatrix();
+              cameraState.needsUpdate = true;
+            }
+          }
+        }
+
         function applyPan(deltaX, deltaY) {
           if (!camera || !renderer) {
             return;
@@ -3703,6 +3800,12 @@ html.is-embedded .lib-toggle {
         function handlePointerDown(event) {
           if (!renderer) {
             return;
+          }
+          // User grabbing the camera cancels any in-progress cinematic zoom
+          if (cinematicZoom.active) {
+            cinematicZoom.active = false;
+            camera.fov = cinematicZoom.fromFov;
+            camera.updateProjectionMatrix();
           }
           if (event.pointerType === "touch") {
             event.preventDefault();
@@ -4513,6 +4616,7 @@ html.is-embedded .lib-toggle {
           updateShockwaves(delta);
           updateExplosionFlashes(delta);
 
+          tickCinematicZoom(delta);
           updateCamera();
           renderer.render(scene, camera);
           updateSceneLabels();
@@ -6789,6 +6893,8 @@ html.is-embedded .lib-toggle {
           setStatus("No components available. Import a component library first.");
           return;
         }
+
+        triggerCinematicZoom();
 
         readTestVariables();
 
