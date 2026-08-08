@@ -444,6 +444,8 @@ export function CompactWorksheetPanel({
                             status: "blank",
                             given: false,
                           };
+                          const placeholder =
+                            row.id === problem.source.id && key === "voltage" ? "" : "?";
                           return (
                             <td key={row.id} data-status={entry.status} className={row.id === "totals" ? "totals-cell" : ""}>
                               <input
@@ -451,7 +453,7 @@ export function CompactWorksheetPanel({
                                 value={entry.raw}
                                 onChange={(e) => handleWorksheetChange(row.id, key, e.target.value)}
                                 disabled={entry.given}
-                                placeholder="?"
+                                placeholder={placeholder}
                                 className={`worksheet-input ${entry.status}`}
                               />
                             </td>
