@@ -82,7 +82,19 @@ jobs:
             echo "::error::Web assets appear incomplete: only ${FILE_COUNT} file(s) in '${ASSETS_DIR}'."
             exit 1
           fi
+          # A count cannot catch the file that matters most going missing. The
+          # builder's entire 3D workspace is one asset loaded in an iframe, and if
+          # it (or its three.js bundle) fails to ship the app still boots normally
+          # — you just get an empty workspace, which has repeatedly been misread as
+          # a circuit bug rather than a packaging one. Assert them by name.
+          for REQUIRED in index.html legacy.html vendor/three.min.js; do
+            if [ ! -s "${ASSETS_DIR}/${REQUIRED}" ]; then
+              echo "::error::Required web asset '${REQUIRED}' is missing or empty in '${ASSETS_DIR}' — the 3D workspace would be blank in this build."
+              exit 1
+            fi
+          done
           echo "✔ Web assets synced — ${FILE_COUNT} files in ${ASSETS_DIR}"
+          echo "  Critical assets present: index.html, legacy.html, vendor/three.min.js"
           echo "  Commit: ${GITHUB_SHA}"
 
       - name: Guard Capacitor generated Gradle include

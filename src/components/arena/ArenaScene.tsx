@@ -1737,6 +1737,12 @@ export function ArenaScene({
   // drag would tear down the circuit and the running test with it.
   const atmosphereRef = useRef<import("three").Points | null>(null);
   const threeRef = useRef<typeof import("three") | null>(null);
+  // The live renderer, so the unmount-only effect below can hand its WebGL
+  // context back. Deliberately NOT cleared by the main effect's cleanup: that
+  // cleanup also runs on a plain sceneAgentSignature re-run, and the context
+  // must survive those (the canvas element is stable, so the next renderer
+  // reuses it).
+  const liveRendererRef = useRef<import("three").WebGLRenderer | null>(null);
   const { settings: appSettings } = useAppSettings();
   const atmosphereDensity = appSettings.workspace.atmosphereDensity;
   // Read by the scene-init effect, which must NOT list the density as a
@@ -1903,6 +1909,7 @@ export function ArenaScene({
         alpha: false,
         powerPreference: "high-performance",
       });
+      liveRendererRef.current = renderer;
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
       renderer.outputColorSpace = THREE.SRGBColorSpace;
       // Without tone mapping, everything above 1.0 clips flat and everything
@@ -3638,6 +3645,26 @@ export function ArenaScene({
       renderer?.dispose();
     };
   }, [sceneAgentSignature]);
+
+  // Hand the WebGL context back on unmount. dispose() alone does NOT release it
+  // — it frees programs and render targets, but the context lives until GC, and
+  // Android WebView allows only a handful at once. Leaking one per arena visit
+  // eventually pushes the browser over its cap, and Chrome's response is to
+  // silently kill the OLDEST live context: the builder's. That surfaces as a
+  // blank workspace (no grid, no circuit) with no error anywhere, because
+  // legacy.html's init() already succeeded — it just lost its canvas underneath.
+  // Same reasoning, same call as Logo3D/FloatingLogo3D.
+  //
+  // Unmount-only on purpose. The main effect's cleanup also runs on a
+  // sceneAgentSignature change, and forcing the loss there would poison the
+  // shared canvas: the replacement renderer would bind an already-lost context.
+  useEffect(() => {
+    return () => {
+      const renderer = liveRendererRef.current;
+      liveRendererRef.current = null;
+      renderer?.forceContextLoss?.();
+    };
+  }, []);
 
   return (
     <div ref={rootRef} className="arena-scene">

@@ -8878,10 +8878,10 @@ body.android-optimized .zoom-btn {
         // Deliberately visible and deliberately ugly. This is not app UI — it only
         // ever appears when the 3D workspace is dead, and when that happens the one
         // thing that matters is that a screenshot of the screen explains why.
-        function showInitFailureNotice(detail) {
-            if (document.getElementById('ct3d-init-failed')) return;
+        function _fatalBox(id, title, body, detail, hint) {
+            if (document.getElementById(id)) return null;
             const box = document.createElement('div');
-            box.id = 'ct3d-init-failed';
+            box.id = id;
             box.style.cssText = [
                 'position:fixed', 'left:12px', 'right:12px', 'top:50%',
                 'transform:translateY(-50%)', 'z-index:99999',
@@ -8890,16 +8890,57 @@ body.android-optimized .zoom-btn {
                 'border-radius:10px', 'padding:12px 14px', 'text-align:left',
             ].join(';');
             box.innerHTML =
-                '<div style="color:#ff8888;font-weight:800;margin-bottom:6px;">3D workspace failed to start</div>' +
-                '<div>The circuit cannot be drawn because the 3D view never initialised. ' +
-                'This is not a problem with the circuit itself.</div>' +
-                '<div style="margin-top:8px;color:#ffb3b3;font-family:monospace;font-size:11px;word-break:break-word;">' +
-                _escapeHtmlBasic(detail) + '</div>' +
-                '<div style="margin-top:8px;opacity:0.8;">Screenshot this and send it — the line above says exactly what failed.</div>';
+                '<div style="color:#ff8888;font-weight:800;margin-bottom:6px;">' + title + '</div>' +
+                '<div>' + body + '</div>' +
+                (detail
+                    ? '<div style="margin-top:8px;color:#ffb3b3;font-family:monospace;font-size:11px;word-break:break-word;">' +
+                      _escapeHtmlBasic(detail) + '</div>'
+                    : '') +
+                '<div style="margin-top:8px;opacity:0.8;">' + hint + '</div>';
             document.body.appendChild(box);
+            return box;
+        }
+
+        function showInitFailureNotice(detail) {
+            const shown = _fatalBox(
+                'ct3d-init-failed',
+                '3D workspace failed to start',
+                'The circuit cannot be drawn because the 3D view never initialised. ' +
+                'This is not a problem with the circuit itself.',
+                detail,
+                'Screenshot this and send it — the line above says exactly what failed.'
+            );
+            if (!shown) return;
             try {
                 window.parent.postMessage({ type: 'legacy:diag', msg: 'init failed permanently', detail: { error: detail } }, '*');
             } catch (e) { /* standalone */ }
+        }
+
+        // A lost context is NOT an init failure — init already succeeded, then the
+        // canvas was pulled out from under it. Chrome does this without raising
+        // anything when too many WebGL contexts are alive at once: it kills the
+        // oldest, which is this one. Until this notice existed the symptom was an
+        // empty workspace and a console.warn nobody can read on a phone, which is
+        // why it got misdiagnosed as a missing payoff circuit for several rounds.
+        function showContextLostNotice() {
+            const shown = _fatalBox(
+                'ct3d-context-lost',
+                '3D workspace lost its graphics context',
+                'The workspace started fine and then the device took its GPU context away — ' +
+                'usually because too many 3D views were open at once, or the app was backgrounded. ' +
+                'The circuit is still here; it just cannot be drawn right now.',
+                'webglcontextlost',
+                'Screenshot this and send it. Reopening the Build tab normally recovers it.'
+            );
+            if (!shown) return;
+            try {
+                window.parent.postMessage({ type: 'legacy:diag', msg: 'webgl context lost', detail: { sceneOk: !!scene, rendererOk: !!renderer } }, '*');
+            } catch (e) { /* standalone */ }
+        }
+
+        function clearContextLostNotice() {
+            const box = document.getElementById('ct3d-context-lost');
+            if (box && box.parentNode) box.parentNode.removeChild(box);
         }
 
         function _escapeHtmlBasic(text) {
@@ -9033,9 +9074,15 @@ body.android-optimized .zoom-btn {
                 canvas.addEventListener('webglcontextlost', function(e) {
                     e.preventDefault();
                     console.warn('WebGL context lost — rendering paused until restored.');
+                    // preventDefault() only REQUESTS restoration; the browser can
+                    // only grant it once a slot frees up. If the loss was caused by
+                    // context exhaustion elsewhere in the app, that may be never —
+                    // so say so on screen rather than sitting there blank.
+                    showContextLostNotice();
                 }, false);
                 canvas.addEventListener('webglcontextrestored', function() {
                     console.info('WebGL context restored — renderer will resume automatically.');
+                    clearContextLostNotice();
                     // Three.js r128 re-uploads all geometry/materials on the next
                     // render call after context restore; just trigger a fresh frame.
                     if (renderer) {
