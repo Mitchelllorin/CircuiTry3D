@@ -30,6 +30,7 @@ const PlayStoreCompliance = lazy(() => import("../pages/PlayStoreCompliance"));
 const DeleteAccount = lazy(() => import("../pages/DeleteAccount"));
 const Textbook = lazy(() => import("../pages/Textbook"));
 const Screenshots = lazy(() => import("../pages/Screenshots"));
+const WallPreview = lazy(() => import("../pages/WallPreview"));
 const Partnerships = lazy(() => import("../pages/Partnerships"));
 const Promo = lazy(() => import("../pages/Promo"));
 const Promo2 = lazy(() => import("../pages/Promo2"));
@@ -89,6 +90,7 @@ export default function App() {
             <Route path="/delete-account" element={<DeleteAccount />} />
             <Route path="/textbook" element={<Textbook />} />
             <Route path="/screenshots" element={<Screenshots />} />
+            <Route path="/wall" element={<WallPreview />} />
             <Route path="/partnerships" element={<Partnerships />} />
             <Route path="/promo" element={<Promo />} />
             <Route path="/promo2" element={<Promo2 />} />
