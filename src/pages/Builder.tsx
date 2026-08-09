@@ -4493,7 +4493,15 @@ export default function Builder() {
           className="builder-iframe"
           title="CircuiTry3D Builder"
           src={builderFrameSrc}
-          sandbox="allow-scripts allow-same-origin allow-popups"
+          // No sandbox attribute, deliberately. This frame loads legacy.html
+          // from our own bundle at our own origin — sandboxing it buys nothing,
+          // and "allow-scripts allow-same-origin" together is the combination
+          // browsers warn about anyway, since a frame granted both can clear its
+          // own sandbox. It is also the only thing that made this frame special:
+          // the arena renders WebGL fine in the same WebView because it is not
+          // in a subframe, while this one drew nothing. Phone Chrome renders it
+          // correctly, so the container's treatment of the sandboxed subframe is
+          // the remaining difference.
         />
         {frameSilent && (
           <div className="builder-frame-silent" role="alert">
