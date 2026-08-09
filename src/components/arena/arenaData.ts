@@ -44,6 +44,33 @@ const STRESS_SIGNATURE_BY_FAMILY: Record<string, string> = {
   generic: "Thermal Overload",
 };
 
+/**
+ * Types the bench does not put on a rung.
+ *
+ * The battery IS the supply — it stands off the left of the board and what it
+ * delivers is the volts fader. The switch IS the Battle button on the supply
+ * panel. Neither is a part under test, so giving either a bay both invents an
+ * empty-looking slot and, worse, scores a power source and a control as if they
+ * were loads being stressed to failure.
+ *
+ * Importing the builder's showcase circuit (battery, resistor, lamp, switch) is
+ * the common case, and it was producing four bays for two testable parts.
+ */
+const NON_TESTABLE_TYPES = new Set([
+  "battery",
+  "switch",
+  "ground",
+  "wire",
+  "junction",
+  "node",
+  "source",
+  "voltage-source",
+  "vsource",
+  "probe",
+  "meter",
+  "multimeter",
+]);
+
 const FALLBACK_COMPONENTS: ArenaSourceComponent[] = [
   {
     id: "fallback-resistor",
@@ -194,7 +221,12 @@ export function buildArenaRoster(
   payload: ArenaSessionPayload | null,
 ): ArenaBattleAgent[] {
   const payloadComponents =
-    payload?.components?.filter((component) => component && typeof component === "object") ?? [];
+    payload?.components
+      ?.filter((component) => component && typeof component === "object")
+      // Drop the supply and the controls before anything is counted, so the
+      // roster length — which is what the 3D board turns into bays — only ever
+      // reflects parts that are genuinely under test.
+      .filter((component) => !NON_TESTABLE_TYPES.has(normaliseType(component.type))) ?? [];
   const sourceComponents =
     payloadComponents.length >= 2 ? payloadComponents.slice(0, 6) : FALLBACK_COMPONENTS;
 

@@ -1583,20 +1583,41 @@ function createCircuitBoard(
   board.userData.switchX = switchX;
   board.userData.switchHalf = switchHalf;
 
-  // Top rail — now unbroken, because nothing is wired into it any more.
+  // The rails stop at the OUTERMOST RUNG, not at the board edge.
+  //
+  // They used to run the full ±halfX and be closed by a right-hand vertical.
+  // Past the last rung that is dead copper — no current flows through it — and
+  // a bare vertical with a solder bead at each end reads as an empty bay. On a
+  // solo bench it was blatant: one part in the middle and a second, permanently
+  // vacant slot 3.75 units to its right.
+  //
+  // The last rung closes the loop by itself, so it needs no help: battery, top
+  // rail, part, bottom rail, back to the battery. Nothing beyond it is drawn,
+  // which removes the phantom bay at every roster size while leaving the board
+  // width — and therefore the tuned supply-panel proportion — untouched.
+  const railEndX = seats.length
+    ? Math.max(...seats.map((seat) => seat.x))
+    : halfX;
+
+  // Top rail — unbroken, because nothing is wired into it any more.
   board.add(
-    createWire(THREE, wireMaterial, -halfX, -CIRCUIT_HALF_Z, halfX, -CIRCUIT_HALF_Z),
+    createWire(THREE, wireMaterial, -halfX, -CIRCUIT_HALF_Z, railEndX, -CIRCUIT_HALF_Z),
   );
   // Bottom rail — the return, unbroken.
-  board.add(createWire(THREE, wireMaterial, -halfX, CIRCUIT_HALF_Z, halfX, CIRCUIT_HALF_Z));
-  // Right edge — plain wire closing the loop.
-  board.add(createWire(THREE, wireMaterial, halfX, -CIRCUIT_HALF_Z, halfX, CIRCUIT_HALF_Z));
+  board.add(createWire(THREE, wireMaterial, -halfX, CIRCUIT_HALF_Z, railEndX, CIRCUIT_HALF_Z));
+  if (!seats.length) {
+    // No parts at all: close the loop so the bench still reads as a circuit
+    // rather than two dangling rails.
+    board.add(createWire(THREE, wireMaterial, railEndX, -CIRCUIT_HALF_Z, railEndX, CIRCUIT_HALF_Z));
+    addNode(railEndX, -CIRCUIT_HALF_Z);
+    addNode(railEndX, CIRCUIT_HALF_Z);
+  }
 
-  // The four corners of the loop.
-  for (const cornerX of [-halfX, halfX]) {
-    for (const cornerZ of [-CIRCUIT_HALF_Z, CIRCUIT_HALF_Z]) {
-      addNode(cornerX, cornerZ);
-    }
+  // The battery end of the loop. The far end's beads belong to the last rung
+  // and are added with the rest of the branch taps below, so adding them here
+  // too would double them up.
+  for (const cornerZ of [-CIRCUIT_HALF_Z, CIRCUIT_HALF_Z]) {
+    addNode(-halfX, cornerZ);
   }
 
   // Each part's branch: a stub from each rail in to where the part actually
