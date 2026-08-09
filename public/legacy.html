@@ -8850,29 +8850,40 @@ body.android-optimized .zoom-btn {
         // indistinguishable from "the circuit failed to load" and sends everyone
         // hunting in the wrong place. Which is exactly what happened.
         let _initAttempts = 0;
+        let _initCompleted = false;
         const INIT_MAX_ATTEMPTS = 4;
 
         function reportInitFailure(error) {
             const detail = (error && error.message) ? String(error.message) : String(error || 'unknown');
+            // Where it broke matters more than what broke — the message alone is
+            // usually too generic to locate. First stack frame, trimmed.
+            let where = '';
+            try {
+                const line = String((error && error.stack) || '').split('\n')[1] || '';
+                where = line.trim().replace(/^at\s+/, '').slice(0, 120);
+            } catch (e) { /* stack is best-effort */ }
             try {
                 window.parent.postMessage({
                     type: 'legacy:diag',
                     msg: 'init failed',
-                    detail: { error: detail, attempt: _initAttempts, sceneOk: !!scene, rendererOk: !!renderer },
+                    detail: { error: detail, where: where, attempt: _initAttempts, sceneOk: !!scene, rendererOk: !!renderer, initCompleted: _initCompleted },
                 }, '*');
             } catch (e) { /* no parent, standalone */ }
 
-            // Only the early stages (scene/camera/renderer) are worth retrying —
-            // past that the scene exists and a partial failure is not fixed by
-            // starting over.
-            if ((!scene || !renderer) && _initAttempts < INIT_MAX_ATTEMPTS) {
+            // Key off whether init actually RAN TO COMPLETION, not off whether a
+            // scene and renderer exist. Those two are created in the first few
+            // lines, so "scene && renderer" is true for almost every mid-init
+            // failure — and the old guard returned silently on exactly those,
+            // which is how "no grid, no circuit, no error anywhere" happened. A
+            // half-built scene is a failure and must say so.
+            if (!_initCompleted && _initAttempts < INIT_MAX_ATTEMPTS) {
                 _initAttempts++;
-                console.warn('[CT3D] init failed (' + detail + ') — retry ' + _initAttempts + '/' + INIT_MAX_ATTEMPTS + ' in 900 ms');
+                console.warn('[CT3D] init failed (' + detail + ' @ ' + where + ') — retry ' + _initAttempts + '/' + INIT_MAX_ATTEMPTS + ' in 900 ms');
                 window.setTimeout(init, 900);
                 return;
             }
-            if (scene && renderer) return;  // came up on a later attempt
-            showInitFailureNotice(detail);
+            if (_initCompleted) return;  // came up on a later attempt
+            showInitFailureNotice(detail + (where ? '  @ ' + where : ''));
         }
 
         // Deliberately visible and deliberately ugly. This is not app UI — it only
@@ -9240,6 +9251,10 @@ body.android-optimized .zoom-btn {
                     notifyParent: false
                 });
 
+                // Reached only if EVERY step above ran. Anything earlier that throws
+                // leaves this false, which is what reportInitFailure now keys off —
+                // see the note there about half-initialised scenes.
+                _initCompleted = true;
             } catch (error) {
                 console.error('Initialization error:', error);
                 // A swallowed init failure is why "no grid, no circuit" could happen

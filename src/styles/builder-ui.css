@@ -4009,6 +4009,45 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
   z-index: 1;
 }
 
+/* Shown only when the workspace iframe never reports in. Deliberately plain and
+   deliberately loud — it is not part of the UI, it exists so an empty workspace
+   on a device explains itself instead of looking like a broken circuit. */
+.builder-frame-silent {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 40;
+  padding: 12px 14px;
+  border: 1px solid #ff5555;
+  border-radius: 10px;
+  background: rgba(40, 0, 0, 0.92);
+  color: #ffd9d9;
+  font: 600 13px/1.45 system-ui, sans-serif;
+  text-align: left;
+}
+
+.builder-frame-silent strong {
+  display: block;
+  margin-bottom: 6px;
+  color: #ff8888;
+  font-weight: 800;
+}
+
+.builder-frame-silent p {
+  margin: 0 0 8px;
+}
+
+.builder-frame-silent code {
+  display: block;
+  margin-bottom: 6px;
+  color: #ffb3b3;
+  font-family: monospace;
+  font-size: 11px;
+  word-break: break-word;
+}
+
 .builder-workspace-skin-layer {
   position: absolute;
   inset: 0;

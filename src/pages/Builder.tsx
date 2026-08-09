@@ -1574,6 +1574,8 @@ export default function Builder() {
   const {
     iframeRef,
     isFrameReady,
+    frameHandshakeOk,
+    frameDiag,
     arenaExportStatus,
     arenaExportError,
     lastArenaExport,
@@ -1592,6 +1594,22 @@ export default function Builder() {
     onCinematicFrame: handleCinematicFrame,
     onCinematicVideo: handleCinematicVideo,
   });
+
+  // The 3D workspace is the only surface that lives in an iframe, and when that
+  // frame dies it dies quietly: useBuilderFrame forces isFrameReady true after
+  // 4 s so the UI never locks, so a dead workspace and a live one look identical
+  // to every consumer. On a device there is no console to check either. Nine
+  // seconds is well past a slow cold start on Android but short enough to still
+  // be on screen when someone is looking at an empty grid wondering why.
+  const [frameSilent, setFrameSilent] = useState(false);
+  useEffect(() => {
+    if (frameHandshakeOk) {
+      setFrameSilent(false);
+      return;
+    }
+    const timerId = window.setTimeout(() => setFrameSilent(true), 9_000);
+    return () => window.clearTimeout(timerId);
+  }, [frameHandshakeOk]);
 
   // Push live scene-appearance settings (background, grid, current-flow speed)
   // from the app Settings page into the 3D builder iframe. Fires whenever the
@@ -4477,6 +4495,22 @@ export default function Builder() {
           src={builderFrameSrc}
           sandbox="allow-scripts allow-same-origin allow-popups"
         />
+        {frameSilent && (
+          <div className="builder-frame-silent" role="alert">
+            <strong>3D workspace never started</strong>
+            <p>
+              The workspace frame never reported in, so the grid and circuit
+              cannot be drawn. Everything else on this screen is fine — this is
+              the 3D view only.
+            </p>
+            <code>src: {builderFrameSrc}</code>
+            <code>
+              last message from workspace:{" "}
+              {frameDiag ? `${frameDiag.msg} ${frameDiag.detail}` : "none — it never spoke"}
+            </code>
+            <p>Screenshot this: the two lines above say exactly what failed.</p>
+          </div>
+        )}
         <div
           className="builder-workspace-skin-layer"
           aria-hidden="true"

@@ -65,6 +65,15 @@ export function useBuilderFrame({
   const simulationPulseTimer = useRef<number | null>(null);
 
   const [isFrameReady, setFrameReady] = useState(false);
+  // isFrameReady is NOT evidence the frame works: the ping watchdog below flips
+  // it to true after 4 s regardless, so the UI never locks. That fallback is why
+  // a dead workspace looked identical to a live one for months. This flag is the
+  // honest one — it only goes true when legacy.html actually speaks to us.
+  const [frameHandshakeOk, setFrameHandshakeOk] = useState(false);
+  const [frameDiag, setFrameDiag] = useState<{
+    msg: string;
+    detail: string;
+  } | null>(null);
   const [arenaExportStatus, setArenaExportStatus] =
     useState<ArenaExportStatus>("idle");
   const [arenaExportError, setArenaExportError] = useState<string | null>(null);
@@ -112,11 +121,25 @@ export function useBuilderFrame({
 
       if (type === "legacy:diag") {
         console.log("[CT3D-REACT] Diag from legacy:", event.data);
+        // Keep the newest diagnostic so the UI can show it on a device, where
+        // there is no console to read.
+        const d = (event.data as { msg?: unknown; detail?: unknown }) || {};
+        setFrameDiag({
+          msg: typeof d.msg === "string" ? d.msg : "unknown",
+          detail: d.detail == null ? "" : JSON.stringify(d.detail),
+        });
       }
 
       if (type === "legacy:ready") {
+        setFrameHandshakeOk(true);
         setFrameReady(true);
         return;
+      }
+
+      // Any well-formed legacy:* message proves the frame is alive and running
+      // its script, even if the ready message itself was missed.
+      if (typeof type === "string" && type.startsWith("legacy:")) {
+        setFrameHandshakeOk(true);
       }
 
       if (type === "legacy:tool-state") {
@@ -412,6 +435,8 @@ export function useBuilderFrame({
   return {
     iframeRef,
     isFrameReady,
+    frameHandshakeOk,
+    frameDiag,
     arenaExportStatus,
     arenaExportError,
     lastArenaExport,
