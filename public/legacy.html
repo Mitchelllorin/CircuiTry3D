@@ -27,6 +27,34 @@
                 } catch (err) {}
             }
         })();
+
+        // Capture console errors/warnings from the very first line, before
+        // three.js loads. Shader compile failures are reported by three through
+        // console.error and are invisible on a phone — which is precisely the
+        // failure being hunted: a scene that builds fine and then draws nothing.
+        window.__ct3dLog = [];
+
+        (function () {
+            ['error', 'warn'].forEach(function (level) {
+                var original = console[level];
+                console[level] = function () {
+                    try {
+                        var text = Array.prototype.map.call(arguments, function (a) {
+                            if (a instanceof Error) return a.message;
+                            if (typeof a === 'string') return a;
+                            try { return JSON.stringify(a); } catch (e) { return String(a); }
+                        }).join(' ');
+                        if (window.__ct3dLog.length < 40) window.__ct3dLog.push(level + ': ' + text);
+                    } catch (e) { /* logging must never throw */ }
+                    return original.apply(console, arguments);
+                };
+            });
+            window.addEventListener('error', function (e) {
+                if (window.__ct3dLog.length < 40) {
+                    window.__ct3dLog.push('uncaught: ' + (e.message || 'unknown') + ' @ ' + (e.filename || '') + ':' + (e.lineno || 0));
+                }
+            });
+        })();
     </script>
     <title>CircuiTry - Professional Circuit Design</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
@@ -3765,6 +3793,30 @@
                 document.head.appendChild(s);
             }
         }
+
+        // Say out loud whether three actually loaded, and from where. If the
+        // local bundle fails in the WebView the CDN fallback needs the network,
+        // and if that is unavailable THREE stays undefined — which looks exactly
+        // like "everything renders except the 3D". Distinguishing that from a
+        // renderer problem decides whether the fix is one file or a migration.
+        window.setTimeout(function () {
+            var ok = typeof window.THREE !== "undefined";
+            var msg = ok
+                ? ('three loaded OK - r' + window.THREE.REVISION)
+                : 'THREE IS MISSING - vendor/three.min.js did not load and the CDN fallback did not either';
+            try {
+                window.__ct3dThreeStatus = msg;
+                (ok ? console.warn : console.error)('[CT3D Boot] ' + msg);
+                if (!ok) {
+                    var b = document.createElement('div');
+                    b.style.cssText = 'position:fixed;left:8px;right:8px;top:8px;z-index:99999;' +
+                        'background:#5a0000;color:#fff;border:2px solid #ff4444;border-radius:8px;' +
+                        'padding:10px;font:700 13px/1.4 system-ui,sans-serif;text-align:left;';
+                    b.textContent = msg;
+                    (document.body || document.documentElement).appendChild(b);
+                }
+            } catch (e) { /* diagnostics must never break boot */ }
+        }, 1200);
     </script>
     <script src="js/component-failure-engine.js?v=6"></script>
     <!-- FUSE™ runtime guard: if component-failure-engine.js failed to execute
@@ -8904,7 +8956,7 @@ body.android-optimized .zoom-btn {
                 '<div style="color:#ff8888;font-weight:800;margin-bottom:6px;">' + title + '</div>' +
                 '<div>' + body + '</div>' +
                 (detail
-                    ? '<div style="margin-top:8px;color:#ffb3b3;font-family:monospace;font-size:11px;word-break:break-word;">' +
+                    ? '<div style="margin-top:8px;color:#ffb3b3;font-family:monospace;font-size:11px;word-break:break-word;white-space:pre-wrap;">' +
                       _escapeHtmlBasic(detail) + '</div>'
                     : '') +
                 '<div style="margin-top:8px;opacity:0.8;">' + hint + '</div>';
@@ -8953,6 +9005,57 @@ body.android-optimized .zoom-btn {
             const box = document.getElementById('ct3d-context-lost');
             if (box && box.parentNode) box.parentNode.removeChild(box);
         }
+
+        // Reports what the RENDERER is doing, for the case where init() succeeds,
+        // the scene is populated, the camera tour runs — and the screen is still
+        // empty. That combination is not a load failure or a crash; it means
+        // geometry is being submitted and coming back invisible. The numbers that
+        // separate the possibilities are draw calls, buffer size and shader
+        // errors, none of which are reachable from a phone.
+        function showRenderDiag() {
+            if (document.getElementById('ct3d-render-diag')) return;
+            const lines = [];
+            try {
+                const info = renderer && renderer.info && renderer.info.render;
+                lines.push('draw calls: ' + (info ? info.calls : 'n/a') +
+                           '   triangles: ' + (info ? info.triangles : 'n/a'));
+                lines.push('scene objects: ' + (scene && scene.children ? scene.children.length : 'n/a') +
+                           '   parts: ' + (typeof components !== 'undefined' && components ? components.length : 'n/a') +
+                           '   wires: ' + (typeof wires !== 'undefined' && wires ? wires.length : 'n/a'));
+                const cv = renderer && renderer.domElement;
+                lines.push('canvas css: ' + (cv ? Math.round(cv.getBoundingClientRect().width) + 'x' + Math.round(cv.getBoundingClientRect().height) : 'n/a') +
+                           '   buffer: ' + (cv ? cv.width + 'x' + cv.height : 'n/a'));
+                const gl = renderer && renderer.getContext && renderer.getContext();
+                if (gl) {
+                    lines.push('gl error: ' + gl.getError() + '   lost: ' + (gl.isContextLost ? gl.isContextLost() : '?'));
+                    lines.push('buffer(gl): ' + gl.drawingBufferWidth + 'x' + gl.drawingBufferHeight);
+                    try {
+                        const dbg = gl.getExtension('WEBGL_debug_renderer_info');
+                        if (dbg) lines.push('gpu: ' + String(gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL)).slice(0, 60));
+                    } catch (e) { /* extension is optional */ }
+                }
+                lines.push('three r' + (window.THREE ? THREE.REVISION : '?') +
+                           '   camera: ' + (camera ? 'yes' : 'no'));
+            } catch (e) {
+                lines.push('diag failed: ' + (e && e.message));
+            }
+
+            const logs = (window.__ct3dLog || []).slice(0, 6);
+            const box = _fatalBox(
+                'ct3d-render-diag',
+                'Workspace render report',
+                'The 3D view started but may not be drawing. These numbers say which.',
+                lines.join('\n') + (logs.length ? '\n\n--- first errors ---\n' + logs.join('\n') : '\n\n(no console errors captured)'),
+                'Screenshot this and send it. Tap to dismiss.'
+            );
+            if (box) {
+                box.style.cursor = 'pointer';
+                box.addEventListener('click', function () {
+                    if (box.parentNode) box.parentNode.removeChild(box);
+                });
+            }
+        }
+        window.showRenderDiag = showRenderDiag;
 
         function _escapeHtmlBasic(text) {
             return String(text).replace(/[&<>]/g, function (c) {
@@ -9277,6 +9380,9 @@ body.android-optimized .zoom-btn {
                 // stuck in its "loading / disabled" state, even when init()
                 // encounters a non-fatal error.
                 notifyParentReady();
+                // showRenderDiag() stays available on window for debugging, but
+                // is NOT shown automatically — it is an engineering readout, not
+                // something a user should ever meet.
             }
         }
 
@@ -9295,6 +9401,42 @@ body.android-optimized .zoom-btn {
 
         function animate(currentTime) {
             requestAnimationFrame(animate);
+            // The loop is re-queued FIRST, so a throw below cannot stop it. It
+            // used to: one exception and the scene froze on whatever the last
+            // clear left behind — a dark screen after a frame or two of correct
+            // rendering, with no error visible on a device. _animateGuard turns
+            // that into a named, on-screen fault the first time it happens.
+            return _animateGuard(currentTime);
+        }
+
+        let _animateFaultShown = false;
+        function _animateGuard(currentTime) {
+            try {
+                return _animateBody(currentTime);
+            } catch (err) {
+                if (!_animateFaultShown) {
+                    _animateFaultShown = true;
+                    const detail = (err && err.message ? err.message : String(err));
+                    let where = '';
+                    try {
+                        const line = String((err && err.stack) || '').split('\n')[1] || '';
+                        where = line.trim().replace(/^at\s+/, '').slice(0, 140);
+                    } catch (e) { /* best effort */ }
+                    console.error('[CT3D Animate] ' + detail + ' @ ' + where);
+                    try {
+                        _fatalBox(
+                            'ct3d-animate-fault',
+                            'Render loop crashed',
+                            'The workspace drew correctly and then stopped. This is the error that stopped it.',
+                            detail + (where ? '\n@ ' + where : ''),
+                            'Screenshot this — that line is the fix.'
+                        );
+                    } catch (e) { /* never recurse into the fault handler */ }
+                }
+            }
+        }
+
+        function _animateBody(currentTime) {
 
             // NOTE: do NOT gate this loop on `document.hidden`. The browser already
             // throttles requestAnimationFrame for genuinely backgrounded tabs, and
@@ -14879,9 +15021,19 @@ body.android-optimized .zoom-btn {
 
         // Pre-initialize the Play Store billing client on Android so it is
         // ready by the time the user reaches the pricing overlay.
+        //
+        // The whole block is inside try/catch on purpose. Billing is an optional
+        // convenience; the workspace is the product. A synchronous throw here
+        // aborts the rest of this script block, which is exactly how a plugin
+        // API change silently killed the entire 3D builder on native — for
+        // months, invisibly, because browsers skip this path entirely.
+        // Nothing about subscriptions is ever worth taking the workspace down.
+        try {
         if (typeof window.Capacitor !== 'undefined' &&
                 typeof window.Capacitor.isNativePlatform === 'function' &&
-                window.Capacitor.isNativePlatform()) {
+                window.Capacitor.isNativePlatform() &&
+                window.Capacitor.Plugins &&
+                window.Capacitor.Plugins.Billing) {
             // Note: the tier-mapping logic below mirrors src/utils/playStoreBilling.ts.
             // legacy.html runs inside a sandboxed iframe and cannot import TypeScript
             // modules directly, so the mapping is kept inline here.
@@ -14926,7 +15078,20 @@ body.android-optimized .zoom-btn {
 
             // Store the tier when a purchase completes (handles both new
             // purchases and any pending purchase that completes on launch).
-            window.Capacitor.Plugins.Billing.addListener('purchaseCompleted', (result) => {
+            // Guarded, and the guard is the whole bug fix.
+            //
+            // addListener() returns a listener HANDLE, not a Promise, in the
+            // current Billing plugin (Play Billing 8.x, upgraded in 6781cca).
+            // The old `.catch(() => {})` chained onto it therefore threw
+            // "addListener(...).catch is not a function" — at top level in this
+            // script block, so EVERYTHING DEFINED BELOW IT NEVER RAN, including
+            // the 3D workspace startup. Symptom: no grid, no circuit, no error,
+            // native only — because window.Capacitor does not exist in a browser,
+            // so this line is skipped there and the workspace comes up fine.
+            // That is the entire "works in Chrome, dead in the app" mystery, and
+            // it is why rolling the app back never helped: the broken call is
+            // older than every version that was tried.
+            const _billingListener = window.Capacitor.Plugins.Billing.addListener('purchaseCompleted', (result) => {
                 if (result.success && Array.isArray(result.products)) {
                     const PRODUCT_TIER_MAP = {
                         circuitry3d_student_monthly: 'student',
@@ -14946,7 +15111,15 @@ body.android-optimized .zoom-btn {
                         localStorage.setItem('circuitry3d_subscription_tier', best);
                     } catch (_) {}
                 }
-            }).catch(() => {});
+            });
+            // Only a Promise has .catch; a handle does not. Tolerate both, and
+            // never let billing take the workspace down with it.
+            if (_billingListener && typeof _billingListener.catch === 'function') {
+                _billingListener.catch(() => {});
+            }
+        }
+        } catch (billingErr) {
+            console.warn('[CT3D Billing] disabled — ' + (billingErr && billingErr.message));
         }
 
         document.addEventListener('keydown', event => {
