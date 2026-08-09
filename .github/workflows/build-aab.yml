@@ -195,10 +195,15 @@ jobs:
       - name: Ensure Gradle wrapper executable
         run: chmod +x android/gradlew
 
-      - name: Build Android Release (AAB)
+      - name: Build Android Release (AAB + sideloadable APK)
+        # assembleRelease rides along with bundleRelease because an AAB cannot be
+        # installed on a phone — Play consumes it and generates split APKs. The APK
+        # is the same release build type (same minify/shrink, same signing key), so
+        # it is the closest thing to the Play build that can be tested on a device
+        # without going through the Play pipeline.
         run: |
           cd android
-          ./gradlew clean bundleRelease -PversionCode="${{ env.VERSION_CODE }}" -PversionName="${{ env.VERSION_NAME }}" --stacktrace --no-build-cache --no-configuration-cache
+          ./gradlew clean bundleRelease assembleRelease -PversionCode="${{ env.VERSION_CODE }}" -PversionName="${{ env.VERSION_NAME }}" --stacktrace --no-build-cache --no-configuration-cache
 
       - name: Collect build outputs into release folder
         shell: bash
@@ -214,11 +219,26 @@ jobs:
           echo "Contents of ${RELEASE_DIR}:"
           ls -lh "${RELEASE_DIR}"
 
+          # The phone-installable build, kept in its own folder so it uploads as a
+          # separate, small artifact — the one to download when testing on a device.
+          APK_DIR="CircuiTry3D-APK"
+          mkdir -p "${APK_DIR}"
+          cp android/app/build/outputs/apk/release/app-release.apk \
+             "${APK_DIR}/CircuiTry3D-v${{ env.VERSION_NAME }}.apk"
+          ls -lh "${APK_DIR}"
+
       - name: Upload release folder
         uses: actions/upload-artifact@v4
         with:
           name: CircuiTry3D-v${{ env.VERSION_NAME }}
           path: CircuiTry3D-Release/
+          if-no-files-found: error
+
+      - name: Upload sideloadable APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: CircuiTry3D-v${{ env.VERSION_NAME }}-APK
+          path: CircuiTry3D-APK/
           if-no-files-found: error
 
       - name: Publish to Play Store internal testing
