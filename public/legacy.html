@@ -3923,6 +3923,24 @@
         let currentLatticeAtoms = []; // Cu²⁺ lattice ion spheres (atomic zoom)
         let currentProbabilityClouds = []; // electron probability-cloud hazes (atomic zoom)
         let flowActivationTime  = 0;  // performance.now() when flow last activated
+
+        /**
+         * Is the current flow actually being drawn on screen?
+         *
+         * NOT the same question as "are there particles". At circuit scale
+         * FLOW_STREAM_DOT_RATIO is 0 on purpose — the lightning bolts carry the
+         * current and the dot count is *meant* to round to zero — so reading
+         * `currentFlowParticles.length === 0` as "flow failed" is wrong — and it
+         * was wrong in five places at once: the animateCurrentFlow failsafe, the
+         * per-frame flow watchdog in animate(), the Android post-analysis retry,
+         * and both runPayoffFlow retry checks. Each channel is drawn by a
+         * different mode, so ask whether ANY of them exists.
+         */
+        function hasVisibleFlowChannel() {
+            return currentFlowParticles.length  > 0 ||   // dots (atomic zoom, classic mode)
+                   currentLightningBolts.length > 0 ||   // lightning (flow mode, the default)
+                   currentWireGlows.length      > 0;     // glow tubes (classic mode)
+        }
         /** Default first-order thermal time constant (s) for small components with no explicit τ. */
         const FUSE_THERMAL_TAU_DEFAULT = 5;
         /**
@@ -9488,7 +9506,7 @@ body.android-optimized .zoom-btn {
             // the System WebView may need several attempts before world matrices are
             // committed and particle positions resolve to non-zero values.
             if (currentFlowState && currentFlowState.hasFlow &&
-                    currentFlowParticles.length === 0 && scene && wires.length > 0) {
+                    !hasVisibleFlowChannel() && scene && wires.length > 0) {
                 _flowWatchdogFrames++;
                 const interval = _flowWatchdogFrames <= 600 ? 60 : 300;
                 const maxAttempts = isAndroid ? 15 : 5;
@@ -9503,7 +9521,7 @@ body.android-optimized .zoom-btn {
                 if (!currentFlowState || !currentFlowState.hasFlow) {
                     _flowWatchdogFrames  = 0;
                     _flowWatchdogAttempts = 0;
-                } else if (currentFlowParticles.length > 0) {
+                } else if (hasVisibleFlowChannel()) {
                     _flowWatchdogFrames = 0;
                 }
             }
@@ -17514,7 +17532,7 @@ Made with ? for visual learners everywhere!
             if (isAndroid && runtimeFlow && runtimeFlow.hasFlow) {
                 setTimeout(function() {
                     try {
-                        if (currentFlowParticles.length === 0 && scene && wires.length > 0) {
+                        if (!hasVisibleFlowChannel() && scene && wires.length > 0) {
                             console.log('[CT3D Flow] Android post-analysis retry: recreating particles');
                             animateCurrentFlow(runtimeFlow);
                         }
@@ -20549,9 +20567,9 @@ Made with ? for visual learners everywhere!
                 }
             });
 
-            // ── Failsafe: if we expected particles but none were created ──
-            if (hasFlow && currentValue > 0 && currentFlowParticles.length === 0 && wires.length > 0) {
-                console.warn('[CT3D Flow] FAILSAFE: Expected particles but none created. Forcing on ALL ' + wires.length + ' wires.');
+            // ── Failsafe: if we expected visible flow but nothing was drawn ──
+            if (hasFlow && currentValue > 0 && !hasVisibleFlowChannel() && wires.length > 0) {
+                console.warn('[CT3D Flow] FAILSAFE: no flow channel rendered. Forcing dots on ALL ' + wires.length + ' wires.');
                 wires.forEach(function(wire, wi) {
                     if (!wire || !wire.wireGroup) return;
                     try { wire.createCurve(); } catch(e) { return; }
@@ -21626,10 +21644,10 @@ Made with ? for visual learners everywhere!
                 // GPU has processed all queued draw calls (world-matrix race). If no
                 // particles exist after the first attempt, schedule one more analyzeCircuit()
                 // 600 ms later as a single additional attempt.
-                if (currentFlowState?.hasFlow && currentFlowParticles.length === 0 && wires.length > 0) {
-                    console.warn('[CT3D Payoff] runPayoffFlow: particles still empty — scheduling self-retry in 600 ms');
+                if (currentFlowState?.hasFlow && !hasVisibleFlowChannel() && wires.length > 0) {
+                    console.warn('[CT3D Payoff] runPayoffFlow: no flow channel drawn — scheduling self-retry in 600 ms');
                     window.setTimeout(function() {
-                        if (currentFlowParticles.length === 0) {
+                        if (!hasVisibleFlowChannel()) {
                             console.log('[CT3D Payoff] self-retry: calling analyzeCircuit()');
                             if (scene) scene.updateMatrixWorld(true);
                             analyzeCircuit();
