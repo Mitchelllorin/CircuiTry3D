@@ -4,6 +4,14 @@ import { useAppSettings } from "../../context/AppSettingsContext";
 import { CurrentFlowAnimationSystem } from "../../schematic/currentFlowAnimation";
 import { LightningFlowSystem } from "../../schematic/lightningFlow";
 import { solveArenaCircuit } from "./arenaCircuitSolve";
+import {
+  blowoutFor,
+  createBlowoutKit,
+  createBlowoutTextures,
+  type BlowoutKit,
+  type BlowoutTextures,
+} from "./failureFx";
+import { isMobile } from "../../utils/mobilePerformance";
 import type { Vec2 } from "../../schematic/types";
 import { STRESS_MAX } from "./stressTest";
 import type {
@@ -33,6 +41,12 @@ type ArenaSceneProps = {
   onLoadChange?: (factor: number) => void;
   /** Name of the most-robust component, shown in the verdict. */
   winnerName?: string | null;
+  /**
+   * Which part won. Distinct from `winnerName` because the scene needs to
+   * FIND it, not label it: the end of a run is the one moment the bench has a
+   * subject chosen for it, and without an id the camera has nothing to end on.
+   */
+  winnerId?: string | null;
   /** How many components survived — shown in the verdict. */
   survivorCount?: number;
   onExitTransitionComplete: () => void;
@@ -46,6 +60,26 @@ type ArenaSceneProps = {
   panelOpen?: boolean;
   /** Solo bench mode — the in-scene control reads "TEST" instead of "BATTLE". */
   solo?: boolean;
+  /**
+   * The part the user has tapped, if any — same model as selecting a component
+   * in the workspace. Selection is lifted out of the scene because it is not a
+   * rendering detail: the panel shows what is selected, and swapping a part
+   * acts on it.
+   */
+  selectedAgentId?: string | null;
+  /**
+   * How many pixels at the BOTTOM of the canvas are covered by the fixed
+   * console. The scene composes the circuit into the space above it — see
+   * applyViewFrame.
+   */
+  bottomInsetPx?: number;
+  /** Tapping a part reports it here; tapping empty board reports null. */
+  onSelectAgent?: (id: string | null) => void;
+  /**
+   * Long-pressing a part — the workspace's own gesture for "edit this
+   * component", same 500ms, so the muscle memory carries across.
+   */
+  onLongPressAgent?: (id: string) => void;
 };
 
 const PHASE_LABEL: Record<string, string> = {
@@ -163,11 +197,36 @@ const FAIL_SIGNATURE_BY_FAMILY: Record<string, FailSignature> = {
     ember: 0.35,
     hot: true,
     char: 0.5,
+    // Vented electrolyte flashes off as a WHITE cloud — the one smoke on this
+    // bench that is genuinely pale rather than pale-because-it-is-lit, and it
+    // leaves fast and straight up out of the split vent.
+    smoke: {
+      rate: 40,
+      forMs: 2600,
+      rise: 1.5,
+      spread: 0.3,
+      tint: "#e8e4dc",
+      opacity: 0.66,
+    },
   },
   // Junction opens: one over-bright flash, then dark. Package stays intact,
   // but the epoxy clouds and darkens over the dead die.
   led: { motion: "flashOut", popMs: 260, flash: 4.2, ember: 0, char: 0.38 },
-  diode: { motion: "burst", popMs: 420, flash: 3.2, ember: 0.1, char: 0.62 },
+  diode: {
+    motion: "burst",
+    popMs: 420,
+    flash: 3.2,
+    ember: 0.1,
+    char: 0.62,
+    smoke: {
+      rate: 16,
+      forMs: 1800,
+      rise: 0.9,
+      spread: 0.34,
+      tint: "#a49a90",
+      opacity: 0.6,
+    },
+  },
   // Insulation cooks off the windings — slow, heavy smoke and a sagging coil.
   inductor: {
     motion: "smoulder",
@@ -178,20 +237,81 @@ const FAIL_SIGNATURE_BY_FAMILY: Record<string, FailSignature> = {
     char: 0.72,
   },
   // Swells and vents hot gas, then stays dangerously hot long afterwards.
-  battery: { motion: "vent", popMs: 2000, flash: 2.6, ember: 0.85, hot: true, char: 0.45 },
+  battery: {
+    motion: "vent",
+    popMs: 2000,
+    flash: 2.6,
+    ember: 0.85,
+    hot: true,
+    char: 0.45,
+    // The heaviest, longest-lasting cloud on the bench, because a cell that
+    // lets go keeps reacting long after the bang.
+    smoke: {
+      rate: 34,
+      forMs: 9000,
+      rise: 1.1,
+      spread: 0.6,
+      tint: "#c9c2b6",
+      opacity: 0.74,
+    },
+  },
   // Doing exactly its job: the element melts quietly, the glass darkens with
   // vaporised metal — a blown fuse is sooted on the inside.
   fuse: { motion: "flashOut", popMs: 340, flash: 2.8, ember: 0.05, char: 0.66 },
   // Filament flashes white and opens; the envelope blackens where it deposited.
   lamp: { motion: "flashOut", popMs: 300, flash: 4.5, ember: 0, char: 0.44 },
   // Silicon lets go hard enough to split the package — magic smoke escapes.
-  mosfet: { motion: "burst", popMs: 500, flash: 3.8, ember: 0.2, char: 0.85 },
-  bjt: { motion: "burst", popMs: 500, flash: 3.6, ember: 0.2, char: 0.85 },
+  // The smoke is the whole folklore of this failure, so it had better be there:
+  // a single dense jet straight out of the hole in the top of the package.
+  mosfet: {
+    motion: "burst",
+    popMs: 500,
+    flash: 3.8,
+    ember: 0.2,
+    char: 0.85,
+    smoke: {
+      rate: 30,
+      forMs: 3200,
+      rise: 1.35,
+      spread: 0.28,
+      tint: "#9c948a",
+      opacity: 0.78,
+    },
+  },
+  bjt: {
+    motion: "burst",
+    popMs: 500,
+    flash: 3.6,
+    ember: 0.2,
+    char: 0.85,
+    smoke: {
+      rate: 28,
+      forMs: 3000,
+      rise: 1.3,
+      spread: 0.28,
+      tint: "#9c948a",
+      opacity: 0.76,
+    },
+  },
   // Contacts arc: a stuttering train of sparks, the body itself undamaged —
   // so it must NOT blacken. Only the contacts are pitted, and you can't see them.
   switch: { motion: "arc", popMs: 1500, flash: 3, ember: 0, char: 0.08 },
   relay: { motion: "arc", popMs: 1200, flash: 2.4, ember: 0.15, char: 0.15 },
-  generic: { motion: "smoulder", popMs: FAIL_POP_MS, flash: 2.4, ember: 0.3, char: 0.6 },
+  generic: {
+    motion: "smoulder",
+    popMs: FAIL_POP_MS,
+    flash: 2.4,
+    ember: 0.3,
+    char: 0.6,
+    smoke: {
+      rate: 20,
+      forMs: 4200,
+      rise: 0.85,
+      spread: 0.42,
+      tint: "#aaa298",
+      opacity: 0.68,
+    },
+  },
 };
 
 /**
@@ -946,8 +1066,17 @@ function fillAtmosphere(
   geometry.setDrawRange(0, count);
 }
 
-const NAMEPLATE_ANCHOR_Y = CIRCUIT_RAIL_Y + 2.5;
-const NAMEPLATE_GAP_PX = 4;
+/**
+ * How high above the rail a plate anchors, in WORLD units.
+ *
+ * 1.5, down from 2.5. A label belongs to the thing it labels, and floating it
+ * two and a half units up left the plates reading as a row of captions across
+ * the middle of the dome rather than as this part's numbers. Closer is also
+ * what makes the pair legible together: you can take in the part and its
+ * figures in one look instead of glancing between them.
+ */
+const NAMEPLATE_ANCHOR_Y = CIRCUIT_RAIL_Y + 1.5;
+const NAMEPLATE_GAP_PX = 3;
 
 /**
  * Minimum clear space between two stacked nameplates, px.
@@ -965,10 +1094,23 @@ const NAMEPLATE_GAP_PX = 4;
  * it re-derives the whole stack from the current projection each frame, so the
  * same camera always yields the same layout and there is nothing to oscillate.
  */
-const NAMEPLATE_STACK_GAP_PX = 5;
+const NAMEPLATE_STACK_GAP_PX = 3;
 
 /** Horizontal slack before two plates count as sharing a column. */
 const NAMEPLATE_COLUMN_PAD_PX = 4;
+
+/**
+ * How much overlap is simply tolerated before a plate is stepped at all.
+ *
+ * Deliberately non-zero. Resolving every last pixel of collision means plates
+ * jumping around constantly as the bench turns — the cure reads worse than the
+ * disease, because motion draws the eye far harder than a few shared pixels do.
+ * A touch of overlap on a rotating scene is nothing; a stack that reshuffles
+ * every frame is a distraction sitting on top of the thing you are watching.
+ * So: step only when they genuinely obscure each other, and step by the least
+ * that clears it.
+ */
+const NAMEPLATE_OVERLAP_SLACK_PX = 7;
 
 /**
  * Height to keep clear at the bottom of the scene, px. The collapsed bench bar
@@ -976,6 +1118,14 @@ const NAMEPLATE_COLUMN_PAD_PX = 4;
  * it, so anything anchored near the bottom edge disappears underneath it.
  */
 const BENCH_BAR_CLEARANCE_PX = 52;
+
+/**
+ * How long a failure card sits on screen before clearing itself, ms.
+ *
+ * Long enough to read one line, short enough that a six-part run does not end
+ * with a wall of text over the dome. Opening the card cancels the countdown.
+ */
+const FUSE_CARD_DWELL_MS = 7000;
 
 /**
  * How far in FRONT of the bottom rail the supply panel sits.
@@ -999,16 +1149,26 @@ const SUPPLY_PANEL_OUTBOARD = 1.95;
  * (`circuitHalfX(1) * 2`), and the panel's own width is
  * `2 * plateHalfX + SWITCH_BAY` = 5.1 before scaling — so at 1.28 the dashboard
  * was 6.5 units, 87% of the circuit it serves, and read as the main event.
- * At 0.75 it comes out around half the board's width: unmistakably a control
- * panel attached to the bench rather than a second bench.
+ *
+ * 0.75 fixed that but overshot in the other direction: at half the board's
+ * width, seen from twenty units out on a phone, the fader travel was short
+ * enough that setting a value precisely with a thumb was fiddly — you could
+ * grab a handle but you could not really OPERATE it, which makes the one
+ * genuinely interactive thing on the bench feel decorative.
+ *
+ * 0.95 is the compromise: ~4.85 units, about 65% of a solo bench, so it is
+ * still plainly a control panel attached to the bench rather than a second
+ * bench — but every track is 27% longer, which is 27% more resolution under
+ * the thumb.
  */
-const SUPPLY_PANEL_SCALE = 0.75;
+const SUPPLY_PANEL_SCALE = 0.95;
 /**
- * The switch has to FIT its bay: `SWITCH_BAY * SUPPLY_PANEL_SCALE` is 1.13
- * units, and the toggle is about 0.9 wide at this scale, so it sits inside the
- * bay instead of hanging off the end of the faceplate.
+ * The switch has to FIT its bay, and the bay is `SWITCH_BAY * SUPPLY_PANEL_SCALE`
+ * — so this is expressed as a RATIO of the panel scale rather than as a fixed
+ * number. Hard-coded, it stayed the same size whenever the panel grew and ended
+ * up a small toggle rattling around in a large bay.
  */
-const SWITCH_SCALE = 1.1;
+const SWITCH_SCALE = SUPPLY_PANEL_SCALE * 1.467;
 
 /**
  * A glowing ring on the floor under each control. This is what carries "this is
@@ -1073,12 +1233,27 @@ function createReadoutTile(
   const texture = new THREE.CanvasTexture(canvas);
   texture.anisotropy = 4;
 
+  // The display face is a decal sitting on the bezel, so it must never fight
+  // the bezel for depth. It used to sit 0.003 units above a 0.07-tall bezel
+  // (top at y=0.035) while still writing depth — far inside a phone GPU's
+  // depth resolution, so the tile flickered between its texture and the
+  // near-black bezel underneath: the black squares that flashed on device.
+  // Three defences: a real gap, no depth writing, and a polygon offset that
+  // biases the decal toward the camera.
   const face = new THREE.Mesh(
     new THREE.PlaneGeometry(0.6, 0.38),
-    new THREE.MeshBasicMaterial({ map: texture, transparent: true }),
+    new THREE.MeshBasicMaterial({
+      map: texture,
+      transparent: true,
+      depthWrite: false,
+      polygonOffset: true,
+      polygonOffsetFactor: -2,
+      polygonOffsetUnits: -2,
+    }),
   );
   face.rotation.x = -Math.PI / 2;
-  face.position.y = 0.038;
+  face.position.y = 0.048;
+  face.renderOrder = 2;
   group.add(face);
 
   // A pinch of light spilling out of the display, tinted to its own metric.
@@ -1483,6 +1658,16 @@ function createSupplyPanel(
   // the row spells the mnemonic the whole app teaches, and each one is tinted
   // to the same ct-term-* colour that quantity carries everywhere else.
   const updaters: Record<string, (value: string) => void> = {};
+  // The tile MESHES are published too, not just their update functions.
+  //
+  // A tile's face is 0.6 units wide and the column pitch is 0.75, so it cannot
+  // be made meaningfully bigger without columns colliding — and at the arena's
+  // camera distance that works out to roughly thirty pixels on a phone. No
+  // canvas resolution fixes thirty pixels. So the lit tiles stay as HARDWARE
+  // (they are what makes the panel read as an instrument) and the numbers you
+  // actually read are drawn as crisp DOM text pinned over them at a fixed size,
+  // which needs their world positions every frame.
+  const tileMeshes: Record<string, import("three").Object3D> = {};
   PANEL_COLUMNS.forEach((column, index) => {
     const tile = createReadoutTile(THREE, column.letter, column.color);
     // Directly BELOW its own column, so each control or gauge stands over the
@@ -1490,8 +1675,10 @@ function createSupplyPanel(
     tile.mesh.position.set(columnX(index), CIRCUIT_RAIL_Y + 0.07, TILE_ROW_Z);
     group.add(tile.mesh);
     updaters[column.key] = tile.update;
+    tileMeshes[column.key] = tile.mesh;
   });
   group.userData.readoutUpdaters = updaters;
+  group.userData.readoutTiles = tileMeshes;
 
   group.userData.trackHalfZ = FADER_TRACK_HALF * scale;
   group.userData.columnCenterZ = COLUMN_CENTER_Z * scale;
@@ -1520,6 +1707,18 @@ function createCircuitBoard(
   // One entry per part, already built and measured, so each stub can stop at
   // the real end of the real component rather than at a guessed radius.
   seats: { x: number; halfZ: number }[],
+  /**
+   * Whether to build the 3D supply console — the faceplate, its two faders,
+   * its lit tiles, the switch and the lead that feeds the cell.
+   *
+   * Off by default now, because the dashboard is fixed DOM at the bottom of
+   * the screen instead. Keeping the object here as well would put two of every
+   * control on screen, and the 3D pair are the ones you have to chase.
+   *
+   * What is left is the circuit: cell, rails, rungs, junction beads. Which is
+   * the point — the board is for the experiment, the console is for you.
+   */
+  withConsole = false,
 ): import("three").Group {
   const count = seats.length;
   const board = new THREE.Group();
@@ -1561,27 +1760,29 @@ function createCircuitBoard(
   const switchX =
     panelX + (FADER_TRACK_HALF + 0.5 + SWITCH_BAY / 2) * SUPPLY_PANEL_SCALE;
 
-  const switchPart = createPanelToggle(THREE);
-  switchPart.position.set(switchX, 0, panelZ);
-  switchPart.name = "switch";
-  // The switch IS the test button, so it is sized like a control rather than
-  // like the parts it gates.
-  switchPart.scale.setScalar(SWITCH_SCALE);
-  board.add(switchPart);
-  const switchHalf =
-    ((switchPart.userData.halfSpan as number) ?? 0.45) * SWITCH_SCALE;
-  // Its own lit ring, so it still reads as the control that starts the test
-  // even sitting on a panel with two others.
-  const switchHalo = createControlHalo(THREE, switchHalf * 1.5, "#7dd3fc");
-  switchHalo.position.set(switchX, 0.03, panelZ);
-  board.add(switchHalo);
-  // A light of its own — controls emit, components are lit.
-  const switchGlow = new THREE.PointLight("#7dd3fc", 2.2, 5.5, 2);
-  switchGlow.position.set(switchX, CIRCUIT_RAIL_Y + 0.5, panelZ);
-  switchGlow.name = "switchGlow";
-  board.add(switchGlow);
-  board.userData.switchX = switchX;
-  board.userData.switchHalf = switchHalf;
+  if (withConsole) {
+    const switchPart = createPanelToggle(THREE);
+    switchPart.position.set(switchX, 0, panelZ);
+    switchPart.name = "switch";
+    // The switch IS the test button, so it is sized like a control rather than
+    // like the parts it gates.
+    switchPart.scale.setScalar(SWITCH_SCALE);
+    board.add(switchPart);
+    const switchHalf =
+      ((switchPart.userData.halfSpan as number) ?? 0.45) * SWITCH_SCALE;
+    // Its own lit ring, so it still reads as the control that starts the test
+    // even sitting on a panel with two others.
+    const switchHalo = createControlHalo(THREE, switchHalf * 1.5, "#7dd3fc");
+    switchHalo.position.set(switchX, 0.03, panelZ);
+    board.add(switchHalo);
+    // A light of its own — controls emit, components are lit.
+    const switchGlow = new THREE.PointLight("#7dd3fc", 2.2, 5.5, 2);
+    switchGlow.position.set(switchX, CIRCUIT_RAIL_Y + 0.5, panelZ);
+    switchGlow.name = "switchGlow";
+    board.add(switchGlow);
+    board.userData.switchX = switchX;
+    board.userData.switchHalf = switchHalf;
+  }
 
   // The rails stop at the OUTERMOST RUNG, not at the board edge.
   //
@@ -1643,53 +1844,55 @@ function createCircuitBoard(
   board.add(createWire(THREE, wireMaterial, -halfX, -CIRCUIT_HALF_Z, -halfX, -batteryHalf));
   board.add(createWire(THREE, wireMaterial, -halfX, batteryHalf, -halfX, CIRCUIT_HALF_Z));
 
-  // ── The supply panel ──────────────────────────────────────────────────────
-  // OUTSIDE the circuit, connected straight to the battery: this is the cell's
-  // output control, the front panel of the supply. The circuit itself is
-  // untouched — the space between the rails belongs to the competing parts, and
-  // nothing else takes a rung. The volts fader sets what the battery delivers
-  // and the series-resistance fader sets what it delivers it through, which is
-  // why every branch's current moves with them.
-  // panelX / panelZ were resolved up with the switch, which is mounted in this
-  // same panel's right-hand bay.
-  const panel = createSupplyPanel(THREE, SUPPLY_PANEL_SCALE);
-  panel.position.set(panelX, 0, panelZ);
-  panel.name = "supplyPanel";
-  board.add(panel);
-  const panelHalf = (panel.userData.halfSpan as number) ?? 2.2;
-  const panelHalfZ = (panel.userData.halfSpanZ as number) ?? 2.2;
-  const plateCenterX = panelX + ((panel.userData.plateCenterX as number) ?? 0);
-  board.userData.panelX = panelX;
-  board.userData.panelZ = panelZ;
-  board.userData.panelHalf = panelHalf;
-  // Where the faceplate actually sits, as opposed to where its origin is — the
-  // halo and the readout both key off this so they stay centred on the panel
-  // now that the switch bay has pushed it to the right.
-  board.userData.plateCenterX = plateCenterX;
-  // Matching lit ring + light, so the whole dashboard reads as the one control
-  // surface. Oval rather than round: the panel is much wider than it is deep,
-  // and a circle big enough to contain it would swamp the board.
-  const panelHalo = createControlHalo(THREE, panelHalf * 1.12, "#ffd166");
-  panelHalo.position.set(plateCenterX, 0.03, panelZ);
-  panelHalo.scale.set(1, panelHalfZ / panelHalf, 1);
-  panelHalo.name = "panelHalo";
-  board.add(panelHalo);
-  const panelGlow = new THREE.PointLight("#ffd166", 2.4, 7, 2);
-  panelGlow.position.set(plateCenterX, CIRCUIT_RAIL_Y + 0.7, panelZ);
-  panelGlow.name = "panelGlow";
-  board.add(panelGlow);
-
-  // The lead from the panel in to the cell. Routed AROUND the outside of the
-  // board — along the front, then up the left edge — because a straight run to
-  // the battery would cut across the bottom rail and read as a connection to it.
-  // The supply is wired to the cell and nothing else.
-  const panelLeadX = panelX + ((panel.userData.leftEdgeX as number) ?? -panelHalf);
-  board.add(createWire(THREE, wireMaterial, panelLeadX, panelZ, -halfX - 1.1, panelZ));
-  addNode(panelLeadX, panelZ);
-  board.add(createWire(THREE, wireMaterial, -halfX - 1.1, panelZ, -halfX - 1.1, 0));
-  addNode(-halfX - 1.1, panelZ);
-  board.add(createWire(THREE, wireMaterial, -halfX - 1.1, 0, -halfX, 0));
-  addNode(-halfX - 1.1, 0);
+  if (withConsole) {
+    // ── The supply panel ──────────────────────────────────────────────────────
+    // OUTSIDE the circuit, connected straight to the battery: this is the cell's
+    // output control, the front panel of the supply. The circuit itself is
+    // untouched — the space between the rails belongs to the competing parts, and
+    // nothing else takes a rung. The volts fader sets what the battery delivers
+    // and the series-resistance fader sets what it delivers it through, which is
+    // why every branch's current moves with them.
+    // panelX / panelZ were resolved up with the switch, which is mounted in this
+    // same panel's right-hand bay.
+    const panel = createSupplyPanel(THREE, SUPPLY_PANEL_SCALE);
+    panel.position.set(panelX, 0, panelZ);
+    panel.name = "supplyPanel";
+    board.add(panel);
+    const panelHalf = (panel.userData.halfSpan as number) ?? 2.2;
+    const panelHalfZ = (panel.userData.halfSpanZ as number) ?? 2.2;
+    const plateCenterX = panelX + ((panel.userData.plateCenterX as number) ?? 0);
+    board.userData.panelX = panelX;
+    board.userData.panelZ = panelZ;
+    board.userData.panelHalf = panelHalf;
+    // Where the faceplate actually sits, as opposed to where its origin is — the
+    // halo and the readout both key off this so they stay centred on the panel
+    // now that the switch bay has pushed it to the right.
+    board.userData.plateCenterX = plateCenterX;
+    // Matching lit ring + light, so the whole dashboard reads as the one control
+    // surface. Oval rather than round: the panel is much wider than it is deep,
+    // and a circle big enough to contain it would swamp the board.
+    const panelHalo = createControlHalo(THREE, panelHalf * 1.12, "#ffd166");
+    panelHalo.position.set(plateCenterX, 0.03, panelZ);
+    panelHalo.scale.set(1, panelHalfZ / panelHalf, 1);
+    panelHalo.name = "panelHalo";
+    board.add(panelHalo);
+    const panelGlow = new THREE.PointLight("#ffd166", 2.4, 7, 2);
+    panelGlow.position.set(plateCenterX, CIRCUIT_RAIL_Y + 0.7, panelZ);
+    panelGlow.name = "panelGlow";
+    board.add(panelGlow);
+  
+    // The lead from the panel in to the cell. Routed AROUND the outside of the
+    // board — along the front, then up the left edge — because a straight run to
+    // the battery would cut across the bottom rail and read as a connection to it.
+    // The supply is wired to the cell and nothing else.
+    const panelLeadX = panelX + ((panel.userData.leftEdgeX as number) ?? -panelHalf);
+    board.add(createWire(THREE, wireMaterial, panelLeadX, panelZ, -halfX - 1.1, panelZ));
+    addNode(panelLeadX, panelZ);
+    board.add(createWire(THREE, wireMaterial, -halfX - 1.1, panelZ, -halfX - 1.1, 0));
+    addNode(-halfX - 1.1, panelZ);
+    board.add(createWire(THREE, wireMaterial, -halfX - 1.1, 0, -halfX, 0));
+    addNode(-halfX - 1.1, 0);
+  }
 
   // The lever, its pivot and its grab target are all built into
   // `createPanelToggle` now — there is no library part left to adapt.
@@ -1711,10 +1914,15 @@ export function ArenaScene({
   onStartTest,
   onLoadChange,
   winnerName = null,
+  winnerId = null,
   survivorCount = 0,
   onExitTransitionComplete,
   workspaceMode = false,
   panelOpen = false,
+  bottomInsetPx = 0,
+  selectedAgentId = null,
+  onSelectAgent,
+  onLongPressAgent,
   // `solo` is still part of the props contract and callers pass it, but nothing
   // in here reads it any more: the only thing that varied on it was the switch
   // caption ("throw to test" vs "throw to battle"), and that caption is gone.
@@ -1741,6 +1949,25 @@ export function ArenaScene({
   onStartTestRef.current = onStartTest;
   const onLoadChangeRef = useRef(onLoadChange);
   onLoadChangeRef.current = onLoadChange;
+  // Same treatment: the tap handler lives inside the scene-init effect and must
+  // see the current selection and callback without the scene being rebuilt.
+  const selectedAgentIdRef = useRef<string | null>(selectedAgentId);
+  selectedAgentIdRef.current = selectedAgentId;
+  const onSelectAgentRef = useRef(onSelectAgent);
+  onSelectAgentRef.current = onSelectAgent;
+  const onLongPressAgentRef = useRef(onLongPressAgent);
+  onLongPressAgentRef.current = onLongPressAgent;
+  /** Read by the scene's framing pass — see bottomInsetPx. */
+  const bottomInsetRef = useRef(bottomInsetPx);
+  /** Published by the scene once it is up, so a height change can re-frame it. */
+  const reframeRef = useRef<(() => void) | null>(null);
+  useEffect(() => {
+    bottomInsetRef.current = bottomInsetPx;
+    reframeRef.current?.();
+  }, [bottomInsetPx]);
+  /** Who won — read by the closing camera move and the victor's ring. */
+  const winnerIdRef = useRef<string | null>(winnerId);
+  winnerIdRef.current = winnerId;
   /** The supply faders' floating readout — a handle position needs a number. */
   const dialLabelRef = useRef<HTMLDivElement | null>(null);
 
@@ -1752,7 +1979,10 @@ export function ArenaScene({
    * conditions that KILLED it, not the conditions once it is dead.
    */
   const [fuseCard, setFuseCard] = useState<ArenaBattleAgent | null>(null);
+  /** Compact by default; the full post-mortem is one tap away. */
+  const [fuseExpanded, setFuseExpanded] = useState(false);
   const reportedFailuresRef = useRef<Set<string>>(new Set());
+  const previousStatusRef = useRef<ArenaBattleStatus>(status);
   // The drifting motes in the air of the dome. Held out here so the density
   // slider can rebuild just this buffer — rebuilding the whole scene on a slider
   // drag would tear down the circuit and the running test with it.
@@ -1766,6 +1996,18 @@ export function ArenaScene({
   const liveRendererRef = useRef<import("three").WebGLRenderer | null>(null);
   const { settings: appSettings } = useAppSettings();
   const atmosphereDensity = appSettings.workspace.atmosphereDensity;
+  // Whether stressed parts tremble. Reduce-motion turns it off regardless of
+  // the simulation setting — a user who has asked the whole app to stop moving
+  // things has already answered this question.
+  const componentShake =
+    appSettings.simulation.componentShake &&
+    !appSettings.accessibility.reducedMotion;
+  // Read inside the animate loop, so toggling it takes effect on the next
+  // frame without tearing down the dome and the running test with it.
+  const componentShakeRef = useRef(componentShake);
+  useEffect(() => {
+    componentShakeRef.current = componentShake;
+  }, [componentShake]);
   // Read by the scene-init effect, which must NOT list the density as a
   // dependency — doing so would rebuild the entire dome on every slider tick.
   const atmosphereDensityRef = useRef(atmosphereDensity);
@@ -1788,9 +2030,17 @@ export function ArenaScene({
   useEffect(() => {
     // A fresh run gets a clean slate, so re-running the bench explains its
     // failures again instead of staying silent because it already did once.
-    if (status === "ready") {
+    //
+    // Testing only for "ready" was not enough: a re-run goes straight from
+    // "complete" to "battling" and never passes through "ready", so every
+    // failure was already in reportedFailures and no card was ever shown on a
+    // second run. Catch the entry INTO a run as well.
+    const previousStatus = previousStatusRef.current;
+    previousStatusRef.current = status;
+    if (status === "ready" || (status === "battling" && previousStatus !== "battling")) {
       reportedFailuresRef.current.clear();
       setFuseCard(null);
+      setFuseExpanded(false);
       return;
     }
     for (const agent of agents) {
@@ -1798,10 +2048,25 @@ export function ArenaScene({
       if (reportedFailuresRef.current.has(agent.id)) continue;
       reportedFailuresRef.current.add(agent.id);
       setFuseCard(agent);
+      setFuseExpanded(false); // each new death arrives compact
     }
   }, [agents, status]);
 
-  const dismissFuseCard = useCallback(() => setFuseCard(null), []);
+  // The card used to sit there until dismissed, so the last failure of a run
+  // stayed parked over the scene indefinitely. It now clears itself — unless
+  // it has been opened for reading, in which case it waits for the user.
+  useEffect(() => {
+    if (!fuseCard || fuseExpanded) {
+      return;
+    }
+    const timerId = window.setTimeout(() => setFuseCard(null), FUSE_CARD_DWELL_MS);
+    return () => window.clearTimeout(timerId);
+  }, [fuseCard, fuseExpanded]);
+
+  const dismissFuseCard = useCallback(() => {
+    setFuseCard(null);
+    setFuseExpanded(false);
+  }, []);
 
   const healthBarAgents = useMemo(() => agents, [agents]);
   const sceneAgentSignature = useMemo(
@@ -1861,9 +2126,11 @@ export function ArenaScene({
     let controls: OrbitControlsInstance | null = null;
     let particleTexture: import("three").CanvasTexture | null = null;
     let smokeTextureRef: import("three").CanvasTexture | null = null;
+    let blowoutTexturesRef: BlowoutTextures | null = null;
     let flowSystemRef: CurrentFlowAnimationSystem | null = null;
     let lightningRef: LightningFlowSystem | null = null;
     let cleanupPointer: (() => void) | null = null;
+    let reframe: (() => void) | null = null;
 
     const agentObjects = new Map<
       string,
@@ -1881,6 +2148,22 @@ export function ArenaScene({
         }[];
         baseColor: import("three").Color;
         smoke: SmokePlume | null;
+        /**
+         * Casing fragments, flame, sparks and the scorch mark left on the
+         * bench. Built LAZILY at the moment the part dies rather than up front:
+         * a bench that finishes with no casualties should not have paid for
+         * six sets of debris, and a phone should not be carrying flame sprites
+         * for parts that are doing fine.
+         */
+        blowout: BlowoutKit | null;
+        /** Invisible, generous tap target — the only thing selection raycasts. */
+        pick: import("three").Mesh;
+        /**
+         * Half the body's smallest cross-section. The wound is sized against
+         * this so a torn signal diode and a torn battery each look torn, rather
+         * than one being swallowed by its own hole.
+         */
+        bodyRadius: number;
         // The failure flash is a real LIGHT at the failure site plus a small
         // glare core — not a uniform emissive wash over the whole body. See
         // the failed-branch comment for why that distinction is the whole
@@ -1907,7 +2190,8 @@ export function ArenaScene({
     void Promise.all([
       import("three"),
       import("three/examples/jsm/controls/OrbitControls.js"),
-    ]).then(([THREE, controlsModule]) => {
+      import("three/examples/jsm/environments/RoomEnvironment.js"),
+    ]).then(([THREE, controlsModule, roomModule]) => {
       if (isDisposed || !rootRef.current || !canvasRef.current) {
         return;
       }
@@ -1917,6 +2201,7 @@ export function ArenaScene({
       threeRef.current = THREE;
 
       const { OrbitControls } = controlsModule;
+      const { RoomEnvironment } = roomModule;
       const root = rootRef.current;
       const canvas = canvasRef.current;
 
@@ -1924,14 +2209,20 @@ export function ArenaScene({
       scene.background = new THREE.Color("#020617");
       scene.fog = new THREE.FogExp2("#020617", 0.032);
 
+      // The arena used to render at desktop settings on a phone: MSAA on, and
+      // up to 2x device pixel ratio. On a Pixel that is roughly 4x the pixels
+      // of the panel plus multisampling, which is most of the choppiness.
+      // Dropping to 1.5x cuts the fragment load ~44%, and at that density MSAA
+      // buys little on a ~400 ppi screen.
+      const onPhone = isMobile();
       renderer = new THREE.WebGLRenderer({
         canvas,
-        antialias: true,
+        antialias: !onPhone,
         alpha: false,
         powerPreference: "high-performance",
       });
       liveRendererRef.current = renderer;
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, onPhone ? 1.5 : 2));
       renderer.outputColorSpace = THREE.SRGBColorSpace;
       // Without tone mapping, everything above 1.0 clips flat and everything
       // below sits crushed and grey — which is most of why the dome read as
@@ -1943,7 +2234,11 @@ export function ArenaScene({
 
       const isWorkspace = workspaceModeRef.current;
 
-      const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 200);
+      // near=1 rather than 0.1. Depth precision is governed by the near/far
+      // ratio, and OrbitControls clamps the camera to minDistance 4, so 0.1
+      // bought nothing and cost an order of magnitude of depth resolution —
+      // which is what let coplanar surfaces z-fight on mobile in the first place.
+      const camera = new THREE.PerspectiveCamera(45, 1, 1, 200);
       // The board is as wide as the roster is long, so every pose backs off in
       // step with it — otherwise a six-part bench runs off both edges of a
       // portrait phone while a two-part bench sits lost in the middle.
@@ -2021,6 +2316,39 @@ export function ArenaScene({
       const skyFill = new THREE.HemisphereLight("#e8f0ff", "#2a1c12", 1.5);
       scene.add(skyFill);
 
+      // ── Image-based lighting ──────────────────────────────────────────────
+      // The single biggest thing standing between this bench and looking real.
+      //
+      // A MeshStandardMaterial is physically based, which means a metal takes
+      // almost none of its appearance from diffuse colour — it is defined by
+      // what it REFLECTS. With no environment there was nothing to reflect, so
+      // every metal surface fell back on flat speculars from three point lights
+      // and read as painted plastic: the tinned copper rails, the battery can,
+      // the component leads. (The comment on the emitter materials already said
+      // as much; this is that gap closed.)
+      //
+      // A prefiltered room gives every metal and every glossy body something to
+      // pick up — soft gradients across a curve, a bright edge where it turns
+      // away from the light. Held at a low intensity because the arena is a dark
+      // dome: the point is reflection DETAIL, not lifting the blacks, and a
+      // bright room would flatten the deliberately theatrical key/rim rig.
+      const pmrem = new THREE.PMREMGenerator(renderer);
+      const envTexture = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+      scene.environment = envTexture;
+      scene.environmentIntensity = 0.34;
+      pmrem.dispose();
+
+      // ── Shadows ───────────────────────────────────────────────────────────
+      // The other half of it. Nothing here cast a shadow, so every part sat ON
+      // the board without being ON it — the eye reads contact from the shadow
+      // under an object, and with none, parts float however well they are lit.
+      //
+      // One caster only: the key. Multiple shadow-casting lights on a phone is
+      // a real cost for a muddle of crossing shadows, and a single strong
+      // source is how a bench or a lab bay is actually lit anyway.
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
       // Just enough neutral lift that nothing falls to pure black.
       const ambientLight = new THREE.AmbientLight("#ffffff", 0.45);
       scene.add(ambientLight);
@@ -2029,6 +2357,24 @@ export function ArenaScene({
       // material colour, so it carries most of the exposure.
       const keyLight = new THREE.DirectionalLight("#fff4e6", 3.4);
       keyLight.position.set(-6, 14, 9);
+      keyLight.castShadow = true;
+      // Sized to the BOARD, not to the dome. A directional shadow camera spread
+      // over the whole 30-unit floor would spend its whole resolution on empty
+      // ground and give the parts a handful of texels each — soft to the point
+      // of being a smudge.
+      const shadowSpan = circuitHalfX(agentsRef.current.length) + 4;
+      keyLight.shadow.camera.left = -shadowSpan;
+      keyLight.shadow.camera.right = shadowSpan;
+      keyLight.shadow.camera.top = shadowSpan;
+      keyLight.shadow.camera.bottom = -shadowSpan;
+      keyLight.shadow.camera.near = 1;
+      keyLight.shadow.camera.far = 40;
+      keyLight.shadow.mapSize.set(onPhone ? 1024 : 2048, onPhone ? 1024 : 2048);
+      // Bias against the acne that a low-angle key produces on near-flat
+      // surfaces (the floor, the faceplate) — normalBias handles the sloped
+      // cases the constant bias cannot.
+      keyLight.shadow.bias = -0.0008;
+      keyLight.shadow.normalBias = 0.02;
       scene.add(keyLight);
 
       // Fill: cooler, opposite side, well under the key so it shapes the far
@@ -2068,6 +2414,66 @@ export function ArenaScene({
       floor.rotation.x = -Math.PI / 2;
       floor.position.y = -0.01;
       scene.add(floor);
+
+      // ── Selection ring ────────────────────────────────────────────────────
+      // Deliberately the SAME ring the workspace draws under a selected
+      // component, down to the numbers: legacy.html's `createSelectionRing()`
+      // is RingGeometry(0.62, 0.82, 40) in #9fd8ff at 0.38 opacity, laid flat
+      // at y = 0.03 with depthTest off and renderOrder 999, breathing on
+      // 1 + sin(t * 0.004) * 0.06.
+      //
+      // Matching it exactly is the point rather than an economy: "selected"
+      // has to mean one thing everywhere in the app, and a second, prettier
+      // ring invented for the arena would teach the user that the arena's
+      // selection is a different kind of thing from the workspace's. It is not.
+      //
+      // One ring, moved — not one per part — same as the workspace.
+      const selectionRing = new THREE.Mesh(
+        new THREE.RingGeometry(0.62, 0.82, 40),
+        new THREE.MeshBasicMaterial({
+          color: 0x9fd8ff,
+          transparent: true,
+          opacity: 0.38,
+          side: THREE.DoubleSide,
+          depthTest: false,
+        }),
+      );
+      selectionRing.rotation.x = -Math.PI / 2;
+      selectionRing.renderOrder = 999;
+      selectionRing.visible = false;
+      scene.add(selectionRing);
+
+      // ── The victor's mark ─────────────────────────────────────────────────
+      // The end of a run had no moment in it. A part was declared "most robust"
+      // in a line of text at the bottom of the screen while the bench sat there
+      // looking exactly as it had a second earlier — so the thing the entire
+      // test exists to determine was the least visible event on the board.
+      //
+      // ONE ring and ONE light, created up front and moved to whoever wins,
+      // rather than a set per part. The light especially has to exist from the
+      // start: three recompiles every material in the scene when the light
+      // COUNT changes, and doing that at the final beat would stutter the
+      // payoff shot. (Same rule the failure flash and the flame follow.)
+      const victorRing = new THREE.Mesh(
+        new THREE.RingGeometry(0.9, 1.16, 48),
+        new THREE.MeshBasicMaterial({
+          color: 0xffc24d,
+          transparent: true,
+          opacity: 0,
+          side: THREE.DoubleSide,
+          depthTest: false,
+        }),
+      );
+      victorRing.rotation.x = -Math.PI / 2;
+      victorRing.renderOrder = 998;
+      victorRing.visible = false;
+      scene.add(victorRing);
+
+      // A warm key from above, so the survivor is physically lit apart from a
+      // board full of corpses — the one part still worth looking at.
+      const victorLight = new THREE.PointLight("#ffca63", 0, 9, 2);
+      victorLight.position.set(0, 3.4, 0);
+      scene.add(victorLight);
 
       const grid = new THREE.GridHelper(30, 30, "#60a5fa", "#f97316");
       const gridMaterial = grid.material as import("three").Material & {
@@ -2115,6 +2521,13 @@ export function ArenaScene({
       const smokeTexture = createCanvasTexture(THREE, "rgba(255,255,255,0.85)");
       smokeTextureRef = smokeTexture;
 
+      // Ember and scorch, built once for the whole bench. Every blowout kit
+      // borrows these rather than baking its own — a canvas texture is uploaded
+      // to the GPU on first render, and paying for that upload on the frame a
+      // part explodes is the one place a hitch would be seen.
+      const blowoutTextures = createBlowoutTextures(THREE);
+      blowoutTexturesRef = blowoutTextures;
+
       // The parts are wired into a circuit now rather than ringed around the
       // dome, so their seats come from the board layout. A solo bench still
       // lands dead centre — circuitSeat handles that without a special case.
@@ -2144,6 +2557,16 @@ export function ArenaScene({
         // dark brown pedestal and you could not tell where the part ended. The
         // dais is furniture — it never gets hot and it never burns. It still
         // catches the failure flash, because that flash is a real light.
+        // Every solid in the part casts. Receiving too, so a lead throws a
+        // shadow onto the body it comes out of — self-shadowing is most of
+        // what makes a small object read as a real object rather than a decal.
+        group.traverse((object) => {
+          const mesh = object as import("three").Mesh;
+          if ((mesh as { isMesh?: boolean }).isMesh) {
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+          }
+        });
         const heatBody = group.getObjectByName("core") ?? group;
         const materials: import("three").MeshStandardMaterial[] = [];
         const emitterLights: import("three").PointLight[] = [];
@@ -2179,6 +2602,43 @@ export function ArenaScene({
           agentPlume.object.visible = false;
           group.add(agentPlume.object);
         }
+
+        // ── Selection hit box ─────────────────────────────────────────────
+        // The same device the workspace uses (legacy.html raycasts a per-part
+        // `selectionBox`, not the mesh), and it is not an optimisation — it is
+        // the difference between selection working and not working on a phone.
+        // A resistor body is a couple of millimetres of screen from twenty
+        // units out, and a thumb cannot reliably hit it; a tap that misses by
+        // three pixels reads as "tapped the empty board" and deselects.
+        //
+        // Raycasting a dedicated box also EXCLUDES the rest of the group. That
+        // matters more than it looks: three's raycaster does not skip objects
+        // with `visible = false`, so the failure flash sprites — which sit at
+        // the part's centre and are camera-facing quads — were live hit
+        // targets the whole time, and so was the debris once a part had blown
+        // up. Picking would have quietly meant "somewhere near this part".
+        //
+        // Invisible via the MATERIAL, not `mesh.visible`, for that same reason:
+        // the mesh must stay raycastable while drawing nothing.
+        const pickBounds = new THREE.Box3().setFromObject(heatBody);
+        const pickSize = pickBounds.getSize(new THREE.Vector3());
+        const pickCenter = pickBounds.getCenter(new THREE.Vector3());
+        const pickBox = new THREE.Mesh(
+          new THREE.BoxGeometry(1, 1, 1),
+          new THREE.MeshBasicMaterial({ visible: false }),
+        );
+        // Floors and padding, so a small part gets a target a thumb can land
+        // on while a big one is not wrapped in a box far larger than itself.
+        pickBox.scale.set(
+          Math.max(pickSize.x, 0.8) + 0.45,
+          Math.max(pickSize.y, 0.6) + 0.4,
+          Math.max(pickSize.z, 0.8) + 0.45,
+        );
+        // The group carries no rotation or scale (rungs all face the same way),
+        // so world → local is a plain subtraction of the seat.
+        pickBox.position.copy(pickCenter).sub(group.position);
+        pickBox.name = "pickBox";
+        group.add(pickBox);
 
         // A real light at the failure site. Created up front (intensity 0) so
         // three.js never has to recompile shaders mid-battle.
@@ -2241,6 +2701,15 @@ export function ArenaScene({
             opacity: material.opacity,
           })),
           smoke: agentPlume,
+          blowout: null,
+          pick: pickBox,
+          // Smallest cross-section, because that is the dimension a casing
+          // splits ACROSS — a resistor is long and thin, and a wound scaled to
+          // its length would be a crater running the whole body.
+          bodyRadius: Math.max(
+            Math.min(pickSize.x, pickSize.y, pickSize.z) * 0.5,
+            0.07,
+          ),
           // Resting emissive is a NEUTRAL near-black, NOT the accent — otherwise the
           // heat loop bathes the whole part in its team colour at rest (one all
           // orange, one all blue), which read as a permanent "highlighted" state.
@@ -2336,6 +2805,15 @@ export function ArenaScene({
       let pressX = 0;
       let pressY = 0;
       let pressAt = 0;
+      /** Where the pointer has got to, so a long press can tell it has wandered. */
+      let lastMoveX = 0;
+      let lastMoveY = 0;
+      /** legacy.html's LONG_PRESS_DURATION / LONG_PRESS_MOVEMENT_THRESHOLD. */
+      const LONG_PRESS_MS = 500;
+      const LONG_PRESS_SLOP = 15;
+      let longPressTimer = 0;
+      /** Set when a long press fires, so the release does not ALSO select. */
+      let longPressFired = false;
       // ── Fader drag ──────────────────────────────────────────────────────────
       // Sliding a fader is a drag, not a tap, so it takes the gesture away from
       // OrbitControls for its duration — otherwise the camera orbits while you
@@ -2433,13 +2911,60 @@ export function ArenaScene({
         }
       };
 
+      /**
+       * Which part is under a given pointer event, if any. Raycasts only the
+       * dedicated hit boxes — see the pickBox comment for why the rest of the
+       * group must be excluded.
+       */
+      const agentUnderPointer = (event: PointerEvent): string | null => {
+        raycaster.setFromCamera(ndcFor(event), camera);
+        let hit: string | null = null;
+        let nearest = Number.POSITIVE_INFINITY;
+        agentObjects.forEach((entry, id) => {
+          const hits = raycaster.intersectObject(entry.pick, false);
+          if (hits.length > 0 && hits[0].distance < nearest) {
+            nearest = hits[0].distance;
+            hit = id;
+          }
+        });
+        return hit;
+      };
+
+      const clearLongPress = () => {
+        if (longPressTimer !== 0) {
+          window.clearTimeout(longPressTimer);
+          longPressTimer = 0;
+        }
+      };
+
       const handlePointerDown = (event: PointerEvent) => {
         pressX = event.clientX;
         pressY = event.clientY;
         pressAt = performance.now();
+        longPressFired = false;
 
         if (!renderer) {
           return;
+        }
+
+        // ── Long-press to edit ──────────────────────────────────────────────
+        // The workspace's gesture, its timing (LONG_PRESS_DURATION = 500ms in
+        // legacy.html) and its haptic. Selecting a part in the arena told you
+        // what it was; this is how you CHANGE it, which is the question a
+        // stress bench is for: "would a half-watt part have survived that?"
+        const pressedAgent = agentUnderPointer(event);
+        if (pressedAgent && onLongPressAgentRef.current) {
+          clearLongPress();
+          longPressTimer = window.setTimeout(() => {
+            longPressTimer = 0;
+            // A drag that wandered is a camera move, not a press.
+            if (Math.hypot(lastMoveX - pressX, lastMoveY - pressY) > LONG_PRESS_SLOP) {
+              return;
+            }
+            longPressFired = true;
+            navigator.vibrate?.(50);
+            onLongPressAgentRef.current?.(pressedAgent);
+          }, LONG_PRESS_MS);
         }
         raycaster.setFromCamera(ndcFor(event), camera);
         for (const column of columns) {
@@ -2462,6 +2987,16 @@ export function ArenaScene({
       };
 
       const handlePointerMove = (event: PointerEvent) => {
+        lastMoveX = event.clientX;
+        lastMoveY = event.clientY;
+        // Moving far enough is an orbit, so the pending edit is abandoned
+        // rather than firing under a finger that has clearly changed its mind.
+        if (
+          longPressTimer !== 0 &&
+          Math.hypot(event.clientX - pressX, event.clientY - pressY) > LONG_PRESS_SLOP
+        ) {
+          clearLongPress();
+        }
         if (!draggingFader || !root) {
           return;
         }
@@ -2484,18 +3019,58 @@ export function ArenaScene({
       };
       const handlePointerUp = (event: PointerEvent) => {
         const wasFaderDrag = draggingFader !== null;
+        clearLongPress();
         endDialDrag();
-        if (wasFaderDrag || !switchObject || !renderer) {
+        // A long press already did something. Letting the release fall through
+        // would open the editor and toggle the selection off underneath it.
+        if (longPressFired) {
+          longPressFired = false;
           return;
         }
+        if (wasFaderDrag || !renderer) {
+          return;
+        }
+        // 14px, not 10: a thumb on glass always slides a little, and the old
+        // threshold was tight enough that a deliberate tap often registered as
+        // a camera drag and did nothing at all. Legacy allows 15px of travel
+        // before it stops calling something a press.
         const drift = Math.hypot(event.clientX - pressX, event.clientY - pressY);
-        if (drift > 10 || performance.now() - pressAt > 700) {
+        if (drift > 14 || performance.now() - pressAt > 700) {
           return;
         }
         raycaster.setFromCamera(ndcFor(event), camera);
-        if (raycaster.intersectObject(switchObject, true).length > 0) {
+        if (
+          switchObject &&
+          raycaster.intersectObject(switchObject, true).length > 0
+        ) {
           onStartTestRef.current?.();
+          return;
         }
+
+        // ── Tap a part to select it ─────────────────────────────────────────
+        // The same model as selecting a component in the workspace, and the
+        // reason it had to exist: the parts were the only things on this board
+        // you could not touch. The switch and the faders both took taps, so the
+        // board taught you that things on it are tappable and then did nothing
+        // when you tapped the components — which is the one thing the whole
+        // bench is about.
+        //
+        // Selecting also aims the camera: a part you have chosen to watch beats
+        // whichever part the ramp currently thinks is worst-off, so you can
+        // stay on the component you came to see even while another one is
+        // closer to failing. Tapping the empty board clears it and hands the
+        // camera back to the action.
+        // Nearest first, so a part in front is not selected through by one
+        // behind it. Same resolver the long press uses, so a tap and a hold
+        // can never disagree about which part is under the finger.
+        const hitAgentId = agentUnderPointer(event);
+        // Re-tapping the selected part deselects it, so the gesture is its own
+        // undo and there is no "how do I get out of this" state.
+        onSelectAgentRef.current?.(
+          hitAgentId && hitAgentId === selectedAgentIdRef.current
+            ? null
+            : hitAgentId,
+        );
       };
       canvas.addEventListener("pointerdown", handlePointerDown);
       // Non-passive: the dial drag calls preventDefault to stop the page
@@ -2507,6 +3082,7 @@ export function ArenaScene({
       window.addEventListener("pointercancel", endDialDrag);
       window.addEventListener("pointerup", endDialDrag);
       cleanupPointer = () => {
+        clearLongPress();
         canvas.removeEventListener("pointerdown", handlePointerDown);
         canvas.removeEventListener("pointermove", handlePointerMove);
         canvas.removeEventListener("pointerup", handlePointerUp);
@@ -2689,6 +3265,33 @@ export function ArenaScene({
       };
       rebuildFlow();
 
+      /**
+       * Keep the circuit centred in the space actually LEFT for it.
+       *
+       * The canvas is full-bleed, but the bottom of it is covered by the fixed
+       * console — so composing to the canvas centre put the board's middle
+       * behind the dashboard, and the bench sat low no matter what the camera
+       * did. Panning the camera down would "fix" it only for one pose and
+       * would fight the orbit; this fixes the FRAME instead, so it holds while
+       * the scene is being orbited, auto-rotated or driven by the camera work.
+       *
+       * `setViewOffset` is exactly the tool: it renders a window of a larger
+       * virtual image. Declaring the virtual frame taller by the console's
+       * height and displaying the window BELOW that extra band lifts the
+       * composed centre into the visible band, without touching the camera,
+       * the target, or the projection anywhere else.
+       */
+      const applyViewFrame = (width: number, height: number) => {
+        const inset = Math.max(0, Math.min(bottomInsetRef.current, height * 0.5));
+        camera.aspect = width / Math.max(height, 1);
+        if (inset < 1) {
+          camera.clearViewOffset();
+        } else {
+          camera.setViewOffset(width, height + inset, 0, inset, width, height);
+        }
+        camera.updateProjectionMatrix();
+      };
+
       const resize = () => {
         if (!rootRef.current || !renderer) {
           return;
@@ -2696,11 +3299,21 @@ export function ArenaScene({
         const width = rootRef.current.clientWidth;
         const height = rootRef.current.clientHeight;
         renderer.setSize(width, height, false);
-        camera.aspect = width / Math.max(height, 1);
-        camera.updateProjectionMatrix();
+        applyViewFrame(width, height);
+      };
+      // Re-framed when the console's height changes too, not only when the
+      // window does — opening a sheet on the dashboard makes it taller, and the
+      // circuit should recentre into what is left rather than hide behind it.
+      reframe = () => {
+        if (!rootRef.current) return;
+        applyViewFrame(rootRef.current.clientWidth, rootRef.current.clientHeight);
       };
 
       resize();
+      // Hand the re-frame out, so a console that grows (a sheet opening) can
+      // recentre the circuit without waiting for the canvas itself to resize —
+      // it never does, since the canvas is full-bleed underneath.
+      reframeRef.current = reframe;
       resizeObserver = new ResizeObserver(resize);
       resizeObserver.observe(root);
 
@@ -2710,7 +3323,7 @@ export function ArenaScene({
        * emptied at the end of each frame rather than allocated inside the
        * animate loop — this runs 60 times a second.
        */
-      /** Lazily-cached W.I.R.E. strip nodes — see the readout block below. */
+      /** Lazily-cached W.I.R.E. value nodes — see the readout block below. */
       let wireEls: Record<"w" | "i" | "r" | "e", HTMLElement | null> | null =
         null;
       const plateLayout: {
@@ -2732,6 +3345,17 @@ export function ArenaScene({
       let lastFrameTime = 0;
       // When the bench finished, so the survivor can cool down from that moment.
       let completedAt = 0;
+      /**
+       * When the current run started.
+       *
+       * The camera cuts to a part that just failed, and `failedAt` survives the
+       * end of a run — so re-running within a few seconds of a death made the
+       * camera snap onto LAST run's corpse the instant the new run began. That
+       * is the stray sweep right at the start of a battle: it was reacting to
+       * an event from the previous run. Deaths older than the current run do
+       * not count.
+       */
+      let battleStartedAt = 0;
       let lastStatus = statusRef.current;
       // Reusable colours for the per-frame thermal glow (avoid per-agent allocs).
       const heatHot = new THREE.Color("#ff5512");
@@ -2752,6 +3376,230 @@ export function ArenaScene({
       // finishes, after which the user holds full orbit control until the panel
       // re-opens (which resets it) or the arena exits.
       let workspaceSweepDone = false;
+
+      // ── Camera-in on the part under test ──────────────────────────────────
+      // A run used to play out entirely in the wide establishing shot, where a
+      // resistor is a few dozen pixels on a phone: the death was loud but the
+      // COOKING that led to it was invisible. While a test is running the
+      // camera now pushes in on whichever part is currently worst-off and
+      // rides it, so the ramp has a subject.
+      //
+      // Three rules keep it from being a nuisance:
+      //  - it never fights the user. Touching the camera hands control straight
+      //    back (same idle gate as the auto-orbit) and abandons the push-in.
+      //  - it keeps the user's own AZIMUTH and only changes what it is looking
+      //    at and from how far. Whipping around to a canned angle would throw
+      //    away the side of the bench they chose to watch from.
+      //  - it puts back what it took: the pose it pushed in FROM is restored
+      //    when the run ends, so the bench is framed again for the result.
+      /** How far out from the part the close pose sits, horizontally. */
+      const CHASE_RADIUS = 6.6;
+      /** And how far above it — a low ringside angle, not the map view. */
+      const CHASE_HEIGHT = 3.2;
+      /**
+       * How long the camera stays on a part after it dies.
+       *
+       * Long enough for the casing to tear, the flame to take and the debris
+       * to land — the blowout's own longest act is the burn, and cutting away
+       * mid-flame wastes the one shot the run is built around.
+       */
+      const FAILURE_HOLD_MS = 4200;
+      /**
+       * How long the winner's shot holds before the camera gives the bench
+       * back.
+       *
+       * It used to hold forever, and that broke the thing you do next: the
+       * switch lives on the supply panel at the front edge, so a camera parked
+       * on the winner put the control you need to run again off-screen and you
+       * had to drag your way back to it every single time. A payoff shot that
+       * costs you the next run is not a payoff.
+       */
+      const VICTOR_HOLD_MS = 3600;
+      /**
+       * How long the camera has to deliver you to a part you selected before it
+       * gives up and lets go anyway.
+       */
+      const SELECTION_DELIVER_MS = 2200;
+      const chaseLook = new THREE.Vector3();
+      const chaseDesired = new THREE.Vector3();
+      const chaseDir = new THREE.Vector3();
+      /** The pose to hand back when the run ends. Null while not pushed in. */
+      let chaseHandoff: import("three").Vector3 | null = null;
+      /** Last selection the camera reacted to — see the gate in the driver. */
+      let chaseSelection: string | null = selectedAgentIdRef.current;
+      /** When that selection changed, so the move can time out. */
+      let chaseSelectionAt = 0;
+      /**
+       * True once a selection's push-in has arrived. Selecting a part SHOWS it
+       * to you; it does not impound the camera. Holding it forever meant that
+       * after tapping a part you had to deselect before you could look at
+       * anything else — including the switch.
+       */
+      let chaseDelivered = false;
+
+      /**
+       * Drives the close-up. Returns true when it has the camera this frame,
+       * so the caller knows to leave the idle auto-orbit alone.
+       */
+      const driveActionCamera = (time: number, frameDelta: number): boolean => {
+        if (!controls) {
+          return false;
+        }
+        // Time-based, so the move damps identically at 60 and 120fps.
+        const k = 1 - Math.exp(-frameDelta / 420);
+
+        // Tapping a part necessarily touches the canvas, which trips the "user
+        // is driving, hands off" gate below — so a fresh selection would sit
+        // there doing nothing for the length of the idle window. A tap on a
+        // part is not the user taking the camera, it is the user AIMING it, so
+        // a changed selection clears that gate outright.
+        const selection = selectedAgentIdRef.current;
+        if (selection !== chaseSelection) {
+          chaseSelection = selection;
+          chaseSelectionAt = time;
+          chaseDelivered = false;
+          lastCameraInteract = Number.NEGATIVE_INFINITY;
+        }
+
+        const userHasIt =
+          draggingFader !== null || time - lastCameraInteract < IDLE_RESUME_MS;
+
+        if (userHasIt) {
+          // They took the wheel: drop the push-in AND the debt. Restoring a
+          // pose over a framing they chose themselves is the same rudeness as
+          // moving the camera under their thumb.
+          chaseHandoff = null;
+          return false;
+        }
+
+        // A part the user has TAPPED outranks everything: they asked to watch
+        // that one, and the camera arguing with them about which component is
+        // more interesting is the whole reason this needed a manual override.
+        // It also works when the bench is idle, which is what makes selection
+        // useful for lining up a shot before a run rather than only during one.
+        if (selection && !chaseDelivered) {
+          const picked = agentObjects.get(selection);
+          if (picked) {
+            chaseLook.set(
+              picked.group.position.x,
+              CIRCUIT_RAIL_Y + 0.35,
+              picked.group.position.z,
+            );
+            chaseDir.subVectors(camera.position, controls.target);
+            chaseDir.y = 0;
+            if (chaseDir.lengthSq() < 1e-4) {
+              chaseDir.set(0, 0, 1);
+            }
+            chaseDir.normalize();
+            chaseDesired.copy(chaseLook).addScaledVector(chaseDir, CHASE_RADIUS);
+            chaseDesired.y = chaseLook.y + CHASE_HEIGHT;
+            camera.position.lerp(chaseDesired, k);
+            controls.target.lerp(chaseLook, k);
+            // Once you are there, the camera is YOURS again — and it owes
+            // nothing back, because you asked to be here. Holding on instead
+            // meant that after tapping a part you had to deselect before you
+            // could reach anything else, the switch included.
+            if (
+              camera.position.distanceToSquared(chaseDesired) < 0.3 ||
+              time - chaseSelectionAt > SELECTION_DELIVER_MS
+            ) {
+              chaseDelivered = true;
+              chaseHandoff = null;
+            }
+            return true;
+          }
+        }
+
+        // ── What the camera is allowed to look at ───────────────────────────
+        // It must never be a LEADING indicator. This used to ride whichever
+        // part `activeAgentId` said was worst-off, which meant the camera sat
+        // on the part that was about to die — so it announced the result
+        // before the bench did and gave the whole run away. A camera that
+        // knows the answer is worse than no camera.
+        //
+        // So it only ever REACTS:
+        //   the part the user picked   — their call, and no spoiler in it
+        //   the winner, once complete  — the run is over, nothing left to give
+        //   a part that JUST failed    — the reveal happens as it happens
+        // and otherwise it stays out of the way and leaves the wide shot up,
+        // which is also where you can watch every part cook at once.
+        let target: string | null = null;
+
+        if (statusRef.current === "complete") {
+          // The victor's shot — held, then handed back. This is the one moment
+          // the bench genuinely has a subject, but it is also the moment right
+          // before you want to run again, and the switch is on the panel at
+          // the front edge. Holding the close-up indefinitely meant every
+          // re-run started with the user dragging the camera off the winner to
+          // find the control. Let the shot land, then release.
+          target =
+            time - completedAt < VICTOR_HOLD_MS ? winnerIdRef.current : null;
+        } else if (statusRef.current === "battling") {
+          // The most recent death, while it is still worth looking at. Newest
+          // wins outright — if two parts go within a second of each other the
+          // camera should be on the second one, not still admiring the first.
+          let newest = -Infinity;
+          failedAt.forEach((failedTime, id) => {
+            if (
+              failedTime > newest &&
+              failedTime >= battleStartedAt &&
+              time - failedTime < FAILURE_HOLD_MS
+            ) {
+              newest = failedTime;
+              target = id;
+            }
+          });
+        }
+
+        if (!target) {
+          if (!chaseHandoff) {
+            return false;
+          }
+          // Nothing to look at: hand the shot back where it was taken from,
+          // then let go for good.
+          camera.position.lerp(chaseHandoff, k);
+          controls.target.lerp(cameraTarget, k);
+          if (
+            camera.position.distanceToSquared(chaseHandoff) < 0.09 &&
+            controls.target.distanceToSquared(cameraTarget) < 0.01
+          ) {
+            chaseHandoff = null;
+          }
+          return true;
+        }
+
+        const entry = agentObjects.get(target);
+        if (!entry) {
+          return false;
+        }
+
+        if (!chaseHandoff) {
+          chaseHandoff = camera.position.clone();
+        }
+
+        // The seat, not the mesh: the part itself is shaking, and a camera
+        // that tracked the shake would cancel it out on screen.
+        chaseLook.set(
+          entry.group.position.x,
+          CIRCUIT_RAIL_Y + 0.35,
+          entry.group.position.z,
+        );
+        // Keep the user's viewing side — only close the distance.
+        chaseDir.subVectors(camera.position, controls.target);
+        chaseDir.y = 0;
+        if (chaseDir.lengthSq() < 1e-4) {
+          chaseDir.set(0, 0, 1);
+        }
+        chaseDir.normalize();
+        chaseDesired
+          .copy(chaseLook)
+          .addScaledVector(chaseDir, CHASE_RADIUS);
+        chaseDesired.y = chaseLook.y + CHASE_HEIGHT;
+
+        camera.position.lerp(chaseDesired, k);
+        controls.target.lerp(chaseLook, k);
+        return true;
+      };
 
       const animate = (time: number) => {
         if (isDisposed) {
@@ -2829,8 +3677,14 @@ export function ArenaScene({
             // control straight back on — so the world orbited under the thumb
             // that was trying to set a value.
             controls.enabled = !draggingFader;
+            // The close-up outranks the idle orbit: both only run when nobody
+            // is touching anything, and orbiting the board while pushed in on
+            // one part would swing that part straight out of frame.
+            const chasing = driveActionCamera(time, frameDelta);
             controls.autoRotate =
-              !draggingFader && time - lastCameraInteract > IDLE_RESUME_MS;
+              !chasing &&
+              !draggingFader &&
+              time - lastCameraInteract > IDLE_RESUME_MS;
             controls.update();
           }
         } else {
@@ -2847,8 +3701,12 @@ export function ArenaScene({
             camera.position.lerpVectors(entryPosition, arenaPosition, cinematicT);
           }
           controls.enabled = phase === "active" && !draggingFader;
+          const chasing =
+            phase === "active" && driveActionCamera(time, frameDelta);
           controls.autoRotate =
-            controls.enabled && time - lastCameraInteract > IDLE_RESUME_MS;
+            controls.enabled &&
+            !chasing &&
+            time - lastCameraInteract > IDLE_RESUME_MS;
           controls.update();
         }
 
@@ -2858,10 +3716,72 @@ export function ArenaScene({
           if (statusRef.current === "complete") {
             completedAt = time;
           }
+          if (statusRef.current === "battling") {
+            battleStartedAt = time;
+          }
         }
 
         ring.rotation.z += 0.0015;
         particles.rotation.y += 0.0011;
+
+        // ── The victor's moment ─────────────────────────────────────────────
+        // Swells in over the second after the bench calls it, rather than
+        // snapping on: the result should ARRIVE. Held from `completedAt`, the
+        // same clock the survivor cools down on, so the light comes up as the
+        // last part stops straining.
+        {
+          const winner = winnerIdRef.current
+            ? agentObjects.get(winnerIdRef.current)
+            : null;
+          const crowning =
+            statusRef.current === "complete" && winner ? true : false;
+          const crownT = crowning
+            ? clampNum((time - completedAt) / 900, 0, 1)
+            : 0;
+          victorRing.visible = crownT > 0.01;
+          victorLight.intensity = crownT * 5.2;
+          if (winner && crownT > 0) {
+            victorRing.position.set(
+              winner.group.position.x,
+              0.028,
+              winner.group.position.z,
+            );
+            victorLight.position.set(
+              winner.group.position.x,
+              3.4,
+              winner.group.position.z,
+            );
+            // Overshoots and settles, then breathes — a ring that simply
+            // appeared at its final size would read as another readout rather
+            // than as something being awarded.
+            const settle =
+              crownT < 1
+                ? Math.sin(crownT * Math.PI * 0.5) * 1.18
+                : 1 + Math.sin(time * 0.0026) * 0.035;
+            victorRing.scale.setScalar(settle);
+            (victorRing.material as import("three").MeshBasicMaterial).opacity =
+              crownT * 0.85;
+          }
+        }
+
+        // Park the selection ring under whatever is selected, breathing on the
+        // workspace's own curve. Follows the part's SEAT, not its body: the
+        // body trembles and convulses, and a ring that chased it would read as
+        // part of the failure rather than as the thing you picked.
+        {
+          const picked = selectedAgentIdRef.current
+            ? agentObjects.get(selectedAgentIdRef.current)
+            : null;
+          selectionRing.visible = Boolean(picked);
+          if (picked) {
+            selectionRing.position.set(
+              picked.group.position.x,
+              0.03,
+              picked.group.position.z,
+            );
+            selectionRing.scale.setScalar(1 + Math.sin(time * 0.004) * 0.06);
+          }
+        }
 
         // ── Throwing the switch ─────────────────────────────────────────────
         // The bench's state, and the moment the circuit comes alive. Driven by
@@ -2977,6 +3897,34 @@ export function ArenaScene({
           readoutUpdaters.e?.(wireText.e);
         }
 
+        // ── The dashboard's displays ────────────────────────────────────────
+        // Written unconditionally, OUTSIDE the 3D-panel block that used to
+        // contain them. That block only runs when a supply console exists in
+        // the scene, and there usually isn't one any more — the dashboard is
+        // fixed DOM at the bottom of the screen. Left where they were, the
+        // bench's totals silently stopped updating the moment the 3D console
+        // was retired, with nothing to indicate why.
+        //
+        // Cached but re-queried until found: the dashboard is a sibling
+        // component and can mount after the scene's first frame, and caching a
+        // null would freeze every total at its placeholder.
+        if (!wireEls || !wireEls.w) {
+          wireEls = {
+            w: document.querySelector<HTMLElement>("[data-wire='w']"),
+            i: document.querySelector<HTMLElement>("[data-wire='i']"),
+            r: document.querySelector<HTMLElement>("[data-wire='r']"),
+            e: document.querySelector<HTMLElement>("[data-wire='e']"),
+          };
+        }
+        for (const key of ["w", "i", "r", "e"] as const) {
+          const element = wireEls[key];
+          // Only touch the DOM when the string actually changed — a steady
+          // bench should cost nothing.
+          if (element && element.textContent !== wireText[key]) {
+            element.textContent = wireText[key];
+          }
+        }
+
         const ratedMax = stressMaxRef.current ?? 3;
         // Matches the drag mapping above: the track runs nominal → rated peak.
         const voltsT = clampNum(
@@ -3088,29 +4036,9 @@ export function ArenaScene({
                 : `${seriesOhms.toFixed(0)} Ω`;
           }
 
-          // The circuit's own four totals, in crisp DOM text. The lit tiles on
-          // the panel carry the same figures, but they are canvas textures on a
-          // small object twenty units from the camera — legible as instruments,
-          // not as numbers you can actually read on a phone. These are.
-          // Cached on first use: querying four nodes every frame, forever, to
-          // re-find markup that never changes is pure waste.
-          if (!wireEls) {
-            wireEls = {
-              w: dialLabel.querySelector<HTMLElement>("[data-wire='w']"),
-              i: dialLabel.querySelector<HTMLElement>("[data-wire='i']"),
-              r: dialLabel.querySelector<HTMLElement>("[data-wire='r']"),
-              e: dialLabel.querySelector<HTMLElement>("[data-wire='e']"),
-            };
-          }
-          for (const key of ["w", "i", "r", "e"] as const) {
-            const element = wireEls[key];
-            const next = wireText[key];
-            // Only touch the DOM when the string actually changed — a steady
-            // bench should cost nothing.
-            if (element && element.textContent !== next) {
-              element.textContent = next;
-            }
-          }
+          // The four totals are written further up, outside this block — the
+          // dashboard is fixed DOM now, so its displays must update whether or
+          // not a 3D console exists in the scene.
         }
 
         // No caption on the switch. It is a lit, breathing toggle sitting on the
@@ -3405,6 +4333,43 @@ export function ArenaScene({
               plume.object.visible = true;
               plume.update(frameDelta, sinceFail);
             }
+
+            // ── Blowout ── the part physically coming apart: casing fragments
+            // thrown and left lying on the bench, a flame that lights its
+            // neighbours, molten ejecta, and a scorch mark that stays.
+            //
+            // Built on the first frame the part is dead. Hanging it off the
+            // GROUP and not the body is deliberate, the same reasoning as the
+            // plume: debris that has left the package must not keep following
+            // the package as it convulses and slumps. Once it is off, it is
+            // off — it obeys the bench, not the part it came from.
+            if (!objectEntry.blowout) {
+              objectEntry.blowout = createBlowoutKit(
+                THREE,
+                blowoutFor(agent.family, agent.failureVisual),
+                {
+                  railY: CIRCUIT_RAIL_Y,
+                  // Debris is made of the part it came off. materialColors[0]
+                  // is the body's ORIGINAL colour — reading the live material
+                  // would hand the shards whatever charring had reached by the
+                  // frame the part died, so they would come out already black.
+                  bodyColor: materialColors[0] ?? baseColor,
+                  popMs: sig.popMs,
+                  textures: blowoutTextures,
+                  // The flame takes over the part's existing failure light
+                  // rather than adding one — see BlowoutOptions.light.
+                  light: objectEntry.flashLight,
+                  bodyRadius: objectEntry.bodyRadius,
+                  bodyQuaternion: core?.quaternion ?? null,
+                },
+              );
+              group.add(objectEntry.blowout.object);
+              // The wound rides the BODY so it convulses and slumps with it;
+              // everything else hangs off the seat so debris that has left the
+              // package stops obeying the package. See BlowoutKit.bodyObject.
+              (core ?? group).add(objectEntry.blowout.bodyObject);
+            }
+            objectEntry.blowout.update(frameDelta, sinceFail);
           } else {
             // ── Live stress ── shake + heat ramp with how hard the part is being
             // driven (severity, temperature, OR percent-of-rating), so even a
@@ -3437,8 +4402,16 @@ export function ArenaScene({
             // A small, quick tremor on the BODY only — reads as "straining" in
             // place. The dais and the metrics nameplate never move; the heat
             // glow (below) does the heavy lifting of showing stress.
+            //
+            // Optional, and off is a legitimate look rather than a degraded
+            // one: the tremor is the one cue here that is theatre rather than
+            // instrumentation, and on a lab bench a resistor being cooked does
+            // not visibly vibrate. With it off the part sits dead still and
+            // discolours, glows, smokes and dies exactly as before — which
+            // reads as measurement equipment instead of a video game.
+            const shakeOn = componentShakeRef.current;
             const coreBase = core ? 1.15 : 1;
-            const jitterAmp = 0.006 + stressLevel * 0.03;
+            const jitterAmp = shakeOn ? 0.006 + stressLevel * 0.03 : 0;
             const freq = 0.02 + stressLevel * 0.06;
             group.position.set(seatX, 0, seatZ);
             shaker.position.x = Math.sin(time * freq * 1.3 + ph) * jitterAmp;
@@ -3448,8 +4421,12 @@ export function ArenaScene({
             // sinks into the board the first frame the bench runs.
             shaker.position.y =
               CIRCUIT_RAIL_Y +
-              Math.abs(Math.sin(time * freq)) * stressLevel * 0.02;
-            shaker.rotation.z = Math.sin(time * freq * 1.7 + ph) * stressLevel * 0.03;
+              (shakeOn
+                ? Math.abs(Math.sin(time * freq)) * stressLevel * 0.02
+                : 0);
+            shaker.rotation.z = shakeOn
+              ? Math.sin(time * freq * 1.7 + ph) * stressLevel * 0.03
+              : 0;
             shaker.scale.setScalar(
               coreBase * ((isMostStressed ? 1.04 : 1.0) + stressLevel * 0.04),
             );
@@ -3542,6 +4519,12 @@ export function ArenaScene({
               if (objectEntry.smoke) {
                 objectEntry.smoke.object.visible = false;
               }
+              // The wreckage goes with it. Disposed rather than hidden: the
+              // debris has already landed and a re-run must throw NEW pieces
+              // from the new failure, not resurrect the last run's — and the
+              // scorch mark is meant to be permanent for exactly one run.
+              objectEntry.blowout?.dispose();
+              objectEntry.blowout = null;
             }
           }
 
@@ -3614,10 +4597,14 @@ export function ArenaScene({
               continue; // side by side — no collision to resolve
             }
             const placedTop = placed.bottom - placed.height;
-            const overlaps =
-              plate.bottom > placedTop - NAMEPLATE_STACK_GAP_PX &&
-              plate.bottom - plate.height < placed.bottom;
-            if (overlaps) {
+            // Measured overlap, not merely "do these touch" — see
+            // NAMEPLATE_OVERLAP_SLACK_PX. A few shared pixels while the bench
+            // turns are fine and cost nothing; plates that hop every frame to
+            // avoid them are not.
+            const shared =
+              Math.min(plate.bottom, placed.bottom) -
+              Math.max(plate.bottom - plate.height, placedTop);
+            if (shared > NAMEPLATE_OVERLAP_SLACK_PX) {
               plate.bottom = placedTop - NAMEPLATE_STACK_GAP_PX;
             }
           }
@@ -3656,10 +4643,12 @@ export function ArenaScene({
       controls?.dispose();
       particleTexture?.dispose();
       smokeTextureRef?.dispose();
+      blowoutTexturesRef?.dispose();
       flowSystemRef?.dispose();
       lightningRef?.dispose();
       agentObjects.forEach((entry) => {
         entry.smoke?.dispose();
+        entry.blowout?.dispose();
         entry.flashCore.material.dispose();
         entry.flashHalo.material.dispose();
       });
@@ -3754,32 +4743,9 @@ export function ArenaScene({
         {/* Colour IS the label — the same ct-term-* coding used everywhere else
             in the app — so the letter can stay tiny and the value gets the
             weight. These are CIRCUIT TOTALS, not any one part's numbers. */}
-        <span className="arena-wire-strip">
-          <span className="arena-wire-cell">
-            <i className="ct-term-power">W</i>
-            <b className="ct-term-power" data-wire="w">
-              0 mW
-            </b>
-          </span>
-          <span className="arena-wire-cell">
-            <i className="ct-term-current">I</i>
-            <b className="ct-term-current" data-wire="i">
-              0 mA
-            </b>
-          </span>
-          <span className="arena-wire-cell">
-            <i className="ct-term-resistance">R</i>
-            <b className="ct-term-resistance" data-wire="r">
-              0 Ω
-            </b>
-          </span>
-          <span className="arena-wire-cell">
-            <i className="ct-term-voltage">E</i>
-            <b className="ct-term-voltage" data-wire="e">
-              0.0 V
-            </b>
-          </span>
-        </span>
+        {/* The W.I.R.E. totals live on the fixed dashboard now (ArenaDashboard),
+            not here and not in the scene. This label is left with the one thing
+            that genuinely belongs to the 3D board. */}
         {/* Only the series resistance. The supply's volts used to be here too,
             but that is the SAME number the E tile on the panel already shows
             (both are nominal × load) — printing it twice just gave the scene
@@ -3806,7 +4772,29 @@ export function ArenaScene({
         A bottom sheet, not a modal: it explains the thing you are watching, so
         it must not cover it. Sits above the collapsed bench bar.
       */}
-      {fuseCard ? (
+      {fuseCard && !fuseExpanded ? (
+        /* Compact form: one line, tappable. A death announces itself without
+           burying the thing that just died. */
+        <button
+          type="button"
+          className="arena-fuse-card arena-fuse-card--compact"
+          onClick={() => setFuseExpanded(true)}
+          aria-label={`${fuseCard.name} failed — open failure report`}
+        >
+          <span className="arena-fuse-card__mark">⚡</span>
+          <b>{fuseCard.name}</b>
+          <span className="arena-fuse-card__mode">
+            {fuseCard.failureName ?? "Destroyed"}
+          </span>
+          <span className="arena-fuse-card__peek">
+            {Math.round(fuseCard.peakTempC)}°C / {Math.round(fuseCard.ratings.junctionLimitC)}°C rated
+          </span>
+          <span className="arena-fuse-card__more" aria-hidden>
+            why ›
+          </span>
+        </button>
+      ) : null}
+      {fuseCard && fuseExpanded ? (
         <div className="arena-fuse-card" role="status" aria-live="polite">
           <div className="arena-fuse-card__head">
             <span className="arena-fuse-card__mark">⚡ F.U.S.E.™</span>
@@ -3857,6 +4845,27 @@ export function ArenaScene({
           // Live current at the present load — a failed (open) part carries none.
           const liveAmps = isFailed ? 0 : agent.metrics.current * stressFactor;
           const overTemp = agent.tempC > agent.ratings.junctionLimitC;
+          // ── Label decluttering ────────────────────────────────────────────
+          // Six full plates on a portrait phone is a traffic jam that no
+          // amount of stacking solves: the previous pass pushed colliders
+          // upward, which on a narrow screen just built a tower that ran off
+          // the top. Every mapping and charting tool answers this the same
+          // way — PRIORITY plus DETAIL ON DEMAND. One label carries the full
+          // read; the rest shrink to a marker and get out of the way.
+          //
+          // The focused one is the part you SELECTED, or, if you have not
+          // chosen, the one under the most stress — i.e. the label you would
+          // have gone looking for anyway.
+          const isFocus = agent.id === (selectedAgentId ?? activeAgentId);
+          // What the compact form keeps is the number that decides the
+          // outcome: how much of its rated power the part is being asked to
+          // take. Always against its rating, never bare.
+          const ratedPct =
+            agent.ratings.powerRating > 0
+              ? ((agent.metrics.power * stressFactor * stressFactor) /
+                  agent.ratings.powerRating) *
+                100
+              : 0;
           return (
             <div
               key={agent.id}
@@ -3865,8 +4874,23 @@ export function ArenaScene({
               }}
               className={`arena-nameplate arena-nameplate--${agent.phase}${
                 isFailed ? " is-defeated" : ""
-              }`}
+              }${isFocus ? " arena-nameplate--focus" : " arena-nameplate--compact"}`}
             >
+              {/* Compact form's single line. Rendered always and hidden by CSS
+                  in the focused state, so switching focus costs no re-render
+                  of the metrics themselves. */}
+              <div className="arena-nameplate__brief">
+                <span className="arena-nameplate__brief-name">
+                  {agent.componentNumber || (agent.componentType || "part").toUpperCase()}
+                </span>
+                <span
+                  className={`arena-nameplate__brief-load${
+                    ratedPct > 100 ? " is-over" : ""
+                  }`}
+                >
+                  {isFailed ? "FAILED" : `${Math.round(ratedPct)}% of rated W`}
+                </span>
+              </div>
               <div className="arena-nameplate__head">
                 <span className="arena-nameplate__name">
                   {(agent.componentType || "part").toUpperCase()}

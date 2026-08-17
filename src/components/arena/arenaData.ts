@@ -217,9 +217,60 @@ function deriveRatings(
   };
 }
 
-export function buildArenaRoster(
+/** The most parts one bench can hold — the board turns each into a rung. */
+export const ARENA_ROSTER_MAX = 6;
+
+/**
+ * A card from the app's component library, as a part on the bench.
+ *
+ * The library is the SAME one the workspace builds from
+ * (`components/builder/componentLibrary`), which is the point: a part you can
+ * build with and a part you can stress-test have to be the same part, or the
+ * two surfaces drift and "add a MOSFET" means something different depending on
+ * which screen you are standing on.
+ *
+ * Branded catalog cards already carry their datasheet values in
+ * `initialProperties` (that is what `toWorkspaceProperties` produced), so a real
+ * part arrives on the bench with its real ratings and F.U.S.E. tests it against
+ * those rather than against a family default.
+ */
+export function arenaSourceFromLibrary(
+  action: {
+    id: string;
+    label: string;
+    builderType?: string;
+    description?: string;
+    initialProperties?: Record<string, number>;
+  },
+  index: number,
+): ArenaSourceComponent {
+  const catalogEntry = findCatalogComponent(action.id);
+  return {
+    // Unique per bench slot: the same library card can legitimately be tested
+    // against itself (two of one resistor is a real experiment), and agents are
+    // keyed by id everywhere downstream — a duplicate would make two rungs
+    // share one selection, one nameplate and one failure.
+    id: `${action.id}-${index}-${Math.random().toString(36).slice(2, 8)}`,
+    name: action.label,
+    type: action.builderType ?? catalogEntry?.type ?? "resistor",
+    manufacturer: catalogEntry?.manufacturer ?? null,
+    properties: { ...(catalogEntry?.properties ?? {}), ...(action.initialProperties ?? {}) },
+  };
+}
+
+/**
+ * The parts a saved session puts on the bench, before they become agents.
+ *
+ * Split out from `buildArenaRoster` so the roster can be EDITED. The arena used
+ * to be able to test only whatever the builder last had open: the roster was
+ * derived from the session payload and nothing else, so "try a different
+ * component" meant leaving the arena, building a circuit around that part, and
+ * coming back. Handing the source list out lets the arena's own picker add and
+ * swap parts without any of that.
+ */
+export function arenaSourcesFrom(
   payload: ArenaSessionPayload | null,
-): ArenaBattleAgent[] {
+): ArenaSourceComponent[] {
   const payloadComponents =
     payload?.components
       ?.filter((component) => component && typeof component === "object")
@@ -227,9 +278,26 @@ export function buildArenaRoster(
       // roster length — which is what the 3D board turns into bays — only ever
       // reflects parts that are genuinely under test.
       .filter((component) => !NON_TESTABLE_TYPES.has(normaliseType(component.type))) ?? [];
-  const sourceComponents =
-    payloadComponents.length >= 2 ? payloadComponents.slice(0, 6) : FALLBACK_COMPONENTS;
+  return payloadComponents.length >= 2
+    ? payloadComponents.slice(0, ARENA_ROSTER_MAX)
+    : FALLBACK_COMPONENTS;
+}
 
+export function buildArenaRoster(
+  payload: ArenaSessionPayload | null,
+): ArenaBattleAgent[] {
+  return buildArenaAgents(arenaSourcesFrom(payload), payload);
+}
+
+/**
+ * Turn an explicit list of parts into bench agents. Same work
+ * `buildArenaRoster` always did; it just no longer insists on sourcing the list
+ * from a saved session.
+ */
+export function buildArenaAgents(
+  sourceComponents: ArenaSourceComponent[],
+  payload: ArenaSessionPayload | null,
+): ArenaBattleAgent[] {
   return sourceComponents.map((component, index, list) => {
     const componentType = normaliseType(component.type);
     const renderType = TYPE_ALIASES[componentType] ?? componentType;

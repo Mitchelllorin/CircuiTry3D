@@ -1,4 +1,7 @@
 import WordMark from "../WordMark";
+import type { ComponentAction } from "../builder/types";
+import { ArenaFuseForecast } from "./ArenaFuseForecast";
+import { ArenaRosterPicker } from "./ArenaRosterPicker";
 import {
   ArenaPodium,
   ArenaScenarioSelect,
@@ -35,6 +38,15 @@ type ArenaPanelContentProps = {
   onSwitchToBench?: () => void;
   /** True once the panel has collapsed and the camera owns the workspace. */
   immersive: boolean;
+  /** The part the user tapped — shared with the 3D scene's selection ring. */
+  selectedAgentId: string | null;
+  onSelectAgent: (id: string | null) => void;
+  /** Add a library part to the bench, or swap it for the selected one. */
+  onAddComponent: (action: ComponentAction) => void;
+  onRemoveAgent: (id: string) => void;
+  onEditAgent: (id: string) => void;
+  /** The bench holds as many parts as the board has rungs. */
+  rosterFull: boolean;
 };
 
 /**
@@ -60,6 +72,12 @@ export function ArenaPanelContent({
   onOpenBuilder,
   onSwitchToBench,
   immersive,
+  selectedAgentId,
+  onSelectAgent,
+  onAddComponent,
+  onRemoveAgent,
+  onEditAgent,
+  rosterFull,
 }: ArenaPanelContentProps) {
   return (
     <div className="arena-panel">
@@ -120,10 +138,33 @@ export function ArenaPanelContent({
         </div>
       </div>
 
+      {/* What is being tested comes before the conditions it is tested under —
+          you pick the parts, then the environment you cook them in. */}
+      <ArenaRosterPicker
+        agents={agents}
+        selectedAgentId={selectedAgentId}
+        onSelectAgent={onSelectAgent}
+        onAddComponent={onAddComponent}
+        onRemoveAgent={onRemoveAgent}
+        onEditAgent={onEditAgent}
+        disabled={status === "battling"}
+        full={rosterFull}
+      />
+
       <ArenaScenarioSelect
         scenario={scenario}
         onSelect={onSelectScenario}
         disabled={status === "battling"}
+      />
+
+      {/* After the scenario, because the reading only means anything once you
+          know which conditions it was taken in. */}
+      <ArenaFuseForecast
+        agents={agents}
+        scenario={scenario}
+        status={status}
+        selectedAgentId={selectedAgentId}
+        onSelectAgent={onSelectAgent}
       />
 
       <ArenaTestControls

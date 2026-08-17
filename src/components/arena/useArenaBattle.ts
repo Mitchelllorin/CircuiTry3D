@@ -26,7 +26,16 @@ type ArenaBattleState = {
   log: ArenaBattleLogEntry[];
   status: ArenaBattleStatus;
   winnerId: string | null;
+  /** The bench's own clock. Always advances while running; drives thermals. */
   elapsedMs: number;
+  /**
+   * Position on the LOAD ramp. Normally tracks elapsedMs; in free mode it is
+   * frozen wherever the supply faders put it, so the load is exactly what you
+   * asked for while the physics keeps running underneath.
+   */
+  rampAt: number;
+  /** No timed ramp and no auto-finish: the bench holds until you stop it. */
+  freeRun: boolean;
   stressFactor: number;
   highlight: ArenaBattleHighlight | null;
   failOrder: string[];
@@ -117,6 +126,8 @@ function createInitialBattleState(
     status: "ready",
     winnerId: null,
     elapsedMs: 0,
+    rampAt: 0,
+    freeRun: false,
     stressFactor: 1,
     highlight: null,
     failOrder: [],
@@ -157,8 +168,19 @@ function step(prev: ArenaBattleState): ArenaBattleState {
   }
 
   const scenario = prev.scenario;
+  // TWO clocks, and separating them is what makes free mode possible.
+  //
+  // `elapsedMs` is the bench's own clock: it always advances, and the thermal
+  // model rides it, because a part goes on heating whether or not the load is
+  // changing. `rampAt` is a POSITION on the load ramp — normally the same
+  // number, but in free mode it is frozen wherever the faders put it.
+  //
+  // Sharing one clock, as this did, means freezing the ramp also freezes the
+  // physics: nothing warms, so nothing ever fails, and free mode would be a
+  // bench that cannot break anything.
   const elapsedMs = prev.elapsedMs + TICK_MS;
-  const stressFactor = stressFactorAt(elapsedMs, scenario);
+  const rampAt = prev.freeRun ? prev.rampAt : elapsedMs;
+  const stressFactor = stressFactorAt(rampAt, scenario);
   const thermalFraction = thermalFractionAt(elapsedMs);
   const dtSeconds = TICK_MS / 1000;
   const newLogs: ArenaBattleLogEntry[] = [];
@@ -336,7 +358,16 @@ export function useArenaBattle({ initialAgents }: UseArenaBattleOptions) {
         return previous;
       }
       // Re-run from a cool, intact roster each time BATTLE is pressed.
-      const fresh = createInitialBattleState(previous.agents, previous.scenario);
+      //
+      // This must be `stableAgents` (the pristine roster from props), NOT
+      // `previous.agents`. createInitialBattleState passes its agents straight
+      // through — it only rebuilds the log, status, timer and stress factor —
+      // and after a battle `previous.agents` are the post-mortem parts:
+      // phase "failed", integrity 0, peak temps retained. step() short-circuits
+      // failed parts, so the re-run concluded on its very first tick with the
+      // identical result and no visible run at all. resetTest always used
+      // stableAgents, which is why Reset worked while re-run did nothing.
+      const fresh = createInitialBattleState(stableAgents, previous.scenario);
       return {
         ...fresh,
         status: "battling",
@@ -351,7 +382,7 @@ export function useArenaBattle({ initialAgents }: UseArenaBattleOptions) {
         ]),
       };
     });
-  }, []);
+  }, [stableAgents]);
 
   /**
    * The load dial. Scrubs the ramp rather than overriding it, so `stressFactor`
@@ -369,6 +400,36 @@ export function useArenaBattle({ initialAgents }: UseArenaBattleOptions) {
     });
   }, []);
 
+  /**
+   * Open the bench without the protocol: no timed ramp, no automatic finish.
+   * The supply is whatever the faders say and the parts respond to it — the
+   * same physics, driven by hand instead of by a script.
+   */
+  const startFreeRun = useCallback(() => {
+    setState((previous) => {
+      const fresh = createInitialBattleState(stableAgents, previous.scenario);
+      return {
+        ...fresh,
+        status: "battling",
+        freeRun: true,
+        // Starts at nominal and stays there until a fader is moved, rather
+        // than beginning a climb nobody asked for.
+        rampAt: 0,
+        stressFactor: 1,
+        log: capLog([
+          ...fresh.log,
+          {
+            id: `free-${Date.now()}`,
+            kind: "system",
+            round: 1,
+            message:
+              "🔧 Free run — no ramp. The supply is yours; F.U.S.E. is still watching every part.",
+          },
+        ]),
+      };
+    });
+  }, [stableAgents]);
+
   const resetTest = useCallback(() => {
     setState((previous) =>
       createInitialBattleState(stableAgents, previous.scenario),
@@ -381,9 +442,11 @@ export function useArenaBattle({ initialAgents }: UseArenaBattleOptions) {
       if (previous.status === "battling") {
         return previous; // don't yank the bench out from under a running test
       }
-      return createInitialBattleState(previous.agents, getScenario(id));
+      // Same reason as startTest: a scenario swap after a battle must re-arm
+      // from the intact roster, not the burned-out one.
+      return createInitialBattleState(stableAgents, getScenario(id));
     });
-  }, []);
+  }, [stableAgents]);
 
   const mostStressedId = useMemo(() => {
     let id: string | null = null;
@@ -416,6 +479,8 @@ export function useArenaBattle({ initialAgents }: UseArenaBattleOptions) {
     scenario: state.scenario,
     summary: state.summary,
     startTest,
+    startFreeRun,
+    freeRun: state.freeRun,
     resetTest,
     selectScenario,
     setLoad,

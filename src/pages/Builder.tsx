@@ -79,10 +79,9 @@ import {
   ENABLE_SCROLLER_MENU,
 } from "../components/builder/constants";
 import {
-  CATALOG_COMPONENTS,
-  builderTypeFor,
-  toWorkspaceProperties,
-} from "../data/componentCatalog";
+  REAL_PART_LIBRARY_ACTIONS,
+  UNIFIED_COMPONENT_ACTIONS,
+} from "../components/builder/componentLibrary";
 import {
   clampLabelVisibilityLevel,
   getLabelVisibilityDescription,
@@ -1239,47 +1238,11 @@ const INTRO_WELCOME = {
 
 const GALLERY_TOAST_DURATION_MS = 6000;
 
-// Unified component library: every branded real-world part becomes a first-class
-// card in the SAME picker as the generic components, inheriting that type's icon
-// and category tab and carrying its preset spec values. This removes the separate
-// "Real Parts Library" section that used to stack beneath the reel (and hide
-// behind it on mobile) — there is now one library, one layer, fully filterable.
-//
-// Derived from the shared catalog rather than a second hand-written list, so a
-// branded part is defined once and the Builder and the Arena can never drift.
-// Families the 3D workspace can't draw (ICs) yield no builderType and are
-// skipped — they used to spawn an unhandled component type.
-const REAL_PART_LIBRARY_ACTIONS: ComponentAction[] = CATALOG_COMPONENTS.flatMap(
-  (part) => {
-    const builderType = builderTypeFor(part);
-    if (!builderType) {
-      return [];
-    }
-    const base = COMPONENT_ACTIONS.find((c) => c.builderType === builderType);
-    const properties = toWorkspaceProperties(part);
-    return [
-      {
-        id: part.id,
-        icon: base?.icon ?? "🔩",
-        label: part.name,
-        action: "component" as const,
-        builderType: builderType as ComponentAction["builderType"],
-        // Manufacturer + datasheet spec, shown on the centered card / tooltip.
-        description: `${part.manufacturer} · ${part.spec}`,
-        initialProperties:
-          Object.keys(properties).length > 0 ? properties : undefined,
-        // Inherit the base type's metadata so the branded part filters under the
-        // same category tab (Power / Passive / Semi / …) as its generic sibling.
-        metadata: base?.metadata ? { ...base.metadata } : undefined,
-      },
-    ];
-  },
-);
-
-const UNIFIED_COMPONENT_ACTIONS: ComponentAction[] = [
-  ...COMPONENT_ACTIONS,
-  ...REAL_PART_LIBRARY_ACTIONS,
-];
+// The unified component library now lives in its own module, because the Arena
+// picks from the SAME list — see src/components/builder/componentLibrary.ts for
+// why. Re-exported here so nothing that already imported it from this page
+// breaks.
+export { REAL_PART_LIBRARY_ACTIONS, UNIFIED_COMPONENT_ACTIONS };
 
 function deriveLabelVisibilityFromShowLabels(
   showLabels: boolean,

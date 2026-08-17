@@ -108,9 +108,11 @@
    Sits above the F.U.S.E. watermark, not merely above the bench bar: the mark
    starts at 72px and stands ~20px tall (two lines), so anything bottoming out
    below ~92px lands right on top of it. */
+/* Sits above the result strip (bottom 82px + its own height) so a failure
+   report and the run controls never land on top of each other. */
 .arena-fuse-card {
   position: absolute;
-  inset-block-end: 104px;
+  inset-block-end: 132px;
   inset-inline: 10px;
   margin-inline: auto;
   max-inline-size: 420px;
@@ -129,6 +131,44 @@
     opacity: 0;
     transform: translateY(10px);
   }
+}
+
+/* ── Compact form ──────────────────────────────────────────────────────
+   The card used to arrive as ~6 lines of post-mortem and stay until it was
+   dismissed by hand, so the end of a six-part run was a wall of text over
+   the dome. It now arrives as ONE line and clears itself; tapping it opens
+   the full report, which then waits for you. Still no background slab —
+   text-shadow carries it over the 3D, same as the workspace's floating
+   labels. */
+.arena-fuse-card--compact {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px 8px;
+  inline-size: auto;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+  appearance: none;
+}
+
+.arena-fuse-card--compact b {
+  color: #fde68a;
+  font-size: 0.9rem;
+}
+
+.arena-fuse-card__peek {
+  font-size: 0.74rem;
+  color: rgba(226, 232, 240, 0.78);
+}
+
+.arena-fuse-card__more {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 153, 68, 0.92);
 }
 .arena-fuse-card__head {
   display: flex;
@@ -1175,8 +1215,17 @@
   pointer-events: none;
 }
 
+/* Everything interactive has to opt back IN here, and forgetting one is a
+   silent, baffling bug rather than a visible one: the control renders, looks
+   right, and every tap on it falls through to the 3D canvas underneath, so the
+   scene orbits instead. That is exactly what happened to the dashboard — the
+   one surface in the arena you are meant to operate.
+   If you add a new overlay to the workspace arena, add it to this list. */
 .arena-view--workspace .arena-scene,
-.arena-view--workspace .workspace-mode-panel {
+.arena-view--workspace .workspace-mode-panel,
+.arena-view--workspace .arena-dash,
+.arena-view--workspace .arena-editor,
+.arena-view--workspace .arena-result {
   pointer-events: auto;
 }
 
@@ -1265,6 +1314,122 @@
   position: fixed;
   z-index: 1220;
   pointer-events: none;
+}
+
+/* ── Result strip ──────────────────────────────────────────────────────
+   Replaces the old champion panel, which parked a near-opaque 320px slab
+   dead centre of the arena (top/left 50%) and — being pointer-events:none
+   — could not even be dismissed. This sits low, stays translucent, and
+   carries the run controls, which is the only place they are reachable
+   once a battle ends: starting a battle collapses the params panel, and a
+   collapsed panel unmounts its children along with its re-run button. */
+.arena-result {
+  position: absolute;
+  inset-inline-start: 50%;
+  transform: translateX(-50%);
+  inset-block-end: calc(env(safe-area-inset-bottom, 0px) + 82px);
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px 10px;
+  max-inline-size: min(94vw, 460px);
+  padding: 8px 14px;
+  border-radius: 18px;
+  border: 1px solid rgba(249, 115, 22, 0.26);
+  background: rgba(2, 6, 23, 0.55);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  pointer-events: auto;
+}
+
+.arena-result--workspace {
+  position: fixed;
+  z-index: 1220;
+}
+
+/* The result ARRIVES. It used to blink into existence at full opacity, which
+   is why the end of a run had no beat to it — the moment the bench had spent
+   thirty seconds building to was the only thing on screen that didn't move. */
+.arena-result {
+  animation: arena-result-in 520ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes arena-result-in {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(14px) scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+}
+
+.arena-result__trophy {
+  font-size: 1rem;
+  line-height: 1;
+  /* One small flourish, once. */
+  animation: arena-trophy-pop 720ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  animation-delay: 180ms;
+}
+
+@keyframes arena-trophy-pop {
+  from {
+    transform: scale(0.2) rotate(-24deg);
+  }
+  to {
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+.arena-result__title {
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255, 194, 77, 0.95);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .arena-result,
+  .arena-result__trophy {
+    animation: none;
+  }
+}
+
+.arena-result__name {
+  font-weight: 800;
+  font-size: 0.95rem;
+  color: #fdba74;
+}
+
+.arena-result__stat {
+  font-size: 0.76rem;
+  color: rgba(226, 232, 240, 0.72);
+}
+
+.arena-result__actions {
+  display: inline-flex;
+  gap: 8px;
+}
+
+.arena-result__btn {
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(249, 115, 22, 0.5);
+  background: rgba(249, 115, 22, 0.16);
+  color: #fed7aa;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.arena-result__btn--ghost {
+  border-color: rgba(148, 163, 184, 0.35);
+  background: transparent;
+  color: rgba(203, 213, 225, 0.8);
 }
 
 @media (max-width: 720px) {
@@ -1695,6 +1860,909 @@
 }
 
 /* ── Solo bench: component/stressor pickers, run button, envelope + SOA ── */
+/* ── Bench roster picker ───────────────────────────────────────────────
+   What is on the bench, and how to change it. Selection here is the SAME
+   selection as the 3D scene's ring — tapping a chip and tapping the part
+   on the board are one act — so the selected chip is deliberately given
+   the ring's own colour (#9fd8ff) rather than the arena's orange accent. */
+.arena-roster {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.arena-roster__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+.arena-roster__title {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--arena-muted);
+}
+.arena-roster__count {
+  font-size: 0.72rem;
+  color: rgba(148, 163, 184, 0.75);
+}
+.arena-roster__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+/* The chip is a pair of buttons in one shell: the name selects, the ✕
+   removes. Splitting them matters on a phone — one combined control that
+   selects on tap and removes on long-press would make "which part am I
+   watching" and "delete this part" the same gesture. */
+.arena-roster__chip {
+  display: inline-flex;
+  align-items: stretch;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  background: rgba(15, 23, 42, 0.5);
+  overflow: hidden;
+}
+.arena-roster__chip--selected {
+  border-color: rgba(159, 216, 255, 0.85);
+  background: rgba(159, 216, 255, 0.14);
+}
+.arena-roster__chip-pick {
+  padding: 5px 10px;
+  border: 0;
+  background: transparent;
+  color: rgba(226, 232, 240, 0.92);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.arena-roster__chip--selected .arena-roster__chip-pick {
+  color: #dbeeff;
+}
+.arena-roster__chip-edit {
+  padding: 5px 6px;
+  border: 0;
+  border-inline-start: 1px solid rgba(148, 163, 184, 0.2);
+  background: transparent;
+  color: rgba(148, 163, 184, 0.8);
+  font-size: 0.74rem;
+  cursor: pointer;
+}
+.arena-roster__chip-edit:hover:not(:disabled) {
+  color: #9fd8ff;
+}
+.arena-roster__chip-edit:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* ── Part editor ───────────────────────────────────────────────────────
+   A sheet, not a modal: it changes the part you are looking at, so it
+   must not cover the bench. Centred low, capped, and scrollable. */
+.arena-editor {
+  position: fixed;
+  inset-inline: 10px;
+  margin-inline: auto;
+  inset-block-end: calc(env(safe-area-inset-bottom, 0px) + 62px);
+  max-inline-size: min(94vw, 420px);
+  max-block-size: min(62vh, 520px);
+  overflow-y: auto;
+  padding: 12px 14px 14px;
+  border-radius: 18px;
+  border: 1px solid rgba(159, 216, 255, 0.34);
+  background: rgba(2, 6, 23, 0.9);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.6);
+  /* Above the quick bar that opens it, which is itself above the panel. */
+  z-index: 1260;
+}
+.arena-editor__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-block-end: 4px;
+}
+.arena-editor__title {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #dbeeff;
+}
+.arena-editor__close {
+  border: 0;
+  background: transparent;
+  color: rgba(148, 163, 184, 0.85);
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.arena-editor__group-label {
+  margin: 10px 0 4px;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--arena-muted);
+}
+.arena-editor__group-note {
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  color: rgba(148, 163, 184, 0.7);
+}
+.arena-editor__field {
+  display: block;
+  margin-block-end: 8px;
+}
+.arena-editor__field-label {
+  display: block;
+  font-size: 0.74rem;
+  color: rgba(203, 213, 225, 0.9);
+  margin-block-end: 3px;
+}
+.arena-editor__unit {
+  color: rgba(148, 163, 184, 0.75);
+}
+.arena-editor__field input {
+  inline-size: 100%;
+  padding: 7px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  background: rgba(15, 23, 42, 0.7);
+  color: #e2e8f0;
+  font-size: 0.86rem;
+  font-variant-numeric: tabular-nums;
+}
+.arena-editor__field input:focus {
+  outline: none;
+  border-color: rgba(159, 216, 255, 0.85);
+}
+.arena-editor__field input.has-error {
+  border-color: rgba(248, 113, 113, 0.9);
+}
+.arena-editor__error {
+  display: block;
+  margin-block-start: 3px;
+  font-size: 0.68rem;
+  color: #fca5a5;
+}
+.arena-editor__hint {
+  display: block;
+  margin-block-start: 3px;
+  font-size: 0.68rem;
+  color: rgba(148, 163, 184, 0.75);
+}
+.arena-editor__note {
+  margin: 8px 0 0;
+  font-size: 0.68rem;
+  color: rgba(148, 163, 184, 0.75);
+}
+.arena-editor__actions {
+  display: flex;
+  gap: 8px;
+  margin-block-start: 12px;
+}
+
+.arena-roster__chip-drop {
+  padding: 5px 9px 5px 4px;
+  border: 0;
+  background: transparent;
+  color: rgba(148, 163, 184, 0.7);
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+.arena-roster__chip-drop:hover:not(:disabled) {
+  color: #fca5a5;
+}
+.arena-roster__chip-drop:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+.arena-roster__toggle {
+  align-self: flex-start;
+}
+.arena-roster__hint {
+  margin: 0;
+  font-size: 0.72rem;
+  color: rgba(148, 163, 184, 0.8);
+}
+
+/* ══ THE DASHBOARD ═════════════════════════════════════════════════════
+   Image set: a NASA-style lab console. Clean room, mil-spec placards,
+   machined panel, recessed instruments. Which means specific things and
+   rules a few out:
+
+   - the panel is MACHINED, not glassy: a brushed steel gradient with a
+     hairline top edge and a hard shadow under it, so it reads as a bezel
+     bolted to the bottom of the frame rather than a floating card.
+   - every control is LABELLED, in small uppercase with wide tracking —
+     the way real equipment silkscreens its legends.
+   - colour is rationed. The surface is steel and graphite; the only
+     saturation in the whole console is the four W.I.R.E. metric colours
+     and the live lamp. On instruments, colour means something.
+   - displays are RECESSED — inset shadow, dark glass, a soft bloom off
+     the digits — so they read as lit readouts rather than printed text.
+
+   Fixed to the bottom of the viewport, above everything: it is the one
+   surface that must never move, because it is what you operate. */
+.arena-dash {
+  position: fixed;
+  inset-inline: 0;
+  inset-block-end: 0;
+  z-index: 1250;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 9px 10px calc(env(safe-area-inset-bottom, 0px) + 9px);
+  background:
+    linear-gradient(180deg, rgba(30, 41, 59, 0.96) 0%, rgba(15, 23, 42, 0.98) 42%, rgba(2, 6, 23, 0.99) 100%);
+  border-block-start: 1px solid rgba(148, 163, 184, 0.28);
+  /* A hairline of light along the top edge and a SHORT shadow under it — the
+     read of a panel seated against the frame. The first pass threw a 34px
+     shadow upward, which from the front reads as a dark halo bleeding into the
+     scene rather than as a seam. A bezel casts a tight shadow, not a glow. */
+  box-shadow:
+    0 1px 0 rgba(226, 232, 240, 0.07) inset,
+    0 -3px 10px rgba(0, 0, 0, 0.4);
+}
+
+/* ── Displays ─────────────────────────────────────────────────────── */
+.arena-dash__displays {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+.arena-dash__display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: 5px 4px 4px;
+  border-radius: 8px;
+  /* Recessed: dark glass, a lip of light on the lower edge only, and the
+     shadow falling INWARD from the top — the read of an inset instrument. */
+  background: linear-gradient(180deg, #05080f 0%, #080d17 100%);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  box-shadow:
+    0 2px 6px rgba(0, 0, 0, 0.7) inset,
+    0 1px 0 rgba(226, 232, 240, 0.05);
+}
+.arena-dash__display-letter {
+  font-size: 0.56rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  opacity: 0.85;
+}
+/* The digits carry a bloom in their own metric colour — lit, not printed. */
+.arena-dash__display-value {
+  font-size: 1.02rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+  text-shadow: 0 0 10px currentColor;
+}
+.arena-dash__display-caption {
+  font-size: 0.52rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(148, 163, 184, 0.6);
+}
+
+/* ── Controls ─────────────────────────────────────────────────────── */
+/* Faders run HORIZONTALLY, one full-width row each, with the switch alongside.
+
+   They used to stand vertically (`writing-mode: vertical-lr` +
+   `-webkit-appearance: slider-vertical`) and THAT IS WHY THEY DID NOT WORK.
+   The track and thumb were sized with LOGICAL properties written as though the
+   control were still horizontal — but a pseudo-element inherits the input's
+   writing mode, so under a vertical one `inline-size: 7px` sizes the track
+   along the axis you actually drag. Seven pixels of travel: every touch
+   slammed the value to an end stop, which reads exactly like a dead control.
+
+   Turning them back is the structural fix rather than a swap of the axes,
+   because the horizontal version needs no writing-mode trickery at all — and
+   it is sized in PHYSICAL properties here for the same reason. A row-wide
+   track is also the longest throw the screen can give (roughly three times the
+   old 104px), and the pair costs less height than the standing ones did. */
+.arena-dash__controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 10px;
+  row-gap: 4px;
+}
+.arena-dash__fader {
+  display: block;
+  min-inline-size: 0;
+}
+.arena-dash__fader-head {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 0.56rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.arena-dash__fader-head b {
+  font-size: 0.78rem;
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+  text-transform: none;
+}
+/* The reference, in the register of a silkscreened legend. Pushed to the far
+   end of the head line so the value it qualifies stays next to its own name. */
+.arena-dash__fader-ref {
+  margin-inline-start: auto;
+  font-style: normal;
+  font-size: 0.5rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: rgba(148, 163, 184, 0.6);
+  white-space: nowrap;
+}
+.arena-dash__fader input[type="range"] {
+  display: block;
+  width: 100%;
+  height: 22px;
+  margin: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+/* A milled slot with a machined cap riding in it. */
+.arena-dash__fader input[type="range"]::-webkit-slider-runnable-track {
+  height: 7px;
+  border-radius: 4px;
+  background: linear-gradient(180deg, #020610 0%, #0b1220 100%);
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.9) inset,
+    0 1px 0 rgba(226, 232, 240, 0.06);
+}
+.arena-dash__fader input[type="range"]::-moz-range-track {
+  height: 7px;
+  border-radius: 4px;
+  background: #0b1220;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.9) inset;
+}
+/* A tall, narrow cap — the shape of a real mixing-desk fader stood in its
+   slot, and taller than the track so there is something to catch with a thumb.
+   The negative top margin re-centres it on a 7px track (webkit positions the
+   thumb from the track's top edge, so without it the cap rides low). */
+.arena-dash__fader input[type="range"]::-webkit-slider-thumb {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 17px;
+  height: 21px;
+  margin-top: -7px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #f1f5f9 0%, #cbd5e1 45%, #64748b 100%);
+  border: 1px solid rgba(15, 23, 42, 0.75);
+  box-shadow:
+    1px 0 0 rgba(255, 255, 255, 0.5) inset,
+    0 2px 5px rgba(0, 0, 0, 0.6);
+}
+.arena-dash__fader input[type="range"]::-moz-range-thumb {
+  width: 17px;
+  height: 21px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #f1f5f9 0%, #cbd5e1 45%, #64748b 100%);
+  border: 1px solid rgba(15, 23, 42, 0.75);
+}
+.arena-dash__fader input[type="range"]:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ── The switch ───────────────────────────────────────────────────── */
+/* Stands in its own column beside BOTH faders, full height — the one control
+   you throw rather than ride, so it stays the biggest target on the console. */
+.arena-dash__switch {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: stretch;
+  justify-content: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 6px 14px 7px;
+  border-radius: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  background: linear-gradient(180deg, #334155 0%, #1e293b 55%, #0f172a 100%);
+  box-shadow:
+    0 1px 0 rgba(226, 232, 240, 0.12) inset,
+    0 3px 8px rgba(0, 0, 0, 0.55);
+  color: #e2e8f0;
+  cursor: pointer;
+}
+/* The lever: a machined bar that sits UP when idle and drops when live —
+   the same "thrown" state the 3D toggle used to carry. */
+.arena-dash__switch-lever {
+  inline-size: 30px;
+  block-size: 14px;
+  border-radius: 4px;
+  background: linear-gradient(180deg, #f1f5f9 0%, #94a3b8 100%);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
+  transform: translateY(-2px);
+  transition: transform 140ms cubic-bezier(0.2, 0.9, 0.25, 1.1), background 140ms ease;
+}
+.arena-dash__switch.is-live .arena-dash__switch-lever {
+  transform: translateY(3px);
+  background: linear-gradient(180deg, #fca5a5 0%, #ef4444 100%);
+  box-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.6),
+    0 0 12px rgba(239, 68, 68, 0.75);
+}
+.arena-dash__switch-label {
+  font-size: 0.56rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(226, 232, 240, 0.85);
+}
+.arena-dash__switch.is-live .arena-dash__switch-label {
+  color: #fecaca;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .arena-dash__switch-lever {
+    transition: none;
+  }
+}
+
+/* ── Leaderboard ───────────────────────────────────────────────────────
+   Three columns because there are three questions: how far up the ramp it
+   got, how hard it was driven against its rating, and how much thermal
+   headroom was left. Every value sits directly above its own reference —
+   "0.41 W" over "of 0.25 W rated" — so nothing is a bare number. */
+.arena-board {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.arena-board__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+.arena-board__title {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--arena-muted);
+}
+.arena-board__clear {
+  border: 0;
+  background: transparent;
+  color: rgba(148, 163, 184, 0.8);
+  font-size: 0.7rem;
+  cursor: pointer;
+}
+.arena-board__empty {
+  margin: 0;
+  font-size: 0.74rem;
+  color: rgba(148, 163, 184, 0.8);
+}
+.arena-board__legend {
+  display: grid;
+  grid-template-columns: 1.6rem minmax(0, 1fr) 4.2rem 5.4rem 4.6rem;
+  gap: 8px;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(148, 163, 184, 0.6);
+}
+/* The legend's first two columns are the rank and the name, which need no
+   heading — so the labels start under the third. */
+.arena-board__legend > span:first-child {
+  grid-column: 3;
+}
+.arena-board__rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.arena-board__row {
+  display: grid;
+  grid-template-columns: 1.6rem minmax(0, 1fr) 4.2rem 5.4rem 4.6rem;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  background: rgba(15, 23, 42, 0.45);
+}
+/* A part that came through the whole ramp is not merely first — it is a
+   different kind of result, so it is marked as one. */
+.arena-board__row.is-survivor {
+  border-color: rgba(52, 211, 153, 0.45);
+}
+.arena-board__rank {
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: rgba(148, 163, 184, 0.9);
+  text-align: center;
+}
+.arena-board__name {
+  display: flex;
+  flex-direction: column;
+  min-inline-size: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: rgba(226, 232, 240, 0.95);
+}
+.arena-board__meta {
+  font-style: normal;
+  font-size: 0.62rem;
+  color: rgba(148, 163, 184, 0.75);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.arena-board__stat {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+}
+.arena-board__stat b {
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+  color: #e2e8f0;
+}
+.arena-board__stat em {
+  font-style: normal;
+  font-size: 0.58rem;
+  color: rgba(148, 163, 184, 0.7);
+}
+.arena-board__stat.is-over b {
+  color: #fdba74;
+}
+
+/* ── Dashboard tile readouts ───────────────────────────────────────────
+   The four circuit totals, pinned over the lit tiles they belong to.
+
+   FIXED font size, on purpose and against the usual instinct to scale a
+   label with its object: a tile face is 0.6 world units against a 0.75
+   column pitch, so the tile can never grow enough to carry readable text
+   at arena camera distance. The tile is the instrument — the recess, the
+   coloured glass, the light it spills — and this is the number. Sizing
+   this by perspective too would reproduce the exact problem it solves.
+
+   Floating text, no slab: same rule as the nameplates. The tile's own
+   dark glass is the background, and a panel behind it would hide the
+   display it is sitting on. */
+.arena-tile-readouts {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.arena-tile-readout {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  font-size: 0.9rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  text-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.95),
+    0 0 6px rgba(0, 0, 0, 0.9);
+  transition: opacity 140ms ease;
+  will-change: transform;
+}
+
+/* ── Nameplate decluttering ────────────────────────────────────────────
+   Priority + detail-on-demand, the same answer every map and charting
+   tool reaches for. One plate — the part you selected, or the one under
+   most stress — carries the full W.I.R.E. read. The others shrink to a
+   name and the one number that decides the outcome, so six parts stop
+   fighting for the same pixels.
+   No background on either: these are floating labels over the 3D, and a
+   padded slab would hide the parts they describe. */
+.arena-nameplate__brief {
+  display: none;
+  align-items: baseline;
+  gap: 6px;
+  white-space: nowrap;
+}
+.arena-nameplate--compact .arena-nameplate__brief {
+  display: flex;
+}
+/* Everything the full plate shows is suppressed in the compact form — this
+   is what actually reclaims the space. */
+.arena-nameplate--compact .arena-nameplate__head,
+.arena-nameplate--compact .arena-nameplate__ident,
+.arena-nameplate--compact .arena-nameplate__wire,
+.arena-nameplate--compact .arena-nameplate__temp,
+.arena-nameplate--compact .arena-nameplate__bar,
+.arena-nameplate--focus .arena-nameplate__brief {
+  display: none;
+}
+.arena-nameplate--compact {
+  /* Dimmer as well as smaller: the focused plate has to win the eye, and
+     size alone does not do that against a bright 3D scene. */
+  opacity: 0.72;
+}
+.arena-nameplate__brief-name {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: rgba(226, 232, 240, 0.92);
+}
+.arena-nameplate__brief-load {
+  font-size: 0.66rem;
+  font-variant-numeric: tabular-nums;
+  color: rgba(148, 163, 184, 0.9);
+}
+/* Past its rating is the one thing worth shouting about in the small form. */
+.arena-nameplate__brief-load.is-over {
+  color: #fdba74;
+  font-weight: 700;
+}
+
+/* ── Quick bar ─────────────────────────────────────────────────────────
+   Parts / Conditions / Results, written ON the arena — top of the view, over
+   sky that nothing else uses, with NO container of any kind. It says what the
+   next run will be; it is not touched during one.
+
+   Containerless is the point, not a style choice. As pills it was a row of
+   bordered, blurred, padded boxes, and wherever it sat it charged a full band
+   of the screen for three short words — in the console it was pushing the
+   circuit up, and floating at the bottom it was a slab over the bench. As
+   plain text with a shadow it costs a line of sky and the arena keeps the rest.
+   Same treatment as the nameplates on the parts: dim label, bright value, no
+   background to hide the thing it labels. */
+/* FIXED and above the params panel (--z-mode-panel: 1240), not absolute at
+   z-index 8. That was the bug behind "where is component selection?": the
+   panel is OPEN by default and covers the lower screen, so the bar was
+   rendered underneath the very thing it exists to save you from opening.
+   A control whose whole purpose is "you should not have to go into the panel
+   for this" cannot live behind the panel. */
+.arena-quickbar {
+  position: fixed;
+  inset-inline: 8px;
+  inset-block-start: calc(env(safe-area-inset-top, 0px) + 8px);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  pointer-events: none;
+  z-index: 1250;
+}
+/* Inside the builder shell the top of the screen is not free: the workspace
+   mode bar is fixed there (12px + its own height) and outranks everything in
+   here on z-index, so a strip anchored to the frame edge would simply be
+   underneath it — the same mistake that once hid this bar behind the params
+   panel. Start below it instead. */
+.arena-view--workspace .arena-quickbar {
+  inset-block-start: calc(var(--builder-safe-area-top, 0px) + 66px);
+}
+.arena-quickbar__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 14px;
+  pointer-events: auto;
+}
+/* Each entry is label-over-value with no box around it. They size to their own
+   text rather than sharing the width equally — equal columns are a container
+   habit, and without borders there is nothing for the leftover width to do but
+   push the three of them apart. The 12px vertical padding is a TOUCH TARGET
+   with no visible edge: the text stays small, the thing you tap does not. */
+.arena-quickbar__btn {
+  flex: 0 0 auto;
+  min-inline-size: 0;
+  max-inline-size: 44vw;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
+  margin: 0;
+  padding: 2px 0 12px;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  color: rgba(226, 232, 240, 0.94);
+  text-align: start;
+  cursor: pointer;
+  /* The shadow is what holds unbacked text against a scene that can be any
+     colour behind it — bright floor, dark sky, a failure flash. */
+  text-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.95),
+    0 0 10px rgba(0, 0, 0, 0.7);
+}
+/* Open state is carried by the VALUE going accent-bright, not by a fill:
+   there is no box left to fill, and colour on the word you tapped is a
+   clearer "this one is open" than a rectangle around it. */
+.arena-quickbar__btn.is-open .arena-quickbar__value {
+  color: #9fd8ff;
+}
+.arena-quickbar__btn.is-open .arena-quickbar__label {
+  color: rgba(159, 216, 255, 0.8);
+}
+.arena-quickbar__btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.arena-quickbar__label {
+  font-size: 0.52rem;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(148, 163, 184, 0.75);
+}
+.arena-quickbar__value {
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1.25;
+  max-inline-size: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* Capped and scrollable: a sheet is a sheet, never a second full screen.
+   It hangs DOWN from the strip now (which is why it is stretched to the full
+   width and shadowed downward), and it is capped harder than the old bottom
+   sheet was — it is falling into the arena rather than rising off the frame
+   edge, so every pixel of it is over the bench it was opened to change. */
+.arena-quickbar__sheet {
+  align-self: stretch;
+  pointer-events: auto;
+  max-block-size: min(38vh, 320px);
+  overflow-y: auto;
+  padding: 10px 12px;
+  border-radius: 16px;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  background: rgba(2, 6, 23, 0.82);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+  animation: arena-sheet-in 200ms ease-out both;
+}
+
+@keyframes arena-sheet-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .arena-quickbar__sheet {
+    animation: none;
+  }
+}
+
+/* ── F.U.S.E. pre-run risk ─────────────────────────────────────────────
+   Risk level is carried by COLOUR on the left edge plus a word, never by
+   colour alone — "critical" has to survive a colour-blind reader and a
+   screen reader both. */
+.arena-forecast {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.arena-forecast__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+}
+.arena-forecast__title {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--arena-muted);
+}
+.arena-forecast__ref {
+  font-size: 0.68rem;
+  color: rgba(148, 163, 184, 0.7);
+}
+.arena-forecast__rows {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.arena-forecast__row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: baseline;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-inline-start-width: 3px;
+  background: rgba(15, 23, 42, 0.45);
+  color: rgba(226, 232, 240, 0.9);
+  text-align: start;
+  cursor: pointer;
+}
+.arena-forecast__row--selected {
+  border-color: rgba(159, 216, 255, 0.85);
+  background: rgba(159, 216, 255, 0.12);
+}
+.arena-forecast__row--safe {
+  border-inline-start-color: #34d399;
+}
+.arena-forecast__row--stressed {
+  border-inline-start-color: #a3e635;
+}
+.arena-forecast__row--warning {
+  border-inline-start-color: #fbbf24;
+}
+.arena-forecast__row--critical {
+  border-inline-start-color: #fb923c;
+}
+.arena-forecast__row--failed {
+  border-inline-start-color: #f87171;
+}
+.arena-forecast__name {
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+.arena-forecast__level {
+  font-size: 0.7rem;
+  color: rgba(226, 232, 240, 0.78);
+}
+.arena-forecast__score {
+  font-size: 0.7rem;
+  font-variant-numeric: tabular-nums;
+  color: rgba(148, 163, 184, 0.85);
+}
+.arena-forecast__detail,
+.arena-forecast__hint {
+  margin: 0;
+  font-size: 0.74rem;
+  color: rgba(203, 213, 225, 0.85);
+}
+.arena-forecast__recommend {
+  margin: 0 0 4px;
+}
+.arena-forecast__vitals {
+  margin: 0;
+  font-size: 0.7rem;
+  font-variant-numeric: tabular-nums;
+  color: rgba(148, 163, 184, 0.85);
+}
+.arena-forecast__modes {
+  margin: 6px 0 0;
+  padding-inline-start: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.arena-forecast__mode {
+  font-size: 0.72rem;
+  color: rgba(203, 213, 225, 0.82);
+}
+.arena-forecast__mode--critical,
+.arena-forecast__mode--failed {
+  color: rgba(254, 215, 170, 0.95);
+}
+
 .arena-bench-picker {
   display: flex;
   flex-direction: column;

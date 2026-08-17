@@ -19,6 +19,8 @@
  * SAME F.U.S.E. engine reports environment-aware failures.
  */
 
+import type { ArenaEnvironment } from "./types";
+
 export type ArenaScenario = {
   id: string;
   name: string;
@@ -28,6 +30,13 @@ export type ArenaScenario = {
   /** UI accent for the scenario chip and scene tint. */
   accent: string;
   ambientC: number;
+  /**
+   * Relative humidity, %. Read by F.U.S.E.'s risk analysis, which models
+   * moisture ingress and lead corrosion against the IPC J-STD-033 Class 3
+   * limit — a real failure mechanism that had nothing feeding it, so every
+   * scenario looked equally dry no matter what it was meant to be.
+   */
+  humidityPercent: number;
   convectionMul: number;
   stressMax: number;
   rampMs: number;
@@ -44,6 +53,7 @@ export const ARENA_SCENARIOS: ArenaScenario[] = [
     icon: "🔬",
     accent: "#38bdf8",
     ambientC: 25,
+    humidityPercent: 45,
     convectionMul: 1,
     stressMax: 4,
     rampMs: 18000,
@@ -57,6 +67,7 @@ export const ARENA_SCENARIOS: ArenaScenario[] = [
     icon: "🏜️",
     accent: "#f59e0b",
     ambientC: 55,
+    humidityPercent: 15,
     convectionMul: 1.12,
     stressMax: 4,
     rampMs: 16000,
@@ -70,6 +81,7 @@ export const ARENA_SCENARIOS: ArenaScenario[] = [
     icon: "❄️",
     accent: "#7dd3fc",
     ambientC: -20,
+    humidityPercent: 65,
     convectionMul: 0.88,
     stressMax: 4.5,
     rampMs: 16000,
@@ -83,6 +95,7 @@ export const ARENA_SCENARIOS: ArenaScenario[] = [
     icon: "🛰️",
     accent: "#a78bfa",
     ambientC: 30,
+    humidityPercent: 0,
     convectionMul: 1.85,
     stressMax: 4,
     rampMs: 20000,
@@ -96,6 +109,7 @@ export const ARENA_SCENARIOS: ArenaScenario[] = [
     icon: "🔥",
     accent: "#ef4444",
     ambientC: 90,
+    humidityPercent: 35,
     convectionMul: 1.18,
     stressMax: 4,
     rampMs: 15000,
@@ -109,6 +123,7 @@ export const ARENA_SCENARIOS: ArenaScenario[] = [
     icon: "⚡",
     accent: "#fde047",
     ambientC: 25,
+    humidityPercent: 45,
     convectionMul: 1,
     stressMax: 6,
     rampMs: 11000,
@@ -121,4 +136,30 @@ export const DEFAULT_SCENARIO = ARENA_SCENARIOS[0];
 
 export function getScenario(id: string | null | undefined): ArenaScenario {
   return ARENA_SCENARIOS.find((scenario) => scenario.id === id) ?? DEFAULT_SCENARIO;
+}
+
+/**
+ * A scenario as an environment F.U.S.E.'s risk analysis can read.
+ *
+ * The two describe the same conditions in different vocabularies — a scenario
+ * is what the bench simulates, an environment is what the engine analyses — and
+ * this is the one place they are reconciled, so they cannot disagree about what
+ * "Engine Bay" means.
+ *
+ * `load` becomes the voltage stress multiplier because that is exactly what the
+ * bench's ramp does: it drives the rail above nominal. Passing 1 asks the
+ * engine the question the bench asks before it starts — "how is this part doing
+ * at its rated conditions, here?" — and passing the scenario's peak asks what
+ * the run is going to do to it.
+ */
+export function environmentFor(
+  scenario: ArenaScenario,
+  load = 1,
+): ArenaEnvironment {
+  return {
+    name: scenario.name,
+    temperatureC: scenario.ambientC,
+    humidityPercent: scenario.humidityPercent,
+    voltageStressMultiplier: load,
+  };
 }
