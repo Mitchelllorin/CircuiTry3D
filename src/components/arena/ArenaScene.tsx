@@ -3380,9 +3380,17 @@ export function ArenaScene({
       // ── Camera-in on the part under test ──────────────────────────────────
       // A run used to play out entirely in the wide establishing shot, where a
       // resistor is a few dozen pixels on a phone: the death was loud but the
-      // COOKING that led to it was invisible. While a test is running the
-      // camera now pushes in on whichever part is currently worst-off and
-      // rides it, so the ramp has a subject.
+      // COOKING that led to it was invisible.
+      //
+      // The camera now pushes in — but only on things that give nothing away.
+      // The first attempt rode whichever part was currently worst-off, and
+      // that had to go: it made the camera a LEADING indicator, sitting on the
+      // part about to die and announcing the result before the bench did. See
+      // the target selection below for what it is allowed to look at instead.
+      //
+      // So the ramp still has no subject unless you pick one. That is a live
+      // tension, not a settled design: "watch it cook" and "don't spoil it"
+      // cannot both be had from a camera that follows the loser.
       //
       // Three rules keep it from being a nuisance:
       //  - it never fights the user. Touching the camera hands control straight
