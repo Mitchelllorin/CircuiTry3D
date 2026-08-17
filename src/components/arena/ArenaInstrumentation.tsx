@@ -1,9 +1,5 @@
-import {
-  AMAZON_AFFILIATE_ENABLED,
-  AMAZON_DISCLOSURE,
-  AMAZON_LINK_REL,
-  buildAmazonSearchUrl,
-} from "./amazonLink";
+import { AffiliateDisclosure, BuyLink } from "../../affiliate";
+import { partQueryForAgent } from "./arenaPartQuery";
 import { isFuseAvailable } from "./fuse";
 import type { ArenaScenario } from "./scenarios";
 import { ARENA_SCENARIOS } from "./scenarios";
@@ -38,38 +34,10 @@ function rankLabel(rank: number): string {
   return "";
 }
 
-/**
- * Affiliate "buy the real part" link. The Arena tests real branded components,
- * so a search by part number / spec is a natural, high-intent placement. Renders
- * nothing when affiliate links are disabled.
- */
-export function ArenaBuyLink({
-  agent,
-  variant = "card",
-}: {
-  agent: ArenaBattleAgent;
-  variant?: "winner" | "card";
-}) {
-  if (!AMAZON_AFFILIATE_ENABLED) return null;
-  return (
-    <a
-      className={`arena-buy-link arena-buy-link--${variant}`}
-      href={buildAmazonSearchUrl(agent)}
-      target="_blank"
-      rel={AMAZON_LINK_REL}
-      title={`Find ${agent.name} on Amazon`}
-    >
-      <span aria-hidden>🛒</span>
-      {variant === "winner" ? "Get the real part on Amazon" : "Get the part"}
-    </a>
-  );
-}
-
-/** One-line affiliate disclosure (required by the Amazon Operating Agreement). */
-export function ArenaAffiliateDisclosure() {
-  if (!AMAZON_AFFILIATE_ENABLED) return null;
-  return <p className="arena-affiliate-disclosure">{AMAZON_DISCLOSURE}</p>;
-}
+/* The Arena's own buy link and disclosure lived here, hard-coded to Amazon and
+   never rendered by anything. Both are now in src/affiliate, which owns the
+   tag, the merchant, the rel and the disclosure as one decision — see
+   docs/AFFILIATE-SETUP.md. The Arena consumes them in ArenaLeaderboard. */
 
 /** Environmental scenario picker — re-tunes the whole bench physics. */
 export function ArenaScenarioSelect({
@@ -229,8 +197,8 @@ export function ArenaTestCard({
               ? `held ${(agent.failedAtLoad ?? 0).toFixed(1)}×`
               : `survived ${agent.survivedLoad.toFixed(1)}×`}
           </span>
-          {/* Affiliate "get the real part" link lives here per card. */}
-          <ArenaBuyLink agent={agent} variant="card" />
+          {/* "Buy the real part", at the moment the card says how it did. */}
+          <BuyLink part={partQueryForAgent(agent)} placement="result" />
         </div>
       ) : null}
     </article>
@@ -292,7 +260,7 @@ export function ArenaPodium({
             Toughness {winner.score.toFixed(0)}/100 · held {summary.peakLoad.toFixed(1)}× its
             normal load · gave off {formatEnergy(summary.totalEnergyJ)} of heat
           </p>
-          <ArenaBuyLink agent={winner} variant="winner" />
+          <BuyLink part={partQueryForAgent(winner)} placement="result" />
         </div>
       </header>
 
@@ -317,7 +285,7 @@ export function ArenaPodium({
           </li>
         ))}
       </ol>
-      <ArenaAffiliateDisclosure />
+      <AffiliateDisclosure />
     </section>
   );
 }

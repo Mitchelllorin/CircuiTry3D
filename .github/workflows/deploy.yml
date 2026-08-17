@@ -51,6 +51,13 @@ jobs:
           VITE_BASE_PATH: /CircuiTry3D/
           VITE_DEMO_MODE: 'true'
           VITE_PAYMENT_URL: 'https://play.google.com/store/apps/details?id=com.circuitry3d.app'
+          # Affiliate tracking, from repository VARIABLES (public by design —
+          # a tracking id rides in every link's URL). Unset ships untagged
+          # links, which is the safe state while an application is pending.
+          VITE_AMAZON_ASSOCIATES_TAG: ${{ vars.VITE_AMAZON_ASSOCIATES_TAG }}
+          VITE_AMAZON_MARKETPLACE: ${{ vars.VITE_AMAZON_MARKETPLACE }}
+          VITE_AMAZON_ASSOCIATES_TAGS: ${{ vars.VITE_AMAZON_ASSOCIATES_TAGS }}
+          VITE_AFFILIATE_ENABLED: ${{ vars.VITE_AFFILIATE_ENABLED }}
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3

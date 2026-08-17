@@ -1,0 +1,54 @@
+/* ── Affiliate links ───────────────────────────────────────────────────
+   A link, not a button. The old arena version was an orange gradient pill
+   that shouted louder than the test result it sat under — which is both
+   against this app's rule for anything laid over the workspace and, more
+   practically, the read that makes a user distrust the whole surface.
+
+   The moment this appears is a part the user has just watched fail. That is
+   already interest; it does not need selling. Quiet text in the app's accent,
+   underlined so it is unmistakably a link, and honestly marked. */
+.affiliate-link {
+  display: inline;
+  color: #9fd8ff;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-color: rgba(159, 216, 255, 0.4);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.affiliate-link:hover,
+.affiliate-link:focus-visible {
+  text-decoration-color: rgba(159, 216, 255, 0.9);
+}
+
+/* The inline "ad" marker. Dimmer than the link and in small caps: it has to be
+   readable — that is the entire point of it — without competing with the thing
+   it qualifies. */
+.affiliate-link__mark {
+  color: rgba(148, 163, 184, 0.75);
+  font-weight: 700;
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+
+/* The block disclosure. Deliberately plain and never hidden behind a
+   disclosure widget or a tooltip: "clear and conspicuous" means a reader meets
+   it without going looking. */
+.affiliate-disclosure {
+  margin: 6px 0 0;
+  color: rgba(148, 163, 184, 0.8);
+  font-size: 0.64rem;
+  line-height: 1.35;
+}
+
+/* In the settings list it sits under the section it explains. */
+.settings-affiliate-disclosure {
+  margin: 2px 0 0;
+  color: rgba(148, 163, 184, 0.75);
+  font-size: 0.7rem;
+  line-height: 1.4;
+}

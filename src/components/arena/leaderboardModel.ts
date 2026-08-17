@@ -1,3 +1,5 @@
+import type { PartQuery } from "../../affiliate";
+import { partQueryForAgent } from "./arenaPartQuery";
 import type { ArenaBattleAgent } from "./types";
 
 /**
@@ -30,6 +32,16 @@ export type LeaderboardEntry = {
   scenarioName: string;
   /** Which run produced this, counting from 1 in this session. */
   runIndex: number;
+  /**
+   * What to search a shop for, to buy the real thing.
+   *
+   * Computed here, at the moment the entry is made, because this is the last
+   * point where the full part is in hand — the board keeps a summary, and the
+   * spec values a search needs (resistance, rated voltage) are not among the
+   * three figures it reports. Working it out later from the entry alone would
+   * mean guessing.
+   */
+  partQuery: PartQuery;
 };
 
 /**
@@ -82,6 +94,7 @@ export function entriesFromRun(
       limitC: agent.ratings.junctionLimitC,
       scenarioName,
       runIndex,
+      partQuery: partQueryForAgent(agent),
     };
   });
 }

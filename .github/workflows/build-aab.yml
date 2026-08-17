@@ -54,6 +54,17 @@ jobs:
 
       - name: Build web app
         run: npm run build -- --mode capacitor
+        env:
+          # Repository VARIABLES, not secrets: an affiliate tracking id travels
+          # in the URL of every link it is attached to, so it is public by
+          # design and masking it in the logs would only make a build harder to
+          # debug. Unset is a safe state — the links then ship untagged and
+          # undisclosed rather than tagged to nobody.
+          # Set at: Settings > Secrets and variables > Actions > Variables.
+          VITE_AMAZON_ASSOCIATES_TAG: ${{ vars.VITE_AMAZON_ASSOCIATES_TAG }}
+          VITE_AMAZON_MARKETPLACE: ${{ vars.VITE_AMAZON_MARKETPLACE }}
+          VITE_AMAZON_ASSOCIATES_TAGS: ${{ vars.VITE_AMAZON_ASSOCIATES_TAGS }}
+          VITE_AFFILIATE_ENABLED: ${{ vars.VITE_AFFILIATE_ENABLED }}
 
       - name: Clear stale Android web assets
         # Ensures cap sync always starts from a clean state so every AAB reflects

@@ -43,10 +43,13 @@ promo-footage/
 # Environment files
 *.env
 *.env.*
--e 
+-e
 # Environment files
 *.env
 *.env.*
+
+# ...except the template, which is documentation and holds no values.
+!.env.example
 
 # Coverage reports
 coverage/

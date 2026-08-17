@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { AffiliateDisclosure } from "../affiliate";
 import BrandSignature from "../components/BrandSignature";
 import {
   useAppSettings,
@@ -216,6 +217,15 @@ export default function Settings({ embedded = false }: { embedded?: boolean }) {
               );
             })}
           </div>
+
+          {/* The standing disclosure.
+              The per-link one on the leaderboard covers the moment of the
+              click; this one covers the app. It is placed where someone who
+              wonders "does this thing make money off what it recommends?"
+              would go looking, and it renders nothing until the links actually
+              carry a tracking id — so it can never claim a commission that
+              does not exist. */}
+          <AffiliateDisclosure className="settings-affiliate-disclosure" />
         </section>
       </div>
     </div>

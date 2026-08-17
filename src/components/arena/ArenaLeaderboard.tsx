@@ -1,3 +1,4 @@
+import { AffiliateDisclosure, BuyLink } from "../../affiliate";
 import { marginC, ratedFraction, type LeaderboardEntry } from "./leaderboardModel";
 
 type ArenaLeaderboardProps = {
@@ -75,6 +76,12 @@ export function ArenaLeaderboard({ entries, onClear }: ArenaLeaderboardProps) {
                   {entry.survived ? "survived" : "failed"} · {entry.scenarioName} ·
                   run {entry.runIndex}
                 </em>
+                {/* The link belongs HERE and not on a "winner" banner: the row
+                    already says what this part did and what it cost it, so a
+                    reader arrives at the link having just been told whether it
+                    is worth buying. It renders untagged (and unmarked) until a
+                    tracking id is configured — see src/affiliate/config.ts. */}
+                <BuyLink part={entry.partQuery} placement="leaderboard" />
               </span>
               <span className="arena-board__stat">
                 <b>{entry.heldToLoad.toFixed(1)}×</b>
@@ -95,6 +102,11 @@ export function ArenaLeaderboard({ entries, onClear }: ArenaLeaderboardProps) {
           );
         })}
       </ol>
+
+      {/* One disclosure for the surface, under the links it covers. Renders
+          nothing at all while the links are untagged, because there is no
+          commission to declare yet. */}
+      <AffiliateDisclosure />
     </section>
   );
 }
