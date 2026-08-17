@@ -1,0 +1,18 @@
+name = "circuitry3d-ai"
+main = "src/worker.js"
+compatibility_date = "2025-01-01"
+
+# Free questions per user per day, and which Gemini model to call.
+# Set GEMINI_MODEL to whatever you're already using in ThePrints3D.
+[vars]
+GEMINI_MODEL = "gemini-2.5-flash"
+DAILY_FREE_LIMIT = "20"
+
+# Daily-cap counter store. Create it once (see README) then paste the id here.
+# The binding name MUST stay "RATE" — the worker looks for env.RATE.
+[[kv_namespaces]]
+binding = "RATE"
+id = "f65bd76866bb4070b5e0c6d51120cc70"
+
+# GEMINI_API_KEY is NOT here on purpose — it's a secret, set via:
+#   npx wrangler secret put GEMINI_API_KEY
