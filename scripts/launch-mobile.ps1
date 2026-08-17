@@ -1,4 +1,4 @@
-# launch-mobile.ps1 — one-shot mobile dev launcher for CircuiTry3D.
+# launch-mobile.ps1 -- one-shot mobile dev launcher for CircuiTry3D.
 #
 # Why this exists: the app decides "mobile" from the user-agent / touch
 # (legacy.html `isMobile`), NOT window width. A skinny desktop window gives the
@@ -64,21 +64,55 @@ if (-not (Test-Path $chrome)) {
 }
 
 $profileDir = Join-Path $env:TEMP 'circuitry3d-mobile-profile'
+
+# Wipe this profile's service worker + HTTP cache before every launch.
+#
+# The profile is deliberately persistent (it is what makes the Android UA flag
+# stick), but that means it also remembers a service worker registered on an
+# earlier visit -- and a SW outlives code changes. The symptom is nasty because
+# it does not look like caching: the page paints once from the cached bundle,
+# then dies, so you get a flicker and a blank blue screen while the SAME build
+# works fine on a real phone that has never registered one.
+#
+# The app already evicts stale workers itself, but that code lives IN the
+# bundle -- if the cached bundle is the thing that is broken, it never runs. So
+# the launcher removes it from the outside, where nothing can prevent it.
+$swDirs = @(
+    (Join-Path $profileDir 'Default\Service Worker'),
+    (Join-Path $profileDir 'Default\Cache'),
+    (Join-Path $profileDir 'Default\Code Cache')
+)
+$wiped = $false
+foreach ($dir in $swDirs) {
+    if (Test-Path $dir) {
+        try { Remove-Item -Recurse -Force $dir -ErrorAction Stop; $wiped = $true }
+        catch { Write-Host "    (could not clear $dir -- close the emulated window first)" -ForegroundColor DarkYellow }
+    }
+}
+if ($wiped) { Write-Host '==> Cleared the emulated profile''s service worker + cache.' }
+
 # Pixel-8-ish Android UA -> isAndroid -> isMobile === true.
 $ua = 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36'
 
 Write-Host '==> Opening Chrome in mobile mode (Android UA + touch + phone window)...'
+# NOT --app mode. App mode gives the cleanest phone-shaped viewport, but it has
+# no toolbar -- so no reload button and no address bar, which makes picking up a
+# code change awkward enough that the usual answer was to kill the window and
+# re-run this script. A normal window keeps Reload one click away; the window is
+# sized taller to pay back the ~85px the toolbar costs, so the PAGE is still
+# roughly a Pixel's 412x915.
 $chromeArgs = @(
     "--user-data-dir=$profileDir",
     "--user-agent=$ua",
-    '--window-size=412,915',
+    '--window-size=412,1000',
     '--window-position=60,40',
     '--touch-events=enabled',
     '--no-first-run',
     '--no-default-browser-check',
-    "--app=$localUrl"
+    $localUrl
 )
 # Start-Process so this script returns immediately instead of blocking on Chrome.
 Start-Process -FilePath $chrome -ArgumentList $chromeArgs
 
-Write-Host 'Done. Close that Chrome window when finished; the dev server keeps running.'
+Write-Host 'Done. Reload that window with Ctrl+R (or the toolbar button) to pick up code changes.'
+Write-Host 'Closing it does not stop the dev server.'

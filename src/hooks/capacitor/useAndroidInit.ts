@@ -142,10 +142,69 @@ export function registerServiceWorker(): void {
   // a device that previously cached the dev build self-heals on the next load.
   if (import.meta.env.DEV) {
     if ('serviceWorker' in navigator) {
+      // Unregistering does NOT evict the worker already controlling THIS page.
+      // That was the gap here: dev correctly tore the worker down, but the load
+      // it tore it down on was still being served by it, so the fix only landed
+      // on the NEXT reload. From the outside that is a dev server that renders a
+      // blank screen after a code change and then mysteriously works later —
+      // and it bites hardest in the phone-emulated Chrome, which keeps its own
+      // persistent profile across sessions and so carries a worker from days
+      // ago. The native path already reloads for exactly this reason; dev needs
+      // it just as much.
+      // Whether a worker is serving THIS document decides which of two very
+      // different things is safe to do, and conflating them is dangerous:
+      //
+      //   controlled — the page you are reading was served by that worker, and
+      //     Vite goes on lazily fetching hundreds more modules as it boots.
+      //     Deleting its caches mid-boot pulls those out from under it and the
+      //     app dies half-loaded, which looks exactly like the bug this code
+      //     exists to fix. So: unregister, reload, and clear nothing yet.
+      //   not controlled — nothing is depending on those caches. Clear freely,
+      //     and do NOT reload; there is nothing to recover from.
+      const controlled = Boolean(navigator.serviceWorker.controller);
+      const RELOAD_FLAG = 'ct3d:sw-evicted-reload-dev';
+      const alreadyReloaded = (() => {
+        try {
+          return Boolean(sessionStorage.getItem(RELOAD_FLAG));
+        } catch {
+          // Storage can throw in locked-down contexts. Treat that as "already
+          // reloaded" so a failure here can never become a boot loop.
+          return true;
+        }
+      })();
+
       navigator.serviceWorker
         .getRegistrations()
-        .then((regs) => regs.forEach((r) => r.unregister()))
+        .then(async (regs) => {
+          const removed =
+            regs.length > 0 &&
+            (await Promise.all(regs.map((r) => r.unregister().catch(() => false)))).some(
+              Boolean,
+            );
+
+          if (controlled) {
+            if (!removed || alreadyReloaded) {
+              return;
+            }
+            try {
+              sessionStorage.setItem(RELOAD_FLAG, '1');
+            } catch {
+              return; // cannot guard the reload, so do not perform it
+            }
+            console.warn(
+              '[SW] Stale service worker evicted on the dev server — reloading for fresh assets',
+            );
+            window.location.reload();
+            return;
+          }
+
+          if (typeof caches !== 'undefined' && caches.keys) {
+            const keys = await caches.keys().catch(() => [] as string[]);
+            await Promise.all(keys.map((k) => caches.delete(k).catch(() => false)));
+          }
+        })
         .catch(() => {});
+      return;
     }
     if (typeof caches !== 'undefined' && caches.keys) {
       caches

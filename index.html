@@ -45,6 +45,57 @@
     <meta name="msapplication-TileImage" content="/icons/icon-144.png" />
     <link rel="msapplication-config" href="/browserconfig.xml" />
 
+    <!-- ── Dev-server service-worker breaker ──────────────────────────────
+         Runs INLINE, in the HTML, on purpose — and this placement is the whole
+         point of it, not a detail.
+
+         sw.js serves HTML network-first but every other asset CACHE-first. On
+         a dev origin that combination is poison: you get a fresh page shell, so
+         the title paints, and then the app's JavaScript comes out of a cache
+         built days ago. React never mounts and you are left staring at the
+         background colour. "Blank blue screen after the title" is the exact
+         signature.
+
+         The app's own eviction code cannot fix this, because that code lives in
+         the very bundle being served stale — it never runs. Only something in
+         index.html can break the deadlock, since index.html is the one thing
+         fetched from the network.
+
+         Scoped to port 3000 (the vite dev server) so production PWA caching,
+         which is a real feature, is untouched. Session-flagged so a failure can
+         never become a boot loop. -->
+    <script>
+      (function () {
+        if (location.port !== '3000' || !('serviceWorker' in navigator)) return;
+        var FLAG = 'ct3d:dev-sw-breaker';
+        navigator.serviceWorker.getRegistrations().then(function (regs) {
+          if (!regs.length) return;
+          var controlled = !!navigator.serviceWorker.controller;
+          return Promise.all(
+            regs.map(function (r) { return r.unregister().catch(function () { return false; }); })
+          ).then(function () {
+            return (typeof caches !== 'undefined' && caches.keys)
+              ? caches.keys().then(function (keys) {
+                  return Promise.all(keys.map(function (k) {
+                    return caches.delete(k).catch(function () { return false; });
+                  }));
+                })
+              : null;
+          }).then(function () {
+            // Unregistering does not evict the worker already serving THIS
+            // page, so the assets in flight are still the stale ones.
+            if (!controlled) return;
+            try {
+              if (sessionStorage.getItem(FLAG)) return;
+              sessionStorage.setItem(FLAG, '1');
+            } catch (e) { return; }
+            console.warn('[SW] Dev service worker evicted — reloading for fresh assets');
+            location.reload();
+          });
+        }).catch(function () {});
+      })();
+    </script>
+
     <!-- FUSE™ Failure Understanding Simulation Engine — loaded app-wide so the
          React Arena (performance test bench) can call the SAME real failure
          physics the 3D builder uses. Zero-dependency UMD; defines
