@@ -85,6 +85,7 @@ const CONFIG: CategoryConfig[] = [
     controls: [
       { kind: "slider", key: "currentFlowSpeed", label: "Current flow speed", min: 0, max: 100, step: 1, format: pct },
       { kind: "toggle", key: "animationsEnabled", label: "Enable flow animations" },
+      { kind: "toggle", key: "componentShake", label: "Components tremble under stress", hint: "Parts being driven past their rating vibrate in the 3D scene. Turn this off for a steadier, more instrument-like look — heat, smoke and failure are unaffected" },
     ],
   },
   {

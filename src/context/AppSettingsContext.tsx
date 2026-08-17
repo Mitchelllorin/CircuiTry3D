@@ -51,6 +51,13 @@ export type AppSettings = {
   simulation: {
     currentFlowSpeed: number; // 0-100
     animationsEnabled: boolean;
+    // Whether a component under electrical stress physically trembles in the
+    // 3D scene. It is a real cue — a part being driven past its rating is a
+    // part in distress — but it is also the one effect that can read as
+    // gimmicky rather than instrumental, so it is the user's call. Off leaves
+    // heat, colour, smoke and failure untouched: the part still cooks and
+    // still dies, it just does it without vibrating.
+    componentShake: boolean;
   };
   accessibility: {
     reducedMotion: boolean;
@@ -93,6 +100,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   simulation: {
     currentFlowSpeed: 50,
     animationsEnabled: true,
+    componentShake: true,
   },
   accessibility: {
     reducedMotion: false,
