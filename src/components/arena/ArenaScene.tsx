@@ -1086,7 +1086,22 @@ function fillAtmosphere(
  * what makes the pair legible together: you can take in the part and its
  * figures in one look instead of glancing between them.
  */
-const NAMEPLATE_ANCHOR_Y = CIRCUIT_RAIL_Y + 1.5;
+/**
+ * How far above its part a plate floats, in SCREEN pixels.
+ *
+ * It used to be a world-space lift of 1.5 units (NAMEPLATE_ANCHOR_Y), and a
+ * fixed world offset projects to a completely different pixel gap depending on
+ * how far the camera is. In the wide shot that was a few pixels; pushed in
+ * close it threw the plate right off its part and across the frame — a
+ * MOSFET's readout floating detached in one corner while the MOSFET sat in
+ * another.
+ *
+ * Same lesson the overlap pass already learned and this line had not: where a
+ * label sits relative to its subject is a SCREEN problem and has to be solved
+ * in screen units. A constant pixel lift keeps the plate the same distance
+ * above its part at any zoom, which is what "attached to it" means.
+ */
+const NAMEPLATE_LIFT_PX = 26;
 const NAMEPLATE_GAP_PX = 3;
 
 /**
@@ -4766,11 +4781,13 @@ export function ArenaScene({
           // but its readout stays put and legible.
           // Every plate anchors over its OWN part; separation is resolved in
           // screen space once all of them have been projected, below.
-          tempVector.set(seatX, NAMEPLATE_ANCHOR_Y, seatZ);
+          // Anchored at the part's own height; the lift happens in pixels below.
+          tempVector.set(seatX, CIRCUIT_RAIL_Y + 0.35, seatZ);
           tempVector.project(camera);
 
           const rawX = (tempVector.x * 0.5 + 0.5) * root.clientWidth;
-          const rawY = (-tempVector.y * 0.5 + 0.5) * root.clientHeight;
+          const rawY =
+            (-tempVector.y * 0.5 + 0.5) * root.clientHeight - NAMEPLATE_LIFT_PX;
           const isVisible = tempVector.z < 1.2 && tempVector.z > -1;
 
           // Sit the plate's BOTTOM edge on the anchor and let it grow upward,
@@ -5070,8 +5087,27 @@ export function ArenaScene({
       <div className="arena-scene__healthbars">
         {healthBarAgents.map((agent) => {
           const isFailed = agent.phase === "failed";
-          // Live current at the present load — a failed (open) part carries none.
-          const liveAmps = isFailed ? 0 : agent.metrics.current * stressFactor;
+          // ── The four numbers must obey Ohm's law ────────────────────────
+          // They did not. Each was scaled independently off the part's stored
+          // metrics — I by the load, E by the load, R not at all — and those
+          // stored values are not guaranteed consistent with each other. A
+          // MOSFET showed E 72 V across R 12 Ω while reporting I 600 mA. That
+          // is 6 A by Ohm's law, off by a factor of ten, on the readout of an
+          // app whose entire subject is Ohm's law.
+          //
+          // So only the two INDEPENDENT quantities are read from the part —
+          // the voltage it is being driven at, and its resistance — and the
+          // other two are derived. Now they cannot disagree, because there is
+          // nothing left to disagree with: I is E/R and W is E·I by
+          // construction, which is also exactly what the solver does with this
+          // part when it works out the branch.
+          const liveVolts = isFailed ? 0 : agent.metrics.voltage * stressFactor;
+          const liveOhms = agent.metrics.resistance;
+          const liveAmps =
+            isFailed || !(liveOhms > 0)
+              ? 0
+              : liveVolts / liveOhms;
+          const liveWatts = isFailed ? 0 : liveVolts * liveAmps;
           const overTemp = agent.tempC > agent.ratings.junctionLimitC;
           // ── Label decluttering ────────────────────────────────────────────
           // Six full plates on a portrait phone is a traffic jam that no
@@ -5090,9 +5126,7 @@ export function ArenaScene({
           // take. Always against its rating, never bare.
           const ratedPct =
             agent.ratings.powerRating > 0
-              ? ((agent.metrics.power * stressFactor * stressFactor) /
-                  agent.ratings.powerRating) *
-                100
+              ? (liveWatts / agent.ratings.powerRating) * 100
               : 0;
           return (
             <div
@@ -5147,11 +5181,7 @@ export function ArenaScene({
               <div className="arena-nameplate__wire">
                 <span className="ct-term ct-term-power">
                   <em>W</em>
-                  <b>
-                    {isFailed
-                      ? "—"
-                      : fmtWatts(agent.metrics.power * stressFactor * stressFactor)}
-                  </b>
+                  <b>{isFailed ? "—" : fmtWatts(liveWatts)}</b>
                 </span>
                 <span className="ct-term ct-term-current">
                   <em>I</em>
@@ -5159,11 +5189,11 @@ export function ArenaScene({
                 </span>
                 <span className="ct-term ct-term-resistance">
                   <em>R</em>
-                  <b>{fmtOhms(agent.metrics.resistance)}</b>
+                  <b>{fmtOhms(liveOhms)}</b>
                 </span>
                 <span className="ct-term ct-term-voltage">
                   <em>E</em>
-                  <b>{isFailed ? "—" : fmtVolts(agent.metrics.voltage * stressFactor)}</b>
+                  <b>{isFailed ? "—" : fmtVolts(liveVolts)}</b>
                 </span>
               </div>
               {/* Temperature is not a W.I.R.E. quantity, but it is what actually
