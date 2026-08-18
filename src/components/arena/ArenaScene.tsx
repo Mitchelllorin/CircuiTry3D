@@ -4202,6 +4202,28 @@ export function ArenaScene({
           if (switchClosed) {
             rebuildFlow();
             flowSystemRef.update(frameDelta / 1000);
+
+            // ── The flow gets out of the way as the camera closes in ────────
+            // A bolt is sized for the wide shot, where it reads as current
+            // running through a circuit. Pushed in on one component it is a
+            // white polygon the size of the frame, and it buries the very part
+            // the camera went in to watch — the component dies somewhere
+            // underneath it and you see none of it.
+            //
+            // This only became possible today: the close-up and the lightning
+            // had never been on screen together before the ramp got a subject.
+            //
+            // Distance, not status, drives it. Tying it to "a test is running"
+            // would blink the flow the moment the camera moved, and orbiting in
+            // by hand would leave the same wall of light. What matters is how
+            // close you are to what you are looking at, which is exactly what
+            // the fade reads. Full standard strength from 16 units out, easing
+            // to a quarter at 6 — the flow never vanishes, because a dead-looking
+            // circuit is its own kind of lie.
+            const viewDistance = camera.position.distanceTo(controls.target);
+            const closeT = Math.max(0, Math.min(1, (16 - viewDistance) / 10));
+            lightningRef?.setIntensity(0.72 * (1 - closeT * 0.72));
+
             // _updateLightning takes absolute milliseconds, not a delta — the
             // undulation and crackle are both functions of wall-clock time.
             lightningRef?.update(time);
