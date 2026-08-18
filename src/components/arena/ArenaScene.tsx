@@ -2476,6 +2476,20 @@ export function ArenaScene({
       // selection is a different kind of thing from the workspace's. It is not.
       //
       // One ring, moved — not one per part — same as the workspace.
+      // The ring is painted flat on the board UNDER the selected part, and it
+      // has to be occluded by that part like anything else lying on a floor.
+      //
+      // It was not. depthTest:false plus renderOrder 999 drew it over every
+      // pixel in the scene regardless of what was in front of it, so the inner
+      // edge sliced straight through the component — a hoop through the middle
+      // of the resistor rather than a ring on the bench beneath it. That flag
+      // is for things that must never be hidden (a highlight over UI), and it
+      // is exactly wrong for a mark on the ground.
+      //
+      // polygonOffset instead of the disabled depth test: the ring sits 0.03
+      // above the floor, which is close enough to z-fight with it at a shallow
+      // camera angle. The offset biases it toward the viewer in depth WITHOUT
+      // exempting it from being occluded by the part standing on it.
       const selectionRing = new THREE.Mesh(
         new THREE.RingGeometry(0.62, 0.82, 40),
         new THREE.MeshBasicMaterial({
@@ -2483,11 +2497,13 @@ export function ArenaScene({
           transparent: true,
           opacity: 0.38,
           side: THREE.DoubleSide,
-          depthTest: false,
+          depthWrite: false,
+          polygonOffset: true,
+          polygonOffsetFactor: -2,
+          polygonOffsetUnits: -2,
         }),
       );
       selectionRing.rotation.x = -Math.PI / 2;
-      selectionRing.renderOrder = 999;
       selectionRing.visible = false;
       scene.add(selectionRing);
 
