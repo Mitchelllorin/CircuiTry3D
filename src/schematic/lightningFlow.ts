@@ -26,17 +26,40 @@ const LIGHTNING_SEGS = isMobile() ? 20 : 28;
 /** Radial faces — low-poly glowing tube. */
 const LIGHTNING_TUBE_SIDES = 5;
 /** Base tube radius (scaled by current). */
-const LIGHTNING_RADIUS = 0.075;
-/** Perpendicular displacement, world units. */
-const LIGHTNING_BASE_AMP = 0.2;
+const LIGHTNING_RADIUS = 0.055;
+/**
+ * Perpendicular displacement, world units — how far off the conductor the
+ * bolt is allowed to wander.
+ *
+ * TIGHTENED from 0.2. This is the knob that decides whether current reads as a
+ * filament running THROUGH the wire or as a scribble draped around it, and the
+ * tighter answer is also the more truthful one: current flows in the
+ * conductor. At 0.2 the bolt sprawled wide enough to obscure the parts it was
+ * running between, and on a phone that is most of the board.
+ *
+ * The trick is that amplitude is NOT what makes it read as electricity —
+ * see LIGHTNING_SPATIAL. Drop the amplitude alone and you get a glowing
+ * straight line, which reads as a laser or a lit wire. Drop the amplitude and
+ * raise the frequency together and it reads MORE electric, not less: a tight,
+ * fast, crackling filament instead of a slow fat snake.
+ */
+const LIGHTNING_BASE_AMP = 0.11;
 /** How fast the bolt rotates around the conductor. */
 const LIGHTNING_TWIST = 1.4;
 /** Twist added per ring (spatial helix). */
 const LIGHTNING_TWIST_PITCH = 0.5;
 /** Undulation / travel speed — lower is more flowing. */
 const LIGHTNING_WAVE_FREQ = 4.2;
-/** Undulation wavelength along the bolt. */
-const LIGHTNING_SPATIAL = 1.8;
+/**
+ * Undulation wavelength along the bolt — phase advance per ring, so HIGHER is
+ * a shorter wavelength and more zigzags per unit of wire.
+ *
+ * Raised from 1.8 as the amplitude came down. Jaggedness DENSITY plus travel is
+ * what the eye reads as electric current; size is not. Keeping the kink count
+ * up while shrinking how far it strays is what lets the flow take a third of
+ * the room and stay instantly recognisable.
+ */
+const LIGHTNING_SPATIAL = 2.6;
 /** Intertwining bolts per conductor (3 at high current). */
 const LIGHTNING_STRANDS = 2;
 

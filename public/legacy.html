@@ -5995,12 +5995,18 @@ body.android-optimized .zoom-btn {
         // the active current direction (conventional + → −, or electron − → +).
         const LIGHTNING_SEGS        = isMobile ? 20 : 28; // rings along each bolt
         const LIGHTNING_TUBE_SIDES  = 5;     // radial faces (low-poly glowing tube)
-        const LIGHTNING_RADIUS      = 0.075; // base tube radius (scaled by current)
-        const LIGHTNING_BASE_AMP    = 0.2;   // perpendicular displacement (world units)
+        const LIGHTNING_RADIUS      = 0.055; // base tube radius (scaled by current)
+        // Tightened from 0.2: current flows IN the conductor, so a bolt that
+        // strays less is both truer and far less noisy. Amplitude is not what
+        // makes it read as electricity - see LIGHTNING_SPATIAL, raised to match.
+        const LIGHTNING_BASE_AMP    = 0.11;  // perpendicular displacement (world units)
         const LIGHTNING_TWIST       = 1.4;   // how fast the bolt rotates around the wire
         const LIGHTNING_TWIST_PITCH = 0.5;   // twist added per ring (spatial helix)
         const LIGHTNING_WAVE_FREQ   = 4.2;   // undulation / travel speed (lower = more flowing)
-        const LIGHTNING_SPATIAL     = 1.8;   // undulation wavelength along the bolt
+        // Raised from 1.8 as the amplitude came down. Higher = shorter
+        // wavelength = more kinks per unit of wire. Jaggedness DENSITY plus
+        // travel is what the eye reads as current; size is not.
+        const LIGHTNING_SPATIAL     = 2.6;   // undulation wavelength along the bolt
         const LIGHTNING_STRANDS     = 2;     // intertwining bolts per wire (3 at high current)
         let currentLightningBolts = [];
 
