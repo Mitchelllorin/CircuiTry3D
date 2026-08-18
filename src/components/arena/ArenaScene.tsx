@@ -3428,6 +3428,24 @@ export function ArenaScene({
        * gives up and lets go anyway.
        */
       const SELECTION_DELIVER_MS = 2200;
+      /**
+       * The wide beat at the top of a run, before the camera goes anywhere.
+       *
+       * You have to be shown the whole bench before being shown one part of
+       * it, or the close-up has no context: a resistor filling the frame means
+       * nothing if you never saw it was one of four. It also covers the throw
+       * itself, which is a bench-wide event — the flow lighting up along both
+       * rails is the shot there, not any single component.
+       */
+      const ESTABLISH_MS = 1600;
+      /**
+       * How long the camera dwells on each part when it is walking the field.
+       *
+       * Long enough to actually watch something cook — a part visibly browns
+       * and swells over seconds, not frames — and short enough that with a
+       * full bench of six you come back around before the ramp has moved on.
+       */
+      const ROTATE_DWELL_MS = 3400;
       const chaseLook = new THREE.Vector3();
       const chaseDesired = new THREE.Vector3();
       const chaseDir = new THREE.Vector3();
@@ -3444,6 +3462,83 @@ export function ArenaScene({
        * anything else — including the switch.
        */
       let chaseDelivered = false;
+      // ── The field walk ────────────────────────────────────────────────────
+      // With nothing selected the camera visits every part in turn, and the
+      // ORDER is shuffled once per pass rather than taken at random each time.
+      //
+      // The distinction matters more than it sounds. Drawing a part at random
+      // every dwell repeats and starves: the same resistor three times running
+      // while another is never visited at all, which does not read as variety,
+      // it reads as broken. A shuffled pass gives both halves — every part is
+      // seen exactly once per cycle, and no two runs play in the same sequence,
+      // so a re-run of the same bench is not the same film.
+      //
+      // What it must never be is an order derived from stress, temperature or
+      // remaining life. That would leak the standings through the edit, which
+      // is the spoiler the worst-off chase was deleted for. Shuffled order
+      // carries no information at all, which is exactly what is wanted.
+      let walkOrder: string[] = [];
+      let walkCursor = 0;
+      let rotateAt = 0;
+
+      /** Every part still alive, in roster order. */
+      const livingAgents = (): string[] => {
+        const ids: string[] = [];
+        agentObjects.forEach((_entry, id) => {
+          const failed = failedAt.get(id);
+          // A corpse has nothing left to show and its death has already had
+          // its own cut. Dropping it reveals nothing — a failed part is
+          // visibly, loudly failed from any angle on the board.
+          if (failed != null && failed >= battleStartedAt) {
+            return;
+          }
+          ids.push(id);
+        });
+        return ids;
+      };
+
+      /** Fisher-Yates, so every ordering is equally likely. */
+      const reshuffleWalk = (time: number): void => {
+        const ids = livingAgents();
+        for (let i = ids.length - 1; i > 0; i -= 1) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [ids[i], ids[j]] = [ids[j], ids[i]];
+        }
+        walkOrder = ids;
+        walkCursor = 0;
+        rotateAt = time;
+      };
+
+      /**
+       * The part the walk is on this frame, or null if there is nobody left.
+       *
+       * Re-shuffles at the end of a pass and whenever a death has emptied the
+       * remaining order, so the walk never stalls on a part that is gone.
+       */
+      const walkTarget = (time: number): string | null => {
+        if (time - rotateAt > ROTATE_DWELL_MS) {
+          walkCursor += 1;
+          rotateAt = time;
+        }
+        // Prune first: a part that died mid-pass must not hold a slot.
+        if (walkOrder.length > 0) {
+          const living = new Set(livingAgents());
+          const pruned = walkOrder.filter((id) => living.has(id));
+          if (pruned.length !== walkOrder.length) {
+            // Keep the cursor pointing at the same part where possible, so one
+            // death elsewhere on the bench does not cut away from the part you
+            // are currently watching.
+            const current = walkOrder[walkCursor];
+            walkOrder = pruned;
+            const kept = current ? pruned.indexOf(current) : -1;
+            walkCursor = kept >= 0 ? kept : walkCursor;
+          }
+        }
+        if (walkOrder.length === 0 || walkCursor >= walkOrder.length) {
+          reshuffleWalk(time);
+        }
+        return walkOrder[walkCursor] ?? null;
+      };
 
       /**
        * Drives the close-up. Returns true when it has the camera this frame,
@@ -3485,7 +3580,13 @@ export function ArenaScene({
         // more interesting is the whole reason this needed a manual override.
         // It also works when the bench is idle, which is what makes selection
         // useful for lining up a shot before a run rather than only during one.
-        if (selection && !chaseDelivered) {
+        //
+        // Deliver-and-release is IDLE behaviour only. During a run a selected
+        // part is ridden for the whole ramp (see the target block below) —
+        // letting go after arriving would be right for "show me that one" and
+        // wrong for "watch that one cook", and the difference between those two
+        // is entirely whether a test is running.
+        if (selection && !chaseDelivered && statusRef.current !== "battling") {
           const picked = agentObjects.get(selection);
           if (picked) {
             chaseLook.set(
@@ -3557,6 +3658,26 @@ export function ArenaScene({
               target = id;
             }
           });
+
+          // Nothing has just died, so the ramp gets a subject rather than the
+          // wide shot it used to play out in. Two ways in, and which one is
+          // right is the user's call, made simply by whether they tapped a
+          // part:
+          //
+          //   selected — ride THAT part for the whole ramp. They asked to
+          //     watch it cook, and cutting away from it to be even-handed
+          //     would be the camera overruling an explicit instruction.
+          //   nothing selected — walk the field, shuffled (see above), so
+          //     every part is watched and none is singled out.
+          //
+          // Both wait out the establishing beat: the throw is a bench-wide
+          // event, and a close-up before you have seen the whole board has
+          // nothing to be close to.
+          if (!target && time - battleStartedAt > ESTABLISH_MS) {
+            target = selection && agentObjects.has(selection)
+              ? selection
+              : walkTarget(time);
+          }
         }
 
         if (!target) {
@@ -3726,6 +3847,13 @@ export function ArenaScene({
           }
           if (statusRef.current === "battling") {
             battleStartedAt = time;
+            // A fresh shuffle per run — that is what stops a re-run of the
+            // same bench from being the same film. Cleared rather than
+            // reshuffled here so the order is drawn when the walk actually
+            // starts, by which time the roster is settled.
+            walkOrder = [];
+            walkCursor = 0;
+            rotateAt = time;
           }
         }
 
