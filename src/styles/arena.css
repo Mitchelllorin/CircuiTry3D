@@ -2083,16 +2083,46 @@
   flex-direction: column;
   gap: 8px;
   padding: 9px 10px calc(env(safe-area-inset-bottom, 0px) + 9px);
+  /* ── Glass, not a slab ────────────────────────────────────────────────
+     This was a gradient running 0.96 -> 0.99 alpha: opaque in every way that
+     matters, and the single heaviest object on the screen. It sat across the
+     bottom of a 3D scene and simply deleted that part of it.
+
+     Now the circuit runs on UNDER the console. That is the whole gain, and it
+     is worth more here than anywhere else in the app: this bar is the tallest
+     fixed thing on a phone, so it was eating the most, and the bench it covers
+     is the thing the user came to watch. The board reads as continuing past
+     the controls instead of being cut off by them.
+
+     The fill still leans denser toward the bottom edge — not for legibility,
+     but because a pane seated against the frame catches less light where it
+     meets it, and a perfectly even sheet reads as a decal rather than glass. */
   background:
-    linear-gradient(180deg, rgba(30, 41, 59, 0.96) 0%, rgba(15, 23, 42, 0.98) 42%, rgba(2, 6, 23, 0.99) 100%);
-  border-block-start: 1px solid rgba(148, 163, 184, 0.28);
+    linear-gradient(180deg, rgba(30, 41, 59, 0.26) 0%, rgba(12, 20, 38, 0.36) 45%, rgba(2, 6, 23, 0.46) 100%);
+  backdrop-filter: blur(26px) saturate(1.45);
+  -webkit-backdrop-filter: blur(26px) saturate(1.45);
+  border-block-start: 1px solid rgba(168, 216, 255, 0.2);
   /* A hairline of light along the top edge and a SHORT shadow under it — the
      read of a panel seated against the frame. The first pass threw a 34px
      shadow upward, which from the front reads as a dark halo bleeding into the
      scene rather than as a seam. A bezel casts a tight shadow, not a glow. */
   box-shadow:
-    0 1px 0 rgba(226, 232, 240, 0.07) inset,
-    0 -3px 10px rgba(0, 0, 0, 0.4);
+    0 1px 0 rgba(255, 255, 255, 0.13) inset,
+    0 -3px 10px rgba(0, 0, 0, 0.28);
+}
+
+/* ── Legibility, now that the scene shows through ──────────────────────
+   The reason an opaque fill is reached for, solved properly instead. Every
+   piece of text on the console gets a tight dark shadow, so a bright floor or
+   a failure flash sliding past underneath cannot swallow it. The lit displays
+   keep their own colour bloom AND gain the dark shadow — the bloom is what
+   makes them read as instruments, the shadow is what keeps them readable. */
+.arena-dash__display-letter,
+.arena-dash__display-caption,
+.arena-dash__fader-head,
+.arena-dash__fader-ref,
+.arena-dash__switch-label {
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
 }
 
 /* ── Displays ─────────────────────────────────────────────────────── */
@@ -2122,13 +2152,19 @@
   letter-spacing: 0.16em;
   opacity: 0.85;
 }
-/* The digits carry a bloom in their own metric colour — lit, not printed. */
+/* The digits carry a bloom in their own metric colour — lit, not printed —
+   plus a tight dark shadow underneath it, because the console is glass now and
+   the scene runs on behind these numbers. The bloom is what makes them read as
+   an instrument; the shadow is what keeps them readable when a failure flash
+   goes off underneath. */
 .arena-dash__display-value {
   font-size: 1.02rem;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
   line-height: 1.1;
-  text-shadow: 0 0 10px currentColor;
+  text-shadow:
+    0 0 10px currentColor,
+    0 1px 3px rgba(0, 0, 0, 0.95);
 }
 .arena-dash__display-caption {
   font-size: 0.52rem;
