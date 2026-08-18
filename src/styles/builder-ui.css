@@ -225,11 +225,30 @@ body.builder-body::before {
   display: flex;
   align-items: center;
   flex-wrap: nowrap;
-  gap: 6px;
-  background: rgba(12, 10, 36, 0.88);
-  border: 1px solid var(--builder-border);
-  border-radius: 20px;
-  padding: 6px;
+  gap: 2px;
+  /* ── Actually glass ───────────────────────────────────────────────────
+     This bar always HAD backdrop-filter: blur(18px) on it. It was just
+     pointless: the fill behind it was rgba(...,0.88), and at 88% opacity
+     nothing gets through to be blurred. The GPU computed a blur and then
+     painted a slab over it — which is why it read as a heavy old container
+     rather than as glass, despite the code saying glass.
+
+     The fix is the fill, not the blur. Down to 0.3, and the blur up with a
+     saturate() so the colour behind it comes through lively rather than
+     washed. Glass reads as glass because you can see the scene MOVING behind
+     it; at 0.88 the scene was gone.
+
+     Three things keep it legible, which is the real reason people reach for
+     an opaque fill and should not:
+       - a top inner highlight, so the top edge catches light like a real
+         pane and the bar has a defined edge without a heavy border;
+       - a hairline border at low alpha rather than a solid line;
+       - text-shadow on the labels (see .mode-tab), which costs nothing and
+         survives a bright 3D background sliding underneath. */
+  background: rgba(12, 10, 36, 0.3);
+  border: 1px solid rgba(168, 216, 255, 0.16);
+  border-radius: 16px;
+  padding: 3px;
   max-width: min(1200px, calc(100vw - 24px));
   overflow-x: auto;
   overscroll-behavior: contain;
@@ -237,8 +256,11 @@ body.builder-body::before {
   -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
   scrollbar-color: rgba(168, 216, 255, 0.35) transparent;
-  backdrop-filter: blur(18px);
-  box-shadow: 0 8px 24px rgba(3, 12, 32, 0.65);
+  backdrop-filter: blur(22px) saturate(1.5);
+  -webkit-backdrop-filter: blur(22px) saturate(1.5);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.14) inset,
+    0 6px 20px rgba(3, 12, 32, 0.4);
 }
 
 .workspace-mode-bar::-webkit-scrollbar {
@@ -255,13 +277,18 @@ body.builder-body::before {
   align-items: center;
   gap: 5px;
   flex: 0 0 auto;
-  padding: 8px 13px;
+  /* Halved vertically. A nav is a signpost, not a workspace -- it should cost
+     the least screen it can while staying a comfortable thumb target, and the
+     tap area is the padding plus the type, not the box drawn around it. */
+  padding: 4px 10px;
   background: transparent;
   border: 1px solid transparent;
-  border-radius: 12px;
+  border-radius: 10px;
   color: var(--builder-muted-soft);
   font-size: 12px;
   font-weight: 600;
+  /* Carries the label against whatever the 3D is doing behind the glass. */
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
   cursor: pointer;
   transition:
     background 0.22s cubic-bezier(0.34, 1.56, 0.64, 1),
