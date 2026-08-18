@@ -127,6 +127,22 @@ export default function ArenaBenchView({
   // composes into the space actually left for it.
   const [dashHeight, setDashHeight] = useState(0);
 
+  /**
+   * Starting a run closes the params panel — the camera is inert until it is.
+   *
+   * With the panel open the scene holds a locked preview pose and gives the
+   * camera to nobody, so the push-in onto the part, the walk across the bench
+   * and the cut to a failure all sit out the entire run. Same trap as battle
+   * mode: it was guaranteed only while the panel's own button was the sole way
+   * to start, and the console switch quietly broke that.
+   */
+  const handleStartRun = useCallback(() => {
+    startTest();
+    if (panelOpen) {
+      onTogglePanel();
+    }
+  }, [startTest, panelOpen, onTogglePanel]);
+
   const running = status === "battling";
   const complete = status === "complete";
 
@@ -168,7 +184,7 @@ export default function ArenaBenchView({
         stressFactor={stressFactor}
         stressMax={scenario.stressMax}
         progress={progress}
-        onStartTest={startTest}
+        onStartTest={handleStartRun}
         onLoadChange={setLoad}
         winnerName={null}
         // A solo bench has one part, so surviving IS winning — it gets the
@@ -216,7 +232,7 @@ export default function ArenaBenchView({
         seriesOhms={seriesOhms}
         onSeriesOhmsChange={(ohms) => applySupply(voltsMultiple, ohms)}
         onHeightChange={setDashHeight}
-        onThrowSwitch={running ? resetTest : startTest}
+        onThrowSwitch={running ? resetTest : handleStartRun}
       />
       <WorkspaceModePanel
         title="Solo Bench"
@@ -332,7 +348,7 @@ export default function ArenaBenchView({
           <button
             type="button"
             className="arena-bench-run"
-            onClick={startTest}
+            onClick={handleStartRun}
             disabled={running || !component}
           >
             {running

@@ -304,15 +304,36 @@ export default function ArenaView({
     setTransitionPhase((phase) => (phase === "exiting" ? phase : "exiting"));
   }, [isWorkspace]);
 
-  // Starting the test from the params panel also collapses the panel, which
-  // triggers the cinematic camera sweep down into the arena — so hitting BATTLE
-  // drops you straight into the 3D scene to watch the run unfold.
-  const handleStartTestFromPanel = useCallback(() => {
-    startTest();
+  /**
+   * Starting a run collapses the params panel, wherever the run was started
+   * from. This is not a nicety — the camera does not work without it.
+   *
+   * While that panel is open the scene holds a locked, slowly swaying preview
+   * pose and hands the camera to nobody: no push-in, no field walk, no cut to
+   * a part that just died. All of that lives in the branch that only runs once
+   * the panel is closed AND the sweep into the arena has finished.
+   *
+   * It used to be guaranteed because the only way to start a run was the
+   * panel's own button, which collapsed it on the way. Then the switch moved
+   * to the fixed console, which can be thrown with the panel still open — and
+   * every run started that way played out under a camera that was never given
+   * the wheel. From the outside: "the zoom-in is just gone."
+   */
+  const collapsePanelForRun = useCallback(() => {
     if (panelOpen && typeof onTogglePanel === "function") {
       onTogglePanel();
     }
-  }, [startTest, panelOpen, onTogglePanel]);
+  }, [panelOpen, onTogglePanel]);
+
+  const handleStartRun = useCallback(() => {
+    startTest();
+    collapsePanelForRun();
+  }, [startTest, collapsePanelForRun]);
+
+  const handleStartFreeRun = useCallback(() => {
+    startFreeRun();
+    collapsePanelForRun();
+  }, [startFreeRun, collapsePanelForRun]);
 
   const winner = useMemo(
     () => agents.find((agent) => agent.id === winnerId) ?? null,
@@ -371,7 +392,7 @@ export default function ArenaView({
           stressFactor={stressFactor}
           stressMax={scenario.stressMax}
           progress={progress}
-          onStartTest={startTest}
+          onStartTest={handleStartRun}
           onLoadChange={setLoad}
           winnerName={winnerName}
           winnerId={winnerId}
@@ -456,7 +477,7 @@ export default function ArenaView({
             <button
               type="button"
               className={`arena-quickbar__btn${freeRun ? " is-open" : ""}`}
-              onClick={freeRun ? resetTest : startFreeRun}
+              onClick={freeRun ? resetTest : handleStartFreeRun}
               aria-pressed={freeRun}
             >
               <span className="arena-quickbar__label">Mode</span>
@@ -475,7 +496,7 @@ export default function ArenaView({
           seriesOhms={seriesOhms}
           onSeriesOhmsChange={(ohms) => applySupply(voltsMultiple, ohms)}
           onHeightChange={setDashHeight}
-          onThrowSwitch={status === "battling" ? resetTest : startTest}
+          onThrowSwitch={status === "battling" ? resetTest : handleStartRun}
         />
         <WorkspaceModePanel
           title="Component Arena"
@@ -496,7 +517,7 @@ export default function ArenaView({
             scenario={scenario}
             summary={summary}
             onSelectScenario={selectScenario}
-            onStartTest={handleStartTestFromPanel}
+            onStartTest={handleStartRun}
             onResetTest={resetTest}
             onReturnToWorkspace={handleReturnToWorkspace}
             onOpenBuilder={onOpenBuilder}
