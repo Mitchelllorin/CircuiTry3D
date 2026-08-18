@@ -474,15 +474,34 @@ export default function ArenaView({
           status={status}
           board={<ArenaLeaderboard entries={board} onClear={handleClearBoard} />}
           extra={
-            <button
-              type="button"
-              className={`arena-quickbar__btn${freeRun ? " is-open" : ""}`}
-              onClick={freeRun ? resetTest : handleStartFreeRun}
-              aria-pressed={freeRun}
-            >
-              <span className="arena-quickbar__label">Mode</span>
-              <span className="arena-quickbar__value">{freeRun ? "Free run" : "Ramp"}</span>
-            </button>
+            <>
+              {/* Getting BETWEEN the two benches was only possible from inside
+                  the params panel — so leaving meant opening a panel over the
+                  bench you were leaving, and doing it again to come back. The
+                  same argument that moved Parts and Conditions up here applies
+                  harder to an exit: a way out that is behind a door is not
+                  much of a way out. */}
+              <button
+                type="button"
+                className="arena-quickbar__btn"
+                onClick={() => setArenaMode("bench")}
+              >
+                <span className="arena-quickbar__label">Bench</span>
+                <span className="arena-quickbar__value">Head-to-head</span>
+              </button>
+              {/* Renamed from "Mode", which now would have collided with the
+                  switch above it. This one is what KIND of run the switch
+                  starts; the other is which bench you are standing at. */}
+              <button
+                type="button"
+                className={`arena-quickbar__btn${freeRun ? " is-open" : ""}`}
+                onClick={freeRun ? resetTest : handleStartFreeRun}
+                aria-pressed={freeRun}
+              >
+                <span className="arena-quickbar__label">Run</span>
+                <span className="arena-quickbar__value">{freeRun ? "Free run" : "Ramp"}</span>
+              </button>
+            </>
           }
         />
 

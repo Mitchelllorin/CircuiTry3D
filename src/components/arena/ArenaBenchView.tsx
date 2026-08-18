@@ -221,6 +221,21 @@ export default function ArenaBenchView({
         onSelectScenario={selectScenario}
         status={status}
         board={board}
+        extra={
+          /* The way off the solo bench, on the bench itself. It used to exist
+             only inside the params panel, so leaving meant opening a panel
+             over the thing you were leaving — and since a run collapses that
+             panel, every single mode change started with re-opening it. */
+          <button
+            type="button"
+            className="arena-quickbar__btn"
+            onClick={onSwitchToBattle}
+            disabled={running}
+          >
+            <span className="arena-quickbar__label">Bench</span>
+            <span className="arena-quickbar__value">Solo</span>
+          </button>
+        }
       />
 
       {/* The console: fixed at the bottom, carrying only the live-run controls. */}

@@ -2,6 +2,55 @@ import type { InternalLayer } from '../../data/componentCompositions';
 
 export type { InternalLayer };
 
+/**
+ * What a surface is MADE OF.
+ *
+ * One material across a whole object is the signature of a toy — because that
+ * is literally what an injection-moulded toy is: one plastic, one finish,
+ * different colours. Real hardware reads as real largely because unlike
+ * materials sit next to each other: matte ceramic against glossy lacquer
+ * against dull tinned metal, each catching the light in its own way.
+ *
+ * A shape declares what it is; the renderer decides what that means in PBR
+ * terms (see SURFACE_FINISHES). Kept as a NAME rather than raw roughness and
+ * metalness numbers so the library stays a description of the part and the
+ * look can be re-tuned in one place for every component at once.
+ */
+export type SurfaceFinish =
+  | "ceramic"
+  | "lacquer"
+  | "epoxy"
+  | "plastic"
+  | "metal"
+  | "tinnedMetal"
+  | "glass"
+  | "paintedMetal";
+
+/** PBR values per finish. Tuned against the arena's RoomEnvironment IBL. */
+export const SURFACE_FINISHES: Record<
+  SurfaceFinish,
+  { metalness: number; roughness: number }
+> = {
+  // The unglazed body of a metal-film resistor: chalky, almost no specular.
+  ceramic: { metalness: 0.02, roughness: 0.82 },
+  // The colour bands. Sprayed lacquer over that ceramic, so noticeably
+  // glossier than what it sits on — the CONTRAST is the whole point.
+  lacquer: { metalness: 0.03, roughness: 0.34 },
+  // Moulded epoxy body (diodes, small transistors): semi-matte, slightly waxy.
+  epoxy: { metalness: 0.04, roughness: 0.52 },
+  // Injection-moulded housings, connector bodies.
+  plastic: { metalness: 0.03, roughness: 0.46 },
+  // Bare metal: can housings, screening cans.
+  metal: { metalness: 0.92, roughness: 0.31 },
+  // Component leads. Tinned copper is dull — a mirror finish here is one of
+  // the loudest wrong notes on an otherwise good part.
+  tinnedMetal: { metalness: 0.88, roughness: 0.34 },
+  // Lenses and envelopes.
+  glass: { metalness: 0.0, roughness: 0.08 },
+  // Painted metal cases, heatsink tabs.
+  paintedMetal: { metalness: 0.35, roughness: 0.42 },
+};
+
 export type Component3DGeometry = {
   type: string;
   label: string;
@@ -14,6 +63,8 @@ export type Component3DGeometry = {
       scale?: [number, number, number];
       color?: string;
       opacity?: number;
+      /** What this surface is made of. Defaults to a mid plastic. */
+      finish?: SurfaceFinish;
     }>;
     leads: Array<{
       position: [number, number, number];
@@ -42,49 +93,56 @@ export const COMPONENT_3D_LIBRARY: Component3DGeometry[] = [
           position: [0, 0, 0],
           rotation: [0, 0, Math.PI / 2],
           scale: [0.15, 1.0, 0.15],
-          color: '#CCAA66',
+          color: '#cfc3a8',
+          finish: 'ceramic',
         },
         {
           type: 'cylinder',
           position: [-0.3, 0, 0],
           rotation: [0, 0, Math.PI / 2],
           scale: [0.16, 0.1, 0.16],
-          color: '#FF0000',
+          color: '#8e2b22',
+          finish: 'lacquer',
         },
         {
           type: 'cylinder',
           position: [-0.1, 0, 0],
           rotation: [0, 0, Math.PI / 2],
           scale: [0.16, 0.1, 0.16],
-          color: '#00FF00',
+          color: '#3f6b3a',
+          finish: 'lacquer',
         },
         {
           type: 'cylinder',
           position: [0.1, 0, 0],
           rotation: [0, 0, Math.PI / 2],
           scale: [0.16, 0.1, 0.16],
-          color: '#0000FF',
+          color: '#2f4a7a',
+          finish: 'lacquer',
         },
         {
           type: 'cylinder',
           position: [0.3, 0, 0],
           rotation: [0, 0, Math.PI / 2],
           scale: [0.16, 0.1, 0.16],
-          color: '#FFD700',
+          color: '#b08d3a',
+          finish: 'lacquer',
         },
         {
           type: 'cylinder',
           position: [-0.6, 0, 0],
           rotation: [0, 0, Math.PI / 2],
           scale: [0.05, 0.8, 0.05],
-          color: '#888888',
+          color: '#b9bcc0',
+          finish: 'tinnedMetal',
         },
         {
           type: 'cylinder',
           position: [0.6, 0, 0],
           rotation: [0, 0, Math.PI / 2],
           scale: [0.05, 0.8, 0.05],
-          color: '#888888',
+          color: '#b9bcc0',
+          finish: 'tinnedMetal',
         },
       ],
       leads: [],

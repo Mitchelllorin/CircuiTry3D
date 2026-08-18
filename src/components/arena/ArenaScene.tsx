@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { getComponent3D } from "../circuit/Component3DLibrary";
+import { SURFACE_FINISHES, getComponent3D } from "../circuit/Component3DLibrary";
 import { useAppSettings } from "../../context/AppSettingsContext";
 import { CurrentFlowAnimationSystem } from "../../schematic/currentFlowAnimation";
 import { LightningFlowSystem } from "../../schematic/lightningFlow";
@@ -700,10 +700,21 @@ function createComponentGroup(
     // The accent emissive is gone entirely: a standing self-glow in the
     // scenario's team colour on every body is exactly what a selection
     // highlight looks like. Parts are lit by the arena now, not by themselves.
+    // Every shape on a part used to share ONE surface: metalness 0.08,
+    // roughness 0.44, whatever it was. That is why the parts read as toys --
+    // because it is literally how a toy is made. A moulded toy is one plastic
+    // at one finish in different colours, and an object whose every surface
+    // catches the light identically is exactly what the eye reads as moulded.
+    //
+    // Real hardware is the opposite: chalky ceramic against glossy lacquer
+    // against dull tinned lead, three different specular responses inside
+    // 10mm. The CONTRAST is what sells it, not the quality of any one surface
+    // -- so a shape now declares what it is made of, and gets that.
+    const finish = SURFACE_FINISHES[shape.finish ?? "plastic"];
     const material = new THREE.MeshStandardMaterial({
       color: shape.color ?? "#94a3b8",
-      metalness: 0.08,
-      roughness: 0.44,
+      metalness: finish.metalness,
+      roughness: finish.roughness,
       transparent: typeof shape.opacity === "number",
       opacity: shape.opacity ?? 1,
       emissive: new THREE.Color("#000000"),
