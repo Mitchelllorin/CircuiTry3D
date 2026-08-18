@@ -58,11 +58,18 @@ export type AppSettings = {
     currentFlowSpeed: number; // 0-100
     animationsEnabled: boolean;
     // Whether a component under electrical stress physically trembles in the
-    // 3D scene. It is a real cue — a part being driven past its rating is a
-    // part in distress — but it is also the one effect that can read as
-    // gimmicky rather than instrumental, so it is the user's call. Off leaves
-    // heat, colour, smoke and failure untouched: the part still cooks and
-    // still dies, it just does it without vibrating.
+    // 3D scene.
+    //
+    // DEFAULTS TO OFF. A trembling part is not what a part under electrical
+    // stress does — it heats, discolours, swells and lets go, and every one of
+    // those is real and already rendered. The shake was the one effect with no
+    // physical claim behind it, which is why it read as gimmicky next to the
+    // rest, and at close range it is actively harmful: it blurs the scorch and
+    // the swelling, which are the things worth watching.
+    //
+    // Off leaves heat, colour, smoke and failure untouched: the part still
+    // cooks and still dies, it just does it without vibrating. Still a setting,
+    // for anyone who wants it back.
     componentShake: boolean;
   };
   accessibility: {
@@ -106,7 +113,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   simulation: {
     currentFlowSpeed: 50,
     animationsEnabled: true,
-    componentShake: true,
+    componentShake: false,
   },
   accessibility: {
     reducedMotion: false,
