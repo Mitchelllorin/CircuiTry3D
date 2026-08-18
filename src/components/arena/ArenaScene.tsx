@@ -4222,7 +4222,39 @@ export function ArenaScene({
             // circuit is its own kind of lie.
             const viewDistance = camera.position.distanceTo(controls.target);
             const closeT = Math.max(0, Math.min(1, (16 - viewDistance) / 10));
-            lightningRef?.setIntensity(0.72 * (1 - closeT * 0.72));
+            // Down to ~12% of standard at the closest pose. The first pass
+            // stopped at 28% and that was still too much: at arm's length from
+            // the part, current is no longer information — you already know it
+            // is flowing, that is why the thing is glowing — and every bolt is
+            // just brightness competing with the scorch, the swelling and the
+            // incandescence, which ARE the information.
+            let flow = 0.72 * (1 - closeT * 0.88);
+
+            // ── And it gets out of the way of a death entirely ──────────────
+            // A blowout is the one event the whole bench exists to show, and it
+            // lasts about a second. Current running past it during that second
+            // is the single loudest thing on screen competing with it. So the
+            // flow ducks hard at the moment of failure and comes back over the
+            // following second and a half — the same instinct as a mix ducking
+            // under a voice.
+            //
+            // Board-wide, not just the failing branch: setFade already pulls
+            // the bolt INSIDE the dying part, and that was not enough, because
+            // what buries the shot is the bolts on the rails right beside it.
+            let newestFailure = -Infinity;
+            failedAt.forEach((failedTime) => {
+              if (failedTime >= battleStartedAt && failedTime > newestFailure) {
+                newestFailure = failedTime;
+              }
+            });
+            const sinceFailure = time - newestFailure;
+            if (sinceFailure >= 0 && sinceFailure < 1500) {
+              // 0 at the instant of failure, easing back to 1 over 1.5s.
+              const recover = sinceFailure / 1500;
+              flow *= 0.15 + 0.85 * recover * recover;
+            }
+
+            lightningRef?.setIntensity(flow);
 
             // _updateLightning takes absolute milliseconds, not a delta — the
             // undulation and crackle are both functions of wall-clock time.
