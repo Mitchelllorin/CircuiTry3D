@@ -4253,7 +4253,12 @@ export function ArenaScene({
         // exactly the screens where the space is tightest. Converted into the
         // canvas's own coordinates because the strip is fixed to the viewport
         // and the plates are positioned within the scene root.
-        const hudElement = root.querySelector<HTMLElement>(".arena-quickbar");
+        // document, NOT root. The strip is a SIBLING of the scene, rendered by
+        // the view alongside it — so root.querySelector never found it, the
+        // ceiling silently stayed at its 8px default, and the clamp shipped
+        // doing nothing at all. It looked correct in the diff and was inert in
+        // the app, which is the worst way for a fix to be wrong.
+        const hudElement = document.querySelector<HTMLElement>(".arena-quickbar");
         let plateCeiling = 8;
         if (hudElement) {
           const hudRect = hudElement.getBoundingClientRect();
