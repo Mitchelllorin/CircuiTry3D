@@ -174,7 +174,10 @@ export default function ArenaBenchView({
   }, [envelope, agent, stressFactor]);
 
   return (
-    <div className="arena-view arena-view--workspace arena-view--bench">
+    <div
+      className="arena-view arena-view--workspace arena-view--bench"
+      style={{ "--arena-dash-height": `${dashHeight}px` } as React.CSSProperties}
+    >
       <ArenaScene
         agents={agents}
         activeAgentId={agent?.id ?? null}
@@ -222,18 +225,19 @@ export default function ArenaBenchView({
         status={status}
         board={board}
         extra={
-          /* The way off the solo bench, on the bench itself. It used to exist
-             only inside the params panel, so leaving meant opening a panel
-             over the thing you were leaving — and since a run collapses that
-             panel, every single mode change started with re-opening it. */
+          /* The way to the other bench, without going through the panel.
+             It names its DESTINATION, not the current state — every other
+             entry in this strip shows what is loaded (Parts, Conditions), but
+             a control that announces where you already are does not read as a
+             way out. An exit is named for the other side of the door. */
           <button
             type="button"
             className="arena-quickbar__btn"
             onClick={onSwitchToBattle}
             disabled={running}
           >
-            <span className="arena-quickbar__label">Bench</span>
-            <span className="arena-quickbar__value">Solo</span>
+            <span className="arena-quickbar__label">Switch to</span>
+            <span className="arena-quickbar__value">Head-to-head</span>
           </button>
         }
       />

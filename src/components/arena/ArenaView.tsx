@@ -382,7 +382,12 @@ export default function ArenaView({
       );
     }
     return (
-      <div className={`arena-view arena-view--workspace${isExiting ? " arena-view--exiting" : ""}`}>
+      <div
+        className={`arena-view arena-view--workspace${isExiting ? " arena-view--exiting" : ""}`}
+        // The console's measured height, published so the params panel can
+        // retract on top of it instead of behind it.
+        style={{ "--arena-dash-height": `${dashHeight}px` } as React.CSSProperties}
+      >
         <ArenaScene
           agents={agents}
           activeAgentId={mostStressedId}
@@ -486,8 +491,8 @@ export default function ArenaView({
                 className="arena-quickbar__btn"
                 onClick={() => setArenaMode("bench")}
               >
-                <span className="arena-quickbar__label">Bench</span>
-                <span className="arena-quickbar__value">Head-to-head</span>
+                <span className="arena-quickbar__label">Switch to</span>
+                <span className="arena-quickbar__value">Solo bench</span>
               </button>
               {/* Renamed from "Mode", which now would have collided with the
                   switch above it. This one is what KIND of run the switch

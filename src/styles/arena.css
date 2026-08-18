@@ -1229,6 +1229,27 @@
   pointer-events: auto;
 }
 
+/* ── The params panel retracts onto the console, not behind it ────────
+   The panel is fixed to bottom:0 and collapses with translateY(100% - 52px),
+   which leaves a 52px header — its toggle, and the only way to re-open it —
+   sitting at the very bottom of the screen. That was fine while the bottom of
+   the screen was empty. It is not fine now: the console is also at bottom:0,
+   is ~150px tall, and outranks the panel on z-index (1250 vs --z-mode-panel
+   1240), so the panel retracted UNDERNEATH it and its handle vanished.
+
+   From the outside that reads as "there is no way back" — the panel holds the
+   route to battle mode, to the workspace and to every parameter, and its door
+   handle was behind a wall. The nav bar was the only exit left.
+
+   So the arena gives the panel a floor: --arena-dash-height is the console's
+   measured height, published by the view. The panel bottoms out on top of the
+   console in BOTH states, so the handle is always reachable and an open panel
+   never buries the faders either. Measured rather than hard-coded, because the
+   console's height changes with orientation and content. */
+.arena-view--workspace .workspace-mode-panel {
+  bottom: var(--arena-dash-height, 0px);
+}
+
 .arena-view--workspace .arena-scene__canvas {
   cursor: grab;
 }

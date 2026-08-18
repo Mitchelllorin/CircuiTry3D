@@ -40,8 +40,14 @@ export type AppSettings = {
     gridLineWidth: number; // 1-5
     gridHue: number; // 0-360
     // Density of the ambient motes drifting in the air of the 3D scene, 0-100.
-    // 0 clears the air completely; 50 is the count the arena has always used, so
-    // the default leaves the scene exactly as it was while allowing twice as many.
+    //
+    // DEFAULTS TO 0 -- off. They were on at 50 because that is what the arena
+    // had always drawn, but "what it already did" is not a reason to charge
+    // every new user for it. Drifting specks read as atmosphere in a game and
+    // as dirt on the screen in an instrument, they compete for attention with
+    // the one thing on screen that matters (a part visibly cooking), and they
+    // are pure cost on a phone. Anyone who wants the haze can have it, and the
+    // slider goes to twice what the scene ever used.
     atmosphereDensity: number; // 0-100
     snapToGrid: boolean;
     cameraSensitivity: number; // 0-100
@@ -91,7 +97,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
     gridBrightness: 50,
     gridLineWidth: 1,
     gridHue: 210,
-    atmosphereDensity: 50,
+    atmosphereDensity: 0,
     snapToGrid: true,
     cameraSensitivity: 50,
     centerInView: true,
