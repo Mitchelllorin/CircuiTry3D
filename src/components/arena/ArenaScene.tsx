@@ -4230,30 +4230,31 @@ export function ArenaScene({
             // incandescence, which ARE the information.
             let flow = 0.72 * (1 - closeT * 0.88);
 
-            // ── And it gets out of the way of a death entirely ──────────────
-            // A blowout is the one event the whole bench exists to show, and it
-            // lasts about a second. Current running past it during that second
-            // is the single loudest thing on screen competing with it. So the
-            // flow ducks hard at the moment of failure and comes back over the
-            // following second and a half — the same instinct as a mix ducking
-            // under a voice.
+            // ── No artificial duck at the moment of failure ────────────────
+            // There was one here, board-wide, and it had to go: the lightning
+            // is a REPRESENTATION OF THE CURRENT and it follows the rules. It
+            // is not a lighting effect to be mixed.
             //
-            // Board-wide, not just the failing branch: setFade already pulls
-            // the bolt INSIDE the dying part, and that was not enough, because
-            // what buries the shot is the bolts on the rails right beside it.
-            let newestFailure = -Infinity;
-            failedAt.forEach((failedTime) => {
-              if (failedTime >= battleStartedAt && failedTime > newestFailure) {
-                newestFailure = failedTime;
-              }
-            });
-            const sinceFailure = time - newestFailure;
-            if (sinceFailure >= 0 && sinceFailure < 1500) {
-              // 0 at the instant of failure, easing back to 1 over 1.5s.
-              const recover = sinceFailure / 1500;
-              flow *= 0.15 + 0.85 * recover * recover;
-            }
-
+            // Dimming every bolt on the board for a second and a half said
+            // something false — that current everywhere fell when one part let
+            // go. In a parallel bank it does not. Each surviving branch sits
+            // across the same two rails at the same voltage and carries exactly
+            // what it carried before; nothing about them changed.
+            //
+            // What DOES change is already handled, honestly, by the solve:
+            //   - the failed branch opens, so its own current goes to zero and
+            //     its bolt goes with it (that is setFade, and it is true);
+            //   - the RAILS carry the sum of the branches, so they genuinely
+            //     dim by the share the dead part was drawing.
+            // Letting the solver say that is both more truthful and better
+            // looking than a blanket fade, because the drop is proportional to
+            // what the part was actually taking.
+            //
+            // The distance fade above stays, and it is a different kind of
+            // thing entirely: it scales every bolt equally, so it changes how
+            // much light is in the frame without touching what the flow says
+            // about any branch relative to another. That is exposure, not a
+            // claim about current.
             lightningRef?.setIntensity(flow);
 
             // _updateLightning takes absolute milliseconds, not a delta — the
