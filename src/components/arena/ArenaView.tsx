@@ -97,13 +97,15 @@ export default function ArenaView({
 
   const handleAddComponent = useCallback(
     (action: ComponentAction) => {
+      // Resolved OUT here, not inside the updater: the pick's destination slot
+      // is needed after the update too, to re-select the part once it exists.
+      const selectedIndex = selectedAgentId
+        ? arenaAgents.findIndex((agent) => agent.id === selectedAgentId)
+        : -1;
       setRosterSources((previous) => {
         const part = arenaSourceFromLibrary(action, previous.length);
         // With a part selected the pick is a SWAP, not an addition — which is
         // also the only way to change anything once the bench is full.
-        const selectedIndex = selectedAgentId
-          ? arenaAgents.findIndex((agent) => agent.id === selectedAgentId)
-          : -1;
         if (selectedIndex >= 0) {
           const next = [...previous];
           next[selectedIndex] = part;
@@ -114,12 +116,36 @@ export default function ArenaView({
         }
         return [...previous, part];
       });
-      // The agent ids are rebuilt with the roster, so the old selection would
-      // dangle and leave a ring under nothing.
+      // The part you just picked becomes the part you are looking at.
+      //
+      // This used to clear the selection outright, and on the solo bench that
+      // made the picker do NOTHING VISIBLE. The bench tests
+      // `roster.find(selected) ?? roster[0]` — so with nothing selected it kept
+      // testing the first part in the roster, while the part you chose was
+      // quietly appended to the end. Pick a MOSFET, watch the same resistor
+      // die. In battle mode it was milder but still wrong: the new part landed
+      // on the board with the camera and the ring left behind on nothing.
+      //
+      // The selection cannot be set here, because ids are regenerated when the
+      // roster rebuilds and the new one does not exist yet. So the INDEX is
+      // recorded and resolved to an id once the rebuild lands, below.
+      pendingPickIndexRef.current =
+        selectedIndex >= 0 ? selectedIndex : Math.min(rosterSources.length, ARENA_ROSTER_MAX - 1);
       setSelectedAgentId(null);
     },
-    [arenaAgents, selectedAgentId],
+    [arenaAgents, selectedAgentId, rosterSources.length],
   );
+
+  /** Which roster slot the last pick landed in, until its agent id exists. */
+  const pendingPickIndexRef = useRef<number | null>(null);
+  useEffect(() => {
+    const index = pendingPickIndexRef.current;
+    if (index == null) return;
+    const picked = arenaAgents[index];
+    if (!picked) return;
+    pendingPickIndexRef.current = null;
+    setSelectedAgentId(picked.id);
+  }, [arenaAgents]);
 
   // ── Leaderboard ───────────────────────────────────────────────────────
   // Accumulated across runs for the session, not per run: the comparison this
