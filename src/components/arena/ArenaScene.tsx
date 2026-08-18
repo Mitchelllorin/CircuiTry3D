@@ -4240,6 +4240,27 @@ export function ArenaScene({
           attackFlashUntil.set(highlightState.agentId, time + flashMs);
         }
 
+        // ── How high a nameplate may climb ─────────────────────────────────
+        // The stack used to stop 6px from the top of the canvas, which put it
+        // straight through the HUD strip (Parts / Conditions / Results) and up
+        // under the nav. Two unrelated sets of small white text on top of each
+        // other, and neither readable — and it happened wherever a part sat,
+        // because a plate only has to collide with ONE neighbour to start
+        // climbing.
+        //
+        // Measured from the strip itself rather than assumed: it wraps to two
+        // rows on a narrow phone, and a hard-coded number would be wrong on
+        // exactly the screens where the space is tightest. Converted into the
+        // canvas's own coordinates because the strip is fixed to the viewport
+        // and the plates are positioned within the scene root.
+        const hudElement = root.querySelector<HTMLElement>(".arena-quickbar");
+        let plateCeiling = 8;
+        if (hudElement) {
+          const hudRect = hudElement.getBoundingClientRect();
+          const rootRect = root.getBoundingClientRect();
+          plateCeiling = Math.max(8, hudRect.bottom - rootRect.top + 8);
+        }
+
         agentsRef.current.forEach((agent, seatIndex) => {
           const objectEntry = agentObjects.get(agent.id);
           if (!objectEntry) {
@@ -4705,7 +4726,7 @@ export function ArenaScene({
           // Clamp on the plate's real extent: it occupies from (y - height - gap)
           // up to y, so the TOP is what can clip off-frame.
           const lowest = root.clientHeight - 6;
-          const highest = plateH + NAMEPLATE_GAP_PX + 6;
+          const highest = plateH + NAMEPLATE_GAP_PX + plateCeiling;
           const y = Math.min(Math.max(rawY, highest), lowest);
           healthBar.style.opacity = isVisible ? "1" : "0";
           // Collected rather than written: a plate cannot know whether it
@@ -4755,9 +4776,9 @@ export function ArenaScene({
               plate.bottom = placedTop - NAMEPLATE_STACK_GAP_PX;
             }
           }
-          // Never let the stack climb out of frame: the topmost plate stops at
-          // the top edge rather than silently leaving the screen.
-          plate.bottom = Math.max(plate.bottom, plate.height + 6);
+          // Never let the stack climb into the HUD: the topmost plate stops
+          // below the strip rather than mixing its numbers with it.
+          plate.bottom = Math.max(plate.bottom, plate.height + plateCeiling);
         }
 
         for (const plate of plateLayout) {

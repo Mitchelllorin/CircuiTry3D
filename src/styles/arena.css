@@ -254,8 +254,8 @@
   /* Narrower than it was (180px). With a full roster these plates are the
      densest thing on screen, and a wide plate collides with its neighbours long
      before a narrow one does. */
-  max-inline-size: 138px;
-  padding: 1px 3px;
+  max-inline-size: 116px;
+  padding: 0 2px;
   /* NO panel — float the readout directly over the 3D like the main builder's
      component labels. A tight text-shadow carries legibility against the dark
      dome instead of a padded slate slab (which obscured the models). */
@@ -429,11 +429,11 @@
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: 6px;
-  margin-block-end: 5px;
+  gap: 5px;
+  margin-block-end: 1px;
 }
 .arena-nameplate__name {
-  font-size: 0.74rem;
+  font-size: 0.62rem;
   font-weight: 800;
   letter-spacing: 0.02em;
   white-space: nowrap;
@@ -442,7 +442,7 @@
 }
 .arena-nameplate__status {
   flex: none;
-  font-size: 0.55rem;
+  font-size: 0.46rem;
   font-weight: 800;
   letter-spacing: 0.07em;
   color: var(--arena-muted);
@@ -459,7 +459,7 @@
 
 .arena-nameplate__track {
   inline-size: 100%;
-  block-size: 6px;
+  block-size: 4px;
   overflow: hidden;
   border-radius: 999px;
   background: rgba(30, 41, 59, 0.9);
@@ -475,8 +475,8 @@
 .arena-nameplate__metrics {
   display: flex;
   justify-content: space-between;
-  gap: 10px;
-  margin-block-start: 7px;
+  gap: 6px;
+  margin-block-start: 2px;
 }
 .arena-nameplate__metrics span {
   display: flex;
@@ -486,13 +486,13 @@
   color: rgba(200, 220, 255, 0.9);
 }
 .arena-nameplate__metrics b {
-  font-size: 1rem;
+  font-size: 0.78rem;
   font-weight: 800;
   color: #ffffff;
 }
 .arena-nameplate__metrics em {
   font-style: normal;
-  font-size: 0.5rem;
+  font-size: 0.44rem;
   font-weight: 700;
   letter-spacing: 0.07em;
   text-transform: uppercase;
@@ -500,13 +500,13 @@
 }
 .arena-nameplate__metrics b i {
   font-style: normal;
-  font-size: 0.62rem;
+  font-size: 0.54rem;
   font-weight: 600;
   color: var(--arena-muted);
 }
 .arena-nameplate__ident {
-  margin-block-start: 2px;
-  font-size: 0.62rem;
+  margin-block-start: 0;
+  font-size: 0.52rem;
   color: var(--arena-muted);
   white-space: nowrap;
   overflow: hidden;
