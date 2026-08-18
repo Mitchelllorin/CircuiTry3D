@@ -471,6 +471,56 @@ function createCanvasTexture(
   return new THREE.CanvasTexture(canvas);
 }
 
+/**
+ * A polarity marker for a battery terminal.
+ *
+ * Drawn as a SPRITE, so it faces the camera from every angle. The board is
+ * orbitable through 360 degrees, and a flat decal on the floor would foreshorten
+ * to an unreadable sliver at the low angles the close-up camera actually uses —
+ * which are exactly the angles where you most want to know which end you are
+ * looking at.
+ *
+ * Worth having at all because polarity is marked exactly ONCE in a DC circuit,
+ * on the source, and everything else follows from it. A schematic puts it on
+ * the battery symbol's long and short lines; this board had nowhere at all, so
+ * the one piece of information the whole loop depends on was simply missing.
+ *
+ * The dark stroke under the glyph is the same trick the DOM labels use: it has
+ * to stay readable over a bright floor, a failure flash, or the cell's own
+ * casing.
+ */
+function createTerminalLabel(
+  THREE: typeof import("three"),
+  glyph: string,
+  color: string,
+): import("three").Sprite {
+  const canvas = document.createElement("canvas");
+  canvas.width = 128;
+  canvas.height = 128;
+  const context = canvas.getContext("2d");
+  if (context) {
+    context.font = "bold 104px system-ui, -apple-system, sans-serif";
+    context.textAlign = "center";
+    context.textBaseline = "middle";
+    context.lineWidth = 12;
+    context.lineJoin = "round";
+    context.strokeStyle = "rgba(0,0,0,0.88)";
+    context.strokeText(glyph, 64, 70);
+    context.fillStyle = color;
+    context.fillText(glyph, 64, 70);
+  }
+  const texture = new THREE.CanvasTexture(canvas);
+  const sprite = new THREE.Sprite(
+    new THREE.SpriteMaterial({
+      map: texture,
+      transparent: true,
+      depthWrite: false,
+    }),
+  );
+  sprite.scale.setScalar(0.5);
+  return sprite;
+}
+
 /** How many puffs a single plume can have in the air at once. */
 const SMOKE_PUFFS = 36;
 
@@ -1891,6 +1941,22 @@ function createCircuitBoard(
   // Left edge, closing onto the ends of the cell.
   board.add(createWire(THREE, wireMaterial, -halfX, -CIRCUIT_HALF_Z, -halfX, -batteryHalf));
   board.add(createWire(THREE, wireMaterial, -halfX, batteryHalf, -halfX, CIRCUIT_HALF_Z));
+
+  // ── Polarity ────────────────────────────────────────────────────────────
+  // Which end is which is not a decoration: it is the one fact the whole loop
+  // is derived from, and it was nowhere on this board. The ends are taken from
+  // buildFlowPath so the labels cannot drift from the direction the current is
+  // actually drawn travelling — + at -z, − at +z, the same two points the flow
+  // path starts and ends on.
+  //
+  // Sat outboard of the cell (further -x) rather than on it, so a label never
+  // covers the terminal it names.
+  const plusLabel = createTerminalLabel(THREE, "+", "#ff9a9a");
+  plusLabel.position.set(-halfX - 0.5, CIRCUIT_RAIL_Y + 0.28, -batteryHalf);
+  board.add(plusLabel);
+  const minusLabel = createTerminalLabel(THREE, "−", "#dce8f7");
+  minusLabel.position.set(-halfX - 0.5, CIRCUIT_RAIL_Y + 0.28, batteryHalf);
+  board.add(minusLabel);
 
   if (withConsole) {
     // ── The supply panel ──────────────────────────────────────────────────────
