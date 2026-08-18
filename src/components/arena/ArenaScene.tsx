@@ -387,7 +387,23 @@ const CIRCUIT_EDGE_MARGIN = 2.4;
  * purpose: the moment they drift apart, nothing looks connected.
  */
 const CIRCUIT_RAIL_Y = 0.4;
-const CIRCUIT_WIRE_RADIUS = 0.075;
+/**
+ * Rail and branch conductor radius.
+ *
+ * Thinned from 0.075. Next to a quarter-watt resistor those rails were fatter
+ * than the part's own body is long is not far off — hookup wire simply is not
+ * that thick relative to the components it joins, and an object drawn heavier
+ * than life is most of what "cartoony" means.
+ *
+ * It also buys back the thing the close-up is for. The wire runs diagonally
+ * across the frame at that distance, so every unit of radius is a band of the
+ * shot covered, and what it covers is the component.
+ *
+ * The bolt inside it stays thinner than this on purpose (LIGHTNING_RADIUS
+ * scaled by strand count lands around 0.02-0.04), because current running
+ * inside a conductor should not be wider than the conductor.
+ */
+const CIRCUIT_WIRE_RADIUS = 0.045;
 
 /**
  * The loop one branch's current takes: out of the battery's + terminal, right
@@ -1758,17 +1774,23 @@ function createCircuitBoard(
     roughness: 0.34,
   });
   // Junction nodes: a solder bead wherever conductors meet — every corner of
-  // the loop and every branch tap. They were there before and invisible, at a
-  // radius barely thicker than the wire itself and from a camera 25 units out.
-  // Now they are unmistakably beads, paler and shinier than the wire, because
-  // marking every junction is what makes the topology readable at a glance.
+  // the loop and every branch tap. They were once invisible, at a radius barely
+  // thicker than the wire and seen from 25 units out, so they were sized up to
+  // be unmistakable — paler and shinier than the wire, because marking every
+  // junction is what makes the topology readable at a glance.
+  //
+  // Scaled back down with the wire, keeping the same ratio to it (~2.5x). Two
+  // reasons the old size no longer fits: a bead 2.7x the radius of a thinner
+  // wire is a ball bearing on a thread, and the camera now pushes in to arm's
+  // length, which was the distance problem that made them big in the first
+  // place. Legibility at 25 units is not a reason to be a blob at 6.
   const nodeMaterial = new THREE.MeshStandardMaterial({
     color: "#f4e9d6",
     metalness: 0.7,
     roughness: 0.18,
     emissive: new THREE.Color("#4a3a24"),
   });
-  const nodeGeometry = new THREE.SphereGeometry(0.2, 18, 12);
+  const nodeGeometry = new THREE.SphereGeometry(0.115, 18, 12);
   const addNode = (x: number, z: number) => {
     const node = new THREE.Mesh(nodeGeometry, nodeMaterial);
     node.position.set(x, CIRCUIT_RAIL_Y, z);
