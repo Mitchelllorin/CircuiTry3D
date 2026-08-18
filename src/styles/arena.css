@@ -1855,24 +1855,6 @@
   flex-direction: column;
   gap: 8px;
 }
-.arena-roster__head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 8px;
-}
-.arena-roster__title {
-  margin: 0;
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--arena-muted);
-}
-.arena-roster__count {
-  font-size: 0.72rem;
-  color: rgba(148, 163, 184, 0.75);
-}
 .arena-roster__chips {
   display: flex;
   flex-wrap: wrap;
@@ -2052,9 +2034,9 @@
   opacity: 0.3;
   cursor: not-allowed;
 }
-.arena-roster__toggle {
-  align-self: flex-start;
-}
+/* The only prose left in the picker: says whether a pick adds or swaps,
+   which is genuinely ambiguous and cannot be shown. Dim, one line, above the
+   reel it qualifies. */
 .arena-roster__hint {
   margin: 0;
   font-size: 0.72rem;

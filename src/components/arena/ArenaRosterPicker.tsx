@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { ScrollerMenu } from "../builder/ScrollerMenu";
 import { UNIFIED_COMPONENT_ACTIONS } from "../builder/componentLibrary";
 import type { ComponentAction } from "../builder/types";
@@ -20,20 +19,24 @@ type ArenaRosterPickerProps = {
 };
 
 /**
- * What is on the bench, and how to change it.
+ * Pick a component. That is the whole job.
  *
- * The arena used to have no say in this at all: its roster was derived from
- * whatever circuit the builder last had open, so "test a different component"
- * meant leaving the arena, building a circuit around that part, and coming
- * back. The parts were also the only things on the 3D board that could not be
- * tapped — the switch and the faders both took taps, so the board taught you
- * that things on it are touchable and then ignored you on the components.
+ * It is the workspace's own `ScrollerMenu` over the workspace's own unified
+ * library — the same cards, the same 3D thumbnails, the same categories, the
+ * same scroll. Not a second picker: a part should be presented identically
+ * wherever you meet it, and two pickers would drift.
  *
- * This is deliberately NOT a new picker. It mounts the workspace's own
- * `ScrollerMenu` over the workspace's own unified library, so a part is
- * presented, described, categorised and searched identically on both surfaces.
- * Building a second picker would have meant two answers to "where do
- * components come from", and they would have drifted.
+ * That was already true, and it did not matter, because the reel was hidden
+ * behind a button reading "Swap Champion Resistor". Three problems in one
+ * control. It gated the only thing anyone opens this for behind an extra tap.
+ * Its label was a sentence where a picture belongs — you cannot know what a
+ * part is from its name, which is exactly why the workspace shows thumbnails.
+ * And the name in it was an invented one, so the button asked you to swap
+ * something you had never heard of.
+ *
+ * So the reel is simply here, open, scrolling, thumbnails and all. What is on
+ * the bench is a line of small text underneath it, because that is a status
+ * with two small actions on it, not a panel.
  */
 export function ArenaRosterPicker({
   agents,
@@ -45,21 +48,32 @@ export function ArenaRosterPicker({
   disabled,
   full,
 }: ArenaRosterPickerProps) {
-  // The reel loads 3D thumbnails while open, so it stays shut until asked for
-  // rather than rendering a component library nobody opened.
-  const [libraryOpen, setLibraryOpen] = useState(false);
   const selected = agents.find((agent) => agent.id === selectedAgentId) ?? null;
 
   return (
     <section className="arena-roster">
-      <header className="arena-roster__head">
-        <h3 className="arena-roster__title">On the bench</h3>
-        <span className="arena-roster__count">
-          {agents.length}/6 parts
-        </span>
-      </header>
+      {/* Says what the pick will DO, because the same reel both adds and swaps
+          and the difference is entirely down to what is selected. One dim line
+          above the thing it qualifies. */}
+      <p className="arena-roster__hint">
+        {selected
+          ? `Picking a part replaces ${selected.name}`
+          : full
+            ? "Bench full — tap a part below to swap it"
+            : `Picking a part adds it · ${agents.length}/6 on the bench`}
+      </p>
 
-      {/* Selection is shared with the 3D scene: tapping a chip here and tapping
+      <ScrollerMenu
+        components={UNIFIED_COMPONENT_ACTIONS}
+        onSelect={onAddComponent}
+        disabled={disabled || (full && !selected)}
+        // The sheet only mounts this while it is open, so the reel is always
+        // "open" from its own point of view — which is what tells it to build
+        // its 3D thumbnails.
+        isOpen
+      />
+
+      {/* Selection is shared with the 3D scene: tapping a name here and tapping
           the part on the board are the same act, and both put the camera on it. */}
       <div className="arena-roster__chips">
         {agents.map((agent) => {
@@ -109,35 +123,6 @@ export function ArenaRosterPicker({
           );
         })}
       </div>
-
-      <button
-        type="button"
-        className="arena-button arena-button--secondary arena-roster__toggle"
-        onClick={() => setLibraryOpen((open) => !open)}
-        disabled={disabled}
-      >
-        {libraryOpen ? "Close library" : selected ? `Swap ${selected.name}` : "Add a part"}
-      </button>
-
-      {libraryOpen ? (
-        <>
-          {/* Says what the pick will DO, because the same reel both adds and
-              swaps and the difference is entirely down to what is selected. */}
-          <p className="arena-roster__hint">
-            {selected
-              ? `Choosing a part replaces ${selected.name}.`
-              : full
-                ? "The bench is full — select a part to swap it."
-                : "Choosing a part adds it to the bench."}
-          </p>
-          <ScrollerMenu
-            components={UNIFIED_COMPONENT_ACTIONS}
-            onSelect={onAddComponent}
-            disabled={disabled || (full && !selected)}
-            isOpen={libraryOpen}
-          />
-        </>
-      ) : null}
     </section>
   );
 }

@@ -71,24 +71,36 @@ const NON_TESTABLE_TYPES = new Set([
   "multimeter",
 ]);
 
+/**
+ * The bench when nothing has been imported from the builder.
+ *
+ * Named for WHAT THEY ARE. They used to be "Champion Resistor", "Pulse
+ * Capacitor" and "Nova LED" — invented gladiator names from the arena's
+ * fighting-game phase, and nobody can tell what any of them is. A part's name
+ * is the only thing carrying its identity in the roster, the leaderboard and
+ * the affiliate search, and an invented one carries nothing: you cannot look
+ * it up, cannot buy it, and cannot tell whether it is the thing you are
+ * holding. The value and the rating ARE the name of a passive component, which
+ * is exactly how they are labelled in a shop, a datasheet and a parts drawer.
+ */
 const FALLBACK_COMPONENTS: ArenaSourceComponent[] = [
   {
     id: "fallback-resistor",
-    name: "Champion Resistor",
+    name: "470 Ω · ¼ W resistor",
     type: "resistor",
     componentNumber: "R1",
     properties: { resistance: 470, voltage: 9, power: 0.5, powerRating: 0.25 },
   },
   {
     id: "fallback-capacitor",
-    name: "Pulse Capacitor",
+    name: "470 µF · 25 V capacitor",
     type: "capacitor",
     componentNumber: "C1",
     properties: { capacitance: 0.00047, voltage: 16, current: 0.4, maxVoltage: 25 },
   },
   {
     id: "fallback-led",
-    name: "Nova LED",
+    name: "5 mm LED · 20 mA",
     type: "led",
     componentNumber: "D1",
     properties: { forwardVoltage: 2.2, current: 0.025, power: 0.08, maxCurrent: 0.02 },
