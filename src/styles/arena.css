@@ -2571,13 +2571,15 @@
   z-index: 1250;
 }
 /* Inside the builder shell the top of the screen is not free: the mode bar is
-   fixed there and the ticker band runs under it, both outranking this on
-   z-index — a strip anchored to the frame edge would simply be beneath them,
-   the same mistake that once hid this bar behind the params panel. So it sits
-   directly under the ticker, computed from the SAME variables the ticker
-   itself is placed with, which is how the AI helper and the builder's other
-   top-anchored overlays find that line. A hard-coded number would drift the
-   moment the band changed height. */
+   fixed there and outranks this on z-index, so a strip anchored to the frame
+   edge would simply be beneath it — the same mistake that once hid this bar
+   behind the params panel.
+
+   This is the FALLBACK only. The component measures the nav's real bottom edge
+   and writes an exact offset (see ArenaQuickBar), because a constant derived
+   from the nav's height is wrong the moment the nav changes — which is exactly
+   what happened when the nav was halved and a band of dead screen opened up
+   between the two. */
 .arena-view--workspace .arena-quickbar {
   inset-block-start: calc(
     var(--builder-ticker-top, 72px) + var(--builder-ticker-height, 32px) + 10px +

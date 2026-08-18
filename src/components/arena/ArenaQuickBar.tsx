@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { ArenaScenarioSelect } from "./ArenaInstrumentation";
 import { ArenaRosterPicker } from "./ArenaRosterPicker";
 import type { ArenaScenario } from "./scenarios";
@@ -62,6 +62,45 @@ export function ArenaQuickBar({
   extra,
 }: ArenaQuickBarProps) {
   const [sheet, setSheet] = useState<"parts" | "scenario" | "board" | null>(null);
+
+  /**
+   * Sit directly under the nav, measured rather than guessed.
+   *
+   * This used to be positioned from the builder's ticker variables --
+   * 72px + 32px + 10px -- and those numbers were derived from the nav's OLD
+   * height. Halving the nav left the strip where it was, so a band of empty
+   * screen opened up between the two: space paid for and used by nothing,
+   * on the surface where space is fought over hardest.
+   *
+   * Measuring the nav means this can never drift again. Change the nav's
+   * padding, its type size, let it wrap on a narrow phone -- the strip
+   * follows, because it is reading the actual rendered bottom edge rather
+   * than a constant that describes what the nav used to be.
+   */
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const element = rootRef.current;
+    if (!element) return;
+    const nav = document.querySelector<HTMLElement>(".workspace-mode-bar");
+    if (!nav) return; // no nav on this surface: the CSS fallback holds
+
+    const place = () => {
+      // 6px of air. Enough to read as two separate things, not enough to
+      // read as a gap.
+      element.style.insetBlockStart = `${nav.getBoundingClientRect().bottom + 6}px`;
+    };
+    place();
+
+    const observer = new ResizeObserver(place);
+    observer.observe(nav);
+    window.addEventListener("resize", place);
+    window.addEventListener("orientationchange", place);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", place);
+      window.removeEventListener("orientationchange", place);
+    };
+  }, []);
   const running = status === "battling";
   const selected = agents.find((agent) => agent.id === selectedAgentId) ?? null;
 
@@ -72,7 +111,7 @@ export function ArenaQuickBar({
   const openSheet = running && sheet !== "board" ? null : sheet;
 
   return (
-    <div className="arena-quickbar">
+    <div className="arena-quickbar" ref={rootRef}>
       {/* The strip comes FIRST in the DOM now, and the sheet after it, because
           the whole thing hangs from the top of the arena and a sheet opens
           downward from what you tapped. */}
