@@ -2,6 +2,7 @@ import { ScrollerMenu } from "../builder/ScrollerMenu";
 import { UNIFIED_COMPONENT_ACTIONS } from "../builder/componentLibrary";
 import type { ComponentAction } from "../builder/types";
 import "../../styles/scroller-menu.css";
+import { ArenaCatalogReference } from "./ArenaCatalogReference";
 import type { ArenaBattleAgent } from "./types";
 
 type ArenaRosterPickerProps = {
@@ -72,6 +73,8 @@ export function ArenaRosterPicker({
         // its 3D thumbnails.
         isOpen
       />
+
+      <ArenaCatalogReference />
 
       {/* Selection is shared with the 3D scene: tapping a name here and tapping
           the part on the board are the same act, and both put the camera on it. */}

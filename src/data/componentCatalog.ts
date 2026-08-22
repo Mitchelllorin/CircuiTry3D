@@ -12,9 +12,27 @@
  * re-export kept for the Arena's existing import paths.
  */
 
+export type CatalogSource = {
+  /** Primary source used to enter the catalog facts. */
+  url: string;
+  publisher: string;
+};
+
+export type CatalogSimulation = {
+  /**
+   * `modeled` uses an existing generic engine family. It is educational behavior,
+   * not a manufacturer-certified part model. `reference-only` is intentionally
+   * not addable because the engine does not yet represent the device faithfully.
+   */
+  status: "modeled" | "reference-only";
+  detail: string;
+};
+
 export type CatalogComponent = {
   id: string;
   manufacturer: string;
+  /** Manufacturer ordering code when it differs from the display name. */
+  partNumber?: string;
   name: string;
   spec: string;
   /**
@@ -29,6 +47,10 @@ export type CatalogComponent = {
   builderType?: string;
   featured?: boolean;
   properties: Record<string, number>;
+  /** Official product-page provenance, when catalog facts were source-backed. */
+  source?: CatalogSource;
+  /** How this entry may be used by CircuiTry3D's current simulation engine. */
+  simulation?: CatalogSimulation;
   ratedThresholds?: {
     maxVoltageV?: number;
     maxCurrentA?: number;
@@ -514,6 +536,199 @@ export const CATALOG_COMPONENTS: CatalogComponent[] = [
     ratedThresholds: { maxVoltageV: 40, maxCurrentA: 0.2, maxPowerW: 0.625, maxTempC: 150 },
   },
 
+  // ── TE Connectivity seed catalog ──────────────────────────────────────────
+  // Reference-only entries remain inspectable in the Arena catalog, but are not
+  // offered as electrical parts until the simulator can represent their behavior.
+  {
+    id: "te-282104-1",
+    manufacturer: "TE Connectivity",
+    partNumber: "282104-1",
+    name: "AMP SUPERSEAL 1.5",
+    spec: "sealed automotive 2-position connector · up to 14A / 24V system",
+    type: "connector",
+    properties: { positions: 2, systemCurrentA: 14, systemVoltageV: 24 },
+    source: {
+      publisher: "TE Connectivity",
+      url: "https://www.te.com/usa-en/product-282104-1.html",
+    },
+    simulation: {
+      status: "reference-only",
+      detail: "Reference only. System figures depend on the mating assembly, terminals, wire, seals, and installation conditions.",
+    },
+  },
+  {
+    id: "te-1-967325-1",
+    manufacturer: "TE Connectivity",
+    partNumber: "1-967325-1",
+    name: "AMPSEAL 16",
+    spec: "sealed automotive 16-position connector · 17A / 250VAC system class",
+    type: "connector",
+    properties: { positions: 16, systemCurrentA: 17, systemVoltageV: 250 },
+    source: {
+      publisher: "TE Connectivity",
+      url: "https://www.te.com/usa-en/product-1-967325-1.html",
+    },
+    simulation: {
+      status: "reference-only",
+      detail: "Reference only. System-class figures are not guaranteed ratings for an incomplete connector assembly.",
+    },
+  },
+  {
+    id: "te-1-480424-0",
+    manufacturer: "TE Connectivity",
+    partNumber: "1-480424-0",
+    name: "Universal MATE-N-LOK",
+    spec: "2-position power connector · up to 19A / 600VAC system class",
+    type: "connector",
+    properties: { positions: 2, systemCurrentA: 19, systemVoltageV: 600 },
+    source: {
+      publisher: "TE Connectivity",
+      url: "https://www.te.com/usa-en/product-1-480424-0.html",
+    },
+    simulation: {
+      status: "reference-only",
+      detail: "Reference only. Installed capability depends on the full mated assembly and application conditions.",
+    },
+  },
+  {
+    id: "te-796635-2",
+    manufacturer: "TE Connectivity",
+    partNumber: "796635-2",
+    name: "Eurostyle terminal-block header",
+    spec: "2-position header · 5.0mm pitch · 12A / 300V class",
+    type: "connector",
+    properties: { positions: 2, pitchMm: 5, currentClassA: 12, voltageClassV: 300 },
+    source: {
+      publisher: "TE Connectivity",
+      url: "https://www.te.com/usa-en/product-796635-2.html",
+    },
+    simulation: {
+      status: "reference-only",
+      detail: "Reference only. The current engine does not model terminal blocks, mated connectors, or wiring conditions.",
+    },
+  },
+  {
+    id: "te-v23074-a1001-a403",
+    manufacturer: "TE Connectivity",
+    partNumber: "V23074-A1001-A403",
+    name: "F4 automotive relay",
+    spec: "12V coil · changeover · 30A at 14VDC class",
+    type: "relay",
+    properties: { coilVoltage: 12, maxCurrent: 30, maxVoltage: 14 },
+    source: {
+      publisher: "TE Connectivity",
+      url: "https://www.te.com/usa-en/product-V23074-A1001-A403.html",
+    },
+    simulation: {
+      status: "modeled",
+      detail: "Modeled as a generic electromagnetic relay for education; it is not a manufacturer-certified coil or contact model.",
+    },
+    ratedThresholds: { maxCurrentA: 30, maxVoltageV: 14 },
+  },
+  {
+    id: "te-t9as1d22-12",
+    manufacturer: "TE Connectivity",
+    partNumber: "T9AS1D22-12",
+    name: "T9A power relay",
+    spec: "12VDC coil · SPST-NO · 30A at 277VAC class",
+    type: "relay",
+    properties: { coilVoltage: 12, maxCurrent: 30, maxVoltage: 277 },
+    source: {
+      publisher: "TE Connectivity",
+      url: "https://www.te.com/usa-en/product-T9AS1D22-12.html",
+    },
+    simulation: {
+      status: "modeled",
+      detail: "Modeled as a generic electromagnetic relay for education; it is not a manufacturer-certified coil or contact model.",
+    },
+    ratedThresholds: { maxCurrentA: 30, maxVoltageV: 277 },
+  },
+  {
+    id: "te-ev200aaana",
+    manufacturer: "TE Connectivity",
+    partNumber: "EV200AAANA",
+    name: "Kilovac EV200 contactor",
+    spec: "sealed high-voltage DC contactor · 12V control · EV200 family ~500A / up to 900VDC",
+    type: "contactor",
+    properties: { controlVoltage: 12, familyCurrentA: 500, familyVoltageV: 900 },
+    source: {
+      publisher: "TE Connectivity",
+      url: "https://www.te.com/usa-en/product-EV200AAANA.html",
+    },
+    simulation: {
+      status: "reference-only",
+      detail: "Reference only. The current relay model cannot represent contactor interruption, arc suppression, or high-voltage DC switching behavior.",
+    },
+  },
+  {
+    id: "te-ms4525do-ds5ai001dp",
+    manufacturer: "TE Connectivity",
+    partNumber: "MS4525DO-DS5AI001DP",
+    name: "MS4525DO differential-pressure sensor",
+    spec: "±1psi differential pressure · I2C · 3.3V / 5V",
+    type: "sensor",
+    properties: { pressureRangePsi: 1, minSupplyVoltage: 3.3, maxSupplyVoltage: 5 },
+    source: {
+      publisher: "TE Connectivity",
+      url: "https://www.te.com/usa-en/product-MS4525DO-DS5AI001DP.html",
+    },
+    simulation: {
+      status: "reference-only",
+      detail: "Reference only. Pressure transduction and I2C behavior are not modeled by the current circuit engine.",
+    },
+  },
+  {
+    id: "te-tsys01",
+    manufacturer: "TE Connectivity",
+    partNumber: "TSYS01",
+    name: "TSYS01 temperature sensor",
+    spec: "I2C / SPI · 2.2–3.6V · -40 to +125°C",
+    type: "sensor",
+    properties: { minSupplyVoltage: 2.2, maxSupplyVoltage: 3.6, minTemperatureC: -40, maxTemperatureC: 125 },
+    source: {
+      publisher: "TE Connectivity",
+      url: "https://www.te.com/usa-en/product-TSYS01.html",
+    },
+    simulation: {
+      status: "reference-only",
+      detail: "Reference only. Digital sensor conversion and I2C/SPI communications are not modeled by the current circuit engine.",
+    },
+  },
+  {
+    id: "te-htu31d",
+    manufacturer: "TE Connectivity",
+    partNumber: "HTU31D",
+    name: "HTU31D humidity/temperature sensor",
+    spec: "I2C · 1.5–3.6V · approximately ±2% RH",
+    type: "sensor",
+    properties: { minSupplyVoltage: 1.5, maxSupplyVoltage: 3.6, humidityAccuracyPercent: 2 },
+    source: {
+      publisher: "TE Connectivity",
+      url: "https://www.te.com/usa-en/product-HTU31D.html",
+    },
+    simulation: {
+      status: "reference-only",
+      detail: "Reference only. Humidity sensing and I2C communications are not modeled by the current circuit engine.",
+    },
+  },
+  {
+    id: "te-rxef050",
+    manufacturer: "TE Connectivity",
+    partNumber: "RXEF050",
+    name: "PolySwitch PPTC",
+    spec: "resettable PPTC · 0.50A hold · 1.00A trip · 72V max",
+    type: "pptc",
+    properties: { holdCurrentA: 0.5, tripCurrentA: 1, maxVoltage: 72 },
+    source: {
+      publisher: "TE Connectivity",
+      url: "https://www.te.com/usa-en/product-RXEF050.html",
+    },
+    simulation: {
+      status: "reference-only",
+      detail: "Reference only. The current fuse model is permanent-blow; it does not model PPTC heating, resistance increase, or reset behavior.",
+    },
+  },
+
   // ── Logic / ICs ───────────────────────────────────────────────────────────
   // The 3D workspace has no `ic` part (no case in legacy.html's
   // getDefaultProperties or createMesh), so these do not appear in the Builder
@@ -570,6 +785,11 @@ export function searchCatalog(query: string, typeFilter?: string): CatalogCompon
   });
 }
 
+/** Components entered for a specific manufacturer, preserving catalog order. */
+export function getManufacturerCatalogComponents(manufacturer: string): CatalogComponent[] {
+  return CATALOG_COMPONENTS.filter((component) => component.manufacturer === manufacturer);
+}
+
 /**
  * Find a catalog component by id.
  */
@@ -598,11 +818,15 @@ const BUILDER_TYPE_BY_FAMILY: Record<string, string | null> = {
   crystal: "crystal",
   thermistor: "thermistor",
   voltage_regulator: "voltage-regulator",
+  relay: "relay",
   ic: null, // legacy.html has no 'ic' case in getDefaultProperties/createMesh
 };
 
 /** The workspace part this branded component spawns as, or null if it has none. */
 export function builderTypeFor(part: CatalogComponent): string | null {
+  if (part.simulation?.status === "reference-only") {
+    return null;
+  }
   return part.builderType ?? BUILDER_TYPE_BY_FAMILY[part.type] ?? null;
 }
 
@@ -662,6 +886,8 @@ export function toWorkspaceProperties(part: CatalogComponent): Record<string, nu
       return defined({ frequency: p.frequency });
     case "voltage_regulator":
       return defined({ outputVoltage: p.outputVoltage, maxCurrent: p.maxCurrent });
+    case "relay":
+      return defined({ coilVoltage: p.coilVoltage });
     default:
       return {};
   }

@@ -8,8 +8,13 @@ export {
   CATALOG_COMPONENTS,
   getCatalogCategories,
   searchCatalog,
+  getManufacturerCatalogComponents,
   findCatalogComponent,
   builderTypeFor,
   toWorkspaceProperties,
 } from "../../data/componentCatalog";
-export type { CatalogComponent } from "../../data/componentCatalog";
+export type {
+  CatalogComponent,
+  CatalogSimulation,
+  CatalogSource,
+} from "../../data/componentCatalog";

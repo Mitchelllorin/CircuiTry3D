@@ -90,6 +90,33 @@ You don't need an engineering background to use CircuiTry3D.
 
 ---
 
+## Manufacturer component catalog
+
+Real-world parts live in the shared `src/data/componentCatalog.ts` catalog, which
+feeds both the Builder library and Component Arena. Each source-backed entry may
+include a manufacturer part number, an official product-page URL, and a
+simulation status:
+
+- **Modeled** entries use an existing generic CircuiTry3D behavior and are
+  explicitly labelled as educational models, not manufacturer-certified
+  simulations.
+- **Reference only** entries remain source-linked in the Arena catalog and are
+  intentionally not addable until the engine can represent their electrical,
+  mechanical, or communication behavior faithfully.
+
+Catalog facts must be traceable to a primary manufacturer source. System or
+family-class ratings are labelled as such, especially for connectors and
+contactors; they are never presented as a guaranteed installed-assembly rating.
+Catalog inclusion does not imply a partnership, endorsement, or certification by
+the manufacturer.
+
+The initial TE Connectivity seed includes connectors, relays, a contactor,
+sensors, and a PPTC device. The two relays are available through the generic
+relay model; the other entries are available as reference-only records with
+official TE product links. Their limitations are displayed in the Arena.
+
+---
+
 ## 📦 Project Structure
 
 ```

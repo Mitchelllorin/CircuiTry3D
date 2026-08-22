@@ -153,7 +153,7 @@ function deriveMetrics(
   const properties = component.properties;
 
   const voltage =
-    readNumeric(properties, ["voltage", "forwardVoltage", "supplyVoltage", "outputVoltage"]) ??
+    readNumeric(properties, ["voltage", "forwardVoltage", "supplyVoltage", "outputVoltage", "coilVoltage"]) ??
     (typeof basic?.voltage === "number" ? basic.voltage : null) ??
     6;
   const safeVoltage = Math.max(voltage, 0.1);

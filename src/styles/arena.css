@@ -2043,6 +2043,71 @@
   color: rgba(148, 163, 184, 0.8);
 }
 
+/* Catalog facts that do not have a faithful electrical model stay visible and
+   source-linked, but cannot be mistaken for roster parts. */
+.arena-catalog-reference {
+  margin: 4px 0;
+  color: var(--arena-muted);
+  font-size: 0.72rem;
+}
+
+.arena-catalog-reference summary {
+  cursor: pointer;
+  color: var(--arena-text);
+  font-weight: 700;
+}
+
+.arena-catalog-reference > p {
+  margin: 6px 0;
+  line-height: 1.4;
+}
+
+.arena-catalog-reference__list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 6px;
+  max-block-size: 240px;
+  overflow: auto;
+}
+
+.arena-catalog-reference__item {
+  display: grid;
+  gap: 3px;
+  padding: 8px;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.48);
+}
+
+.arena-catalog-reference__item strong,
+.arena-catalog-reference__item span,
+.arena-catalog-reference__item small {
+  display: block;
+}
+
+.arena-catalog-reference__item span {
+  color: var(--arena-text);
+}
+
+.arena-catalog-reference__meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.arena-catalog-reference__meta > span {
+  color: #fbbf24;
+}
+
+.arena-catalog-reference a {
+  color: var(--arena-cyan);
+  text-decoration: underline;
+}
+
+.arena-catalog-reference__note {
+  line-height: 1.35;
+}
+
 /* ══ THE DASHBOARD ═════════════════════════════════════════════════════
    Image set: a NASA-style lab console. Clean room, mil-spec placards,
    machined panel, recessed instruments. Which means specific things and
