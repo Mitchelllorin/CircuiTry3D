@@ -3005,6 +3005,7 @@ export default function Builder() {
     if (solved) {
       setCircuitLocked(false);
       setTroubleshootStatus("Solved! Current is flowing. Circuit unlocked for editing.");
+      window.dispatchEvent(new CustomEvent("circuitry3d:meaningfulSuccess"));
       setTroubleshootSolvedIds((previous) => {
         if (previous.includes(activeTroubleshootProblem.id)) return previous;
         return [...previous, activeTroubleshootProblem.id];

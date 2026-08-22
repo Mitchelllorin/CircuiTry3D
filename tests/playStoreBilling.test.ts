@@ -145,4 +145,23 @@ describe("playStoreBilling", () => {
       skus: ["sub_monthly", "sub_yearly"],
     });
   });
+
+  it("opens the configured Android Play listing for a rating request", async () => {
+    const { module, window } = await loadPlayStoreBilling({}, true);
+
+    expect(module.getAndroidPlayStorePackageId()).toBe("com.circuitry3d.app");
+    expect(module.openAndroidStoreListing()).toBe(true);
+    expect(window.open).toHaveBeenCalledWith(
+      "market://details?id=com.circuitry3d.app",
+      "_blank",
+      "noopener,noreferrer",
+    );
+  });
+
+  it("does not open a rating destination outside the Android app", async () => {
+    const { module, window } = await loadPlayStoreBilling({}, false);
+
+    expect(module.openAndroidStoreListing()).toBe(false);
+    expect(window.open).not.toHaveBeenCalled();
+  });
 });

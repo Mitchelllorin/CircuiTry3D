@@ -237,6 +237,21 @@ Without these the classroom feature still works but saves to browser localStorag
 
 ---
 
+## Purchase and rating prompts
+
+The Pricing route remains available from the in-app navigation and compares the
+configured Free, one-time Premium Unlock, and Pro subscription options. On
+Android, displayed purchase prices are refreshed from Google Play Billing and
+fall back to the configured labels when live prices are unavailable.
+
+CircuiTry3D only shows upgrade prompts after a verified troubleshooting success,
+with locally stored frequency caps and a dismiss action. After a second
+successful session, the Android build may offer an optional honest Google Play
+rating. Web and Electron builds do not show a review prompt because they cannot
+open the configured Android Play listing. Prompt state is stored locally only.
+
+---
+
 ## 🔑 Key Features
 
 ### 💥 FUSE™ — Failure Understanding Simulation Engine
