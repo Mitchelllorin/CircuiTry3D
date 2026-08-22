@@ -1,6 +1,17 @@
 import { getManufacturerCatalogComponents } from "../../data/componentCatalog";
 
-const TE_CONNECTIVITY_COMPONENTS = getManufacturerCatalogComponents("TE Connectivity");
+const MANUFACTURER_CATALOGS = ["TE Connectivity", "Littelfuse", "Vishay"].map(
+  (manufacturer) => ({
+    manufacturer,
+    components: getManufacturerCatalogComponents(manufacturer).filter(
+      (component) => component.source,
+    ),
+  }),
+);
+
+const SOURCE_BACKED_COMPONENTS = MANUFACTURER_CATALOGS.flatMap(
+  (catalog) => catalog.components,
+);
 
 /**
  * Facts that belong in the catalog but must not be turned into a pretend circuit
@@ -11,16 +22,17 @@ export function ArenaCatalogReference() {
   return (
     <details className="arena-catalog-reference">
       <summary>
-        TE Connectivity catalog reference ({TE_CONNECTIVITY_COMPONENTS.length})
+        Manufacturer catalog reference ({SOURCE_BACKED_COMPONENTS.length})
       </summary>
       <p>
         Source-backed product facts. “Modeled” uses CircuiTry3D&apos;s generic
         educational behavior; it is not manufacturer certification or endorsement.
       </p>
       <div className="arena-catalog-reference__list">
-        {TE_CONNECTIVITY_COMPONENTS.map((component) => (
+        {SOURCE_BACKED_COMPONENTS.map((component) => (
           <article key={component.id} className="arena-catalog-reference__item">
             <div>
+              <small>{component.manufacturer}</small>
               <strong>{component.partNumber ?? component.name}</strong>
               <span>{component.name}</span>
               <small>{component.spec}</small>

@@ -729,6 +729,236 @@ export const CATALOG_COMPONENTS: CatalogComponent[] = [
     },
   },
 
+  // ── Littelfuse seed catalog ────────────────────────────────────────────────
+  {
+    id: "littelfuse-0218-250mxp",
+    manufacturer: "Littelfuse",
+    partNumber: "0218.250MXP",
+    name: "218 series cartridge fuse",
+    spec: "5 × 20mm time-lag cartridge fuse · 250mA · 250VAC",
+    type: "fuse",
+    properties: { ratedCurrentA: 0.25, maxVoltage: 250 },
+    source: {
+      publisher: "Littelfuse",
+      url: "https://www.littelfuse.com/products/fuses-overcurrent-protection/fuses/cartridge-fuses/5x20mm-fuses-cartridge-fuses/218/0218-250",
+    },
+    simulation: {
+      status: "modeled",
+      detail: "Modeled as a generic time-lag fuse for education; its AC interrupting behavior and time-current curve are not manufacturer-certified.",
+    },
+    ratedThresholds: { maxCurrentA: 0.25, maxVoltageV: 250 },
+  },
+  {
+    id: "littelfuse-1812l110-16dr",
+    manufacturer: "Littelfuse",
+    partNumber: "1812L110/16DR",
+    name: "1812L series PPTC",
+    spec: "resettable PPTC · 1.10A hold · 1.95A trip · 16V",
+    type: "pptc",
+    properties: { holdCurrentA: 1.1, tripCurrentA: 1.95, maxVoltage: 16 },
+    source: {
+      publisher: "Littelfuse",
+      url: "https://www.littelfuse.com/assetdocs/resettable-ptcs-1812l-datasheet?assetguid=ca5c80cb-504e-4a8a-8e74-0107520a1717",
+    },
+    simulation: {
+      status: "reference-only",
+      detail: "Reference only. The current fuse model is permanent-blow and does not represent PPTC trip resistance or reset behavior.",
+    },
+  },
+  {
+    id: "littelfuse-smf5-0a",
+    manufacturer: "Littelfuse",
+    partNumber: "SMF5.0A",
+    name: "SMF TVS diode",
+    spec: "surface-mount TVS diode · 5V",
+    type: "tvs",
+    properties: { standoffVoltageV: 5 },
+    source: {
+      publisher: "Littelfuse",
+      url: "https://www.littelfuse.com/products/overvoltage-protection/tvs-diodes/surface-mount/smf/smf5-0a",
+    },
+    simulation: {
+      status: "reference-only",
+      detail: "Reference only. The current diode model does not represent transient clamping or surge energy behavior.",
+    },
+  },
+  {
+    id: "littelfuse-smbj24a",
+    manufacturer: "Littelfuse",
+    partNumber: "SMBJ24A",
+    name: "SMBJ TVS diode",
+    spec: "surface-mount TVS diode · 24V",
+    type: "tvs",
+    properties: { standoffVoltageV: 24 },
+    source: {
+      publisher: "Littelfuse",
+      url: "https://www.littelfuse.com/products/overvoltage-protection/tvs-diodes/surface-mount/smbj/smbj24a",
+    },
+    simulation: {
+      status: "reference-only",
+      detail: "Reference only. The current diode model does not represent transient clamping or surge energy behavior.",
+    },
+  },
+  {
+    id: "littelfuse-sp0502bahtg",
+    manufacturer: "Littelfuse",
+    partNumber: "SP0502BAHTG",
+    name: "SP05 ESD/TVS array",
+    spec: "two-channel ESD / TVS diode array",
+    type: "esd_array",
+    properties: { channels: 2 },
+    source: {
+      publisher: "Littelfuse",
+      url: "https://www.littelfuse.com/assetdocs/tvs-diode-array-spasp050xba-lead-freegreen-datasheet?assetguid=15a03de1-f0c6-457a-95f1-55d449fdd756",
+    },
+    simulation: {
+      status: "reference-only",
+      detail: "Reference only. The engine does not model multi-channel ESD or transient suppression behavior.",
+    },
+  },
+  {
+    id: "littelfuse-v14e275p",
+    manufacturer: "Littelfuse",
+    partNumber: "V14E275P",
+    name: "UltraMOV varistor",
+    spec: "radial-leaded varistor · 275VAC",
+    type: "varistor",
+    properties: { acVoltageRatingV: 275 },
+    source: {
+      publisher: "Littelfuse",
+      url: "https://www.littelfuse.com/products/overvoltage-protection/varistors/radial-leaded-varistors/ultramov/v14e275p",
+    },
+    simulation: {
+      status: "reference-only",
+      detail: "Reference only. The engine does not model varistor nonlinear clamping or surge aging behavior.",
+    },
+  },
+
+  // ── Vishay seed catalog ────────────────────────────────────────────────────
+  {
+    id: "vishay-1n4148w-e3-08",
+    manufacturer: "Vishay",
+    partNumber: "1N4148W-E3-08",
+    name: "1N4148W fast switching diode",
+    spec: "fast switching diode · 100V",
+    type: "diode",
+    properties: { reverseVoltage: 100 },
+    source: {
+      publisher: "Vishay",
+      url: "https://www.vishay.com/docs/86356/1n4148w.pdf",
+    },
+    simulation: {
+      status: "modeled",
+      detail: "Modeled as a generic diode for education; the simulator does not use this part's switching curve or capacitance.",
+    },
+    ratedThresholds: { maxVoltageV: 100 },
+  },
+  {
+    id: "vishay-ss14-e3-61t",
+    manufacturer: "Vishay",
+    partNumber: "SS14-E3/61T",
+    name: "SS14 Schottky rectifier",
+    spec: "Schottky diode · 40V · 1A",
+    type: "diode",
+    properties: { reverseVoltage: 40, maxCurrent: 1 },
+    source: {
+      publisher: "Vishay",
+      url: "https://www.vishay.com/doc/?88746",
+    },
+    simulation: {
+      status: "modeled",
+      detail: "Modeled as a generic diode for education; the simulator does not use this part's Schottky I-V curve.",
+    },
+    ratedThresholds: { maxVoltageV: 40, maxCurrentA: 1 },
+  },
+  {
+    id: "vishay-smaj5-0a-e3-61",
+    manufacturer: "Vishay",
+    partNumber: "SMAJ5.0A-E3/61",
+    name: "SMAJ TVS diode",
+    spec: "surface-mount TVS diode · 5V",
+    type: "tvs",
+    properties: { standoffVoltageV: 5 },
+    source: {
+      publisher: "Vishay",
+      url: "https://www.vishay.com/docs/88390/smaj50a.pdf",
+    },
+    simulation: {
+      status: "reference-only",
+      detail: "Reference only. The current diode model does not represent transient clamping or surge energy behavior.",
+    },
+  },
+  {
+    id: "vishay-crcw060310k0fkea",
+    manufacturer: "Vishay",
+    partNumber: "CRCW060310K0FKEA",
+    name: "CRCW 0603 resistor",
+    spec: "0603 thick-film resistor · 10kΩ · 1%",
+    type: "resistor",
+    properties: { resistance: 10000, tolerance: 0.01 },
+    source: {
+      publisher: "Vishay",
+      url: "https://www.vishay.com/docs/28773/crcwce3.pdf",
+    },
+    simulation: {
+      status: "modeled",
+      detail: "Modeled with the sourced resistance and tolerance; power and thermal behavior remain the app's generic resistor model.",
+    },
+  },
+  {
+    id: "vishay-vj0603y104kxxat",
+    manufacturer: "Vishay",
+    partNumber: "VJ0603Y104KXXAT",
+    name: "VJ 0603 MLCC",
+    spec: "0603 MLCC · 100nF · 16V · X7R",
+    type: "capacitor",
+    properties: { capacitance: 100e-9, maxVoltage: 16 },
+    source: {
+      publisher: "Vishay",
+      url: "https://www.vishay.com/en/product/45199/",
+    },
+    simulation: {
+      status: "modeled",
+      detail: "Modeled with sourced capacitance and voltage; dielectric bias effects and ESR are not part-specific in the current model.",
+    },
+    ratedThresholds: { maxVoltageV: 16 },
+  },
+  {
+    id: "vishay-ihlp2525czer100m01",
+    manufacturer: "Vishay",
+    partNumber: "IHLP2525CZER100M01",
+    name: "IHLP power inductor",
+    spec: "shielded power inductor · 10µH",
+    type: "inductor",
+    properties: { inductance: 10e-6 },
+    source: {
+      publisher: "Vishay",
+      url: "https://www.vishay.com/docs/34335/ihlp-2525cz-5a.pdf",
+    },
+    simulation: {
+      status: "modeled",
+      detail: "Modeled with sourced inductance; saturation, DCR, and thermal behavior remain generic until separately sourced and modeled.",
+    },
+  },
+  {
+    id: "vishay-siss52dn",
+    manufacturer: "Vishay",
+    partNumber: "SiSS52DN",
+    name: "SiSS52DN N-channel MOSFET",
+    spec: "N-channel power MOSFET · 30V",
+    type: "mosfet",
+    properties: { vds_max: 30 },
+    source: {
+      publisher: "Vishay",
+      url: "https://www.vishay.com/docs/79977/siss52dn.pdf",
+    },
+    simulation: {
+      status: "modeled",
+      detail: "Modeled as a generic N-channel MOSFET with its sourced voltage class; the current model does not use this part's RDS(on), transfer, or thermal curves.",
+    },
+    ratedThresholds: { maxVoltageV: 30 },
+  },
+
   // ── Logic / ICs ───────────────────────────────────────────────────────────
   // The 3D workspace has no `ic` part (no case in legacy.html's
   // getDefaultProperties or createMesh), so these do not appear in the Builder

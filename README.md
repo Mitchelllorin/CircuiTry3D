@@ -110,10 +110,11 @@ contactors; they are never presented as a guaranteed installed-assembly rating.
 Catalog inclusion does not imply a partnership, endorsement, or certification by
 the manufacturer.
 
-The initial TE Connectivity seed includes connectors, relays, a contactor,
-sensors, and a PPTC device. The two relays are available through the generic
-relay model; the other entries are available as reference-only records with
-official TE product links. Their limitations are displayed in the Arena.
+The initial 24-part seed catalog includes 11 TE Connectivity, 6 Littelfuse, and
+7 Vishay records. Supported families are available through explicitly generic
+educational models; connectors, contactors, sensors, PPTCs, TVS/ESD protection,
+and varistors remain reference-only with official product links and limitations
+displayed in the Arena.
 
 ---
 
