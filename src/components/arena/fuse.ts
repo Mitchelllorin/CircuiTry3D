@@ -158,6 +158,7 @@ const LOCAL_DEFAULTS: Record<string, Record<string, unknown>> = {
   mosfet: { id_max: 33, powerRating: 130, thermalResistance: 0.92 },
   bjt: { ic_max: 0.6, powerRating: 0.625, thermalResistance: 200 },
   switch: { maxCurrent: 5, thermalResistance: 50 },
+  relay: { coilVoltage: 12, maxCurrent: 10, maxVoltage: 250, thermalResistance: 50 },
   generic: { powerRating: 0.25, thermalResistance: 60 },
 };
 
@@ -172,6 +173,7 @@ const LOCAL_THERMAL: Record<
   battery: { junctionLimitC: 60, absoluteMaxTempC: 75 },
   mosfet: { junctionLimitC: 175, absoluteMaxTempC: 200 },
   bjt: { junctionLimitC: 150, absoluteMaxTempC: 175 },
+  relay: { junctionLimitC: 130, absoluteMaxTempC: 150 },
   generic: { junctionLimitC: 125, absoluteMaxTempC: 125 },
 };
 
@@ -187,6 +189,7 @@ const LOCAL_FAMILY_KEYWORDS: Array<[RegExp, string]> = [
   [/(mosfet|nmos|pmos|irf)/, "mosfet"],
   [/(bjt|transistor|npn|pnp|2n|bc)/, "bjt"],
   [/switch/, "switch"],
+  [/relay/, "relay"],
 ];
 
 function localResolveFamily(

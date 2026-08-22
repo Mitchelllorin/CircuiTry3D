@@ -12,9 +12,27 @@
  * re-export kept for the Arena's existing import paths.
  */
 
+export type CatalogSource = {
+  /** Primary source used to enter the catalog facts. */
+  url: string;
+  publisher: string;
+};
+
+export type CatalogSimulation = {
+  /**
+   * `modeled` uses an existing generic engine family. It is educational behavior,
+   * not a manufacturer-certified part model. `reference-only` is intentionally
+   * not addable because the engine does not yet represent the device faithfully.
+   */
+  status: "modeled" | "reference-only";
+  detail: string;
+};
+
 export type CatalogComponent = {
   id: string;
   manufacturer: string;
+  /** Manufacturer ordering code when it differs from the display name. */
+  partNumber?: string;
   name: string;
   spec: string;
   /**
@@ -29,6 +47,10 @@ export type CatalogComponent = {
   builderType?: string;
   featured?: boolean;
   properties: Record<string, number>;
+  /** Official product-page provenance, when catalog facts were source-backed. */
+  source?: CatalogSource;
+  /** How this entry may be used by CircuiTry3D's current simulation engine. */
+  simulation?: CatalogSimulation;
   ratedThresholds?: {
     maxVoltageV?: number;
     maxCurrentA?: number;
@@ -514,6 +536,429 @@ export const CATALOG_COMPONENTS: CatalogComponent[] = [
     ratedThresholds: { maxVoltageV: 40, maxCurrentA: 0.2, maxPowerW: 0.625, maxTempC: 150 },
   },
 
+  // ── TE Connectivity seed catalog ──────────────────────────────────────────
+  // Reference-only entries remain inspectable in the Arena catalog, but are not
+  // offered as electrical parts until the simulator can represent their behavior.
+  {
+    id: "te-282104-1",
+    manufacturer: "TE Connectivity",
+    partNumber: "282104-1",
+    name: "AMP SUPERSEAL 1.5",
+    spec: "sealed automotive 2-position connector · up to 14A / 24V system",
+    type: "connector",
+    properties: { positions: 2, systemCurrentA: 14, systemVoltageV: 24 },
+    source: {
+      publisher: "TE Connectivity",
+      url: "https://www.te.com/usa-en/product-282104-1.html",
+    },
+    simulation: {
+      status: "reference-only",
+      detail: "Reference only. System figures depend on the mating assembly, terminals, wire, seals, and installation conditions.",
+    },
+  },
+  {
+    id: "te-1-967325-1",
+    manufacturer: "TE Connectivity",
+    partNumber: "1-967325-1",
+    name: "AMPSEAL 16",
+    spec: "sealed automotive 16-position connector · 17A / 250VAC system class",
+    type: "connector",
+    properties: { positions: 16, systemCurrentA: 17, systemVoltageV: 250 },
+    source: {
+      publisher: "TE Connectivity",
+      url: "https://www.te.com/usa-en/product-1-967325-1.html",
+    },
+    simulation: {
+      status: "reference-only",
+      detail: "Reference only. System-class figures are not guaranteed ratings for an incomplete connector assembly.",
+    },
+  },
+  {
+    id: "te-1-480424-0",
+    manufacturer: "TE Connectivity",
+    partNumber: "1-480424-0",
+    name: "Universal MATE-N-LOK",
+    spec: "2-position power connector · up to 19A / 600VAC system class",
+    type: "connector",
+    properties: { positions: 2, systemCurrentA: 19, systemVoltageV: 600 },
+    source: {
+      publisher: "TE Connectivity",
+      url: "https://www.te.com/usa-en/product-1-480424-0.html",
+    },
+    simulation: {
+      status: "reference-only",
+      detail: "Reference only. Installed capability depends on the full mated assembly and application conditions.",
+    },
+  },
+  {
+    id: "te-796635-2",
+    manufacturer: "TE Connectivity",
+    partNumber: "796635-2",
+    name: "Eurostyle terminal-block header",
+    spec: "2-position header · 5.0mm pitch · 12A / 300V class",
+    type: "connector",
+    properties: { positions: 2, pitchMm: 5, currentClassA: 12, voltageClassV: 300 },
+    source: {
+      publisher: "TE Connectivity",
+      url: "https://www.te.com/usa-en/product-796635-2.html",
+    },
+    simulation: {
+      status: "reference-only",
+      detail: "Reference only. The current engine does not model terminal blocks, mated connectors, or wiring conditions.",
+    },
+  },
+  {
+    id: "te-v23074-a1001-a403",
+    manufacturer: "TE Connectivity",
+    partNumber: "V23074-A1001-A403",
+    name: "F4 automotive relay",
+    spec: "12V coil · changeover · 30A at 14VDC class",
+    type: "relay",
+    properties: { coilVoltage: 12, maxCurrent: 30, maxVoltage: 14 },
+    source: {
+      publisher: "TE Connectivity",
+      url: "https://www.te.com/usa-en/product-V23074-A1001-A403.html",
+    },
+    simulation: {
+      status: "modeled",
+      detail: "Modeled as a generic electromagnetic relay for education; it is not a manufacturer-certified coil or contact model.",
+    },
+    ratedThresholds: { maxCurrentA: 30, maxVoltageV: 14 },
+  },
+  {
+    id: "te-t9as1d22-12",
+    manufacturer: "TE Connectivity",
+    partNumber: "T9AS1D22-12",
+    name: "T9A power relay",
+    spec: "12VDC coil · SPST-NO · 30A at 277VAC class",
+    type: "relay",
+    properties: { coilVoltage: 12, maxCurrent: 30, maxVoltage: 277 },
+    source: {
+      publisher: "TE Connectivity",
+      url: "https://www.te.com/usa-en/product-T9AS1D22-12.html",
+    },
+    simulation: {
+      status: "modeled",
+      detail: "Modeled as a generic electromagnetic relay for education; it is not a manufacturer-certified coil or contact model.",
+    },
+    ratedThresholds: { maxCurrentA: 30, maxVoltageV: 277 },
+  },
+  {
+    id: "te-ev200aaana",
+    manufacturer: "TE Connectivity",
+    partNumber: "EV200AAANA",
+    name: "Kilovac EV200 contactor",
+    spec: "sealed high-voltage DC contactor · 12V control · EV200 family ~500A / up to 900VDC",
+    type: "contactor",
+    properties: { controlVoltage: 12, familyCurrentA: 500, familyVoltageV: 900 },
+    source: {
+      publisher: "TE Connectivity",
+      url: "https://www.te.com/usa-en/product-EV200AAANA.html",
+    },
+    simulation: {
+      status: "reference-only",
+      detail: "Reference only. The current relay model cannot represent contactor interruption, arc suppression, or high-voltage DC switching behavior.",
+    },
+  },
+  {
+    id: "te-ms4525do-ds5ai001dp",
+    manufacturer: "TE Connectivity",
+    partNumber: "MS4525DO-DS5AI001DP",
+    name: "MS4525DO differential-pressure sensor",
+    spec: "±1psi differential pressure · I2C · 3.3V / 5V",
+    type: "sensor",
+    properties: { pressureRangePsi: 1, minSupplyVoltage: 3.3, maxSupplyVoltage: 5 },
+    source: {
+      publisher: "TE Connectivity",
+      url: "https://www.te.com/usa-en/product-MS4525DO-DS5AI001DP.html",
+    },
+    simulation: {
+      status: "reference-only",
+      detail: "Reference only. Pressure transduction and I2C behavior are not modeled by the current circuit engine.",
+    },
+  },
+  {
+    id: "te-tsys01",
+    manufacturer: "TE Connectivity",
+    partNumber: "TSYS01",
+    name: "TSYS01 temperature sensor",
+    spec: "I2C / SPI · 2.2–3.6V · -40 to +125°C",
+    type: "sensor",
+    properties: { minSupplyVoltage: 2.2, maxSupplyVoltage: 3.6, minTemperatureC: -40, maxTemperatureC: 125 },
+    source: {
+      publisher: "TE Connectivity",
+      url: "https://www.te.com/usa-en/product-TSYS01.html",
+    },
+    simulation: {
+      status: "reference-only",
+      detail: "Reference only. Digital sensor conversion and I2C/SPI communications are not modeled by the current circuit engine.",
+    },
+  },
+  {
+    id: "te-htu31d",
+    manufacturer: "TE Connectivity",
+    partNumber: "HTU31D",
+    name: "HTU31D humidity/temperature sensor",
+    spec: "I2C · 1.5–3.6V · approximately ±2% RH",
+    type: "sensor",
+    properties: { minSupplyVoltage: 1.5, maxSupplyVoltage: 3.6, humidityAccuracyPercent: 2 },
+    source: {
+      publisher: "TE Connectivity",
+      url: "https://www.te.com/usa-en/product-HTU31D.html",
+    },
+    simulation: {
+      status: "reference-only",
+      detail: "Reference only. Humidity sensing and I2C communications are not modeled by the current circuit engine.",
+    },
+  },
+  {
+    id: "te-rxef050",
+    manufacturer: "TE Connectivity",
+    partNumber: "RXEF050",
+    name: "PolySwitch PPTC",
+    spec: "resettable PPTC · 0.50A hold · 1.00A trip · 72V max",
+    type: "pptc",
+    properties: { holdCurrentA: 0.5, tripCurrentA: 1, maxVoltage: 72 },
+    source: {
+      publisher: "TE Connectivity",
+      url: "https://www.te.com/usa-en/product-RXEF050.html",
+    },
+    simulation: {
+      status: "reference-only",
+      detail: "Reference only. The current fuse model is permanent-blow; it does not model PPTC heating, resistance increase, or reset behavior.",
+    },
+  },
+
+  // ── Littelfuse seed catalog ────────────────────────────────────────────────
+  {
+    id: "littelfuse-0218-250mxp",
+    manufacturer: "Littelfuse",
+    partNumber: "0218.250MXP",
+    name: "218 series cartridge fuse",
+    spec: "5 × 20mm time-lag cartridge fuse · 250mA · 250VAC",
+    type: "fuse",
+    properties: { ratedCurrentA: 0.25, maxVoltage: 250 },
+    source: {
+      publisher: "Littelfuse",
+      url: "https://www.littelfuse.com/products/fuses-overcurrent-protection/fuses/cartridge-fuses/5x20mm-fuses-cartridge-fuses/218/0218-250",
+    },
+    simulation: {
+      status: "modeled",
+      detail: "Modeled as a generic time-lag fuse for education; its AC interrupting behavior and time-current curve are not manufacturer-certified.",
+    },
+    ratedThresholds: { maxCurrentA: 0.25, maxVoltageV: 250 },
+  },
+  {
+    id: "littelfuse-1812l110-16dr",
+    manufacturer: "Littelfuse",
+    partNumber: "1812L110/16DR",
+    name: "1812L series PPTC",
+    spec: "resettable PPTC · 1.10A hold · 1.95A trip · 16V",
+    type: "pptc",
+    properties: { holdCurrentA: 1.1, tripCurrentA: 1.95, maxVoltage: 16 },
+    source: {
+      publisher: "Littelfuse",
+      url: "https://www.littelfuse.com/assetdocs/resettable-ptcs-1812l-datasheet?assetguid=ca5c80cb-504e-4a8a-8e74-0107520a1717",
+    },
+    simulation: {
+      status: "reference-only",
+      detail: "Reference only. The current fuse model is permanent-blow and does not represent PPTC trip resistance or reset behavior.",
+    },
+  },
+  {
+    id: "littelfuse-smf5-0a",
+    manufacturer: "Littelfuse",
+    partNumber: "SMF5.0A",
+    name: "SMF TVS diode",
+    spec: "surface-mount TVS diode · 5V",
+    type: "tvs",
+    properties: { standoffVoltageV: 5 },
+    source: {
+      publisher: "Littelfuse",
+      url: "https://www.littelfuse.com/products/overvoltage-protection/tvs-diodes/surface-mount/smf/smf5-0a",
+    },
+    simulation: {
+      status: "reference-only",
+      detail: "Reference only. The current diode model does not represent transient clamping or surge energy behavior.",
+    },
+  },
+  {
+    id: "littelfuse-smbj24a",
+    manufacturer: "Littelfuse",
+    partNumber: "SMBJ24A",
+    name: "SMBJ TVS diode",
+    spec: "surface-mount TVS diode · 24V",
+    type: "tvs",
+    properties: { standoffVoltageV: 24 },
+    source: {
+      publisher: "Littelfuse",
+      url: "https://www.littelfuse.com/products/overvoltage-protection/tvs-diodes/surface-mount/smbj/smbj24a",
+    },
+    simulation: {
+      status: "reference-only",
+      detail: "Reference only. The current diode model does not represent transient clamping or surge energy behavior.",
+    },
+  },
+  {
+    id: "littelfuse-sp0502bahtg",
+    manufacturer: "Littelfuse",
+    partNumber: "SP0502BAHTG",
+    name: "SP05 ESD/TVS array",
+    spec: "two-channel ESD / TVS diode array",
+    type: "esd_array",
+    properties: { channels: 2 },
+    source: {
+      publisher: "Littelfuse",
+      url: "https://www.littelfuse.com/assetdocs/tvs-diode-array-spasp050xba-lead-freegreen-datasheet?assetguid=15a03de1-f0c6-457a-95f1-55d449fdd756",
+    },
+    simulation: {
+      status: "reference-only",
+      detail: "Reference only. The engine does not model multi-channel ESD or transient suppression behavior.",
+    },
+  },
+  {
+    id: "littelfuse-v14e275p",
+    manufacturer: "Littelfuse",
+    partNumber: "V14E275P",
+    name: "UltraMOV varistor",
+    spec: "radial-leaded varistor · 275VAC",
+    type: "varistor",
+    properties: { acVoltageRatingV: 275 },
+    source: {
+      publisher: "Littelfuse",
+      url: "https://www.littelfuse.com/products/overvoltage-protection/varistors/radial-leaded-varistors/ultramov/v14e275p",
+    },
+    simulation: {
+      status: "reference-only",
+      detail: "Reference only. The engine does not model varistor nonlinear clamping or surge aging behavior.",
+    },
+  },
+
+  // ── Vishay seed catalog ────────────────────────────────────────────────────
+  {
+    id: "vishay-1n4148w-e3-08",
+    manufacturer: "Vishay",
+    partNumber: "1N4148W-E3-08",
+    name: "1N4148W fast switching diode",
+    spec: "fast switching diode · 100V",
+    type: "diode",
+    properties: { reverseVoltage: 100 },
+    source: {
+      publisher: "Vishay",
+      url: "https://www.vishay.com/docs/86356/1n4148w.pdf",
+    },
+    simulation: {
+      status: "modeled",
+      detail: "Modeled as a generic diode for education; the simulator does not use this part's switching curve or capacitance.",
+    },
+    ratedThresholds: { maxVoltageV: 100 },
+  },
+  {
+    id: "vishay-ss14-e3-61t",
+    manufacturer: "Vishay",
+    partNumber: "SS14-E3/61T",
+    name: "SS14 Schottky rectifier",
+    spec: "Schottky diode · 40V · 1A",
+    type: "diode",
+    properties: { reverseVoltage: 40, maxCurrent: 1 },
+    source: {
+      publisher: "Vishay",
+      url: "https://www.vishay.com/doc/?88746",
+    },
+    simulation: {
+      status: "modeled",
+      detail: "Modeled as a generic diode for education; the simulator does not use this part's Schottky I-V curve.",
+    },
+    ratedThresholds: { maxVoltageV: 40, maxCurrentA: 1 },
+  },
+  {
+    id: "vishay-smaj5-0a-e3-61",
+    manufacturer: "Vishay",
+    partNumber: "SMAJ5.0A-E3/61",
+    name: "SMAJ TVS diode",
+    spec: "surface-mount TVS diode · 5V",
+    type: "tvs",
+    properties: { standoffVoltageV: 5 },
+    source: {
+      publisher: "Vishay",
+      url: "https://www.vishay.com/docs/88390/smaj50a.pdf",
+    },
+    simulation: {
+      status: "reference-only",
+      detail: "Reference only. The current diode model does not represent transient clamping or surge energy behavior.",
+    },
+  },
+  {
+    id: "vishay-crcw060310k0fkea",
+    manufacturer: "Vishay",
+    partNumber: "CRCW060310K0FKEA",
+    name: "CRCW 0603 resistor",
+    spec: "0603 thick-film resistor · 10kΩ · 1%",
+    type: "resistor",
+    properties: { resistance: 10000, tolerance: 0.01 },
+    source: {
+      publisher: "Vishay",
+      url: "https://www.vishay.com/docs/28773/crcwce3.pdf",
+    },
+    simulation: {
+      status: "modeled",
+      detail: "Modeled with the sourced resistance and tolerance; power and thermal behavior remain the app's generic resistor model.",
+    },
+  },
+  {
+    id: "vishay-vj0603y104kxxat",
+    manufacturer: "Vishay",
+    partNumber: "VJ0603Y104KXXAT",
+    name: "VJ 0603 MLCC",
+    spec: "0603 MLCC · 100nF · 16V · X7R",
+    type: "capacitor",
+    properties: { capacitance: 100e-9, maxVoltage: 16 },
+    source: {
+      publisher: "Vishay",
+      url: "https://www.vishay.com/en/product/45199/",
+    },
+    simulation: {
+      status: "modeled",
+      detail: "Modeled with sourced capacitance and voltage; dielectric bias effects and ESR are not part-specific in the current model.",
+    },
+    ratedThresholds: { maxVoltageV: 16 },
+  },
+  {
+    id: "vishay-ihlp2525czer100m01",
+    manufacturer: "Vishay",
+    partNumber: "IHLP2525CZER100M01",
+    name: "IHLP power inductor",
+    spec: "shielded power inductor · 10µH",
+    type: "inductor",
+    properties: { inductance: 10e-6 },
+    source: {
+      publisher: "Vishay",
+      url: "https://www.vishay.com/docs/34335/ihlp-2525cz-5a.pdf",
+    },
+    simulation: {
+      status: "modeled",
+      detail: "Modeled with sourced inductance; saturation, DCR, and thermal behavior remain generic until separately sourced and modeled.",
+    },
+  },
+  {
+    id: "vishay-siss52dn",
+    manufacturer: "Vishay",
+    partNumber: "SiSS52DN",
+    name: "SiSS52DN N-channel MOSFET",
+    spec: "N-channel power MOSFET · 30V",
+    type: "mosfet",
+    properties: { vds_max: 30 },
+    source: {
+      publisher: "Vishay",
+      url: "https://www.vishay.com/docs/79977/siss52dn.pdf",
+    },
+    simulation: {
+      status: "modeled",
+      detail: "Modeled as a generic N-channel MOSFET with its sourced voltage class; the current model does not use this part's RDS(on), transfer, or thermal curves.",
+    },
+    ratedThresholds: { maxVoltageV: 30 },
+  },
+
   // ── Logic / ICs ───────────────────────────────────────────────────────────
   // The 3D workspace has no `ic` part (no case in legacy.html's
   // getDefaultProperties or createMesh), so these do not appear in the Builder
@@ -570,6 +1015,11 @@ export function searchCatalog(query: string, typeFilter?: string): CatalogCompon
   });
 }
 
+/** Components entered for a specific manufacturer, preserving catalog order. */
+export function getManufacturerCatalogComponents(manufacturer: string): CatalogComponent[] {
+  return CATALOG_COMPONENTS.filter((component) => component.manufacturer === manufacturer);
+}
+
 /**
  * Find a catalog component by id.
  */
@@ -598,11 +1048,15 @@ const BUILDER_TYPE_BY_FAMILY: Record<string, string | null> = {
   crystal: "crystal",
   thermistor: "thermistor",
   voltage_regulator: "voltage-regulator",
+  relay: "relay",
   ic: null, // legacy.html has no 'ic' case in getDefaultProperties/createMesh
 };
 
 /** The workspace part this branded component spawns as, or null if it has none. */
 export function builderTypeFor(part: CatalogComponent): string | null {
+  if (part.simulation?.status === "reference-only") {
+    return null;
+  }
   return part.builderType ?? BUILDER_TYPE_BY_FAMILY[part.type] ?? null;
 }
 
@@ -662,6 +1116,8 @@ export function toWorkspaceProperties(part: CatalogComponent): Record<string, nu
       return defined({ frequency: p.frequency });
     case "voltage_regulator":
       return defined({ outputVoltage: p.outputVoltage, maxCurrent: p.maxCurrent });
+    case "relay":
+      return defined({ coilVoltage: p.coilVoltage });
     default:
       return {};
   }

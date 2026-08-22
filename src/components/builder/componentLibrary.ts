@@ -48,7 +48,14 @@ export const REAL_PART_LIBRARY_ACTIONS: ComponentAction[] =
         // Inherit the base type's metadata so the branded part filters under
         // the same category tab (Power / Passive / Semi / …) as its generic
         // sibling.
-        metadata: base?.metadata ? { ...base.metadata } : undefined,
+        metadata: {
+          ...(base?.metadata ?? {}),
+          realWorld: {
+            partNumber: part.partNumber ?? part.name,
+            manufacturer: part.manufacturer,
+            datasheetUrl: part.source?.url,
+          },
+        },
       },
     ];
   });
