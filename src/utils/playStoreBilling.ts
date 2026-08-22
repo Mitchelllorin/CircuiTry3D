@@ -589,6 +589,33 @@ export const WEB_PAYMENT_URL: string = (import.meta.env.VITE_PAYMENT_URL ?? "").
 export const PLAY_STORE_URL =
   "https://play.google.com/store/apps/details?id=com.circuitry3d.app";
 
+/**
+ * Read the Android package from the established Play Store listing. Keeping the
+ * rating flow derived from this URL prevents it from targeting an unconfigured
+ * package.
+ */
+export function getAndroidPlayStorePackageId(): string | null {
+  try {
+    const packageId = new URL(PLAY_STORE_URL).searchParams.get("id")?.trim();
+    return packageId || null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Opens this Android app's configured Play listing, where users can rate it.
+ * Web and desktop clients intentionally receive no review fallback prompt.
+ */
+export function openAndroidStoreListing(): boolean {
+  const packageId = getAndroidPlayStorePackageId();
+  if (!isAndroidApp() || !packageId) {
+    return false;
+  }
+  window.open(`market://details?id=${encodeURIComponent(packageId)}`, "_blank", "noopener,noreferrer");
+  return true;
+}
+
 function normalizeUrl(url: string): string {
   return url.trim().replace(/\/+$/, "");
 }

@@ -7,6 +7,7 @@ import GlobalModeBar from "../components/GlobalModeBar";
 import TipsTicker from "../components/TipsTicker";
 import ErrorBoundary from "../components/ErrorBoundary";
 import DemoBanner from "../components/DemoBanner";
+import EngagementPromptManager from "../components/EngagementPromptManager";
 import { WorkspaceModeProvider } from "../context/WorkspaceModeContext";
 import { ThemeProvider } from "../context/ThemeContext";
 import { AppSettingsProvider } from "../context/AppSettingsContext";
@@ -196,6 +197,7 @@ function AppLayout() {
       <main className={contentClass}>
         <Outlet />
       </main>
+      {isWorkspace && <EngagementPromptManager />}
       {/* Tips & facts ticker - workspace only */}
       {isWorkspace && <TipsTicker />}
       {/* Site footer with legal links - shown on all pages except landing, workspace & promo */}
