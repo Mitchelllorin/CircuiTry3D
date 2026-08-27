@@ -1750,9 +1750,16 @@ export default function Builder() {
         return stored;
       }
     } catch { /* ignore */ }
-    // Default to hidden — the quick-action buttons start tucked away; the
-    // user reveals them via the action-bar toggle (Hide / Tools / All).
-    return "hidden";
+    // Default to 'tools' — the tool row (Wire, Run, Undo, Save, Measure…) is on
+    // from the first run; only the component quick-adds stay tucked away, since
+    // the Library panel already covers those.
+    //
+    // This used to default to 'hidden', which puts display:none on EVERY child of
+    // the bar — Wire Mode included — and the bar is the only place Wire Mode
+    // lives (LeftToolbar's "Wire Modes" section is never mounted). So a fresh
+    // install had no reachable way into wiring at all: it worked only in the
+    // tutorial and Practice, which toggle wire mode programmatically.
+    return "tools";
   });
 
   // Persist whenever mode changes
@@ -2671,6 +2678,30 @@ export default function Builder() {
     }
     showcaseLoadedRef.current = true;
     triggerBuilderAction("load-payoff");
+
+    // Only run the tour for someone who hasn't dismissed it. Closing the tour
+    // writes TOUR_DISMISSED_KEY ("dismiss for good"), but nothing ever READ it,
+    // so the tour re-opened on every single launch of build mode — and while it
+    // is open the shell carries data-tour-active="true", which puts
+    // `display: none !important` on the whole unified action bar. That took the
+    // Wire button (and Run, Undo, Save, Measure) off screen every session, and
+    // the showcase lock on top of it made the workspace read-only. Wiring then
+    // only worked from the tutorial and Practice, which drive it in code.
+    let tourDismissed = false;
+    try {
+      tourDismissed =
+        window.localStorage.getItem(TOUR_DISMISSED_KEY) === "1";
+    } catch {
+      /* ignore */
+    }
+
+    if (tourDismissed) {
+      // Returning user: showcase stays as the backdrop, but the workspace is
+      // theirs — unlocked, with the full action bar.
+      setShowcaseLocked(false);
+      return;
+    }
+
     // The showcase is view-only — lock it so the user can't drag/edit the parts
     // while the guided tour points at them.
     setShowcaseLocked(true);
@@ -3436,7 +3467,7 @@ export default function Builder() {
             </button>
             <button
               type="button"
-              className={`edge-action-btn${modeState.isWireMode ? " edge-action-btn--active" : ""}`}
+              className={`edge-action-btn edge-action-btn--wire${modeState.isWireMode ? " edge-action-btn--active" : ""}`}
               onClick={() => triggerBuilderAction("toggle-wire-mode")}
               disabled={controlsDisabled}
               aria-disabled={controlsDisabled}

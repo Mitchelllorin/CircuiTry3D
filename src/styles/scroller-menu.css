@@ -775,15 +775,22 @@
 }
 
 /* ---------------------------------------------------------------------------
-   When mode = 'hidden', keep ONLY the toggle floating at the right end of
-   where the action bar would normally be.
+   When mode = 'hidden', keep only the toggle and Wire Mode floating at the top
+   of where the action bar would normally be.
    The .unified-action-bar gets data-bar-mode="hidden" and hides all children
-   except the cycle toggle (.action-bar-cycle) — the one control that lets the
-   user bring the buttons back. (Was ".action-bar-toggle"; the button class was
-   renamed to .action-bar-cycle and this exception was never updated, so the
-   toggle hid itself and "hidden" became a one-way trip.)
+   except:
+     .action-bar-cycle    — the one control that brings the buttons back.
+                            (Was ".action-bar-toggle"; the button class was
+                            renamed and this exception was never updated, so the
+                            toggle hid itself and "hidden" was a one-way trip.)
+     .edge-action-btn--wire — Wire Mode. This bar is the ONLY mounted entry point
+                            for wiring, so hiding it here left the builder with no
+                            way to wire anything; it worked only inside the
+                            tutorial and Practice, which toggle it in code.
+                            Tucking the bar away must never cost the primary tool.
    --------------------------------------------------------------------------- */
-.unified-action-bar[data-bar-mode="hidden"] > *:not(.action-bar-cycle) {
+.unified-action-bar[data-bar-mode="hidden"]
+  > *:not(.action-bar-cycle):not(.edge-action-btn--wire) {
   display: none !important;
 }
 
