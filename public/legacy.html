@@ -3912,6 +3912,20 @@
         // hit, not placing). On pointer-UP, if the gesture stayed a tap (didn't turn
         // into a camera-rotate drag), an empty tap dismisses the selector ring.
         let pointerDownOnEmpty = false;
+        // The component/junction this press actually landed on — recorded by the
+        // click dispatchers inside checkComponentHit, cleared at the top of every
+        // hit test. Null when the press hit bare workspace or only a terminal.
+        let lastHitEntity = null;
+        // A move-drag may only begin when the press went down ON the part it would
+        // move. Without this, `selectedComponent` alone armed the drag, so once you
+        // had tapped ANY part, a later drag on empty space — the gesture that orbits
+        // the camera — yanked that part across the board instead. Set on pointer-down,
+        // cleared on pointer-up.
+        let dragArmed = false;
+        // Where the finger grabbed the part, relative to the part's centre. Applied
+        // while dragging so the part keeps its grab point under the finger instead of
+        // teleporting its centre there on the first move.
+        const dragGrabOffset = { x: 0, z: 0 };
         // True while a freshly-added part is a "held ghost" waiting to be dropped
         // (from the library). In this state a single tap/click anywhere on the grid
         // snaps the part under the pointer and drops it there — one-tap placement.
@@ -9537,8 +9551,15 @@ body.android-optimized .zoom-btn {
             // interval that is one label move every 200 ms: the board glides and the
             // text pinned to it jumps five times a second, which reads as the whole
             // rotation being choppy even though the 3D itself is smooth.
+            // ...and not while the user is moving something either. Dragging a part,
+            // orbiting, panning or pinching all move the 3D at frame rate while the
+            // labels pinned to it were still stepping at LABEL_UPDATE_INTERVAL — 5 Hz
+            // on Android. The part glides, its nameplate hops along behind it, and the
+            // whole grab reads as choppy even though the mesh itself is smooth. This is
+            // the same exemption the idle turntable already gets, for the same reason.
             labelUpdateCounter++;
-            if (labelUpdateCounter >= LABEL_UPDATE_INTERVAL || _idleOrbitActive) {
+            if (labelUpdateCounter >= LABEL_UPDATE_INTERVAL || _idleOrbitActive
+                    || isDragging || isPlacing || isRotating || isPanning) {
                 labelUpdateCounter = 0;
                 updateComponentLabels();
             }
@@ -11060,6 +11081,9 @@ body.android-optimized .zoom-btn {
                 // Remember an empty-space press so a plain tap (no rotate) can dismiss
                 // the selector ring on release.
                 pointerDownOnEmpty = !hitComponent && !isPlacing && !isDragging;
+                // Arm a move-drag only when this press landed on the part it would
+                // move. An empty-space drag is a camera orbit, never a part grab.
+                dragArmed = Boolean(lastHitEntity) && lastHitEntity === selectedComponent;
 
                 // Enable rotation for empty space touches
                 // For component touches, rotation will be enabled in touchmove if not dragging
@@ -11194,6 +11218,7 @@ body.android-optimized .zoom-btn {
         function handleTouchEnd(e) {
             e.preventDefault();
             cancelLongPress();
+            dragArmed = false; // a new press has to re-arm on the part it lands on
 
             if (isDragging) {
                 handleRelease();
@@ -11284,6 +11309,11 @@ body.android-optimized .zoom-btn {
                 // Remember an empty-space press so a plain tap (no rotate) can dismiss
                 // the selector ring on release.
                 pointerDownOnEmpty = !hitComponent && !isPlacing && !isDragging;
+                // Arm a move-drag only when this press landed on the part it would
+                // move. Also keeps a plain mouse MOVE (no button down) from grabbing
+                // the selected part — mousemove fires on hover, and maybeStartDrag
+                // used to engage on it.
+                dragArmed = Boolean(lastHitEntity) && lastHitEntity === selectedComponent;
 
                 // If no component hit and not dragging, enable camera rotation
                 if (!hitComponent && !isDragging) {
@@ -11338,6 +11368,7 @@ body.android-optimized .zoom-btn {
             isRotating = false;
             isPanning = false;
             cancelLongPress();
+            dragArmed = false; // a new press has to re-arm on the part it lands on
             if (isDragging) {
                 handleRelease();
             } else {
@@ -13869,7 +13900,11 @@ body.android-optimized .zoom-btn {
             if (isLongPressing) {
                 return false;
             }
-            
+
+            // Fresh hit test — forget whatever the last press landed on. The click
+            // dispatchers below re-record it when they fire.
+            lastHitEntity = null;
+
             const rect = renderer.domElement.getBoundingClientRect();
             // Guard against a 0×0 bounding rect (can happen on Android WebView
             // before the first layout paint).  Fall back to the window dimensions
@@ -14323,6 +14358,7 @@ body.android-optimized .zoom-btn {
 
         function handleComponentClick(component) {
             hideComponentContextMenu();
+            lastHitEntity = component; // this press landed on this part
 
             if (meterArmed && meterMode === 'current' && !isWireMode && !isRotateMode && !isMeasureMode) {
                 meterCurrentTarget = component;
@@ -14334,6 +14370,11 @@ body.android-optimized .zoom-btn {
 
             if (isRotateMode) {
                 rotateComponent(component);
+                // Make the part you just rotated the controlled one. maybeStartDrag
+                // can pause rotate mode to move a part; before this it moved whatever
+                // happened to be selected before rotate mode was entered — i.e. the
+                // wrong part, or nothing.
+                selectComponent(component, { silent: true });
 
             } else if (component.type === 'switch' && !isWireMode) {
                 saveState(); // Save for undo
@@ -14349,6 +14390,7 @@ body.android-optimized .zoom-btn {
 
         function handleJunctionClick(junction) {
             hideComponentContextMenu();
+            lastHitEntity = junction; // this press landed on this junction
 
             if (!isWireMode && !isDragging) {
                 selectJunction(junction, { startDragging: false });
@@ -14404,10 +14446,28 @@ body.android-optimized .zoom-btn {
                 return;
             }
 
+            // The press must have landed on this part. Otherwise this is a camera
+            // gesture on empty space (or a bare mouse hover) and moving the part is
+            // the last thing the user meant.
+            if (!dragArmed) {
+                return;
+            }
+
             const deltaX = Math.abs(clientX - longPressStartPos.x);
             const deltaY = Math.abs(clientY - longPressStartPos.y);
             if (deltaX < COMPONENT_DRAG_THRESHOLD && deltaY < COMPONENT_DRAG_THRESHOLD) {
                 return;
+            }
+
+            // Keep the grab point under the finger. Without this the part's CENTRE
+            // snapped to the finger on the first move, so grabbing a part anywhere
+            // but dead centre made it jump before it started following.
+            dragGrabOffset.x = 0;
+            dragGrabOffset.z = 0;
+            const grabWorld = screenToWorld(longPressStartPos.x, longPressStartPos.y);
+            if (grabWorld) {
+                dragGrabOffset.x = selectedComponent.position.x - grabWorld.x;
+                dragGrabOffset.z = selectedComponent.position.z - grabWorld.z;
             }
 
             saveState(); // Save state before moving so the move is undoable
@@ -14532,7 +14592,13 @@ body.android-optimized .zoom-btn {
             }
         }
 
+        // The y = 0 workspace plane every pointer ray is cast against. Built once.
+        let _groundPlane = null;
+
         function screenToWorld(clientX, clientY) {
+            if (!_groundPlane) {
+                _groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+            }
             const rect = renderer.domElement.getBoundingClientRect();
             const rectWidth  = rect.width  || window.innerWidth  || document.documentElement.clientWidth;
             const rectHeight = rect.height || window.innerHeight || document.documentElement.clientHeight;
@@ -14540,11 +14606,13 @@ body.android-optimized .zoom-btn {
             mouse.y = -((clientY - rect.top)  / rectHeight) * 2 + 1;
             
             raycaster.setFromCamera(mouse, camera);
-            
-            const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+
+            // The ground plane never changes — building a new Plane (and its normal
+            // Vector3) here allocated three objects per call, and this runs on EVERY
+            // touchmove, which on a 120 Hz phone is a few hundred throwaway objects a
+            // second during a drag. That GC churn is felt as micro-stutter. Reuse one.
             const intersection = new THREE.Vector3();
-            
-            if (raycaster.ray.intersectPlane(groundPlane, intersection)) {
+            if (raycaster.ray.intersectPlane(_groundPlane, intersection)) {
                 return intersection;
             }
             return null;
@@ -14553,6 +14621,13 @@ body.android-optimized .zoom-btn {
         function handleComponentDrag(clientX, clientY) {
             const worldPos = screenToWorld(clientX, clientY);
             if (worldPos && selectedComponent) {
+                // Apply the grab offset so the part tracks the point you grabbed.
+                // A held ghost (one-tap placement) has no grab point — it centres on
+                // the pointer by design, so it keeps the zero offset.
+                if (!isPlacing) {
+                    worldPos.x += dragGrabOffset.x;
+                    worldPos.z += dragGrabOffset.z;
+                }
                 const snappedPos = clampToWorkspace(snapToGrid(worldPos));
 
                 // Show orange snap ring when hovering over an existing wire (no connections yet),
@@ -14574,6 +14649,9 @@ body.android-optimized .zoom-btn {
 
         function handleRelease() {
             isDragging = false;
+            dragArmed = false;
+            dragGrabOffset.x = 0;
+            dragGrabOffset.z = 0;
             const wasPlacing = isPlacing;
             isPlacing = false;
             hideSnapIndicator();
