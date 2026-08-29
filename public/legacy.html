@@ -2484,204 +2484,6 @@
             }
         }
         
-        /* ── Tutorial Modal ─────────────────────────────────────────── */
-        .tutorial-backdrop {
-            position: fixed;
-            inset: 0;
-            z-index: 9000;
-            background: rgba(4, 12, 24, 0.82);
-            backdrop-filter: blur(8px);
-            display: none;
-            align-items: center;
-            justify-content: center;
-        }
-        .tutorial-backdrop.visible {
-            display: flex;
-        }
-        .tutorial-modal {
-            position: relative;
-            width: min(520px, calc(100vw - 32px));
-            max-height: calc(100vh - 48px);
-            background: linear-gradient(160deg, rgba(6, 18, 38, 0.98) 0%, rgba(2, 10, 24, 0.98) 100%);
-            border: 1.5px solid rgba(0, 255, 136, 0.35);
-            border-radius: 24px;
-            padding: 28px 24px 24px;
-            box-shadow: 0 0 0 1px rgba(0,255,136,0.08), 0 32px 80px rgba(0,0,0,0.7), 0 0 60px rgba(0,255,136,0.08);
-            color: #e8f6ff;
-            overflow-y: auto;
-            -webkit-overflow-scrolling: touch;
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-        }
-        .tutorial-header {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-        .tutorial-logo {
-            font-size: 22px;
-            font-weight: 900;
-            letter-spacing: -0.5px;
-            line-height: 1;
-            margin-bottom: 6px;
-        }
-        .tutorial-logo .tl-circui { color: #00ff88; }
-        .tutorial-logo .tl-try    { color: #ff8800; }
-        .tutorial-logo .tl-3d     { color: #00ff88; }
-        .tutorial-kicker {
-            font-size: 11px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.3em;
-            color: rgba(0, 255, 136, 0.75);
-            margin-bottom: 10px;
-        }
-        .tutorial-for-everyone {
-            display: inline-block;
-            font-size: 10px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.15em;
-            color: rgba(110, 230, 130, 0.9);
-            text-shadow: 0 0 10px rgba(80, 200, 100, 0.4);
-            padding: 3px 10px;
-            border-radius: 100px;
-            border: 1px solid rgba(100, 220, 120, 0.3);
-            background: rgba(100, 220, 120, 0.07);
-            margin-bottom: 8px;
-        }
-        .tutorial-title {
-            font-size: clamp(18px, 5vw, 22px);
-            font-weight: 800;
-            letter-spacing: -0.02em;
-            color: #ffffff;
-            margin: 0;
-        }
-        .tutorial-divider {
-            height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(0,255,136,0.4), transparent);
-            margin: 16px 0;
-        }
-        .tutorial-section {
-            margin-bottom: 16px;
-        }
-        .tutorial-section-title {
-            font-size: 12px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.2em;
-            color: #00ff88;
-            margin-bottom: 8px;
-        }
-        .tutorial-steps {
-            list-style: none;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-        .tutorial-steps li {
-            display: flex;
-            align-items: flex-start;
-            gap: 10px;
-            font-size: 13px;
-            line-height: 1.5;
-            color: rgba(220, 234, 255, 0.88);
-            background: rgba(0, 255, 136, 0.04);
-            border: 1px solid rgba(0, 255, 136, 0.1);
-            border-radius: 10px;
-            padding: 8px 10px;
-        }
-        .tutorial-steps li .ts-icon {
-            flex-shrink: 0;
-            font-size: 15px;
-            line-height: 1.4;
-        }
-        .tutorial-color-legend {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 6px;
-        }
-        .tutorial-color-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 12px;
-            color: rgba(220, 234, 255, 0.85);
-            background: rgba(255,255,255,0.03);
-            border-radius: 8px;
-            padding: 6px 8px;
-            border: 1px solid rgba(255,255,255,0.06);
-        }
-        .tutorial-color-dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            flex-shrink: 0;
-        }
-        .tutorial-footer {
-            margin-top: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            align-items: center;
-        }
-        .tutorial-dismiss-btn {
-            width: 100%;
-            padding: 14px;
-            border: none;
-            border-radius: 14px;
-            background: linear-gradient(135deg, #00ff88, #00cc66);
-            color: #071a10;
-            font-weight: 800;
-            font-size: 15px;
-            cursor: pointer;
-            letter-spacing: 0.04em;
-            transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
-            box-shadow: 0 4px 20px rgba(0,255,136,0.35);
-        }
-        .tutorial-dismiss-btn:hover, .tutorial-dismiss-btn:active {
-            opacity: 0.9;
-            transform: translateY(-1px);
-            box-shadow: 0 6px 24px rgba(0,255,136,0.5);
-        }
-        .tutorial-suppress-label {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 12px;
-            color: rgba(180, 200, 230, 0.6);
-            cursor: pointer;
-            user-select: none;
-        }
-        .tutorial-suppress-label input[type="checkbox"] {
-            accent-color: #00ff88;
-            width: 14px;
-            height: 14px;
-            cursor: pointer;
-        }
-        .tutorial-close-x {
-            position: absolute;
-            top: 14px;
-            right: 14px;
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            border: 1px solid rgba(0, 255, 136, 0.3);
-            background: rgba(0, 255, 136, 0.08);
-            color: #e8f6ff;
-            font-size: 18px;
-            font-weight: 600;
-            line-height: 1;
-            cursor: pointer;
-            display: grid;
-            place-items: center;
-            transition: background 0.2s, box-shadow 0.2s;
-        }
-        .tutorial-close-x:hover {
-            background: rgba(0, 255, 136, 0.18);
-            box-shadow: 0 0 12px rgba(0,255,136,0.3);
-        }
-
         /* Improved circuit centering and alignment */
         .circuit-container {
             display: flex;
@@ -3282,63 +3084,6 @@
     
     <canvas id="canvas" style="display: none;"></canvas>
 
-    <!-- ── Tutorial Modal ──────────────────────────────────────────────── -->
-    <div class="tutorial-backdrop" id="tutorial-backdrop" role="dialog" aria-modal="true" aria-labelledby="tutorial-title" onclick="if(event.target===this)dismissTutorial()">
-        <div class="tutorial-modal" id="tutorial-modal">
-            <button class="tutorial-close-x" type="button" aria-label="Close tutorial" onclick="dismissTutorial()">&times;</button>
-            <div class="tutorial-header">
-                <div class="tutorial-logo">
-                    <span class="tl-circui">Circui</span><span class="tl-try">Try</span><span class="tl-3d">3D</span>
-                </div>
-                <div class="tutorial-for-everyone">👥 For Everyone — to facilitate and enhance the learning</div>
-                <div class="tutorial-kicker">Quick Start Guide</div>
-                <h2 class="tutorial-title" id="tutorial-title">Welcome to CircuiTry3D ⚡</h2>
-            </div>
-            <div class="tutorial-divider"></div>
-
-            <div class="tutorial-section">
-                <div class="tutorial-section-title">🚀 Getting Started</div>
-                <ul class="tutorial-steps">
-                    <li><span class="ts-icon">🔋</span><span>Add a <strong>Battery</strong> (<kbd>B</kbd>) as your power source</span></li>
-                    <li><span class="ts-icon">⚡</span><span>Add <strong>Resistors</strong> (<kbd>R</kbd>), <strong>LEDs</strong> (<kbd>L</kbd>), and other components from the Components menu</span></li>
-                    <li><span class="ts-icon">〰️</span><span>Press <kbd>W</kbd> for <strong>Wire Mode</strong> — tap terminals to connect components and complete the circuit</span></li>
-                    <li><span class="ts-icon">📊</span><span>Watch the <strong>W.I.R.E. panel</strong> on the right for live Voltage, Current &amp; Power readings</span></li>
-                </ul>
-            </div>
-
-            <div class="tutorial-section">
-                <div class="tutorial-section-title">🎨 Color-Coded Values</div>
-                <div class="tutorial-color-legend">
-                    <div class="tutorial-color-item"><div class="tutorial-color-dot" style="background:#ff4444;"></div>Voltage (Volts)</div>
-                    <div class="tutorial-color-item"><div class="tutorial-color-dot" style="background:#ff8800;"></div>Current (Amps)</div>
-                    <div class="tutorial-color-item"><div class="tutorial-color-dot" style="background:#00cc55;"></div>Resistance (Ω)</div>
-                    <div class="tutorial-color-item"><div class="tutorial-color-dot" style="background:#4499ff;"></div>Power (Watts)</div>
-                </div>
-            </div>
-
-            <div class="tutorial-section">
-                <div class="tutorial-section-title">🕹️ Controls</div>
-                <ul class="tutorial-steps">
-                    <li><span class="ts-icon">✋</span><span><strong>Drag</strong> to move components · <strong>Long-press / right-click</strong> to edit values</span></li>
-                    <li><span class="ts-icon">🔍</span><span><strong>Pinch / scroll wheel</strong> to zoom · <strong>Two-finger drag / middle-drag</strong> to pan</span></li>
-                    <li><span class="ts-icon">⌨️</span><span><kbd>B</kbd> Battery &nbsp;·&nbsp; <kbd>R</kbd> Resistor &nbsp;·&nbsp; <kbd>L</kbd> LED &nbsp;·&nbsp; <kbd>S</kbd> Switch &nbsp;·&nbsp; <kbd>W</kbd> Wire</span></li>
-                </ul>
-            </div>
-
-            <div class="tutorial-divider"></div>
-
-            <div class="tutorial-footer">
-                <button class="tutorial-dismiss-btn" type="button" onclick="dismissTutorial()">
-                    ⚡ Let's Build!
-                </button>
-                <label class="tutorial-suppress-label">
-                    <input type="checkbox" id="tutorial-suppress-checkbox">
-                    Don't show this again
-                </label>
-            </div>
-        </div>
-    </div>
-    <!-- ── End Tutorial Modal ──────────────────────────────────────────── -->
 
     <div class="subscription-overlay-backdrop" id="subscription-pricing-backdrop"></div>
 
@@ -4515,9 +4260,6 @@ body.android-optimized .zoom-btn {
                                 break;
                             case 'practice-help':
                                 if (typeof showPracticeModeHelp === 'function') showPracticeModeHelp();
-                                break;
-                            case 'show-tutorial':
-                                if (typeof showTutorial === 'function') showTutorial();
                                 break;
                             case 'show-wire-guide':
                                 if (typeof showWireGuide === 'function') showWireGuide();
@@ -12727,6 +12469,224 @@ body.android-optimized .zoom-btn {
             component.mesh.rotation.y = component.rotation;
         }
 
+        /**
+         * Which electrical node each COMPONENT terminal currently sits on.
+         *
+         * Terminal keys are `${component.id}:${side}` — identity, not position —
+         * so this map survives repositioning and rewiring, which is what lets
+         * Arrange redraw a circuit and then prove it drew the same one.
+         * Junction terminals are deliberately excluded: junctions are thrown away
+         * and remade by every layout, so their ids would differ every time and
+         * nothing could ever be compared.
+         */
+        function captureComponentTerminalNodes() {
+            const map = new Map();
+            let terminalToNode;
+            try {
+                ({ terminalToNode } = buildElectricalNodesLegacy());
+            } catch (error) {
+                console.warn('[CT3D Layout] cannot read electrical nodes', error);
+                return map;
+            }
+            components.forEach(comp => {
+                if (!comp) return;
+                getComponentTerminals(comp).forEach(side => {
+                    const key = getTerminalKey(comp, side);
+                    if (!key) return;
+                    map.set(key, terminalToNode.get(key) || null);
+                });
+            });
+            return map;
+        }
+
+        /**
+         * A canonical fingerprint of the circuit's electrical structure.
+         *
+         * A netlist IS a partition of terminals into nodes, so the fingerprint is
+         * that partition written down in a fixed order: each node's member
+         * terminals sorted, then the nodes sorted by their member lists. Node ids
+         * themselves are arbitrary and never appear, so two drawings of the same
+         * circuit produce the same string. An unconnected terminal gets a bucket of
+         * its own so that wiring one up is a real difference.
+         */
+        function captureCircuitNodeSignature(nodeMap) {
+            const map = nodeMap || captureComponentTerminalNodes();
+            const groups = new Map();
+            map.forEach((node, key) => {
+                const bucket = node || `isolated:${key}`;
+                if (!groups.has(bucket)) groups.set(bucket, []);
+                groups.get(bucket).push(key);
+            });
+            return Array.from(groups.values())
+                .map(list => list.slice().sort().join('|'))
+                .sort()
+                .join(' // ');
+        }
+
+        /**
+         * Redraw ANY circuit as a ladder, from its captured netlist.
+         *
+         * Every electrical node becomes one horizontal rail; every two-terminal
+         * part becomes a rung between the two rails its ends belong to. Because the
+         * rails ARE the captured nodes, the redrawn circuit has the same netlist by
+         * construction — this cannot change the circuit, whatever shape it was.
+         *
+         * That is the difference from the other layout builders, which take the
+         * topology LABEL and redraw a canonical picture from the parts list. That
+         * works for series and for parallel, where every arrangement of the parts is
+         * the same circuit anyway, but not for a combination: the old
+         * createCombinationFallbackLayout always drew two parallel pairs in series,
+         * so a 150 Ω combination came back as a 100 Ω one. Different circuit, same
+         * class. See tools/probe/drive-59-arrange.mjs.
+         *
+         * Rails are ordered by distance from the battery's positive terminal,
+         * counted THROUGH the parts and never through the battery itself, so the
+         * drawing runs supply-at-the-top to return-at-the-bottom the way a schematic
+         * is read. The negative node is forced to the bottom rail.
+         */
+        function createNetlistLadderLayout(battery, otherComponents, nodeMap) {
+            if (!battery || !nodeMap || nodeMap.size === 0) return false;
+
+            const rowGap = GRID_SIZE * 3;
+            const colGap = GRID_SIZE * 3;
+            const leftX = -GRID_SIZE * 5;
+
+            // ── Read each part as an edge between two nodes ────────────────────
+            const nodeOf = (comp, side) => nodeMap.get(getTerminalKey(comp, side)) || null;
+            const edges = [];
+            const parked = [];
+            [battery, ...otherComponents].forEach(comp => {
+                if (!comp) return;
+                const sides = getComponentTerminals(comp);
+                if (!Array.isArray(sides) || sides.length !== 2) {
+                    parked.push(comp);
+                    return;
+                }
+                const lower = { side: sides[0], node: nodeOf(comp, sides[0]) };
+                const upper = { side: sides[1], node: nodeOf(comp, sides[1]) };
+                if (!lower.node && !upper.node) {
+                    parked.push(comp); // never wired to anything — leave it out
+                    return;
+                }
+                edges.push({ comp, lower, upper, isBattery: comp === battery });
+            });
+            if (!edges.some(e => e.isBattery)) return false;
+
+            // ── Order the nodes into rails ─────────────────────────────────────
+            const negNode = nodeOf(battery, 'negative');
+            const posNode = nodeOf(battery, 'positive');
+            const nodeIds = new Set();
+            edges.forEach(e => {
+                if (e.lower.node) nodeIds.add(e.lower.node);
+                if (e.upper.node) nodeIds.add(e.upper.node);
+            });
+
+            const rank = new Map();
+            if (posNode && nodeIds.has(posNode)) {
+                rank.set(posNode, 0);
+                const queue = [posNode];
+                while (queue.length) {
+                    const at = queue.shift();
+                    edges.forEach(e => {
+                        // Walking through the battery would put its own two terminals
+                        // one rail apart and flatten every circuit to two rails.
+                        if (e.isBattery || !e.lower.node || !e.upper.node) return;
+                        const other = e.lower.node === at ? e.upper.node
+                            : (e.upper.node === at ? e.lower.node : null);
+                        if (!other || rank.has(other)) return;
+                        rank.set(other, rank.get(at) + 1);
+                        queue.push(other);
+                    });
+                }
+            }
+            const UNREACHED = 1e6;
+            const railOrder = Array.from(nodeIds).sort((a, b) => {
+                // Return rail last, then by distance from the supply, then stably.
+                const ka = a === negNode ? Infinity : (rank.has(a) ? rank.get(a) : UNREACHED);
+                const kb = b === negNode ? Infinity : (rank.has(b) ? rank.get(b) : UNREACHED);
+                if (ka !== kb) return ka - kb;
+                return String(a) < String(b) ? -1 : 1;
+            });
+            const railIndex = new Map(railOrder.map((id, i) => [id, i]));
+            const railZ = (i) => ((railOrder.length - 1) / 2 - i) * rowGap;
+
+            // ── Give every part a column, siblings side by side ────────────────
+            const span = (e) => {
+                const a = e.lower.node ? railIndex.get(e.lower.node) : null;
+                const b = e.upper.node ? railIndex.get(e.upper.node) : null;
+                return { a, b };
+            };
+            const rungs = edges.filter(e => !e.isBattery).sort((x, y) => {
+                const sx = span(x), sy = span(y);
+                const hx = Math.min(sx.a ?? 99, sx.b ?? 99), hy = Math.min(sy.a ?? 99, sy.b ?? 99);
+                if (hx !== hy) return hx - hy;
+                const lx = Math.max(sx.a ?? 99, sx.b ?? 99), ly = Math.max(sy.a ?? 99, sy.b ?? 99);
+                return lx - ly;
+            });
+
+            // rail index -> [{ x, obj, side }]
+            const railTaps = new Map();
+            const tap = (nodeId, x, obj, side) => {
+                if (!nodeId || !railIndex.has(nodeId)) return;
+                const i = railIndex.get(nodeId);
+                if (!railTaps.has(i)) railTaps.set(i, []);
+                railTaps.get(i).push({ x, obj, side });
+            };
+
+            const place = (e, x) => {
+                const iLow = e.lower.node ? railIndex.get(e.lower.node) : null;
+                const iUp = e.upper.node ? railIndex.get(e.upper.node) : null;
+                const zLow = iLow === null ? null : railZ(iLow);
+                const zUp = iUp === null ? null : railZ(iUp);
+
+                if (zLow !== null && zUp !== null) {
+                    // Rotation π/2 puts the SECOND terminal ('right' / 'positive')
+                    // toward +z, which is up. Flip it when that end belongs to the
+                    // lower rail, so no lead has to cross its own body.
+                    const rotation = zUp >= zLow ? Math.PI / 2 : -Math.PI / 2;
+                    // Both ends on one rail = a shorted part. Sit it just above the
+                    // rail and tap either side of its column.
+                    const shorted = iLow === iUp;
+                    positionComponent(e.comp, x, shorted ? zLow + rowGap * 0.4 : (zLow + zUp) / 2, rotation);
+                    tap(e.lower.node, shorted ? x - GRID_SIZE : x, e.comp, e.lower.side);
+                    tap(e.upper.node, shorted ? x + GRID_SIZE : x, e.comp, e.upper.side);
+                    return;
+                }
+                // Only one end is wired: a stub. Hang it off the rail it belongs to.
+                const wired = zLow !== null ? e.lower : e.upper;
+                const z = zLow !== null ? zLow : zUp;
+                const outward = zLow !== null ? -rowGap * 0.6 : rowGap * 0.6;
+                positionComponent(e.comp, x, z + outward, zLow !== null ? -Math.PI / 2 : Math.PI / 2);
+                tap(wired.node, x, e.comp, wired.side);
+            };
+
+            const batteryEdge = edges.find(e => e.isBattery);
+            place(batteryEdge, leftX);
+            rungs.forEach((e, i) => place(e, leftX + colGap * (i + 1)));
+
+            // ── Draw the rails ────────────────────────────────────────────────
+            railTaps.forEach((taps, i) => {
+                const z = railZ(i);
+                const ordered = taps.slice().sort((a, b) => a.x - b.x);
+                const nodes = ordered.map(t => {
+                    const j = new Junction(snapToGrid(new THREE.Vector3(t.x, 0, z)));
+                    junctions.push(j);
+                    connectTerminals(j, 'center', t.obj, t.side);
+                    return j;
+                });
+                for (let k = 0; k < nodes.length - 1; k++) {
+                    connectTerminals(nodes[k], 'center', nodes[k + 1], 'center');
+                }
+            });
+
+            // Anything that was never wired stays unwired, parked clear of the ladder.
+            parked.forEach((comp, i) => {
+                positionComponent(comp, leftX + colGap * (rungs.length + 2 + i), railZ(0) + rowGap, 0);
+            });
+
+            return true;
+        }
+
         function clearCircuitRouting() {
             wires.forEach(wire => wire.remove());
             wires = [];
@@ -12868,7 +12828,23 @@ body.android-optimized .zoom-btn {
                 connectTerminals(bottomRail[i], 'center', bottomRail[i + 1], 'center');
             }
 
-            connectTerminals(returnTop, 'center', returnBottom, 'center');
+            // ⚠️ There was a `connectTerminals(returnTop, ..., returnBottom, ...)`
+            // here, closing the far end of the rectangle. It looked like tidy
+            // draughtsmanship and it was a DEAD SHORT: the two rails are the two
+            // sides of the supply, so joining their far ends puts a zero-ohm link
+            // straight across the battery, in parallel with every branch.
+            //
+            // It collapsed the whole circuit into ONE electrical node — wires are
+            // ideal, so top rail = bottom rail = battery+ = battery- — at which
+            // point buildNetlistLegacy drops the source (its two nodes are the same
+            // node) and drops every resistor for the same reason, leaving an empty
+            // netlist. Measured: Arrange on a working 100 || 200 (66.7 Ω) returned
+            // nodes:1, sources:[], resistors:[] and the circuit read as open.
+            //
+            // A parallel schematic does NOT close on the right. The rails simply
+            // end; returnTop and returnBottom are the end caps. Detector:
+            // tools/probe/drive-59-arrange.mjs (draw a shape, Arrange it, check the
+            // shape and the resistance survived).
 
             branchComponents.forEach((comp, index) => {
                 connectTerminals(branchNodesTop[index], 'center', comp, 'right');
@@ -12878,6 +12854,14 @@ body.android-optimized .zoom-btn {
             return true;
         }
 
+        // SUPERSEDED by createNetlistLadderLayout, and kept rather than deleted
+        // because the drawing it makes is still the nicest picture of the one shape
+        // it handles. It is no longer wired into Arrange for a specific reason: it
+        // redraws a canonical two-parallel-pairs-in-series regardless of what was
+        // actually drawn, so a 150 Ω combination came back as a 100 Ω one — the
+        // right CLASS of circuit, but not the same circuit. If it is ever brought
+        // back, it must go behind the netlist-signature check in
+        // arrangeCircuitSchematic().
         function createCombinationFallbackLayout(battery, otherComponents) {
             // Canonical screenshot-style fallback:
             // two parallel branches in series (top pair and bottom pair).
@@ -13010,6 +12994,12 @@ body.android-optimized .zoom-btn {
                 layoutTopology = hasBranching ? 'parallel' : 'series';
             }
 
+            // Arrange TIDIES a circuit; it must never change one. Capture the
+            // netlist before the wires are torn out so the redraw can be checked
+            // against it, and so the ladder builder has nodes to rebuild from.
+            const nodeMapBefore = captureComponentTerminalNodes();
+            const signatureBefore = captureCircuitNodeSignature(nodeMapBefore);
+
             clearCircuitRouting();
 
             const battery = batteries[0];
@@ -13021,8 +13011,24 @@ body.android-optimized .zoom-btn {
             } else if (layoutTopology === 'series') {
                 layoutApplied = createSeriesSquareLayout(battery, otherComponents);
             } else {
-                createCombinationFallbackLayout(battery, otherComponents);
-                layoutApplied = true;
+                // A combination has structure the parts list does not carry, so it
+                // goes straight to the ladder, which rebuilds from the netlist.
+                layoutApplied = createNetlistLadderLayout(battery, otherComponents, nodeMapBefore);
+            }
+
+            // The safety net, and it applies to every branch above. The series and
+            // parallel builders redraw from the PARTS LIST, which is sound only
+            // because any ordering of series elements — or any ordering of parallel
+            // branches — is the same circuit. Anything they were handed that does
+            // not fit that assumption comes out as a different circuit, silently.
+            // So: compare the netlist fingerprint, and if the redraw changed it,
+            // throw the redraw away and lay the captured netlist out as a ladder.
+            if (layoutApplied && captureCircuitNodeSignature() !== signatureBefore) {
+                console.warn('[CT3D Layout] ' + layoutTopology + ' layout changed the circuit — rebuilding from the netlist');
+                clearCircuitRouting();
+                positionComponent(battery, -GRID_SIZE * 5, 0, Math.PI / 2);
+                layoutApplied = createNetlistLadderLayout(battery, otherComponents, nodeMapBefore);
+                layoutTopology = 'combination';
             }
 
             if (!layoutApplied) {
@@ -13766,7 +13772,7 @@ body.android-optimized .zoom-btn {
                 case 'resistor':
                     formHTML = `
                         <div class="edit-row">
-                            <label>? Resistance (?)</label>
+                            <label>Resistance (Ω)</label>
                             <input type="number" id="edit-resistance" value="${component.properties.resistance}" min="1" max="10000" step="1">
                         </div>
                     `;
@@ -13775,7 +13781,7 @@ body.android-optimized .zoom-btn {
                 case 'led':
                     formHTML = `
                         <div class="edit-row">
-                            <label>? Forward Resistance (?)</label>
+                            <label>Forward Resistance (Ω)</label>
                             <input type="number" id="edit-resistance" value="${component.properties.resistance}" min="1" max="1000" step="1">
                         </div>
                     `;
@@ -13791,7 +13797,7 @@ body.android-optimized .zoom-btn {
                             </select>
                         </div>
                         <div class="edit-row">
-                            <label>? Contact Resistance (?)</label>
+                            <label>Contact Resistance (Ω)</label>
                             <input type="number" id="edit-resistance" value="${component.properties.resistance}" min="0.01" max="10" step="0.01">
                         </div>
                     `;
@@ -13879,7 +13885,7 @@ body.android-optimized .zoom-btn {
             analyzeCircuit();
             
             const componentType = currentEditComponent.type;
-            setStatus(`? ${componentType.charAt(0).toUpperCase() + componentType.slice(1)} updated successfully!`);
+            setStatus(`✓ ${componentType.charAt(0).toUpperCase() + componentType.slice(1)} updated successfully!`);
         }
 
         function cancelEdit() {
@@ -14930,7 +14936,7 @@ body.android-optimized .zoom-btn {
 
                 if (summary) {
                     const count = summary.componentCount || 0;
-                    const message = `?? Component Arena export ready (${count} component${count === 1 ? '' : 's'})`;
+                    const message = `⚡ Component Arena export ready (${count} component${count === 1 ? '' : 's'})`;
                     setStatus(payloadStored ? message : `${message} (quick sync unavailable)`);
                 } else if (payloadStored) {
                     setStatus('⚡ Component Arena opened with current build');
@@ -16171,7 +16177,7 @@ body.android-optimized .zoom-btn {
                 
                 notifyParentModeState();
 
-                setStatus(`? Grid ${showGrid ? 'shown' : 'hidden'} - Components snap to grid points`);
+                setStatus(`⚡ Grid ${showGrid ? 'shown' : 'hidden'} - Components snap to grid points`);
             }
         }
 
@@ -16194,7 +16200,7 @@ body.android-optimized .zoom-btn {
                     : labelVisibilityLevel === 1
                         ? 'References only'
                         : 'All labels hidden';
-            setStatus(`⚡ ? ${labelStateMessage}`);
+            setStatus(`⚡ ${labelStateMessage}`);
         }
         
         // Toggle current flow visualization style
@@ -16287,7 +16293,7 @@ body.android-optimized .zoom-btn {
             
             notifyParentModeState();
 
-            setStatus(`? Polarity indicators ${showPolarityIndicators ? 'shown' : 'hidden'}`);
+            setStatus(`⚡ Polarity indicators ${showPolarityIndicators ? 'shown' : 'hidden'}`);
         }
         
         // Toggle branding overlay
@@ -16353,38 +16359,6 @@ body.android-optimized .zoom-btn {
         }
 
         // Help functions
-        const TUTORIAL_SEEN_KEY = 'circuitry3d_tutorial_seen';
-
-        function showTutorial() {
-            const backdrop = document.getElementById('tutorial-backdrop');
-            if (backdrop) {
-                backdrop.classList.add('visible');
-                // Reset suppress checkbox each time the modal is opened via menu
-                const cb = document.getElementById('tutorial-suppress-checkbox');
-                if (cb) cb.checked = false;
-            }
-        }
-
-        function dismissTutorial() {
-            const backdrop = document.getElementById('tutorial-backdrop');
-            if (backdrop) backdrop.classList.remove('visible');
-            const cb = document.getElementById('tutorial-suppress-checkbox');
-            if (cb && cb.checked) {
-                try { localStorage.setItem(TUTORIAL_SEEN_KEY, '1'); } catch(e) {}
-            }
-        }
-
-        function maybeAutoShowTutorial() {
-            try {
-                if (!localStorage.getItem(TUTORIAL_SEEN_KEY)) {
-                    showTutorial();
-                }
-            } catch(e) {
-                // localStorage unavailable — show anyway for new sessions
-                showTutorial();
-            }
-        }
-
         function showWireGuide() {
             const guide = `
 ?? W.I.R.E. METHOD EXPLAINED
@@ -17002,7 +16976,7 @@ Made with ? for visual learners everywhere!
             analyzeCircuit();
             updateCircuitInfo();
             
-            setStatus(`? Created textbook-style parallel circuit with ${targetObjs.length} branches`);
+            setStatus(`✓ Created textbook-style parallel circuit with ${targetObjs.length} branches`);
         }
 
         function enableWireMode(options = {}) {
@@ -18627,6 +18601,59 @@ Made with ? for visual learners everywhere!
             return (vA - vB) / ohms;
         }
 
+        /**
+         * The resistance the source actually sees, straight off the MNA solve.
+         *
+         * Deliberately NOT a series/parallel decomposition. Total dissipation
+         *      P = Σ I²R   over every element the solver gave a current to
+         * is exact for any topology, and the source branch current I_src is the
+         * loop current, so
+         *      R = P / I_src²
+         * inverts it without needing to know the circuit's shape at all. A branch
+         * that carries no current — a dead end, an open switch, a failed part —
+         * contributes I² = 0 and drops out on its own, which is the whole reason
+         * this beats summing a parts list.
+         *
+         * Wire resistance is NOT included: wires are collapsed into ideal nodes by
+         * buildElectricalNodesLegacy, so the caller adds the traced wire path on
+         * top (it needs that term separately anyway, for the ampacity check).
+         *
+         * Returns null when there is no solution or nothing is conducting, so the
+         * caller can fall back rather than print a zero.
+         */
+        function getNetlistEquivalentResistance() {
+            let solution;
+            try {
+                solution = solveDCCircuitLegacy();
+            } catch (error) {
+                console.warn('[CT3D Analysis] solver unavailable', error);
+                return null;
+            }
+            if (!solution || solution.status !== 'solved') return null;
+
+            let watts = 0;
+            let sourceAmps = 0;
+            components.forEach(comp => {
+                if (!comp) return;
+                const amps = getComponentCurrentFromSolution(comp, solution);
+                if (!Number.isFinite(amps)) return;
+                if (comp.type === 'battery') {
+                    // Batteries in series all carry the loop current, and the
+                    // readouts already sum their voltages as if they do, so the
+                    // largest magnitude is the current that V_total belongs to.
+                    sourceAmps = Math.max(sourceAmps, Math.abs(amps));
+                    return;
+                }
+                const ohms = getComponentResistance(comp);
+                if (!Number.isFinite(ohms) || ohms <= 0) return;
+                watts += amps * amps * ohms;
+            });
+
+            if (!(sourceAmps > 1e-9) || !(watts > 0)) return null;
+            const ohms = watts / (sourceAmps * sourceAmps);
+            return Number.isFinite(ohms) && ohms > 0 ? ohms : null;
+        }
+
         function getEquivalentResistanceBetweenProbes(probeA, probeB) {
             if (!probeA || !probeB) return NaN;
             const aKey = getPointTerminalKey(probeA);
@@ -19286,42 +19313,61 @@ Made with ? for visual learners everywhere!
                 );
                 let totalResistance = baseWireResistance;
                 
-                if (topology.type === 'series') {
-                    // Series: R_total = R1 + R2 + ... + Rn
-                    resistors.forEach(resistor => {
-                        totalResistance += resistor.properties.resistance || 100;
-                    });
-                } else if (topology.type === 'parallel') {
-                    // Parallel: 1/R_total = 1/R1 + 1/R2 + ... + 1/Rn
-                    let reciprocalSum = 0;
-                    resistors.forEach(resistor => {
-                        const r = resistor.properties.resistance || 100;
-                        reciprocalSum += 1 / r;
-                    });
-                    totalResistance += (reciprocalSum > 0) ? (1 / reciprocalSum) : 100;
-                } else if (topology.type === 'combination') {
-                    // For combination circuits, calculate series and parallel groups separately
-                    totalResistance += calculateCombinationResistance(topology);
+                // The equivalent resistance comes from the SOLVER, not from a
+                // formula picked by the topology label. Measured against hand
+                // arithmetic (tools/probe/drive-58-topocases.mjs), the old branch
+                // was out by 2x or more on everything but a plain series loop:
+                //
+                //   two 100 in parallel   R 100 reported, 50 true   (2.0x)
+                //   100 + (100 || 100)    R 300 reported, 150 true  (2.0x)
+                //   series loop + a stub  R 800 reported, 300 true  (2.7x)
+                //
+                // Two separate faults, and the Math.max floor below made both
+                // permanent. The branch arithmetic assumes every listed part is in
+                // the conducting path, so a dead-end branch got summed in as though
+                // current went through it; and flowState.pathResistance traces ONE
+                // route, which for a parallel circuit is a single branch, i.e. the
+                // resistance of the part of the circuit you did NOT reduce. Flooring
+                // the correct parallel answer with it threw the answer away.
+                //
+                // Σ I²R over every element is exact for any topology, needs no
+                // series/parallel decomposition at all, and is automatically zero
+                // through a stub or an open switch because the solver gives those
+                // branches no current. R = V²/P then inverts it.
+                const netlistOhms = getNetlistEquivalentResistance();
+                if (netlistOhms !== null) {
+                    totalResistance += netlistOhms;
                 } else {
-                    // Unknown or simple circuit - use basic addition
-                    resistors.forEach(resistor => {
-                        totalResistance += resistor.properties.resistance || 100;
-                    });
-                }
-                
-                // Add switch resistance
-                switches.forEach(sw => {
-                    if (sw.properties.isOn) {
-                        totalResistance += sw.properties.resistance || 0.1;
+                    // No solution (floating network, singular matrix). Fall back to
+                    // the old label-driven arithmetic rather than reporting nothing.
+                    if (topology.type === 'parallel') {
+                        let reciprocalSum = 0;
+                        resistors.forEach(resistor => {
+                            const r = resistor.properties.resistance || 100;
+                            reciprocalSum += 1 / r;
+                        });
+                        totalResistance += (reciprocalSum > 0) ? (1 / reciprocalSum) : 100;
+                    } else {
+                        resistors.forEach(resistor => {
+                            totalResistance += resistor.properties.resistance || 100;
+                        });
                     }
-                });
+                    // Switches are elements in the netlist, so they are already
+                    // counted above; they only need adding on this fallback path.
+                    switches.forEach(sw => {
+                        if (sw.properties.isOn) {
+                            totalResistance += sw.properties.resistance || 0.1;
+                        }
+                    });
+                    if (isFinite(flowState.pathResistance)) {
+                        totalResistance = Math.max(totalResistance, flowState.pathResistance);
+                    }
+                }
 
                 if (flowState.shortCircuit) {
-                    totalResistance = Math.max(totalResistance, flowState.pathResistance || FLOW_CONSTANTS.shortThreshold, FLOW_CONSTANTS.shortThreshold);
-                } else if (isFinite(flowState.pathResistance)) {
-                    totalResistance = Math.max(totalResistance, flowState.pathResistance);
+                    totalResistance = Math.max(totalResistance, FLOW_CONSTANTS.shortThreshold);
                 }
-                
+
                 let current = totalVoltage / Math.max(totalResistance, FLOW_CONSTANTS.shortThreshold, 0.001);
                 let wireStress = computeWireStressAdjustment(current, totalVoltage, baseWireResistance);
                 if (wireStress.adjustedWireResistance > baseWireResistance) {
@@ -19740,12 +19786,161 @@ Made with ? for visual learners everywhere!
             }
         }
         
-        // Detect whether circuit is series, parallel, or combination
+        // ── Circuit topology, read off the ELECTRICAL netlist ─────────────────
+        //
+        // Series / parallel / combination are statements about CURRENT, so they can
+        // only be answered from the netlist. The previous implementation answered
+        // from the drawing, and its first test was `if (junctions.length > 0)
+        // return 'combination'` — so it could never once say "series", because a
+        // junction is just a corner or a splice (see the Junction Node role) and
+        // every circuit drawn with a corner has them. The shipped showcase IS a
+        // series loop (battery → resistor → switch → lamp → back) and was called
+        // "combination" from one call site and "parallel" from the other.
+        //
+        // That was not only a wrong label. arrangeCircuitSchematic() branches on
+        // this to pick a LAYOUT, and then rewires the circuit to match it — so
+        // "Arrange" on a series loop tore it down and rebuilt it on parallel rails,
+        // turning a series circuit into a parallel one.
+        //
+        // buildElectricalNodesLegacy() already collapses every wire and junction
+        // into one electrical node with union-find, which is exactly the step that
+        // makes the geometry stop mattering. What is left is a graph: nodes as
+        // vertices, each two-terminal part (and each battery) as one edge. Then:
+        //
+        //   loops = E - N + 1        (independent loops, per connected component)
+        //     loops <= 0  → nothing closed → 'none'
+        //     loops == 1  → ONE loop, so one current, so 'series' — however many
+        //                   corners it was drawn with
+        //     loops >  1  → more than one path. Prune dead-end branches (they
+        //                   carry no current), and if only TWO nodes are left then
+        //                   every remaining part spans the same pair → 'parallel'.
+        //                   Three or more nodes means at least one branch has
+        //                   something in series inside it → 'combination'.
+        //
+        // Note the parallel test is "two nodes remain", not "count the paths": a
+        // parallel branch that itself holds two parts in series introduces a middle
+        // node, which is precisely what makes it a combination circuit.
+        function classifyTopologyFromNetlist() {
+            if (typeof buildElectricalNodesLegacy !== 'function' ||
+                typeof buildNetlistLegacy !== 'function') {
+                return null;
+            }
+
+            let netlist;
+            try {
+                const { terminalToNode } = buildElectricalNodesLegacy();
+                netlist = buildNetlistLegacy(terminalToNode);
+            } catch (error) {
+                console.warn('[CT3D Topology] netlist unavailable, falling back to geometry', error);
+                return null;
+            }
+            if (!netlist) return null;
+
+            // Sources are edges too. A battery in the loop is what closes it, and
+            // leaving it out would make every single-part circuit look open.
+            const edges = [
+                ...netlist.resistors.map(r => ({ a: r.a, b: r.b, resistive: true })),
+                ...netlist.sources.map(s => ({ a: s.positiveNode, b: s.negativeNode, resistive: false }))
+            ].filter(e => e.a && e.b && e.a !== e.b);
+
+            if (netlist.resistors.length === 0) {
+                return { type: 'none', groups: [], loops: 0, nodes: 0 };
+            }
+
+            // Work on the energized sub-circuit only. Parts sitting unwired on the
+            // grid are their own connected components and must not be classified.
+            const adjacency = new Map();
+            const touch = (n) => {
+                if (!adjacency.has(n)) adjacency.set(n, new Set());
+                return adjacency.get(n);
+            };
+            edges.forEach((e, i) => {
+                touch(e.a).add(i);
+                touch(e.b).add(i);
+            });
+
+            const seed = netlist.sources.length
+                ? netlist.sources[0].positiveNode
+                : (edges[0] && edges[0].a);
+            if (!seed || !adjacency.has(seed)) {
+                return { type: 'none', groups: [], loops: 0, nodes: 0 };
+            }
+
+            const liveNodes = new Set();
+            const liveEdges = new Set();
+            const queue = [seed];
+            liveNodes.add(seed);
+            while (queue.length) {
+                const node = queue.pop();
+                for (const i of adjacency.get(node) || []) {
+                    liveEdges.add(i);
+                    const other = edges[i].a === node ? edges[i].b : edges[i].a;
+                    if (!liveNodes.has(other)) {
+                        liveNodes.add(other);
+                        queue.push(other);
+                    }
+                }
+            }
+
+            const loops = liveEdges.size - liveNodes.size + 1;
+            if (loops <= 0) {
+                return { type: 'none', groups: [], loops, nodes: liveNodes.size };
+            }
+            if (loops === 1) {
+                return { type: 'series', groups: [], loops, nodes: liveNodes.size };
+            }
+
+            // Strip dead ends: a node with one edge is the end of a stub, it carries
+            // no current, and it would otherwise inflate the node count and make a
+            // plain parallel circuit read as a combination.
+            const degree = new Map();
+            liveNodes.forEach(n => degree.set(n, 0));
+            liveEdges.forEach(i => {
+                degree.set(edges[i].a, (degree.get(edges[i].a) || 0) + 1);
+                degree.set(edges[i].b, (degree.get(edges[i].b) || 0) + 1);
+            });
+            const keptEdges = new Set(liveEdges);
+            let pruned = true;
+            while (pruned) {
+                pruned = false;
+                for (const i of Array.from(keptEdges)) {
+                    const { a, b } = edges[i];
+                    if (degree.get(a) === 1 || degree.get(b) === 1) {
+                        keptEdges.delete(i);
+                        degree.set(a, degree.get(a) - 1);
+                        degree.set(b, degree.get(b) - 1);
+                        pruned = true;
+                    }
+                }
+            }
+            const keptNodes = new Set();
+            keptEdges.forEach(i => {
+                keptNodes.add(edges[i].a);
+                keptNodes.add(edges[i].b);
+            });
+
+            return {
+                type: keptNodes.size <= 2 ? 'parallel' : 'combination',
+                groups: [],
+                loops,
+                nodes: keptNodes.size
+            };
+        }
+
+        // Detect whether circuit is series, parallel, or combination.
+        // The arguments are kept for the two existing call sites (which pass
+        // different part lists and used to DISAGREE with each other about the same
+        // circuit); they are only consulted if the netlist cannot be built.
         function detectCircuitTopology(resistors, wires, junctions) {
+            const fromNetlist = classifyTopologyFromNetlist();
+            if (fromNetlist) {
+                return fromNetlist;
+            }
+
             if (resistors.length === 0) {
                 return { type: 'none', groups: [] };
             }
-            
+
             // If there are junctions, likely parallel or combination
             if (junctions.length > 0) {
                 // Check if junctions create parallel paths
@@ -19755,22 +19950,22 @@ Made with ? for visual learners everywhere!
                 }
                 return { type: 'combination', groups: [] };
             }
-            
+
             // No junctions - check connection pattern
             // If all resistors are in a single chain, it's series
             if (resistors.length === 1) {
                 return { type: 'series', groups: [resistors] };
             }
-            
+
             // Check if all resistors are connected in sequence
             const isSeriesChain = checkSeriesConnection(resistors, wires);
             if (isSeriesChain) {
                 return { type: 'series', groups: [resistors] };
             }
-            
+
             return { type: 'simple', groups: [] };
         }
-        
+
         // Check if resistors are connected in series (one after another)
         function checkSeriesConnection(resistors, wires) {
             if (resistors.length < 2) return true;
@@ -19986,11 +20181,36 @@ Made with ? for visual learners everywhere!
             return false;
         }
         
-        // Calculate resistance for combination circuits
-        function calculateCombinationResistance(topology) {
-            // Simplified calculation - just use series sum for now
-            // A full implementation would require complex graph analysis
-            return 100;
+        // Calculate resistance for combination circuits.
+        //
+        // This used to `return 100` — a constant, in ohms, for ANY circuit. The
+        // comment already said "just use series sum for now"; the code simply
+        // never did it. That constant was not harmless, because the caller does
+        //     totalResistance = Math.max(totalResistance, flowState.pathResistance)
+        // so a fake 100 Ω FLOORS the reported resistance. Every circuit whose real
+        // resistance is under ~100 Ω was reported as ~100 Ω, and current and power
+        // fell with it: three 2 Ω parts on a 12 V battery (true 6.08 Ω / 1.97 A /
+        // 23.7 W) reported 102 Ω / 0.118 A / 1.41 W — out by about 17x. That number
+        // feeds the W.I.R.E. ticker, the Arena export's loadImpedanceOhms, and the
+        // F.U.S.E. power check, so parts that should have been cooking read cold.
+        //
+        // Now it does what it always claimed: sum the resistors in series. That is
+        // still an approximation — anything the caller's `resistors` list misses
+        // (lamps, motors, speakers) is picked up by the pathResistance floor above,
+        // which walks the actual conducting path. It is only ever an UNDER-estimate
+        // now, so the Math.max resolves to the real traced path instead of a guess.
+        //
+        // The genuine fix is upstream: detectCircuitTopology classifies from
+        // geometry (any junction at all => "not series"), so a plain series loop
+        // drawn with corner junctions lands here in the first place. Classifying
+        // from the MNA netlist instead is the queued rewrite — do not paper over it
+        // by tuning this function.
+        function calculateCombinationResistance(topology, resistors) {
+            const parts = Array.isArray(resistors) ? resistors : [];
+            return parts.reduce(
+                (sum, part) => sum + (Number(part?.properties?.resistance) || 0),
+                0
+            );
         }
         
         // Update topology display in UI
