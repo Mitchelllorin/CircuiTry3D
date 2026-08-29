@@ -131,30 +131,16 @@
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
 }
 
-/* Guided tour: persistent "skip" pill so the user can dismiss the whole tour at
-   any point, including between cards / mid-sweep. */
-.builder-tour-skip {
-  pointer-events: auto;
-  position: fixed;
-  top: calc(10px + env(safe-area-inset-top, 0px));
-  right: calc(10px + env(safe-area-inset-right, 0px));
-  padding: 6px 12px;
-  border-radius: 999px;
-  border: 1px solid rgba(136, 204, 255, 0.3);
-  background: rgba(10, 24, 48, 0.72);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  color: rgba(232, 246, 255, 0.85);
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  z-index: 3;
-}
-
-.builder-tour-skip:hover {
-  border-color: rgba(136, 204, 255, 0.5);
-  background: rgba(10, 24, 48, 0.88);
-}
+/* There is no top-right "Skip tour" pill any more, in either walkthrough, and the
+   .builder-tour-skip rule that styled it is gone with it. It was clutter twice
+   over: a corner pill is easy to miss and awkward to thumb, and it was parked in
+   the workspace mode bar's own row - the bar carries --z-builder-top (1300)
+   against the tour layer's 1260, so the bar painted straight over it. That was
+   invisible while the bar was an opaque slab and showed up as a ghost the moment
+   the bar went containerless. Both walkthroughs dismiss from the close button on
+   the coach card instead (.builder-tutorial-close), which is where the user is
+   already looking. --z-tutorial stays at 1400 regardless: a layer teaching the
+   app should be the topmost thing while it is up. */
 
 /* Guided tour: a "Next" affordance on the card so the user can advance early. */
 .builder-tour-next {

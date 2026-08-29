@@ -404,10 +404,6 @@ export function BuilderBuildAlong({
 
   return (
     <div className="builder-tutorial-layer">
-      <button type="button" className="builder-tour-skip" onClick={onClose}>
-        {isLast ? "Done ✕" : "Skip ✕"}
-      </button>
-
       {/* Spotlight: blur everything except the target, with a focus ring. */}
       {rect && (
         <>
@@ -456,8 +452,9 @@ export function BuilderBuildAlong({
             <span className="builder-tutorial-kicker-step">
               {Math.min(step + 1, BUILD_STEPS.length)} / {BUILD_STEPS.length}
             </span>
-            {/* Dismiss on the card itself — the Skip pill is pinned to the far
-                top-right corner, which is easy to miss and awkward to reach. */}
+            {/* The only way out. There used to be a "Skip" pill in the top-right
+                corner as well; it was removed because a corner pill is easy to
+                miss, awkward to reach, and it sat in the workspace mode bar row. */}
             <button
               type="button"
               className="builder-tutorial-close"

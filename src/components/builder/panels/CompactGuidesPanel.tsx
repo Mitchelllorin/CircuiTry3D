@@ -24,7 +24,6 @@ type CompactGuidesPanelProps = {
   activeGuide: GuideWorkflowId;
   onToggle: () => void;
   onSelectGuide: (guide: GuideWorkflowId) => void;
-  onLaunchInteractiveTutorial: () => void;
   onOpenPracticeWorksheet: () => void;
   onOpenShortcutsReference: () => void;
   onOpenAboutReference: () => void;
@@ -150,7 +149,6 @@ export function CompactGuidesPanel({
   activeGuide,
   onToggle,
   onSelectGuide,
-  onLaunchInteractiveTutorial,
   onOpenPracticeWorksheet,
   onOpenShortcutsReference,
   onOpenAboutReference,
@@ -388,15 +386,12 @@ export function CompactGuidesPanel({
             >
               Next Guide
             </button>
-            {activeGuide === "tutorial" && (
-              <button
-                type="button"
-                className="guides-action-btn guides-action-btn--primary"
-                onClick={onLaunchInteractiveTutorial}
-              >
-                Launch Interactive Tutorial
-              </button>
-            )}
+            {/* Help used to hand a first-time user this guide and nothing else — a
+                wall of headings and bullet lists — while the two walkthroughs that
+                actually teach in the 3D workspace were buried in a side-menu chip
+                row. Once the tour had been dismissed, the obvious way in led only
+                to the reading material. Lead with the walkthroughs; the written
+                guide stays underneath as the reference it is. */}
             {activeGuide === "wire-guide" && (
               <button
                 type="button"

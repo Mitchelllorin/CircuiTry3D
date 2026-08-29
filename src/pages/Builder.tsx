@@ -7,7 +7,6 @@ import {
   useState,
 } from "react";
 import { useBuilderFrame } from "../hooks/builder/useBuilderFrame";
-import { useLogoAnimation } from "../hooks/builder/useLogoAnimation";
 import { useHelpModal } from "../hooks/builder/useHelpModal";
 import { useResponsiveLayout } from "../hooks/builder/useResponsiveLayout";
 import { useWorkspaceBackground } from "../hooks/builder/useWorkspaceBackground";
@@ -30,14 +29,9 @@ import ArenaView from "../components/arena/ArenaView";
 import { CircuitSaveModal } from "../components/builder/modals/CircuitSaveModal";
 import { CircuitLoadModal } from "../components/builder/modals/CircuitLoadModal";
 import { CircuitRecoveryBanner } from "../components/builder/modals/CircuitRecoveryBanner";
-import { BuilderInteractiveTutorial } from "../components/builder/tutorial/BuilderInteractiveTutorial";
 import { BuilderGuidedTour } from "../components/builder/tutorial/BuilderGuidedTour";
 import { BuilderBuildAlong } from "../components/builder/tutorial/BuilderBuildAlong";
-import { WorkspaceLogo3D } from "../components/builder/branding/WorkspaceLogo3D";
-import {
-  CompactSettingsPanel,
-  type SettingsPanelTab,
-} from "../components/builder/panels/CompactSettingsPanel";
+import { CompactSettingsPanel } from "../components/builder/panels/CompactSettingsPanel";
 import { useCircuitStorage } from "../context/CircuitStorageContext";
 import "../styles/circuit-storage.css";
 import practiceProblems, {
@@ -63,7 +57,6 @@ import type {
   HelpSection,
   HelpModalView,
   SettingsItem,
-  LogoNumericSettingKey,
   PracticeWorksheetStatus,
   PanelAction,
 } from "../components/builder/types";
@@ -75,7 +68,6 @@ import {
   VIEW_CONTROL_ACTIONS,
   SETTINGS_ITEMS,
   WIRE_LEGEND,
-  DEFAULT_LOGO_SETTINGS,
   ENABLE_SCROLLER_MENU,
 } from "../components/builder/constants";
 import {
@@ -118,6 +110,7 @@ import CurrentFlowAnimation from '../components/CurrentFlowAnimation';
 
 type WorkspacePanelMode =
   | "arena"
+  | "learn"
   | "arcade"
   | "classroom"
   | "community"
@@ -135,7 +128,12 @@ const INTRO_DIALOG_STORAGE_KEY = "circuitry3d:onboarding:v1";
 const JUNCTION_TIP_STORAGE_KEY = "circuitry3d:junction-tip-dismissed:v1";
 // Set once the user dismisses the guided tour "for good" — after that it no longer
 // auto-opens on launch (still re-launchable from the Guides menu).
-const TOUR_DISMISSED_KEY = "circuitry3d:onboarding:tour-dismissed:v1";
+// Bumped v1 → v2 deliberately. Closing the tour writes this key and NOTHING ever
+// clears it, so a single tap on ✕ retired the guided tour permanently — on every
+// device that had already dismissed it, the app simply had no walkthrough any more,
+// which read as the tour having been deleted. Bumping the key hands it back to
+// everyone once. It is still re-launchable from Help → Take the Tour.
+const TOUR_DISMISSED_KEY = "circuitry3d:onboarding:tour-dismissed:v2";
 const ACTION_BAR_MODE_STORAGE_KEY = "ct3d.actionbar.mode";
 const THUMB_DESCRIPTORS_STORAGE_KEY = "ct3d.actionbar.descriptors";
 
@@ -1359,8 +1357,6 @@ export default function Builder() {
     resistance: 0,
     voltage: 0,
   });
-  const [isInteractiveTutorialOpen, setInteractiveTutorialOpen] =
-    useState(false);
   const [isGuidedTourOpen, setGuidedTourOpen] = useState(false);
   const [isBuildAlongOpen, setBuildAlongOpen] = useState(false);
   const [isCurrentFlowPayoffVisible, setCurrentFlowPayoffVisible] =
@@ -1684,13 +1680,6 @@ export default function Builder() {
   }, [circuitState]);
 
   const {
-    floatingLogoRef,
-    logoSettings,
-    prefersReducedMotion,
-    handleLogoSettingChange,
-    toggleLogoVisibility,
-  } = useLogoAnimation();
-  const {
     workspaceSkinOptions,
     workspaceSkinStyle,
     activeWorkspaceSkinId,
@@ -1705,8 +1694,6 @@ export default function Builder() {
     resetWorkspaceSkin,
   } = useWorkspaceBackground();
   const [isSettingsPanelOpen, setSettingsPanelOpen] = useState(false);
-  const [activeSettingsPanelTab, setActiveSettingsPanelTab] =
-    useState<SettingsPanelTab>("workspace-skins");
 
   const {
     helpSectionRefs,
@@ -2143,6 +2130,29 @@ export default function Builder() {
     ],
   );
 
+  // The two immersive walkthroughs, hoisted out of the side-menu chips that used
+  // to own them inline. Both are reachable from the Guides/Help panel now, and
+  // both have to come back to BUILD mode first: the overlay layer only makes sense
+  // over the 3D workspace, and the "leaving build mode closes the walkthroughs"
+  // effect would otherwise shut them again on the very next render.
+  const startGuidedTour = useCallback(() => {
+    resetWorkspaceSurfaces();
+    setWorkspaceModeWithGlobalSync("build");
+    setBuildAlongOpen(false);
+    triggerBuilderAction("load-payoff");
+    setShowcaseLocked(true);
+    setGuidedTourOpen(true);
+  }, [resetWorkspaceSurfaces, setWorkspaceModeWithGlobalSync, triggerBuilderAction]);
+
+  const startBuildAlong = useCallback(() => {
+    resetWorkspaceSurfaces();
+    setWorkspaceModeWithGlobalSync("build");
+    setGuidedTourOpen(false);
+    setShowcaseLocked(false);
+    setCircuitLocked(false);
+    triggerBuilderAction("clear-workspace");
+    setBuildAlongOpen(true);
+  }, [resetWorkspaceSurfaces, setWorkspaceModeWithGlobalSync, triggerBuilderAction]);
   const openGuidesWorkspace = useCallback(
     (workflow: GuideWorkflowId = "tutorial") => {
       setActiveGuideWorkflow(workflow);
@@ -2258,6 +2268,8 @@ export default function Builder() {
         openPracticeWorkspace();
       } else if (pendingMode === "arena") {
         openArenaWorkspace({ forceSync: true });
+      } else if (pendingMode === "learn") {
+        openWorkspacePanelMode("learn");
       } else if (pendingMode === "help") {
         openGuidesWorkspace("tutorial");
       } else if (pendingMode === "wire-guide") {
@@ -2332,14 +2344,6 @@ export default function Builder() {
   const handleEnvironmentChange = useCallback((scenario: EnvironmentalScenario) => {
     setActiveEnvironment(scenario);
   }, []);
-
-  const resetLogoSettings = useCallback(() => {
-    handleLogoSettingChange("speed", DEFAULT_LOGO_SETTINGS.speed);
-    handleLogoSettingChange("travelX", DEFAULT_LOGO_SETTINGS.travelX);
-    handleLogoSettingChange("travelY", DEFAULT_LOGO_SETTINGS.travelY);
-    handleLogoSettingChange("bounce", DEFAULT_LOGO_SETTINGS.bounce);
-    handleLogoSettingChange("opacity", DEFAULT_LOGO_SETTINGS.opacity);
-  }, [handleLogoSettingChange]);
 
   const handleComponentAction = useCallback(
     (component: ComponentAction) => {
@@ -3202,7 +3206,6 @@ export default function Builder() {
     // timer at the same time put two unsynced card systems on screen at once
     // (the "two tutorials running at once" bug). While any walkthrough overlay
     // is open, it is the sole narrator; the banner returns once it closes.
-    !isInteractiveTutorialOpen &&
     !isGuidedTourOpen &&
     !isBuildAlongOpen;
 
@@ -3281,6 +3284,11 @@ export default function Builder() {
 
   const workspacePanelMeta = useMemo(() => {
     switch (activeWorkspacePanelMode) {
+      case "learn":
+        return {
+          title: "Learn",
+          subtitle: "Two ways in — watch the circuit explain itself, or build one with me.",
+        };
       case "arena":
         return {
           title: "Component Arena",
@@ -3373,6 +3381,23 @@ export default function Builder() {
             }}
           />
         );
+      case "learn":
+        return (
+          <div className="learn-launcher">
+            <button type="button" className="learn-launch-btn" onClick={startGuidedTour}>
+              <span className="learn-launch-title">Take the Tour</span>
+              <span className="learn-launch-sub">
+                The camera walks the circuit and names every part as it goes.
+              </span>
+            </button>
+            <button type="button" className="learn-launch-btn" onClick={startBuildAlong}>
+              <span className="learn-launch-title">Build it with me</span>
+              <span className="learn-launch-sub">
+                A clean workspace, one step at a time, until it lights.
+              </span>
+            </button>
+          </div>
+        );
       case "community":
         return <Community />;
       case "gallery":
@@ -3401,6 +3426,8 @@ export default function Builder() {
     activeWireProfile,
     activeWorkspacePanelMode,
     handleApplyWireProfile,
+    startGuidedTour,
+    startBuildAlong,
     handleClearWireProfile,
     liveWireMetricsSnapshot.current,
     liveWireMetricsSnapshot.isOpenCircuit,
@@ -4240,10 +4267,7 @@ export default function Builder() {
                   });
                   const isSettingPanelTabActive =
                     isSettingsPanelOpen &&
-                    ((setting.action === "open-logo-settings" &&
-                      activeSettingsPanelTab === "logo-motion") ||
-                      (setting.action === "open-workspace-skins" &&
-                        activeSettingsPanelTab === "workspace-skins"));
+                    setting.action === "open-workspace-skins";
                   const isActive =
                     (setting.isActive?.(modeState) ?? false) || isSettingPanelTabActive;
                   return (
@@ -4252,12 +4276,7 @@ export default function Builder() {
                       type="button"
                       className="slider-btn slider-btn-stacked"
                       onClick={() => {
-                        if (setting.action === "open-logo-settings") {
-                          setActiveSettingsPanelTab("logo-motion");
-                          setSettingsPanelOpen(true);
-                          setRightMenuOpen(true);
-                        } else if (setting.action === "open-workspace-skins") {
-                          setActiveSettingsPanelTab("workspace-skins");
+                        if (setting.action === "open-workspace-skins") {
                           setSettingsPanelOpen(true);
                           setRightMenuOpen(true);
                         } else {
@@ -4336,25 +4355,7 @@ export default function Builder() {
                 <button
                   type="button"
                   className="slider-chip"
-                  onClick={() => {
-                    openGuidesWorkspace("tutorial");
-                    setInteractiveTutorialOpen(true);
-                  }}
-                  title="Start the interactive tutorial (battery -> resistor -> wire -> simulate)"
-                >
-                  <span className="slider-chip-label">
-                    Launch Interactive Tutorial
-                  </span>
-                </button>
-                <button
-                  type="button"
-                  className="slider-chip"
-                  onClick={() => {
-                    setBuildAlongOpen(false);
-                    triggerBuilderAction("load-payoff");
-                    setShowcaseLocked(true);
-                    setGuidedTourOpen(true);
-                  }}
+                  onClick={startGuidedTour}
                   title="Replay the guided tour of the showcase circuit."
                 >
                   <span className="slider-chip-label">Take the Tour</span>
@@ -4362,13 +4363,7 @@ export default function Builder() {
                 <button
                   type="button"
                   className="slider-chip"
-                  onClick={() => {
-                    setGuidedTourOpen(false);
-                    setShowcaseLocked(false);
-                    setCircuitLocked(false);
-                    triggerBuilderAction("clear-workspace");
-                    setBuildAlongOpen(true);
-                  }}
+                  onClick={startBuildAlong}
                   title="Build a circuit yourself, step by step."
                 >
                   <span className="slider-chip-label">Build it with me</span>
@@ -4511,17 +4506,17 @@ export default function Builder() {
           aria-hidden="true"
           style={workspaceSkinStyle}
         />
-        {(isCurrentFlowPayoffLocking || isShowcaseLocked) && (
-          <button
-            type="button"
-            className="builder-payoff-guard"
-            aria-label="Showcase circuit is locked — tap to start editing"
-            title="Tap to edit this circuit"
-            onClick={() => setShowcaseLocked(false)}
-          >
-            <span className="builder-payoff-guard__hint">🔒 Demo circuit — tap to edit</span>
-          </button>
-        )}
+        {/* The "🔒 Demo circuit — tap to edit" pill used to sit here, floating over
+            the bottom of the workspace for as long as the showcase was locked.
+            Removed: it announced something the circuit already says for itself,
+            and its whole purpose was to invite a tap that unlocks the demo —
+            which is the one thing the lock exists to prevent. A stray tap there
+            let someone drag the showcase apart and lose their bearings.
+
+            The lock stays. What moved is the unlock: it now happens when the tour
+            ENDS (see BuilderGuidedTour's onClose below), which is the deliberate
+            "I am done watching, the workspace is mine" moment. Nobody is left
+            with a read-only workspace and no way out. */}
       </div>
 
       {activeWorkspacePanelMode === "arena" && (
@@ -4617,13 +4612,16 @@ export default function Builder() {
         </div>
       )}
 
-      <div
-        ref={floatingLogoRef}
-        className="builder-floating-logo builder-floating-logo--3d"
-        aria-hidden="true"
-      >
-        <WorkspaceLogo3D />
-      </div>
+      {/* The drifting 3D logo watermark used to hang here, over the workspace, at
+          10% opacity. It was a second live WebGL context — a full r3f <Canvas> with
+          antialias, three lights and an animated mesh, rendering every frame — sat
+          on top of the builder's own Three.js scene, purely as decoration nobody
+          could quite see. Two costs, both real: it competed with the workspace for
+          GPU and for the device's WebGL context budget (this app has already had to
+          fight for contexts — see the arena/builder blanking fixes), and on mobile
+          its transparent clear is not always honoured, which paints it as a faint
+          opaque box drifting behind the circuit. Removed. The wordmark still exists
+          for headers as <HeaderLogo3D>, where it is actually legible. */}
 
       {activeWorkspacePanelMode && workspacePanelMeta && workspacePanelContent && (
         <WorkspaceModePanel
@@ -4737,14 +4735,7 @@ export default function Builder() {
       {isSettingsPanelOpen && (
         <CompactSettingsPanel
           isOpen={isSettingsPanelOpen}
-          activeTab={activeSettingsPanelTab}
           onToggle={() => setSettingsPanelOpen(false)}
-          onChangeTab={setActiveSettingsPanelTab}
-          logoSettings={logoSettings}
-          prefersReducedMotion={prefersReducedMotion}
-          onLogoSettingChange={handleLogoSettingChange}
-          onToggleLogoVisibility={toggleLogoVisibility}
-          onResetLogoSettings={resetLogoSettings}
           skinOptions={workspaceSkinOptions}
           activeSkinId={activeWorkspaceSkinId}
           hasCustomSkin={hasCustomWorkspaceSkin}
@@ -4820,10 +4811,6 @@ export default function Builder() {
             setGuidesWorkspaceMode(true);
             setGuidesPanelOpen(true);
           }}
-          onLaunchInteractiveTutorial={() => {
-            setActiveGuideWorkflow("tutorial");
-            setInteractiveTutorialOpen(true);
-          }}
           onOpenPracticeWorksheet={() => openPracticeWorkspace()}
           onOpenShortcutsReference={() => openHelpCenter("shortcuts")}
           onOpenAboutReference={() => openHelpCenter("about")}
@@ -4895,22 +4882,17 @@ export default function Builder() {
         />
       )}
 
-      <BuilderInteractiveTutorial
-        isOpen={isInteractiveTutorialOpen}
-        onClose={() => setInteractiveTutorialOpen(false)}
-        modeState={modeState}
-        circuitState={circuitState}
-        lastSimulationAt={lastSimulationAt}
-        isLeftMenuOpen={isLeftMenuOpen}
-        onRequestOpenLeftMenu={() => setLeftMenuOpen(true)}
-        onInvokeAction={triggerBuilderAction}
-      />
 
       <BuilderGuidedTour
         open={isGuidedTourOpen}
         onClose={() => {
           // Dismiss for good — it won't auto-open again (Guides menu re-launches it).
           setGuidedTourOpen(false);
+          // Ending the tour hands the workspace over. This used to be the job of
+          // the "tap to edit" pill; with the pill gone this is the only unlock on
+          // the guided-tour path, so without it the showcase would stay read-only
+          // until a reload.
+          setShowcaseLocked(false);
           try {
             window.localStorage.setItem(TOUR_DISMISSED_KEY, "1");
           } catch {

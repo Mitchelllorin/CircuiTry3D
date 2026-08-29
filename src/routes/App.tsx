@@ -170,6 +170,14 @@ function AppLayout() {
     const updateLayoutVars = () => {
       const modeBarHeight = modeBar?.offsetHeight ?? 0;
       shell.style.setProperty("--app-mode-bar-height", `${modeBarHeight}px`);
+      // Also publish it on <html>. Custom properties are substituted where they
+      // are DECLARED, so a :root rule that derives from this — e.g. the ticker
+      // strip's top — only sees it if it lives on :root too. Setting it on the
+      // shell alone left those rules reading the 0px placeholder.
+      document.documentElement.style.setProperty(
+        "--app-mode-bar-height",
+        `${modeBarHeight}px`,
+      );
     };
 
     updateLayoutVars();

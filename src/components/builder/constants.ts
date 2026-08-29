@@ -723,14 +723,11 @@ export const VIEW_CONTROL_ACTIONS: PanelAction[] = [
   },
 ];
 
+// "Logo Motion" used to lead this list — speed / travel / bounce / opacity
+// sliders for the drifting logo watermark. That watermark is gone (it was a
+// second live WebGL canvas over the workspace), so the whole settings entry
+// steered nothing. Removed with it.
 export const SETTINGS_ITEMS: SettingsItem[] = [
-  {
-    id: "logo-motion",
-    label: "Logo Motion",
-    action: "open-logo-settings",
-    getDescription: () => "Configure floating logo animation",
-    isActive: () => false,
-  },
   {
     id: "workspace-skins",
     label: "Workspace Skin",

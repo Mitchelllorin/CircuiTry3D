@@ -239,9 +239,6 @@ export function BuilderGuidedTour({
 
   return (
     <div className="builder-tutorial-layer">
-      <button type="button" className="builder-tour-skip" onClick={dismiss}>
-        Skip tour ✕
-      </button>
       {showCard && (
         <div className="builder-tutorial-card builder-tutorial-card--tour">
           <div className="builder-tutorial-header">

@@ -385,6 +385,56 @@
   gap: 10px;
 }
 
+/* ── Learn ────────────────────────────────────────────────────────────────
+   Help and the tutorial were the same door for a while: the Help panel led with
+   two walkthrough launchers and then continued into a written reference guide,
+   so neither thing was clearly the point of the panel. They are separate tabs
+   now — 🎓 Learn starts a walkthrough, 📚 Help is reference — and these are the
+   Learn side. Two targets, nothing else, each big enough for a thumb. */
+.learn-launcher {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.learn-launch-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  width: 100%;
+  padding: 13px 15px;
+  border: 1px solid rgba(136, 204, 255, 0.35);
+  border-radius: 12px;
+  background: rgba(12, 34, 62, 0.55);
+  color: rgba(228, 244, 255, 0.95);
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+}
+
+.learn-launch-btn:hover,
+.learn-launch-btn:focus-visible {
+  background: rgba(20, 56, 96, 0.7);
+  border-color: rgba(136, 204, 255, 0.6);
+  outline: none;
+}
+
+.learn-launch-btn:active {
+  transform: scale(0.98);
+}
+
+.learn-launch-title {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.learn-launch-sub {
+  font-size: 11.5px;
+  line-height: 1.35;
+  color: rgba(190, 219, 245, 0.8);
+}
+
 .guides-action-btn {
   border: 1px solid rgba(136, 204, 255, 0.35);
   border-radius: 9px;

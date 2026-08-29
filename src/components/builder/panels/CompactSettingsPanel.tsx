@@ -1,32 +1,18 @@
-import type { LogoNumericSettingKey } from "../types";
 import type {
   WorkspaceSkinId,
   WorkspaceSkinOption,
 } from "../../../hooks/builder/useWorkspaceBackground";
-import { LogoSettingsModal } from "../modals/LogoSettingsModal";
 import { WorkspaceSkinModal } from "../modals/WorkspaceSkinModal";
 import WordMark from "../../WordMark";
 import "../../../styles/compact-settings.css";
 
-export type SettingsPanelTab = "workspace-skins" | "logo-motion";
+// Only one section remains, but the type is kept so callers that track which
+// settings section is showing keep compiling and can grow again later.
+export type SettingsPanelTab = "workspace-skins";
 
 type CompactSettingsPanelProps = {
   isOpen: boolean;
-  activeTab: SettingsPanelTab;
   onToggle: () => void;
-  onChangeTab: (tab: SettingsPanelTab) => void;
-  logoSettings: {
-    isVisible: boolean;
-    speed: number;
-    travelX: number;
-    travelY: number;
-    bounce: number;
-    opacity: number;
-  };
-  prefersReducedMotion: boolean;
-  onLogoSettingChange: (key: LogoNumericSettingKey, value: number) => void;
-  onToggleLogoVisibility: () => void;
-  onResetLogoSettings: () => void;
   skinOptions: WorkspaceSkinOption[];
   activeSkinId: WorkspaceSkinId;
   hasCustomSkin: boolean;
@@ -42,14 +28,7 @@ type CompactSettingsPanelProps = {
 
 export function CompactSettingsPanel({
   isOpen,
-  activeTab,
   onToggle,
-  onChangeTab,
-  logoSettings,
-  prefersReducedMotion,
-  onLogoSettingChange,
-  onToggleLogoVisibility,
-  onResetLogoSettings,
   skinOptions,
   activeSkinId,
   hasCustomSkin,
@@ -77,60 +56,26 @@ export function CompactSettingsPanel({
           <span className="toggle-icon">{isOpen ? "▼" : "▲"}</span>
           <span className="toggle-label">Workspace Settings</span>
         </button>
-        {isOpen && (
-          <div
-            className="compact-settings-tablist"
-            role="tablist"
-            aria-label="Workspace settings sections"
-          >
-            <button
-              type="button"
-              className={`compact-settings-tab${activeTab === "workspace-skins" ? " active" : ""}`}
-              onClick={() => onChangeTab("workspace-skins")}
-              role="tab"
-              aria-selected={activeTab === "workspace-skins"}
-            >
-              Skins
-            </button>
-            <button
-              type="button"
-              className={`compact-settings-tab${activeTab === "logo-motion" ? " active" : ""}`}
-              onClick={() => onChangeTab("logo-motion")}
-              role="tab"
-              aria-selected={activeTab === "logo-motion"}
-            >
-              Logo Motion
-            </button>
-          </div>
-        )}
+        {/* The tablist is gone with the "Logo Motion" tab it used to sit beside.
+            One section left means no tabs to choose between — a row of one tab is
+            chrome that costs a line of screen and decides nothing. */}
       </div>
       {isOpen && (
         <div className="compact-settings-body">
-          {activeTab === "workspace-skins" ? (
-            <WorkspaceSkinModal
-              isOpen={isOpen}
-              skinOptions={skinOptions}
-              activeSkinId={activeSkinId}
-              hasCustomSkin={hasCustomSkin}
-              customSkinName={customSkinName}
-              customSkinOpacity={customSkinOpacity}
-              error={workspaceSkinError}
-              onSelectSkin={onSelectSkin}
-              onImportCustomSkin={onImportCustomSkin}
-              onCustomSkinOpacityChange={onCustomSkinOpacityChange}
-              onClearCustomSkin={onClearCustomSkin}
-              onResetWorkspaceSkin={onResetWorkspaceSkin}
-            />
-          ) : (
-            <LogoSettingsModal
-              isOpen={isOpen}
-              logoSettings={logoSettings}
-              prefersReducedMotion={prefersReducedMotion}
-              onLogoSettingChange={onLogoSettingChange}
-              onToggleLogoVisibility={onToggleLogoVisibility}
-              onResetLogoSettings={onResetLogoSettings}
-            />
-          )}
+          <WorkspaceSkinModal
+            isOpen={isOpen}
+            skinOptions={skinOptions}
+            activeSkinId={activeSkinId}
+            hasCustomSkin={hasCustomSkin}
+            customSkinName={customSkinName}
+            customSkinOpacity={customSkinOpacity}
+            error={workspaceSkinError}
+            onSelectSkin={onSelectSkin}
+            onImportCustomSkin={onImportCustomSkin}
+            onCustomSkinOpacityChange={onCustomSkinOpacityChange}
+            onClearCustomSkin={onClearCustomSkin}
+            onResetWorkspaceSkin={onResetWorkspaceSkin}
+          />
         </div>
       )}
     </div>

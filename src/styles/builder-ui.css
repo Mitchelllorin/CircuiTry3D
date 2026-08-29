@@ -49,6 +49,13 @@
      instead of being chopped by the stage's overflow:hidden. Constant across
      breakpoints (the tab's min-height doesn't change). */
   --builder-menu-toggle-bottom-h: 46px;
+  /* How far BELOW dead-centre the two side toggle tabs sit, as a share of the
+     viewport height. They used to be centred exactly (margin: auto 0), which put
+     them level with the middle of the circuit — right where the eye and the
+     fingers already are. Nudging them down clears the workspace centre without
+     dropping them into the bottom action bar. Change this one value to retune;
+     both tabs move together. */
+  --builder-menu-toggle-drop: 7vh;
   /* On touch devices, toggles are widened via min-width; keep edge actions clear of that hitbox. */
   --builder-menu-toggle-hit-width: max(var(--builder-menu-toggle-width), 36px);
   /* Slimmer sidebar widths */
@@ -83,15 +90,38 @@
      controls, panel tabs) that live in the bottom corners. Apply this gutter to
      any centred bottom overlay's max-width and collisions stop — for good. */
   --overlay-corner-gutter: 76px;
+  /* Distance from the top of the viewport (before safe-area) to the top of the
+     workspace mode bar. Single source of truth — .workspace-mode-bar sets its own
+     `top` from this, and the ticker below measures down from it. */
+  --app-mode-bar-top: 12px;
+  /* Gap between the bottom of the mode bar and the top of the ticker strip. */
+  --app-mode-bar-gap-below: 10px;
   /* Top of the ticker strip (below the mode bar and gap).
      Side menus, quick-add-bar and zoom controls all key off this value so that nothing
-     overlaps the ticker band. */
-  --builder-ticker-top: 72px;
+     overlaps the ticker band.
+
+     DERIVED, not hand-tuned. This used to be a constant (72 / 68 / 64px per
+     breakpoint) that somebody had to keep in sync with however tall the mode bar
+     happened to be. The mode bar grew — more mode tabs, more padding, a larger
+     system font — and the constant did not, so the bar crept down over the ticker
+     until it covered it completely. --app-mode-bar-height is measured live from
+     the real element (ResizeObserver in App.tsx), so the ticker now sits below the
+     bar no matter how tall the bar gets. The 46px fallback only applies before the
+     first measurement lands. */
+  --builder-ticker-top: calc(
+    var(--app-mode-bar-top, 12px) + var(--app-mode-bar-height, 46px) +
+      var(--app-mode-bar-gap-below, 10px)
+  );
   --builder-floating-action-offset: 140px;
   --builder-floating-button-size: 46px;
   --builder-edge-actions-gap: 12px;
   --builder-edge-action-button-size: 44px;
-  --builder-edge-action-icon-size: 26px;
+  /* Up from 26px. Removing the fill, border, radius, blur and the padding that
+     went with them frees real estate inside the same footprint, and the point of
+     taking a container away is never the empty space - it is that the mark can
+     grow into it. A bigger glyph with a shadow is legible in a way a small glyph
+     in a box never was. */
+  --builder-edge-action-icon-size: 31px;
 }
 
 body.builder-body {
@@ -217,7 +247,7 @@ body.builder-body::before {
 
 .workspace-mode-bar {
   position: fixed;
-  top: calc(12px + var(--builder-safe-area-top));
+  top: calc(var(--app-mode-bar-top, 12px) + var(--builder-safe-area-top));
   left: 50%;
   transform: translateX(-50%);
   /* Keep the workspace bar above all builder panels and compact overlays */
@@ -245,31 +275,80 @@ body.builder-body::before {
        - a hairline border at low alpha rather than a solid line;
        - text-shadow on the labels (see .mode-tab), which costs nothing and
          survives a bright 3D background sliding underneath. */
-  background: rgba(12, 10, 36, 0.3);
-  border: 1px solid rgba(168, 216, 255, 0.16);
-  border-radius: 16px;
-  padding: 3px;
+  /* ── Containerless ──────────────────────────────────────────────────────
+     There is no bar any more, only the icons. Every version of this before now
+     drew a box first and then fitted controls inside it, and the box is what
+     was costing the screen: a fill, a border, a radius, padding on the strip
+     AND padding on every tab inside it, plus a blur the fill was hiding. All of
+     that is chrome describing chrome. Take it away and the same row of controls
+     needs a fraction of the width and none of the height, which is what buys
+     icons big enough to actually read.
+
+     What replaces it is not nothing — an icon still has to survive a bright 3D
+     scene sliding underneath. That job moves onto the marks themselves:
+     drop-shadow on the icons, text-shadow on any label. A shadow costs no
+     layout, so it can never overlap anything. A container always can. */
+  background: none;
+  border: none;
+  border-radius: 0;
+  padding: 0;
   max-width: min(1200px, calc(100vw - 24px));
   overflow-x: auto;
   overscroll-behavior: contain;
   touch-action: pan-x;
   -webkit-overflow-scrolling: touch;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(168, 216, 255, 0.35) transparent;
-  backdrop-filter: blur(22px) saturate(1.5);
-  -webkit-backdrop-filter: blur(22px) saturate(1.5);
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.14) inset,
-    0 6px 20px rgba(3, 12, 32, 0.4);
+  /* ── No scrollbar ───────────────────────────────────────────────────────
+     It was a 6px slider under the icons: a control drawn to describe another
+     control, which is the same fault as the container it replaced, and it was
+     eating height the labels needed. The affordance moves onto the CONTENT -
+     the row fades out at whichever edge has more behind it (see
+     [data-can-scroll] below). Icons dissolving off the edge says "keep going"
+     without spending a single pixel of layout, and it cannot be scrolled past
+     or mis-hit the way a 6px slider can. */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  /* No fill left to blur, and blurring the live 3D behind a row of floating
+     icons just smears the workspace the user is trying to look at. */
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  /* The inset highlight and the drop shadow drew the top and bottom edges of a
+     glass pane. There is no pane. */
+  box-shadow: none;
+  gap: 2px;
 }
 
 .workspace-mode-bar::-webkit-scrollbar {
-  height: 6px;
+  display: none;
 }
 
-.workspace-mode-bar::-webkit-scrollbar-thumb {
-  background: rgba(168, 216, 255, 0.35);
-  border-radius: 999px;
+/* The scroll cue, drawn with the icons instead of beside them. Only the edge
+   that actually has more behind it fades, so a row scrolled hard to one end
+   doesn't dim a tab you can already reach. */
+.workspace-mode-bar[data-can-scroll="right"] {
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 38px), transparent 100%);
+  mask-image: linear-gradient(to right, #000 calc(100% - 38px), transparent 100%);
+}
+
+.workspace-mode-bar[data-can-scroll="left"] {
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 38px);
+  mask-image: linear-gradient(to right, transparent 0, #000 38px);
+}
+
+.workspace-mode-bar[data-can-scroll="both"] {
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    #000 38px,
+    #000 calc(100% - 38px),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    #000 38px,
+    #000 calc(100% - 38px),
+    transparent 100%
+  );
 }
 
 .mode-tab {
@@ -280,10 +359,11 @@ body.builder-body::before {
   /* Halved vertically. A nav is a signpost, not a workspace -- it should cost
      the least screen it can while staying a comfortable thumb target, and the
      tap area is the padding plus the type, not the box drawn around it. */
-  padding: 4px 10px;
-  background: transparent;
-  border: 1px solid transparent;
-  border-radius: 10px;
+  /* Padding only where a thumb needs it, and none of it drawing a shape. */
+  padding: 3px 5px;
+  background: none;
+  border: none;
+  border-radius: 0;
   color: var(--builder-muted-soft);
   font-size: 12px;
   font-weight: 600;
@@ -299,25 +379,51 @@ body.builder-body::before {
 }
 
 .mode-tab:hover {
-  background: rgba(168, 216, 255, 0.08);
   color: var(--builder-cyan);
-  border-color: rgba(168, 216, 255, 0.22);
-  transform: scale(1.04);
+  transform: scale(1.1);
 }
 
 .mode-tab:active {
   transform: scale(0.94);
 }
 
+/* Active is shown ON the mark, not behind it: the icon lights up and throws a
+   glow of its own. A filled pill would put a container straight back. */
 .mode-tab[data-active="true"] {
-  background: rgba(168, 216, 255, 0.18);
   color: var(--builder-cyan);
-  border-color: var(--builder-border-strong);
-  box-shadow: 0 0 12px rgba(168, 216, 255, 0.32);
+}
+
+.mode-tab[data-active="true"] .mode-icon,
+.mode-tab[data-active="true"] .mode-icon--3d {
+  filter:
+    drop-shadow(0 0 7px rgba(120, 224, 255, 0.85))
+    drop-shadow(0 1px 2px rgba(0, 0, 0, 0.9));
+  transform: scale(1.06);
+}
+
+/* Modelled 3D icons render as images, so they need a box; the emoji ones are text
+   and size themselves. Sized to match the emoji optically so the two can sit in
+   the same row while the set is converted one icon at a time.
+
+   These are as big as they are because the containers went. At 19px inside a
+   padded pill inside a padded bar an icon has no chance; with the boxes gone the
+   same strip of screen holds one two-thirds larger, and a drop-shadow does the
+   separating that the box used to. */
+.mode-icon--3d {
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+  display: block;
+  flex: 0 0 auto;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.85));
+  transition: filter 0.2s ease, transform 0.15s ease;
 }
 
 .mode-icon {
-  font-size: 16px;
+  font-size: 25px;
+  line-height: 1;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.85));
+  transition: filter 0.2s ease, transform 0.15s ease;
   line-height: 1;
 }
 
@@ -335,6 +441,78 @@ body.builder-body::before {
 
 .mode-label {
   font-family: inherit;
+}
+
+/* On a phone the labels are what make the nav unreachable. Thirteen tabs of
+   "🩺 Troubleshoot"-sized text needs about 1600px; the viewport has 412, so
+   more than half the destinations sat off the right edge and had to be scrolled
+   to blind. Icon-only, with the containers gone, the same row fits in a third of
+   that. The name still reaches anyone who needs it — every tab carries both
+   aria-label and title, so screen readers and long-press tooltips are unaffected;
+   it is only the always-on printed label that goes. */
+@media (max-width: 640px) {
+  .mode-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  /* The names come back in ONE place instead - .mode-bar-caption, below. */
+}
+
+/* The caption: one line under the bar naming the tab you are on, or the one you
+   are scrolling past.
+   Hiding all fourteen names was a step too far. aria-label and title cover a
+   screen reader and a mouse; touch has neither, so a sighted thumb got fourteen
+   unlabelled objects and no way to ask what any of them were.
+   Two rejected alternatives, both instructive:
+     - a caption under every icon puts the 36px bar back to about fifty and
+       undoes the whole containerless pass;
+     - revealing the label inside the active tab widens that tab, which shifts
+       the strip under the thumb that is scrolling it, and it slides out of view
+       the moment you scroll anyway.
+   One slot outside the scroller costs no layout, never moves, and can name a tab
+   the moment it passes the middle. */
+.mode-bar-caption {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .mode-bar-caption {
+    display: block;
+    position: fixed;
+    /* ABOVE the icons, hard against the top of the safe area.
+       It sat underneath first, which needed the bar's live height to place it -
+       and that height changes when the modelled icons replace the emoji
+       fallbacks, so it overlapped the bar about half the time. Above, it needs
+       no measurement at all: the top of the screen does not move. The bar is
+       pushed down by --app-mode-caption-band instead, and a band is safe to
+       hard-code where the bar's height was not, because this is one line of
+       12px text - its height is set by the font, not by what loads into it. */
+    top: calc(var(--builder-safe-area-top, 0px) + 1px);
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: var(--z-builder-top);
+    pointer-events: none;
+    max-width: calc(100vw - 24px);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: var(--builder-cyan);
+    /* Containerless, like everything else up here: no fill, no border, no blur.
+       The shadow is what carries it over a moving 3D scene. */
+    background: none;
+    border: none;
+    text-shadow:
+      0 1px 3px rgba(2, 6, 16, 0.95),
+      0 0 10px rgba(2, 6, 16, 0.75);
+  }
 }
 
 .mode-tab--icon-only {
@@ -1213,21 +1391,34 @@ body.builder-body::before {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  background: rgba(12, 10, 36, 0.95);
-  border: 1px solid rgba(168, 216, 255, 0.22);
-  border-radius: 14px;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  /* Containerless, same treatment as the library toggle tabs.
+     .edge-action-btn already declared itself transparent up at its base rule -
+     and then this block, further down and more specific, put a 95%-opaque slab,
+     a border, a 14px radius AND a blur straight back on. Fourteen of those in two
+     rows is a wall of boxes over the workspace, and the boxes are also the thing
+     with EDGES: a hairline at 22% alpha never blends into a moving 3D scene, it
+     just sits on top of it looking like a seam.
+     What replaces it is a shadow on the mark itself. A shadow occupies no layout,
+     so it cannot overlap or draw an edge, and it survives a bright scene sliding
+     underneath - which is the only job the fill was ever doing. */
+  background: none;
+  border: none;
+  border-radius: 0;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: none;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.95)) drop-shadow(0 0 7px rgba(2, 6, 23, 0.75));
   transition:
-    background 0.16s ease,
-    border-color 0.16s ease,
-    transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1),
-    box-shadow 0.16s ease;
+    color 0.16s ease,
+    filter 0.16s ease,
+    transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .unified-action-bar .edge-action-btn:hover:not(:disabled) {
-  transform: scale(1.06);
-  box-shadow: 0 4px 14px rgba(168, 216, 255, 0.18);
+  transform: scale(1.08);
+  color: var(--builder-cyan, #a8d8ff);
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.95))
+    drop-shadow(0 0 9px rgba(168, 216, 255, 0.75));
 }
 
 .unified-action-bar .edge-action-btn:active:not(:disabled) {
@@ -1236,8 +1427,98 @@ body.builder-body::before {
 }
 
 .unified-action-bar .edge-action-btn:active {
-  background: rgba(168, 216, 255, 0.18);
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.95)) brightness(1.35);
 }
+
+/* ── Containerless: the coloured action buttons ───────────────────────────
+   Clear, Run and AI each carried a full gradient pill with a border and a drop
+   shadow, and inside the action bar those are the loudest containers on the
+   whole workspace - three solid lozenges sitting over the 3D scene.
+
+   The colour itself stays, because it is genuinely load-bearing: it is how a
+   thumb finds Clear (destructive), Run (go) and AI (help) in a row of fourteen
+   near-identical glyphs. It just moves off the box and onto the mark, as colour
+   plus a matching glow. Same information, no rectangle, and nothing left that
+   can have an edge to blend.
+   ───────────────────────────────────────────────────────────────────────── */
+.unified-action-bar .edge-action-btn--clear,
+.unified-action-bar .edge-action-btn--simulate,
+.unified-action-bar .edge-action-btn--ai,
+.unified-action-bar .edge-action-btn--help,
+.unified-action-bar .edge-action-btn--active,
+.unified-action-bar .edge-action-btn--ai.edge-action-btn--active {
+  background: none;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.unified-action-bar .edge-action-btn--clear {
+  color: #ff8f7a;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.95))
+    drop-shadow(0 0 8px rgba(255, 86, 86, 0.55));
+}
+
+.unified-action-bar .edge-action-btn--simulate {
+  color: #6cffd0;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.95))
+    drop-shadow(0 0 9px rgba(0, 230, 190, 0.6));
+}
+
+.unified-action-bar .edge-action-btn--help {
+  color: #bae6fd;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.95))
+    drop-shadow(0 0 7px rgba(56, 189, 248, 0.5));
+}
+
+.unified-action-bar .edge-action-btn--active {
+  color: var(--builder-cyan, #a8d8ff);
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.95))
+    drop-shadow(0 0 10px rgba(168, 216, 255, 0.7));
+}
+
+/* AI keeps its slow attention pulse - it is the one control most users never
+   find on their own - but the pulse now breathes the GLOW rather than inflating
+   and deflating a purple box. */
+.unified-action-bar .edge-action-btn--ai {
+  color: #e9d5ff;
+  animation: aiMarkGlow 2.8s ease-in-out infinite;
+}
+
+.unified-action-bar .edge-action-btn--ai.edge-action-btn--active {
+  color: #fff;
+  animation: none;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.95))
+    drop-shadow(0 0 14px rgba(216, 180, 254, 0.9));
+}
+
+@keyframes aiMarkGlow {
+  0%,
+  100% {
+    filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.95))
+      drop-shadow(0 0 8px rgba(168, 85, 247, 0.5));
+  }
+  50% {
+    filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.95))
+      drop-shadow(0 0 15px rgba(192, 132, 252, 0.85));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .unified-action-bar .edge-action-btn--ai {
+    animation: none;
+  }
+}
+
+/* Labels sit on bare workspace now, so their legibility is their own problem. */
+.unified-action-bar .edge-action-label,
+.unified-action-bar .quick-add-btn-label {
+  color: rgba(206, 231, 255, 0.9);
+  text-shadow: 0 1px 3px rgba(2, 6, 23, 0.95);
+}
+
 
 .unified-action-bar .quick-add-btn {
   min-width: 48px;
@@ -1274,8 +1555,8 @@ body.builder-body::before {
 
 /* Tool button icons — no nested box, just size and centering */
 .unified-action-bar .edge-action-icon-svg {
-  width: 26px;
-  height: 26px;
+  width: 31px;
+  height: 31px;
   flex-shrink: 0;
   box-sizing: border-box;
 }
@@ -1311,7 +1592,8 @@ body.builder-body::before {
     min-height: 42px;
     min-width: 42px;
     padding: 4px 2px 3px;
-    border-radius: 9px;
+    /* No box left to round. */
+    border-radius: 0;
   }
   .unified-action-bar .quick-add-btn {
     width: auto;
@@ -1757,8 +2039,18 @@ body.builder-body::before {
 }
 
 @media (max-width: 640px) {
+  :root {
+    /* The strip of screen the caption sits in, above the icons. Folded into
+       --app-mode-bar-top rather than added anywhere else, because that one
+       property moves the bar AND everything measured below it (the ticker, and
+       the side menus / action bar / zoom controls that key off the ticker)
+       together - so the whole stack shifts down as one and nothing collides.
+       Roughly paid for by the scrollbar that came out from under the icons. */
+    --app-mode-caption-band: 16px;
+    --app-mode-bar-top: calc(6px + var(--app-mode-caption-band, 0px));
+  }
+
   .workspace-mode-bar {
-    top: calc(8px + var(--builder-safe-area-top));
     left: 50%;
     transform: translateX(-50%);
     right: auto;
@@ -1767,7 +2059,7 @@ body.builder-body::before {
   }
 
   .mode-tab {
-    padding: 8px 12px;
+    padding: 3px 4px;
     font-size: 12px;
   }
 
@@ -2295,9 +2587,15 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
   flex: 1 1 auto;
 }
 
+/* Containerless, like the nav. These were a filled, bordered, blurred slab per
+   side, permanently parked over the workspace whether the menu was open or not —
+   two vertical bars of chrome the circuit had to be read around. What actually
+   has to be visible is the word and the chevron, so they keep a drop-shadow and
+   everything that was drawing a box goes. */
 .builder-menu-toggle {
-  border: var(--glass-border-strong);
-  background: var(--glass-bg-chrome);
+  border: none;
+  background: none;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.9));
   color: var(--builder-text);
   display: flex;
   flex-direction: column;
@@ -2315,11 +2613,10 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
     border-color 0.2s ease,
     box-shadow 0.2s ease,
     transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
-  box-shadow:
-    0 4px 12px var(--builder-shadow),
-    0 0 12px rgba(168, 216, 255, 0.15);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
+  box-shadow: none;
+  /* Nothing left to blur through. */
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   /* Button stays horizontal so the column flex stacks icon ABOVE the label.
      Only .toggle-text is vertical-rl (its own rule), so the word runs down the
      slim tab and fits the ~28px width instead of overflowing + being clipped. */
@@ -2327,33 +2624,35 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
 
 /* Left toggle tab — slim vertical handle at the left edge, rounded right side */
 .builder-menu-toggle-left {
-  border-radius: 0 var(--radius-tab) var(--radius-tab) 0;
-  border-left: none;
-  border-right: var(--glass-border-strong);
-  box-shadow:
-    2px 0 12px var(--builder-shadow),
-    2px 0 16px rgba(168, 216, 255, 0.18);
+  border-radius: 0;
+  border: none;
+  box-shadow: none;
 }
 
 /* Right toggle tab — mirror of the left */
 .builder-menu-toggle-right {
-  border-radius: var(--radius-tab) 0 0 var(--radius-tab);
-  border-right: none;
-  border-left: var(--glass-border-strong);
-  box-shadow:
-    -2px 0 12px var(--builder-shadow),
-    -2px 0 16px rgba(168, 216, 255, 0.18);
+  border-radius: 0;
+  border: none;
+  box-shadow: none;
 }
 
 .builder-menu-toggle:hover,
 .builder-menu-toggle:focus-visible {
-  border-color: var(--builder-border-strong);
-  background: rgba(20, 18, 52, 0.95);
+  color: var(--builder-cyan);
+  filter: drop-shadow(0 0 6px rgba(120, 224, 255, 0.8))
+    drop-shadow(0 1px 3px rgba(0, 0, 0, 0.9));
   outline: none;
 }
 
 .builder-menu-toggle:active {
   transform: scale(0.94);
+}
+
+/* The side tabs carry a translateY; a bare scale() on :active would replace it and
+   snap them back to centre for the duration of the press. Re-state both. */
+.builder-menu-toggle-left:active,
+.builder-menu-toggle-right:active {
+  transform: translateY(var(--builder-menu-toggle-drop)) scale(0.94);
 }
 
 .builder-menu-toggle:focus-visible {
@@ -2371,6 +2670,10 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
   padding: 10px 3px;
   margin: auto 0; /* vertically center within the stage */
   align-self: center;
+  /* ...then drop them below centre. transform, not margin, so the tab keeps its
+     centred layout box (and the stage keeps its height) and only paints + hit-tests
+     lower. See --builder-menu-toggle-drop. */
+  transform: translateY(var(--builder-menu-toggle-drop));
   position: relative;
   z-index: var(--z-raised);
   writing-mode: vertical-rl;
@@ -3766,11 +4069,21 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
   left: 0;
   right: 0;
   height: var(--builder-ticker-height, 32px);
-  background: rgba(12, 10, 36, 0.88);
-  border-bottom: 1px solid rgba(0, 255, 136, 0.22);
+  /* Containerless, like the nav above it. This was an 88%-opaque band running the
+     full width of the screen with a lit border under it — a second solid stripe
+     directly below the nav, which is most of why the top of the workspace felt
+     walled off. The text carries itself with a shadow instead. */
+  background: none;
+  border-bottom: none;
   overflow: hidden;
   z-index: var(--z-builder-side-panel);
-  backdrop-filter: blur(10px);
+  backdrop-filter: none;
+  text-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.95),
+    0 0 8px rgba(0, 0, 0, 0.7);
+  /* The band no longer paints, so it must not eat taps meant for the circuit
+     underneath it. The scrolling copy is read-only. */
+  pointer-events: none;
   display: flex;
   align-items: center;
 }
@@ -4086,44 +4399,6 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
   opacity: 0;
   mix-blend-mode: normal;
   transition: opacity 0.28s ease;
-}
-
-/* Transparent guard shown over the workspace while the current-flow payoff demo
-   plays. Captures all pointer input so the preset circuit can't be accidentally
-   edited; sits above the iframe but well below the payoff banner (z-index 1100),
-   so the banner's Edit/× controls stay clickable. */
-/* Small top-centre "tap to edit" pill. The showcase is kept view-only by the
-   circuit EDIT-LOCK (so components can't be dragged) — this pill no longer covers
-   the workspace, so the camera stays free to zoom/orbit the locked demo. */
-.builder-payoff-guard {
-  position: absolute;
-  top: 12px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 3;
-  pointer-events: auto;
-  background: transparent;
-  border: 0;
-  margin: 0;
-  padding: 0;
-  width: auto;
-  height: auto;
-  cursor: pointer;
-}
-/* Small "tap to edit" badge so the lock is obvious but doesn't hide the circuit. */
-.builder-payoff-guard__hint {
-  margin-top: 14px;
-  padding: 6px 14px;
-  border-radius: 999px;
-  background: rgba(12, 10, 36, 0.82);
-  border: 1px solid var(--builder-border);
-  color: var(--builder-cyan);
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  box-shadow: 0 2px 12px var(--builder-shadow);
-  backdrop-filter: blur(6px);
-  pointer-events: none;
 }
 
 .builder-arena-workspace {
@@ -5162,7 +5437,9 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
     --builder-menu-toggle-width: 36px;
     --builder-menu-toggle-height: 64px;
     --builder-ticker-height: 28px;
-    --builder-ticker-top: 68px;
+    /* --builder-ticker-top is derived from the measured mode-bar height in :root;
+       do not pin it per breakpoint again. Only the gap is tuned here. */
+    --app-mode-bar-gap-below: 9px;
     --builder-menu-left-height: clamp(280px, 60vh, 540px);
     --builder-menu-right-height: clamp(280px, 60vh, 540px); /* mirror left */
   }
@@ -5202,7 +5479,8 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
     --builder-ticker-height: 24px;
     --builder-floating-action-offset: 120px;
     --builder-floating-button-size: 40px;
-    --builder-ticker-top: 64px;
+    /* Derived in :root from the live mode-bar height — see the note there. */
+    --app-mode-bar-gap-below: 8px;
     --builder-menu-left-height: clamp(260px, 60vh, 500px);
     --builder-menu-right-height: clamp(260px, 60vh, 500px); /* mirror left */
   }
@@ -5401,8 +5679,17 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
     --builder-menu-toggle-height: 44px;
     --builder-ticker-height: 0px;
     --builder-ticker-gap: 0px;
-    /* Ticker is hidden; side menus position just below the mode bar */
-    --builder-ticker-top: 0px;
+    /* Carries the caption band too, for the narrow-landscape case where this
+       block and the 640px one both match; without it this would win and put the
+       icons back over the caption. It resolves to 0 whenever the caption is
+       hidden, so wide landscape is unaffected. */
+    --app-mode-bar-top: calc(6px + var(--app-mode-caption-band, 0px));
+    /* Ticker is hidden here, so everything that keys off it should sit directly
+       under the mode bar rather than below a band that isn't drawn. Still derived
+       from the live bar height — a pinned 0px put the side menus UNDER the bar. */
+    --builder-ticker-top: calc(
+      var(--app-mode-bar-top, 6px) + var(--app-mode-bar-height, 38px) + 6px
+    );
     --builder-menu-left-height: 200px;
     --builder-menu-right-height: 200px; /* mirror left */
   }
@@ -5422,7 +5709,7 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
   }
 
   .workspace-mode-bar {
-    top: calc(6px + var(--builder-safe-area-top));
+    top: calc(var(--app-mode-bar-top, 6px) + var(--builder-safe-area-top));
     padding: 4px;
     border-radius: 14px;
     max-width: calc(
@@ -5431,7 +5718,7 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
   }
 
   .mode-tab {
-    padding: 6px 10px;
+    padding: 3px 4px;
     font-size: 12px;
   }
 

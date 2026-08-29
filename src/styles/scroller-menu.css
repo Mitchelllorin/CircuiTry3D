@@ -722,24 +722,30 @@
   height: var(--control-size);
   flex-shrink: 0;
   padding: 0;
-  border-radius: var(--radius-control);
-  border: var(--glass-border);
-  background: var(--glass-bg-chrome);
+  /* Containerless, like every other button in this bar. This was the last one
+     left with a box, and being the only one made it look like the important
+     control rather than the utility one it is. */
+  border-radius: 0;
+  border: none;
+  background: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   color: rgba(180, 215, 255, 0.9);
   cursor: pointer;
   touch-action: manipulation;
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.95)) drop-shadow(0 0 7px rgba(2, 6, 23, 0.75));
   transition:
-    background 0.15s ease,
-    border-color 0.15s ease,
+    color 0.15s ease,
+    filter 0.15s ease,
     transform 0.12s ease;
   position: relative;
   z-index: 1;
 }
 
 .action-bar-cycle:hover {
-  border-color: rgba(168, 216, 255, 0.5);
+  color: var(--builder-cyan, #a8d8ff);
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.95))
+    drop-shadow(0 0 9px rgba(168, 216, 255, 0.75));
 }
 
 .action-bar-cycle:active {

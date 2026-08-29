@@ -90,8 +90,14 @@
   /* Menu-stage toggle tabs (Library / Controls / Insights) — above action bar &
      zoom so the small toggle buttons are never hidden behind floating elements */
   --z-builder-menu-stage: 945;
-  /* Tutorial overlay — must clear collapsed compact panel headers (z 1190–1250) */
-  --z-tutorial: 1260;
+  /* Tutorial overlay. Must clear collapsed compact panel headers (z 1190-1250)
+     AND the two things that were painting over it: the workspace mode bar
+     (--z-builder-top, 1300) and the tips ticker (1310). At 1260 the tour's
+     "Skip tour" pill sat UNDER the nav bar - invisible back when the bar was an
+     opaque slab, and a confusing ghost once the bar went containerless and you
+     could suddenly see it through. A coach layer teaching the app has to be the
+     topmost thing while it is up; nothing should occlude it. */
+  --z-tutorial: 1400;
   /* Compact / mobile panels */
   --z-compact-worksheet: 860;
   --z-builder-widget: 1185;
@@ -485,13 +491,22 @@ body {
   }
 }
 
-/* Global Mode Bar adjustments for non-landing pages */
+/* Global Mode Bar adjustments for non-landing pages.
+
+   ⚠️ This pair of rules is what ACTUALLY places the bar on every page that has
+   one — three classes deep, so it beats the `.workspace-mode-bar` rule in
+   builder-ui.css no matter which file loads last. Anything that moves the bar
+   has to move it HERE. It previously hard-coded `--app-mode-bar-gap`, which is
+   why the caption band never reached it: the band was folded into
+   `--app-mode-bar-top`, the bar kept sitting at 12px, and the caption drew over
+   the icons. So defer to `--app-mode-bar-top` and keep the gap as the fallback
+   for the widths where that property is not set. One property, one position. */
 .app-shell:not(.is-landing) .workspace-mode-bar--global {
-  top: calc(var(--app-safe-area-top) + var(--app-mode-bar-gap, 12px));
+  top: calc(var(--app-safe-area-top) + var(--app-mode-bar-top, var(--app-mode-bar-gap, 12px)));
 }
 
 .app-shell:not(.is-landing) .mode-bar-scroll-indicator--left {
-  top: calc(var(--app-safe-area-top) + var(--app-mode-bar-gap, 12px));
+  top: calc(var(--app-safe-area-top) + var(--app-mode-bar-top, var(--app-mode-bar-gap, 12px)));
 }
 
 /* Add top padding to content when mode bar is present on non-workspace pages */
@@ -944,10 +959,21 @@ body {
 }
 
 /* ── Light-mode overrides for mode-bar & surfaces ────────────────────────── */
+/* Light mode used to put the whole container straight back: a 92%-opaque white
+   slab with a border and a drop shadow, and a filled pill behind every tab on
+   hover and when active. The nav is containerless in both themes now — what
+   changes between them is the ink, not whether there is a box. Legibility on a
+   pale workspace comes from a light-coloured shadow under the mark instead. */
 html[data-theme="light"] .workspace-mode-bar {
-  background: rgba(255, 255, 255, 0.92);
-  border-color: rgba(80, 130, 190, 0.3);
-  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.1);
+  background: none;
+  border: none;
+  box-shadow: none;
+}
+
+html[data-theme="light"] .mode-icon,
+html[data-theme="light"] .mode-icon--3d {
+  filter: drop-shadow(0 1px 2px rgba(255, 255, 255, 0.9))
+    drop-shadow(0 0 5px rgba(255, 255, 255, 0.75));
 }
 
 html[data-theme="light"] .mode-tab {
@@ -955,16 +981,35 @@ html[data-theme="light"] .mode-tab {
 }
 
 html[data-theme="light"] .mode-tab:hover {
-  background: rgba(26, 111, 196, 0.1);
+  background: none;
   color: var(--brand-blue);
-  border-color: rgba(26, 111, 196, 0.28);
+  border-color: transparent;
 }
 
 html[data-theme="light"] .mode-tab[data-active="true"] {
-  background: rgba(26, 111, 196, 0.15);
+  background: none;
   color: var(--brand-blue);
-  border-color: rgba(26, 111, 196, 0.45);
-  box-shadow: 0 0 10px rgba(26, 111, 196, 0.22);
+  border-color: transparent;
+  box-shadow: none;
+}
+
+html[data-theme="light"] .mode-tab[data-active="true"] .mode-icon,
+html[data-theme="light"] .mode-tab[data-active="true"] .mode-icon--3d {
+  filter: drop-shadow(0 0 7px rgba(26, 111, 196, 0.6))
+    drop-shadow(0 1px 2px rgba(255, 255, 255, 0.9));
+}
+
+/* On a phone the caption under the bar is the ONLY printed name (see
+   .mode-bar-caption in builder-ui.css), so its halo has to flip with the theme.
+   The dark shadow that carries it against the 3D in dark mode is a smudge under
+   dark ink on a pale workspace. */
+@media (max-width: 640px) {
+  html[data-theme="light"] .mode-bar-caption {
+    color: var(--brand-blue);
+    text-shadow:
+      0 1px 3px rgba(255, 255, 255, 0.95),
+      0 0 10px rgba(255, 255, 255, 0.8);
+  }
 }
 
 html[data-theme="light"] .app-shell {
@@ -972,8 +1017,11 @@ html[data-theme="light"] .app-shell {
 }
 
 html[data-theme="light"] .tips-ticker {
-  background: rgba(255, 255, 255, 0.92);
-  border-color: rgba(80, 130, 190, 0.25);
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
+  background: none;
+  border: none;
+  box-shadow: none;
+  /* Kept from the slab version. Without it the copy falls back to a colour chosen
+     to sit on white, and vanishes now that the white has gone. */
   color: var(--text-secondary);
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.95);
 }
