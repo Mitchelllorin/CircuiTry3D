@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState, useEffect } from "react";
+import type { CSSProperties } from "react";
 import type {
   ComponentAction,
   QuickAction,
@@ -248,7 +249,7 @@ export function LeftToolbar({
                   <button
                     key={action.id}
                     type="button"
-                    className="slider-btn slider-btn-stacked"
+                    className="slider-btn slider-btn-action"
                     onClick={() => onQuickAction(action)}
                     disabled={controlsDisabled}
                     aria-disabled={controlsDisabled}
@@ -264,8 +265,20 @@ export function LeftToolbar({
                         ? controlDisabledTitle
                         : action.description
                     }
+                    style={
+                      action.color
+                        ? ({ "--action-color": action.color } as CSSProperties)
+                        : undefined
+                    }
                   >
-                    <span className="slider-label">{action.label}</span>
+                    {action.icon ? (
+                      <span className="action-btn-face">
+                        <span className="action-btn-icon" aria-hidden="true">{action.icon}</span>
+                        <span className="action-btn-label">{action.label}</span>
+                      </span>
+                    ) : (
+                      <span className="slider-label">{action.label}</span>
+                    )}
                   </button>
                 );
               })}
@@ -298,7 +311,7 @@ export function LeftToolbar({
                   <button
                     key={action.id}
                     type="button"
-                    className="slider-btn slider-btn-stacked"
+                    className="slider-btn slider-btn-action"
                     onClick={() => onBuilderAction(action.action, action.data)}
                     disabled={controlsDisabled}
                     aria-disabled={controlsDisabled}
@@ -313,8 +326,20 @@ export function LeftToolbar({
                         ? isActionActive
                         : undefined
                     }
+                    style={
+                      action.color
+                        ? ({ "--action-color": action.color } as CSSProperties)
+                        : undefined
+                    }
                   >
-                    <span className="slider-label">{action.label}</span>
+                    {action.icon ? (
+                      <span className="action-btn-face">
+                        <span className="action-btn-icon" aria-hidden="true">{action.icon}</span>
+                        <span className="action-btn-label">{action.label}</span>
+                      </span>
+                    ) : (
+                      <span className="slider-label">{action.label}</span>
+                    )}
                   </button>
                 );
               })}
