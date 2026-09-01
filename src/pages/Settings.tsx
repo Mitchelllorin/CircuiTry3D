@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { AffiliateDisclosure } from "../affiliate";
 import BrandSignature from "../components/BrandSignature";
+import StudioCredit from "../components/StudioCredit";
 import {
   useAppSettings,
   type AppSettings,
@@ -226,6 +227,11 @@ export default function Settings({ embedded = false }: { embedded?: boolean }) {
               carry a tracking id — so it can never claim a commission that
               does not exist. */}
           <AffiliateDisclosure className="settings-affiliate-disclosure" />
+
+          {/* Website + studio credit. Settings is the other place people look
+              for "who made this / where does it live", so it sits under the
+              disclosure rather than getting a section of its own. */}
+          <StudioCredit />
         </section>
       </div>
     </div>

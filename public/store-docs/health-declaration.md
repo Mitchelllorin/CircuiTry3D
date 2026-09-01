@@ -36,4 +36,4 @@ When prompted under **"Health"**, select:
 
 ---
 
-**Contact:** info@circuitry3d.net
+**Contact:** info@circuitry3d.app

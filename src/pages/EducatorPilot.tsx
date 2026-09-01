@@ -93,7 +93,7 @@ What you'll be doing:
 • Completing [assignment name] using the simulation as your lab environment
 
 Getting access:
-1. Go to: https://www.circuitry3d.net/app
+1. Go to: https://circuitry3d.app/app
 2. Use the class join code: [JOIN CODE from your Classroom dashboard]
 3. Follow the on-screen prompts — your premium features are already unlocked
 
@@ -198,7 +198,7 @@ export default function EducatorPilot() {
           the only thing we ask in return — it directly shapes how CircuiTry3D develops.
         </p>
         <a
-          href="mailto:info@circuitry3d.net?subject=Educator%20Pilot%20Application"
+          href="mailto:info@circuitry3d.app?subject=Educator%20Pilot%20Application"
           className="pilot-hero-cta"
         >
           Apply for a Pilot Seat →
@@ -319,8 +319,8 @@ export default function EducatorPilot() {
           <li>
             <strong>Copy the "Teacher Self-Introduction" email template</strong> above, fill in
             your details, and send it to{" "}
-            <a href="mailto:info@circuitry3d.net" className="pilot-link">
-              info@circuitry3d.net
+            <a href="mailto:info@circuitry3d.app" className="pilot-link">
+              info@circuitry3d.app
             </a>
             .
           </li>
@@ -342,10 +342,10 @@ export default function EducatorPilot() {
           </li>
         </ol>
         <a
-          href="mailto:info@circuitry3d.net?subject=Educator%20Pilot%20Application"
+          href="mailto:info@circuitry3d.app?subject=Educator%20Pilot%20Application"
           className="pilot-apply-btn"
         >
-          📧 Apply Now — info@circuitry3d.net
+          📧 Apply Now — info@circuitry3d.app
         </a>
       </section>
 

@@ -1,0 +1,62 @@
+/* ═══════════════════════════════════════════════════════════════
+   STUDIO CREDIT
+   The website link + "from the makers of" line. Containerless:
+   the surface it sits on supplies the background, this supplies
+   only text. Sized to be findable, not to compete.
+   ═══════════════════════════════════════════════════════════════ */
+
+.studio-credit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.75rem 0 0.25rem;
+  text-align: center;
+}
+
+.studio-credit__site {
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--brand-primary);
+  text-decoration: none;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.45);
+  /* A comfortable tap target without a button-shaped box around it. */
+  padding: 0.35rem 0.5rem;
+  border-radius: 6px;
+  transition: color 0.15s ease, text-shadow 0.15s ease;
+}
+
+.studio-credit__site:hover,
+.studio-credit__site:focus-visible {
+  color: var(--brand-primary-bright, var(--brand-primary));
+  text-shadow: 0 0 14px var(--brand-primary-glow, rgba(0, 255, 136, 0.4));
+}
+
+.studio-credit__makers {
+  margin: 0;
+  font-size: 0.72rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+}
+
+.studio-credit__lead {
+  opacity: 0.75;
+}
+
+.studio-credit__link {
+  color: var(--text-secondary, var(--text-muted));
+  text-decoration: none;
+  padding: 0.25rem 0.15rem;
+  transition: color 0.15s ease;
+}
+
+.studio-credit__link:hover,
+.studio-credit__link:focus-visible {
+  color: var(--brand-primary);
+}
+
+.studio-credit__sep {
+  opacity: 0.4;
+}

@@ -78,7 +78,7 @@ Would a 30-minute demo be worthwhile? I can work around your schedule.
 
 [Your name]
 CircuiTry3D
-info@circuitry3d.net
+info@circuitry3d.app
 ```
 
 ### Talking Points for School Board Presentations
@@ -156,7 +156,7 @@ Would you be open to a quick call to discuss? Happy to send more detail about ou
 
 [Your name]
 CircuiTry3D
-info@circuitry3d.net
+info@circuitry3d.app
 ```
 
 ### Technical Implementation

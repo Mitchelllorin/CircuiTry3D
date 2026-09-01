@@ -34,4 +34,4 @@ When prompted under **"Government Apps"**, select:
 
 ---
 
-**Contact:** info@circuitry3d.net
+**Contact:** info@circuitry3d.app

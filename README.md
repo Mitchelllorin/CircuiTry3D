@@ -7,7 +7,7 @@
 
 CircuiTry3D is founded and led by **Mitchell Lorin McKnight**, who built the platform to make circuit theory accessible and intuitive for everyone — because visual learning increases retention for all kinds of learners.
 
-[![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?logo=vercel)](https://www.circuitry3d.net)
+[![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?logo=vercel)](https://circuitry3d.app)
 [![License: ISC](https://img.shields.io/badge/License-ISC-blue.svg)](https://opensource.org/licenses/ISC)
 [![Node >=20](https://img.shields.io/badge/node-%3E%3D20-brightgreen)](https://nodejs.org)
 
@@ -62,7 +62,7 @@ You don't need an engineering background to use CircuiTry3D.
 - **Just curious?** Open the Builder, drop in a battery and an LED, and watch it light up — then crank the voltage and watch it explode in 3D
 - **Want to see what's really happening inside the wire?** Zoom all the way in from the wire surface to the atomic crystal lattice to see individual electrons vibrating and drifting through the metal in real time
 - **Self-studying?** The in-app textbook starts from "what is electricity?" and walks you through two full years of electrical engineering concepts with worked examples, formulas, and interactive practice
-- **No account required** — the Free Sandbox plan lets you build, simulate, and experiment right now at [www.circuitry3d.net](https://www.circuitry3d.net)
+- **No account required** — the Free Sandbox plan lets you build, simulate, and experiment right now at [circuitry3d.app](https://circuitry3d.app)
 
 ---
 
@@ -517,7 +517,7 @@ The **Educator License** ($299/educator/yr) unlocks:
 - Advanced W.I.R.E. coaching tools
 - Priority support and onboarding
 
-For **Institutional Licenses** (schools and districts), contact info@circuitry3d.net — bulk educator seats, dedicated onboarding, SIS integrations, SSO, and curriculum alignment toolkit are included.
+For **Institutional Licenses** (schools and districts), contact info@circuitry3d.app — bulk educator seats, dedicated onboarding, SIS integrations, SSO, and curriculum alignment toolkit are included.
 
 > 📋 For outreach templates, grant funding angles, and a competitive comparison table, see [`docs/ARENA_MARKETING.md`](docs/ARENA_MARKETING.md).
 
@@ -590,7 +590,7 @@ The key datasheet parameters vary by component family (e.g. a MOSFET needs `vth`
 
 ### How to Get Started
 
-1. **Email us** at [info@circuitry3d.net](mailto:info@circuitry3d.net?subject=Component%20Arena%20Manufacturer%20Partnership) with:
+1. **Email us** at [info@circuitry3d.app](mailto:info@circuitry3d.app?subject=Component%20Arena%20Manufacturer%20Partnership) with:
    - Your company name and the component families you'd like featured
    - Part numbers and links to the relevant datasheets
 2. **We map your specs** to a FUSE™ component profile and build the card
@@ -618,13 +618,13 @@ You can also request a **live demo** showing the Arena running a FUSE™ simulat
 
 > 📋 For full pitch deck structure, email templates, and outreach strategy, see [`docs/ARENA_MARKETING.md`](docs/ARENA_MARKETING.md) — Part 3: Manufacturer Product Placement.
 >
-> 🤝 To start the conversation, visit the in-app [Partnerships page](https://www.circuitry3d.net/#/partnerships) or email [info@circuitry3d.net](mailto:info@circuitry3d.net?subject=Component%20Arena%20Manufacturer%20Partnership).
+> 🤝 To start the conversation, visit the in-app [Partnerships page](https://circuitry3d.app/#/partnerships) or email [info@circuitry3d.app](mailto:info@circuitry3d.app?subject=Component%20Arena%20Manufacturer%20Partnership).
 
 ---
 
 ## 💳 Pricing
 
-Pricing is available at [`/pricing`](https://www.circuitry3d.net/#/pricing). Plans are offered on **monthly** or **annual** (save 15%) billing cycles.
+Pricing is available at [`/pricing`](https://circuitry3d.app/#/pricing). Plans are offered on **monthly** or **annual** (save 15%) billing cycles.
 
 | Plan | Price (Annual) | Who it's for | Highlights |
 |---|---|---|---|
@@ -635,7 +635,7 @@ Pricing is available at [`/pricing`](https://www.circuitry3d.net/#/pricing). Pla
 
 **Add-on — Certification Bundle** *(Coming Soon)* — $99 / yr: Guided certification pathway, accredited PD modules, printable achievement badges.
 
-Volume discounts available for 25+ seats. Custom enterprise packages available — contact info@circuitry3d.net.
+Volume discounts available for 25+ seats. Custom enterprise packages available — contact info@circuitry3d.app.
 
 ---
 
@@ -687,7 +687,7 @@ CircuiTry3D is one of a family of interactive 3D apps built by Mitchell Lorin Mc
 
 | App | What it does | Links |
 |---|---|---|
-| **CircuiTry3D** *(this app)* | Build and simulate electrical circuits in 3D — from macro current flow to the atomic scale, with the FUSE™ failure engine | [circuitry3d.net](https://www.circuitry3d.net) · [Google Play](https://play.google.com/store/apps/details?id=com.circuitry3d.app) |
+| **CircuiTry3D** *(this app)* | Build and simulate electrical circuits in 3D — from macro current flow to the atomic scale, with the FUSE™ failure engine | [circuitry3d.app](https://circuitry3d.app) · [Google Play](https://play.google.com/store/apps/details?id=com.circuitry3d.app) |
 | **Automotive3D** | Build real engines in 3D, swap branded parts, and diagnose faults with live DTC codes | [automotive3d.ca](https://automotive3d.ca) · [Google Play](https://play.google.com/store/apps/details?id=com.automotive3d.app) |
 | **ThePrints3D** | Turn flat floor-plan PDFs and images into an interactive 3D building model — entirely in the browser | [theprints3d.com](https://theprints3d.com) · [Google Play](https://play.google.com/store/apps/details?id=com.theprints3d.app) |
 
@@ -760,4 +760,4 @@ Pull requests are welcome! Please open an issue first to discuss what you'd like
 ## 📞 Support
 
 - **GitHub Issues:** https://github.com/Mitchelllorin/CircuiTry3D/issues
-- **Email:** info@circuitry3d.net
+- **Email:** info@circuitry3d.app

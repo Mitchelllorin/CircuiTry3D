@@ -16,18 +16,89 @@
     
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://www.circuitry3d.net/" />
+    <meta property="og:url" content="https://circuitry3d.app/" />
     <meta property="og:title" content="CircuiTry3D — Illuminate Electricity" />
     <meta property="og:description" content="For everyone — to facilitate and enhance the learning. Build, simulate, and explore electric circuits in interactive 3D — from wire-level current all the way down to quantum probability clouds. Powered by FUSE™." />
-    <meta property="og:image" content="https://www.circuitry3d.net/icons/icon-512.png" />
+    <meta property="og:image" content="https://circuitry3d.app/icons/icon-512.png" />
     
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image" />
-    <meta property="twitter:url" content="https://www.circuitry3d.net/" />
+    <meta property="twitter:url" content="https://circuitry3d.app/" />
     <meta property="twitter:title" content="CircuiTry3D — Illuminate Electricity" />
     <meta property="twitter:description" content="For everyone — to facilitate and enhance the learning. Build, simulate, and explore electric circuits in interactive 3D — from wire-level current all the way down to quantum probability clouds. Powered by FUSE™." />
-    <meta property="twitter:image" content="https://www.circuitry3d.net/icons/icon-512.png" />
+    <meta property="twitter:image" content="https://circuitry3d.app/icons/icon-512.png" />
     
+    <!-- ── Structured data (schema.org / JSON-LD) ─────────────────────────
+         The <meta name="author"> above is a hint. This is the machine-readable
+         claim, and it is the only thing that tells a search engine that the app,
+         the person who made it, and his other two companies are one entity
+         graph rather than three unrelated pages.
+
+         Everything here is a verifiable fact. NOTHING that cannot be checked
+         goes in this block — in particular there is deliberately no
+         aggregateRating: inventing review counts or star ratings is both a
+         lie and a manual-action penalty from Google.
+    ────────────────────────────────────────────────────────────────────── -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "SoftwareApplication",
+          "@id": "https://circuitry3d.app/#app",
+          "name": "CircuiTry3D",
+          "alternateName": "CircuiTry3D - Circuit Simulator",
+          "url": "https://circuitry3d.app/",
+          "description": "An interactive 3D circuit sandbox. Build circuits in a real-time physics environment, watch current flow through wires and components, and zoom from macro wire glow down to the atomic crystal lattice and quantum probability clouds.",
+          "applicationCategory": "EducationalApplication",
+          "applicationSubCategory": "Electrical circuit simulation",
+          "operatingSystem": "Android",
+          "installUrl": "https://play.google.com/store/apps/details?id=com.circuitry3d.app",
+          "image": "https://circuitry3d.app/icons/icon-512.png",
+          "inLanguage": "en",
+          "featureList": [
+            "Real-time circuit simulation with modified nodal analysis",
+            "Visible current flow through wires and components",
+            "Component Arena - two parts tested side by side under identical electrical and environmental conditions",
+            "FUSE - Failure Understanding Simulation Engine: components overheat, drift out of tolerance, char and burn out when pushed past their limits",
+            "Multi-scale visualisation from wire glow to the atomic lattice and quantum probability clouds",
+            "W.I.R.E. method worksheets for Watts, Current, Resistance and Voltage"
+          ],
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD",
+            "description": "Free Sandbox plan; optional paid subscriptions for Classroom and advanced features."
+          },
+          "author": { "@id": "https://circuitry3d.app/#maker" },
+          "creator": { "@id": "https://circuitry3d.app/#maker" },
+          "publisher": { "@id": "https://circuitry3d.app/#maker" }
+        },
+        {
+          "@type": "Person",
+          "@id": "https://circuitry3d.app/#maker",
+          "name": "Mitchell Lorin McKnight",
+          "email": "mailto:info@circuitry3d.app",
+          "url": "https://circuitry3d.app/",
+          "sameAs": [ "https://github.com/Mitchelllorin" ]
+        },
+        {
+          "@type": "Organization",
+          "@id": "https://theprints3d.com/#org",
+          "name": "ThePrints3D",
+          "url": "https://theprints3d.com/",
+          "founder": { "@id": "https://circuitry3d.app/#maker" }
+        },
+        {
+          "@type": "Organization",
+          "@id": "https://automotive3d.ca/#org",
+          "name": "Automotive3D",
+          "url": "https://automotive3d.ca/",
+          "founder": { "@id": "https://circuitry3d.app/#maker" }
+        }
+      ]
+    }
+    </script>
     <title>CircuiTry3D — Illuminate Electricity</title>
 
     <!-- Google Fonts - UI body font + display/heading + bold display fonts for Arena -->
@@ -141,6 +212,24 @@
         overscroll-behavior: contain;
       }
       
+      /* ── The boot screen, which is deliberately BLANK ──────────────────
+         This used to draw the wordmark in flat CSS text — "Circui" in blue,
+         "Try" in orange, "3D" in green — over "Loading / Initializing…". It
+         was a second landing page standing in front of the real one: you got
+         a couple of seconds of flat lettering, it vanished, and only then did
+         the actual 3D logo and Launch App screen arrive.
+
+         Two landing screens in a row is one too many, and the flat one is the
+         worse of the two — it is a hand-drawn imitation of a mark this app
+         renders properly in three dimensions a moment later.
+
+         So the layer stays and the picture goes. It still has a job: if the
+         JS bundle never arrives (offline, 404, a stale cache), something has
+         to tell the user rather than leave them on an empty background. That
+         message is written in by the script below, and only after 10s — so in
+         the normal case this element paints one colour and is removed without
+         ever having been noticed. The colour is landing.html's own --bg, so
+         the handover to the real screen is invisible. */
       .initial-loader {
         position: fixed;
         inset: 0;
@@ -148,106 +237,30 @@
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        gap: 20px;
+        gap: 14px;
         z-index: 9999;
-        background: #0f172a;
-      }
-      
-      .loader-text {
-        font-size: 1.05rem;
-        color: rgba(136, 204, 255, 0.78);
-        letter-spacing: 0.16em;
-        text-transform: uppercase;
-      }
-
-      .loader-logo-orbit {
-        position: relative;
-        width: 280px;
-        height: 220px;
-        display: grid;
-        place-items: center;
-        margin-top: 4px;
-      }
-
-      .loader-wordmark {
-        display: inline-flex;
-        align-items: baseline;
-        gap: 0.12em;
-        font-weight: 900;
-        letter-spacing: 0.14em;
-        user-select: none;
-        -webkit-user-select: none;
-        user-select: none;
-        -webkit-user-drag: none;
-        transform: translateY(-2px);
-        filter: drop-shadow(0 10px 24px rgba(56, 189, 248, 0.16));
-      }
-
-      .loader-wordmark span {
-        font-size: clamp(2.1rem, 8.2vw, 2.8rem);
-        line-height: 1;
-        text-shadow:
-          0 1px 0 rgba(2, 6, 23, 0.65),
-          0 2px 0 rgba(2, 6, 23, 0.55),
-          0 3px 0 rgba(2, 6, 23, 0.45),
-          0 10px 22px rgba(2, 6, 23, 0.35);
-      }
-
-      .loader-wordmark .wm-circui {
-        color: #88ccff;
-        text-shadow:
-          0 1px 0 rgba(2, 6, 23, 0.65),
-          0 2px 0 rgba(2, 6, 23, 0.55),
-          0 3px 0 rgba(2, 6, 23, 0.45),
-          0 0 14px rgba(136, 204, 255, 0.35),
-          0 0 26px rgba(136, 204, 255, 0.22);
-      }
-
-      .loader-wordmark .wm-try {
-        color: #ff8844;
-        font-style: italic;
-        text-shadow:
-          0 1px 0 rgba(2, 6, 23, 0.65),
-          0 2px 0 rgba(2, 6, 23, 0.55),
-          0 3px 0 rgba(2, 6, 23, 0.45),
-          0 0 14px rgba(255, 136, 68, 0.35),
-          0 0 26px rgba(255, 136, 68, 0.22);
-      }
-
-      .loader-wordmark .wm-3d {
-        color: #00ff88;
-        letter-spacing: 0.18em;
-        text-shadow:
-          0 1px 0 rgba(2, 6, 23, 0.65),
-          0 2px 0 rgba(2, 6, 23, 0.55),
-          0 3px 0 rgba(2, 6, 23, 0.45),
-          0 0 14px rgba(0, 255, 136, 0.28),
-          0 0 26px rgba(0, 255, 136, 0.2);
+        background: #050b1f;
       }
     </style>
   </head>
   <body>
-    <!-- Initial loader lives OUTSIDE #root so it is unaffected by React's
-         DOM reconciliation.  A plain (non-module) script below provides a
-         safety-net timeout that removes the loader even when the JS bundle
-         fails to load (offline, 404, slow network), preventing the user from
-         being permanently stuck at "Initializing...". -->
+    <!-- Boot screen. Empty on purpose — see .initial-loader above. It lives
+         OUTSIDE #root so React's reconciliation cannot touch it, and it holds
+         nothing but the background colour until either the app signals ready
+         (normal case: removed unseen) or the plain script below decides the
+         bundle is not coming and writes a message into #loader-status. -->
     <div id="initial-loader" class="initial-loader">
-      <div class="loader-text">Loading</div>
-      <div class="loader-logo-orbit" aria-hidden="true">
-        <div class="loader-wordmark" aria-label="CircuiTry3D">
-          <span class="wm-circui">Circui</span><span class="wm-try">Try</span><span class="wm-3d">3D</span>
-        </div>
-      </div>
-      <div id="loader-status" style="color: rgba(136, 204, 255, 0.6); font-size: 0.9rem; margin-top: 10px;">Initializing...</div>
+      <div id="loader-status" style="font-size: 0.95rem; text-align: center; padding: 0 24px;"></div>
     </div>
     <div id="root"></div>
 
     <!-- Plain (non-module) fallback script — runs synchronously before the
          module bundle loads, so it is always registered regardless of network
-         conditions.  Provides a "please refresh" message after 10 s when the
-         bundle is taking unusually long, and removes the loader entirely after
-         20 s so the user is never permanently stuck. -->
+         conditions. It says NOTHING for the first 10 s: a normal boot is over
+         long before that, and a progress message the user never needed is
+         exactly the splash screen this element stopped being. After 10 s it
+         explains the delay, and after 20 s it offers a Refresh button, so a
+         bundle that never arrives is never a silent blank screen. -->
     <script>
       (function () {
         var loaderEl = document.getElementById('initial-loader');

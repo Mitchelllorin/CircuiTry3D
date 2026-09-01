@@ -97,9 +97,9 @@ export default function AppAccess() {
         <div className="legal-contact-card">
           <h3>App Support Contact</h3>
           <p><strong>Mitchell Lorin McKnight</strong></p>
-          <p>Email: <a href="mailto:info@circuitry3d.net">info@circuitry3d.net</a></p>
+          <p>Email: <a href="mailto:info@circuitry3d.app">info@circuitry3d.app</a></p>
           <p>
-            Privacy enquiries: <a href="mailto:info@circuitry3d.net">info@circuitry3d.net</a>
+            Privacy enquiries: <a href="mailto:info@circuitry3d.app">info@circuitry3d.app</a>
           </p>
         </div>
 

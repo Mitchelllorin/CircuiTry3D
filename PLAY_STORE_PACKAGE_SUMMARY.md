@@ -238,7 +238,7 @@ All data is encrypted in transit and at rest. Users can request deletion.
 
 ### Contact
 - **GitHub:** https://github.com/Mitchelllorin/CircuiTry3D
-- **Email:** Mitchell Lorin McKnight — info@circuitry3d.net
+- **Email:** Mitchell Lorin McKnight — info@circuitry3d.app
 
 ---
 

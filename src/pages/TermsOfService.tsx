@@ -35,7 +35,7 @@ export default function TermsOfService() {
           To access certain features you must create an account. You are responsible for maintaining
           the confidentiality of your login credentials and for all activity that occurs under your
           account. Notify us immediately at{" "}
-          <a href="mailto:info@circuitry3d.net">info@circuitry3d.net</a> if you suspect unauthorised
+          <a href="mailto:info@circuitry3d.app">info@circuitry3d.app</a> if you suspect unauthorised
           use.
         </p>
 
@@ -134,8 +134,8 @@ export default function TermsOfService() {
         <div className="legal-contact-card">
           <h3>Contact</h3>
           <p><strong>Mitchell Lorin McKnight</strong></p>
-          <p>Email: <a href="mailto:info@circuitry3d.net">info@circuitry3d.net</a></p>
-          <p>Website: <a href="https://www.circuitry3d.net/terms" target="_blank" rel="noopener noreferrer">https://www.circuitry3d.net/terms</a></p>
+          <p>Email: <a href="mailto:info@circuitry3d.app">info@circuitry3d.app</a></p>
+          <p>Website: <a href="https://circuitry3d.app/terms" target="_blank" rel="noopener noreferrer">https://circuitry3d.app/terms</a></p>
           <p>Response time: within 48 hours (2 business days)</p>
         </div>
 

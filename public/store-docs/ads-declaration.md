@@ -34,4 +34,4 @@ When prompted in Google Play Console under **"Ads"**, select:
 
 ---
 
-**Contact:** info@circuitry3d.net
+**Contact:** info@circuitry3d.app

@@ -44,7 +44,7 @@ jobs:
             const MAX_ATTEMPTS = Number(process.env.PREVIEW_POLL_ATTEMPTS || "18");
             const POLL_INTERVAL_MS = Number(process.env.PREVIEW_POLL_INTERVAL_MS || "10000");
             const TOTAL_WAIT_SECONDS = (MAX_ATTEMPTS * POLL_INTERVAL_MS) / 1000;
-            const ALLOWED_HOST_SUFFIXES = ["vercel.app", "circuitry3d.net", "github.io"];
+            const ALLOWED_HOST_SUFFIXES = ["vercel.app", "circuitry3d.app", "github.io"];
             const isAllowedPreviewUrl = (value) => {
               try {
                 const parsed = new URL(value);

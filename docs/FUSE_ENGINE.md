@@ -38,7 +38,7 @@ FUSE™ is CircuiTry3D's core intellectual property.  Its key protectable elemen
 ### Licensing
 
 Commercial licensing, OEM embedding, and developer API partnerships are available:
-- **Contact:** info@circuitry3d.net
+- **Contact:** info@circuitry3d.app
 - **npm package:** `@circuitry3d/fuse-engine` *(future)*
 - **SaaS API:** `POST /api/fuse/detect` *(future)*
 

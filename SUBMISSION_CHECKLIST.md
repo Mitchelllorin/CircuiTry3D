@@ -148,7 +148,7 @@ Use this checklist to track your progress through the submission process.
   - [ ] Data handling (encrypted in transit and at rest)
   - [ ] User can request deletion
 - [ ] Review all answers
-- [ ] Keep Data Safety URL ready: `https://www.circuitry3d.net/data-safety`
+- [ ] Keep Data Safety URL ready: `https://circuitry3d.app/data-safety`
 - [ ] Keep Google Play listing URL ready: `https://play.google.com/store/apps/details?id=com.circuitry3d.app`
 - [ ] Submit data safety form
 

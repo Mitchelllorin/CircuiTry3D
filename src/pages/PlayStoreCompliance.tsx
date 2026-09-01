@@ -485,7 +485,7 @@ export default function PlayStoreCompliance() {
           </p>
           <p>
             Questions or review requests:{" "}
-            <a href="mailto:info@circuitry3d.net">info@circuitry3d.net</a>
+            <a href="mailto:info@circuitry3d.app">info@circuitry3d.app</a>
           </p>
         </div>
       </div>

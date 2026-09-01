@@ -41,4 +41,4 @@ When prompted under **"Financial Features"**, select:
 
 ---
 
-**Contact:** info@circuitry3d.net
+**Contact:** info@circuitry3d.app

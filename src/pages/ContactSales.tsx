@@ -26,7 +26,7 @@ export default function ContactSales() {
 
   const mailtoHref = tier
     ? tier.contactMailto
-    : "mailto:info@circuitry3d.net?subject=Enterprise%20Inquiry";
+    : "mailto:info@circuitry3d.app?subject=Enterprise%20Inquiry";
 
   return (
     <main style={pageStyle}>

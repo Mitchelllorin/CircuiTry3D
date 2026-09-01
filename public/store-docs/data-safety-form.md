@@ -174,7 +174,7 @@ Users can request data deletion by:
    - All data will be permanently deleted within 30 days
 
 2. **Email Request:**
-   - Send email to: info@circuitry3d.net
+   - Send email to: info@circuitry3d.app
    - Include: account email and deletion request
    - We will respond within 48 hours
    - Data deletion completed within 30 days
@@ -199,9 +199,9 @@ Users can request data deletion by:
 
 **Data Protection Officer:**  
 Mitchell Lorin McKnight  
-Email: info@circuitry3d.net  
-Privacy Policy URL: https://www.circuitry3d.net/privacy  
-Data Safety URL: https://www.circuitry3d.net/data-safety  
+Email: info@circuitry3d.app  
+Privacy Policy URL: https://circuitry3d.app/privacy  
+Data Safety URL: https://circuitry3d.app/data-safety  
 Play Listing URL: https://play.google.com/store/apps/details?id=com.circuitry3d.app  
 
 **Response Time:**  
@@ -221,8 +221,8 @@ When filling out the Data Safety form in Google Play Console:
 1. Answer honestly and completely
 2. Review each category carefully
 3. Explain data handling practices clearly
-4. Provide your privacy policy URL (`https://www.circuitry3d.net/privacy`)
-5. Keep your Data Safety URL available for reviewers (`https://www.circuitry3d.net/data-safety`)
+4. Provide your privacy policy URL (`https://circuitry3d.app/privacy`)
+5. Keep your Data Safety URL available for reviewers (`https://circuitry3d.app/data-safety`)
 6. Keep your Play Store listing URL available for reviewer notes (`https://play.google.com/store/apps/details?id=com.circuitry3d.app`)
 7. Test data deletion functionality before submission
 8. Keep this document updated with any changes to data practices
