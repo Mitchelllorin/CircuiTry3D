@@ -793,10 +793,15 @@
                             for wiring, so hiding it here left the builder with no
                             way to wire anything; it worked only inside the
                             tutorial and Practice, which toggle it in code.
+     .edge-action-btn--help — Help. Tier 1 is meant to be the bar at rest, not
+                            the bar gone: one way back to the buttons and one
+                            way to ask what they are. Wire Mode is the third
+                            because it is the primary tool and lives nowhere
+                            else — see below.
                             Tucking the bar away must never cost the primary tool.
    --------------------------------------------------------------------------- */
 .unified-action-bar[data-bar-mode="hidden"]
-  > *:not(.action-bar-cycle):not(.edge-action-btn--wire) {
+  > *:not(.action-bar-cycle):not(.edge-action-btn--wire):not(.edge-action-btn--help) {
   display: none !important;
 }
 

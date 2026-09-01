@@ -2189,6 +2189,19 @@ body.ct-opaque-menus {
     width 0.32s ease,
     height 0.32s ease;
   will-change: width, height;
+  /* The stage is a positioning frame, not a surface. It is transparent and
+     much bigger than what it holds, and at 34% down the screen its box laps
+     over the CLEAR and SAVE edge buttons - so a thumb aimed at the middle of
+     either one hit the frame and nothing happened. Only the children take
+     taps; the empty frame lets them through. */
+  pointer-events: none;
+}
+
+/* Every direct child of a stage is real: the toggle tab and the nav itself.
+   The per-side rules below still gate .builder-menu by open/closed - they are
+   two classes deep, so they outrank this. */
+.builder-menu-stage > * {
+  pointer-events: auto;
 }
 
 .builder-menu-stage-bottom {
@@ -2703,11 +2716,9 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
   writing-mode: horizontal-tb;
   text-orientation: mixed;
   flex-direction: row;
-  border-radius: var(--radius-tab) var(--radius-tab) 0 0;
-  border-bottom: none;
-  box-shadow:
-    0 -2px 12px var(--builder-shadow),
-    0 -2px 16px rgba(168, 216, 255, 0.2);
+  /* No radius, no border, no shadow: a rounded top edge only makes sense
+     on a box, and there is no box. The padding stays — here it is the tap
+     target, not decoration. */
 }
 
 .toggle-icon {
@@ -5593,31 +5604,19 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
   }
 
   /* Ensure toggle buttons are always visible on touch devices */
+  /* Touch tap-target minimums only. This block used to re-add a two-layer
+     box-shadow (dark + cyan glow, offset 0 -4px) to all four toggle
+     selectors, which put back the exact container the base rules had
+     already stripped — on a slim tab a glow that size reads as a lit
+     border. Containerless means the glyph carries the shadow, not a box:
+     that is what the base rule's filter: drop-shadow() is for. */
   .builder-menu-toggle {
     min-width: 44px;
     min-height: 44px;
-    box-shadow:
-      0 -4px 16px var(--builder-shadow),
-      0 -4px 16px rgba(168, 216, 255, 0.25);
   }
 
-  .builder-menu-toggle-left {
-    box-shadow:
-      0 -4px 16px var(--builder-shadow),
-      0 -4px 20px rgba(168, 216, 255, 0.3);
-  }
 
-  .builder-menu-toggle-right {
-    box-shadow:
-      0 -4px 16px var(--builder-shadow),
-      0 -4px 20px rgba(168, 216, 255, 0.3);
-  }
 
-  .builder-menu-toggle-bottom {
-    box-shadow:
-      0 -4px 16px var(--builder-shadow),
-      0 -4px 20px rgba(168, 216, 255, 0.3);
-  }
 
   /* Side panels on touch devices: use same transform-based approach as desktop */
   .builder-menu-stage-left {

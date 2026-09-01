@@ -215,6 +215,32 @@
     }
     .landing-footer-link:hover { color: rgba(147,197,253,0.9); }
     .landing-footer-sep { color: rgba(147,197,253,0.22); }
+    /* Studio credit — the sibling sites are the same maker, not sponsors.
+       Stacked under the legal row it has to read as a footnote, not as a
+       second nav row: two dotted link lists 5px apart at almost the same size
+       were one cluttered blob. So it gets real air above it, a clearly smaller
+       size, and NO middle dot — the dot is the legal row's separator, and
+       reusing it here made the credit look like more of the same list. */
+    .landing-footer {
+      flex-direction: column;
+      gap: 0.85rem;
+      padding-top: 18px;
+    }
+    .landing-credit {
+      margin: 0;
+      font-size: 0.62rem;
+      letter-spacing: 0.015em;
+      color: rgba(147,197,253,0.3);
+    }
+    .landing-credit-link {
+      color: rgba(147,197,253,0.5);
+      text-decoration: none;
+      padding: 2px 1px;
+      transition: color 0.15s ease;
+    }
+    .landing-credit-link:hover { color: rgba(147,197,253,0.85); }
+    /* The joining word sits behind the two names it joins. */
+    .landing-credit-and { opacity: 0.62; }
     /* ══════════════════════════════════════════════════════════════
        ONE-PAGER LAYOUT
        The landing page is a single screen: wordmark, mark, one button.
@@ -351,6 +377,12 @@
       <span class="landing-footer-sep" aria-hidden="true">·</span>
       <a class="landing-footer-link" href="/partnerships">Partnerships</a>
     </nav>
+    <p class="landing-credit">
+      From the makers of
+      <a class="landing-credit-link" href="https://theprints3d.com" target="_blank" rel="noopener noreferrer">ThePrints3D.com</a>
+      <span class="landing-credit-and">and</span>
+      <a class="landing-credit-link" href="https://automotive3d.ca" target="_blank" rel="noopener noreferrer">Automotive3D.ca</a>
+    </p>
   </footer>
 
 

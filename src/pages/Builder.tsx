@@ -7,6 +7,7 @@ import {
   useState,
 } from "react";
 import { useBuilderFrame } from "../hooks/builder/useBuilderFrame";
+import StudioCredit from "../components/StudioCredit";
 import { useHelpModal } from "../hooks/builder/useHelpModal";
 import { useResponsiveLayout } from "../hooks/builder/useResponsiveLayout";
 import { useWorkspaceBackground } from "../hooks/builder/useWorkspaceBackground";
@@ -75,6 +76,7 @@ import {
   UNIFIED_COMPONENT_ACTIONS,
 } from "../components/builder/componentLibrary";
 import {
+  DEFAULT_LABEL_LEVEL,
   clampLabelVisibilityLevel,
   getLabelVisibilityDescription,
   getNextLabelToggleTitle,
@@ -134,7 +136,10 @@ const JUNCTION_TIP_STORAGE_KEY = "circuitry3d:junction-tip-dismissed:v1";
 // which read as the tour having been deleted. Bumping the key hands it back to
 // everyone once. It is still re-launchable from Help → Take the Tour.
 const TOUR_DISMISSED_KEY = "circuitry3d:onboarding:tour-dismissed:v2";
-const ACTION_BAR_MODE_STORAGE_KEY = "ct3d.actionbar.mode";
+// v2: the three tiers changed shape (tier 1 now keeps Help reachable), so the
+// key is bumped — a device holding an old value gets the new middle default
+// once, then persists its own choice again from there.
+const ACTION_BAR_MODE_STORAGE_KEY = "ct3d.actionbar.mode.v2";
 const THUMB_DESCRIPTORS_STORAGE_KEY = "ct3d.actionbar.descriptors";
 
 type ActionBarMode = "full" | "tools" | "hidden";
@@ -1279,7 +1284,7 @@ export default function Builder() {
     // hit with a wall of volts/ohms on first sight. The W.I.R.E. metrics (level 3)
     // get introduced deliberately in the next tutorial. Must match legacy.html's
     // own default (search `labelVisibilityLevel = 1`) or the legacy sync overrides it.
-    labelVisibilityLevel: 1,
+    labelVisibilityLevel: DEFAULT_LABEL_LEVEL,
     gridBrightness: 100,
     gridLineWidth: 1,
     gridHue: 240,
@@ -2168,12 +2173,17 @@ export default function Builder() {
     (view: HelpModalView = "overview", _sectionTitle?: string) => {
       if (view === "overview" || view === "tutorial" || view === "wire-guide") {
         const workflow: GuideWorkflowId = view === "wire-guide" ? view : "tutorial";
+        // These three views live in the Help panel, not the modal. Without
+        // this the modal stayed open on top of the panel we just switched to,
+        // which is what made "< Back" out of About and Shortcuts look like a
+        // dead button: it did route, you just could not see it happen.
+        setHelpOpen(false);
         openGuidesWorkspace(workflow);
         return;
       }
       openHelpWithView(view);
     },
-    [openGuidesWorkspace, openHelpWithView],
+    [openGuidesWorkspace, openHelpWithView, setHelpOpen],
   );
 
   const assignPracticeProblem = useCallback(
@@ -4666,6 +4676,10 @@ export default function Builder() {
           {activeHelpContent.description && (
             <p className="help-description">{activeHelpContent.description}</p>
           )}
+          {/* In the packaged Android build there is no address bar, so About
+              is the one reachable place the website and the sibling studio
+              sites can live. */}
+          {helpView === "about" && <StudioCredit />}
           {helpView === "overview" && (
             <div
               className="help-nav"

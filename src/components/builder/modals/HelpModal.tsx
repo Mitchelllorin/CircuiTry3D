@@ -1,5 +1,6 @@
 import { Fragment } from "react";
 import type { HelpModalView, HelpSection } from "../types";
+import StudioCredit from "../../StudioCredit";
 import { WIRE_LEGEND } from "../constants";
 
 interface HelpModalProps {
@@ -93,6 +94,10 @@ export function HelpModal({
         {activeHelpContent.description && (
           <p className="help-description">{activeHelpContent.description}</p>
         )}
+        {/* In the packaged Android build there is no address bar, so About is
+            the one reachable place the website and the sibling studio sites can
+            live. */}
+        {helpView === "about" && <StudioCredit />}
         {helpView === "overview" && (
           <div
             className="help-nav"
