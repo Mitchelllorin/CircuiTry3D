@@ -255,16 +255,32 @@ export function BuilderGuidedTour({
           <div className="builder-tutorial-body">
             <p className="builder-tutorial-text">{highlightTerms(current.text, { symbols: true, wrapPlain: true })}</p>
           </div>
-          {!isLast && (
-            <button type="button" className="builder-tour-next" onClick={goNext}>
-              Next ›
+          {/* Three ways out, and "no thanks" has to be one of them.
+              The card offered Next and Build it with me, and the only way to
+              decline BOTH was the ✕ in the header — a small glyph a thumb has to
+              find, sitting where a close button on a panel goes, not where a
+              choice goes. Someone who wants neither walkthrough was being asked
+              to work out that the tour is a thing you close rather than a
+              question you answer.
+              So Skip sits in the same row as the offers, because it is one of
+              the offers. It is deliberately quiet — plain text, no border, no
+              chevron — so it reads as the third option rather than competing
+              with the one most people want. */}
+          <div className="builder-tour-actions">
+            <button type="button" className="builder-tour-skip-link" onClick={dismiss}>
+              Skip
             </button>
-          )}
-          {current?.id === "build" && (
-            <button type="button" className="builder-tour-next" onClick={onStartBuildAlong}>
-              Build it with me ›
-            </button>
-          )}
+            {!isLast && (
+              <button type="button" className="builder-tour-next" onClick={goNext}>
+                Next ›
+              </button>
+            )}
+            {current?.id === "build" && (
+              <button type="button" className="builder-tour-next" onClick={onStartBuildAlong}>
+                Build it with me ›
+              </button>
+            )}
+          </div>
         </div>
       )}
     </div>

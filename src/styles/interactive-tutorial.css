@@ -143,9 +143,18 @@
    app should be the topmost thing while it is up. */
 
 /* Guided tour: a "Next" affordance on the card so the user can advance early. */
-.builder-tour-next {
-  align-self: flex-end;
+/* The card's action row. Skip is pushed to the far left and the offers sit on
+   the right, so declining is never the thing a thumb reaches for by accident. */
+.builder-tour-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
   margin-top: 10px;
+}
+
+.builder-tour-next {
   padding: 7px 14px;
   border-radius: 10px;
   border: 1px solid rgba(0, 255, 136, 0.35);
@@ -159,6 +168,42 @@
 .builder-tour-next:hover {
   border-color: rgba(0, 255, 136, 0.55);
   background: rgba(0, 255, 136, 0.16);
+}
+
+/* Skip: a real option, quietly. Containerless — no fill, no border, no pill —
+   so it cannot be mistaken for the primary action, and a 44px tall hit area so
+   a thumb can still land it. Left-aligned via margin-right:auto rather than a
+   spacer element, which keeps it in the same flex row as the offers it belongs
+   with. */
+.builder-tour-skip-link {
+  margin-right: auto;
+  padding: 12px 4px;
+  min-height: 44px;
+  background: none;
+  border: none;
+  color: rgba(168, 200, 235, 0.72);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  text-shadow: 0 1px 3px rgba(2, 6, 16, 0.9);
+}
+
+.builder-tour-skip-link:hover,
+.builder-tour-skip-link:focus-visible {
+  color: rgba(214, 234, 255, 0.95);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+html[data-theme="light"] .builder-tour-skip-link {
+  color: rgba(38, 66, 96, 0.78);
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.9);
+}
+
+html[data-theme="light"] .builder-tour-skip-link:hover,
+html[data-theme="light"] .builder-tour-skip-link:focus-visible {
+  color: rgba(16, 38, 60, 0.98);
 }
 
 /* Guided tour: pulse-highlight on the Circuit AI button during the closing card. */

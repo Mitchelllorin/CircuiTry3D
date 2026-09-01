@@ -3157,7 +3157,7 @@
                     <li>Priority email support</li>
                 </ul>
                 <div class="subscription-plan-cta">
-                    <button type="button" class="subscription-plan-button" onclick="launchPlayStorePurchase('educator', subscriptionPricingState.activeCycle, 'mailto:info@circuitry3d.net?subject=Educator%20License%20Subscription')">Subscribe</button>
+                    <button type="button" class="subscription-plan-button" onclick="launchPlayStorePurchase('educator', subscriptionPricingState.activeCycle, 'mailto:info@circuitry3d.app?subject=Educator%20License%20Subscription')">Subscribe</button>
                 </div>
             </article>
 
@@ -3182,7 +3182,7 @@
                     <span>Volume discounts start at 25 seats</span>
                 </div>
                 <div class="subscription-plan-cta">
-                    <a class="subscription-plan-button" href="mailto:info@circuitry3d.net?subject=Institutional%20Pricing">Contact Us</a>
+                    <a class="subscription-plan-button" href="mailto:info@circuitry3d.app?subject=Institutional%20Pricing">Contact Us</a>
                 </div>
             </article>
         </div>
@@ -3283,7 +3283,7 @@
             </div>
             <div class="subscription-cta-actions">
                 <button type="button" class="subscription-cta-button" onclick="startSandboxFromPricing()">Start free sandbox</button>
-                <a class="subscription-cta-button" href="mailto:info@circuitry3d.net?subject=CircuiTry3D%20Subscription%20Planning">Book a planning call</a>
+                <a class="subscription-cta-button" href="mailto:info@circuitry3d.app?subject=CircuiTry3D%20Subscription%20Planning">Book a planning call</a>
             </div>
         </div>
     </div>
@@ -4366,7 +4366,13 @@ body.android-optimized .zoom-btn {
         // Default to REFERENCES-ONLY (level 1 → SW1, R1, …) so newcomers aren't hit
         // with volts/ohms on open; W.I.R.E. metrics (level 3) are introduced in the
         // next tutorial. Must match the React default in Builder.tsx (labelVisibilityLevel: 1).
-        let showGrid = true, showLabels = true, labelVisibilityLevel = 1;
+        // Nameplate detail is a THREE-tier cycle, not a four-step dimmer:
+        //   0 = off, 2 = name + value, 3 = name + value + live metrics.
+        // Level 1 (identifier with no value) is skipped — a name with no
+        // number attached is the one state nobody reaches for. Opens on the
+        // middle tier, which must match the React default in Builder.tsx.
+        const LABEL_TIERS = [0, 2, 3];
+        let showGrid = true, showLabels = true, labelVisibilityLevel = LABEL_TIERS[1];
         let gridBrightness = 45, gridLineWidth = 1, gridHue = 120;
         let currentAnalysisTab = 'wire';
         let lastKnownValues = { voltage: 0, current: 0, resistance: Infinity, power: 0 };
@@ -15048,7 +15054,7 @@ body.android-optimized .zoom-btn {
         }
 
         function contactSubscriptionTeam() {
-            window.location.href = 'mailto:info@circuitry3d.net?subject=CircuiTry3D%20Subscription%20Planning';
+            window.location.href = 'mailto:info@circuitry3d.app?subject=CircuiTry3D%20Subscription%20Planning';
         }
 
         function startSandboxFromPricing() {
@@ -16182,8 +16188,15 @@ body.android-optimized .zoom-btn {
         }
 
         function toggleLabels() {
-            labelVisibilityLevel = Math.max(0, Math.min(3, Math.round(Number(labelVisibilityLevel) || 0)));
-            labelVisibilityLevel = labelVisibilityLevel <= 0 ? 3 : labelVisibilityLevel - 1;
+            // Step to the next tier, wrapping. Snaps to the nearest tier first
+            // so a level arriving from anywhere else lands somewhere valid.
+            const current = Math.max(0, Math.min(3, Math.round(Number(labelVisibilityLevel) || 0)));
+            let tier = LABEL_TIERS.indexOf(current);
+            if (tier < 0) {
+                tier = LABEL_TIERS.reduce((best, v, i) =>
+                    Math.abs(v - current) < Math.abs(LABEL_TIERS[best] - current) ? i : best, 0);
+            }
+            labelVisibilityLevel = LABEL_TIERS[(tier + 1) % LABEL_TIERS.length];
             showLabels = labelVisibilityLevel > 0;
             components.forEach(component => {
                 if (typeof component.updateLabels === 'function') {
@@ -16194,12 +16207,10 @@ body.android-optimized .zoom-btn {
             });
             notifyParentModeState();
             const labelStateMessage = labelVisibilityLevel >= 3
-                ? 'Full labels shown'
-                : labelVisibilityLevel === 2
-                    ? 'Wire metrics hidden'
-                    : labelVisibilityLevel === 1
-                        ? 'References only'
-                        : 'All labels hidden';
+                ? 'Names, values and live metrics'
+                : labelVisibilityLevel >= 2
+                    ? 'Names and values'
+                    : 'Nameplates hidden';
             setStatus(`⚡ ${labelStateMessage}`);
         }
         

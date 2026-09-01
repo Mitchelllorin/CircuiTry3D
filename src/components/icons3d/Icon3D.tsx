@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
 import * as THREE from "three";
+import circuitLogo from "../../assets/circuit-logo.svg";
 import { ICON_MODELS, ICON_NAMES, type Icon3DName } from "./iconModels";
 
 // Real modelled 3D icons, rendered ONCE on a single shared WebGL context and
@@ -14,6 +15,19 @@ import { ICON_MODELS, ICON_NAMES, type Icon3DName } from "./iconModels";
 // Icons are static. Rendering them every frame buys nothing.
 
 const ICON_PX = 256;
+
+/**
+ * Icons that are a real artwork file, not a modelled mesh.
+ *
+ * Build is the app's own logo. A 3D model of it — however carefully matched —
+ * is a redrawing, and a redrawing of your own mark is worse than the mark: the
+ * whole value of using it here is that people already read it as this product.
+ * So Build ships the actual file, background plate and labels and all, and the
+ * other twelve stay modelled.
+ */
+const IMAGE_ICONS: Partial<Record<Icon3DName, string>> = {
+  build: circuitLogo,
+};
 
 const cache: Partial<Record<Icon3DName, string>> = {};
 let renderPromise: Promise<void> | null = null;
@@ -179,6 +193,10 @@ function renderIcons(): Promise<void> {
       env = makeEnvironment(renderer);
 
       for (const name of ICON_NAMES) {
+        // An artwork icon has no mesh to render and no frame to spend.
+        if (IMAGE_ICONS[name]) {
+          continue;
+        }
         const scene = new THREE.Scene();
         lightScene(scene, env);
         const model = ICON_MODELS[name]();
@@ -204,9 +222,16 @@ function renderIcons(): Promise<void> {
 
 /** The cached image for one icon — undefined until the set has rendered. */
 export function useIcon3D(name: Icon3DName): string | undefined {
-  const [src, setSrc] = useState<string | undefined>(cache[name]);
+  const image = IMAGE_ICONS[name];
+  const [src, setSrc] = useState<string | undefined>(image ?? cache[name]);
+
 
   useEffect(() => {
+    // A file-backed icon is ready on the first render — no WebGL, no idle wait.
+    if (image) {
+      setSrc(image);
+      return;
+    }
     if (cache[name]) {
       setSrc(cache[name]);
       return;
@@ -245,7 +270,7 @@ export function useIcon3D(name: Icon3DName): string | undefined {
         window.clearTimeout(timeoutId);
       }
     };
-  }, [name]);
+  }, [image, name]);
 
   return src;
 }

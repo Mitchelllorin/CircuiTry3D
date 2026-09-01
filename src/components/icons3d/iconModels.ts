@@ -1560,6 +1560,166 @@ function buildKey(): THREE.Object3D {
   return g;
 }
 
+/**
+ * BUILD - the series circuit from the app's own logo, modelled.
+ *
+ * This replaces the wire bundle, which failed the only test that matters:
+ * "I'm not sure what it is at all ... it looks like a hypodermic from here."
+ * A bundle of cut cables is a fine object and a poor icon - at 26px the six
+ * ellipses merge into one blunt cylinder with a point, and a blunt cylinder
+ * with a point is a syringe.
+ *
+ * The replacement was already in the repo. `src/assets/circuit-logo.svg` -
+ * aria-label "CircuiTry3D Logo - Series Circuit" - is the mark this app used
+ * before the 3D wordmark: a square loop, a battery on the left, zigzag
+ * resistors, purple junction beads. Reusing it means the Build tab is marked
+ * with something the user already reads as this product, which no newly
+ * invented object can be.
+ *
+ * What had to change to survive 26px, and why:
+ *   - THREE resistors become ONE, on the top run. The logo has one per side
+ *     because it is a 512px illustration with room for R1/R2/R3 labels. At icon
+ *     size three zigzags on three sides is texture, not structure - the eye
+ *     reads a fuzzy square. One zigzag on one side stays a zigzag.
+ *   - The labels, the grid, the current arrows and the flowing photons all go.
+ *     Every one of them is information the icon is not being asked to carry.
+ *   - The gap in the left run is kept and made bigger. It is the second tell
+ *     after the zigzag: an unbroken square is a frame, a square with a battery
+ *     wedged into one side is a circuit.
+ *
+ * A closed loop is the strongest silhouette in this set - better even than a
+ * wand. It has no ambiguous end to resolve, and the hole in the middle means
+ * the background reads THROUGH it, which is what stops small marks turning to
+ * mush. (Compare the price tag's eyelet, which had to be enlarged for exactly
+ * this reason.)
+ *
+ * Colour comes from the logo, not from physics: green conductor, orange
+ * resistor, red battery, purple junctions. Copper would be more truthful and
+ * less recognisable, and recognition is the entire job here.
+ */
+function buildSeriesCircuit(): THREE.Object3D {
+  const g = new THREE.Group();
+
+  // Tubes sweep the whole studio as they curve, so they can take full chrome.
+  // The battery plates cannot - they are flat faces, and a near-mirror flat face
+  // shows only the one patch of environment it happens to point at (the lesson
+  // the key and the wire bundle's cut cores both taught). Hence gloss(), not
+  // steel(), for the plates.
+  // Both the orange and the red had to come UP from the logo's values. The logo
+  // is a 512px illustration on its own dark ground and #ff8844 sits fine there;
+  // shrunk to 26px on the nav bar, a chrome tube of it averaged out to BROWN,
+  // and the small red plate to near-black. This is the same rule the hand bell's
+  // walnut handle broke - on a dark ground an icon's second colour has to be
+  // LIGHTER than the ground, and reference accuracy loses to it every time.
+  // Lighter base plus a higher emissive floor, not one or the other: the base
+  // alone still averages down, and emissive alone flattens the tube.
+  // The conductor stays chrome: #00ff88 is bright enough that even a mostly
+  // reflected surface averages green.
+  const conductor = steel(0x00ff88, 0x004d29, 0.15);
+  // The resistor does NOT. At metalness 0.94 an object's colour is mostly what
+  // it REFLECTS, and a tube this thin reflects a few pixels of a dark studio -
+  // so mid-tone orange averaged out to brown at 26px however far the base colour
+  // and the emissive were pushed. gloss() is nearly non-metallic, so the orange
+  // is its OWN colour rather than a borrowed one. Generalises the copper-core
+  // and flat-key findings: it is not "flat faces", it is any surface too small
+  // to sweep enough of the environment to average out.
+  const resistor = gloss(0xffa257, 0x6b3410, 0.26);
+  const bead = gloss(0x9d5cff, 0x2a0a5c, 0.22);
+  const plate = gloss(0xff4d4d, 0x6b0a0a, 0.34);
+
+  const X = 0.66;
+  const Y = 0.6;
+  const WIRE_R = 0.062;
+  const at = (x: number, y: number) => new THREE.Vector3(x, y, 0);
+
+  // ── The loop, drawn as four runs so two of them can be interrupted ────────
+  const TL = at(-X, Y), TR = at(X, Y), BR = at(X, -Y), BL = at(-X, -Y);
+
+  // Top run: lead, resistor, lead. The resistor spans about half the width -
+  // wider than the logo's R1 does, because peaks need room (see below).
+  const rzL = -0.36, rzR = 0.36;
+  g.add(link(TL, at(rzL, Y), WIRE_R, conductor));
+  g.add(link(at(rzR, Y), TR, WIRE_R, conductor));
+
+  // Right and bottom runs are unbroken - they are what carries the square.
+  g.add(link(TR, BR, WIRE_R, conductor));
+  g.add(link(BR, BL, WIRE_R, conductor));
+
+  // Left run, interrupted for the battery.
+  const GAP = 0.15;
+  g.add(link(BL, at(-X, -GAP), WIRE_R, conductor));
+  g.add(link(at(-X, GAP), TL, WIRE_R, conductor));
+
+  // ── The resistor: one zigzag, TWO peaks ──────────────────────────────────
+  // The logo's R1 has four and the first pass here had three. Both turn to a
+  // brown blob: the top run is only about 13px wide on a 26px icon, so three
+  // peaks means a direction change every 4px and anti-aliasing fills the gaps
+  // between them into a solid mass. Two peaks across the same width gives each
+  // stroke ~6px to be seen in, which is the difference between a zigzag and a
+  // smudge. Amplitude came DOWN as well (0.23 -> 0.17): a tall zigzag pushes
+  // the bounding box up, and everything else in the icon shrinks to fit it.
+  const AMP = 0.17;
+  const zig = [
+    at(rzL, Y),
+    at(rzL + 0.08, Y),
+    at(-0.1, Y + AMP),
+    at(0.1, Y - AMP),
+    at(rzR - 0.08, Y),
+    at(rzR, Y),
+  ];
+  for (let i = 0; i < zig.length - 1; i += 1) {
+    // Fatter than the conductor, as in the logo (9 vs 6) - the resistor has to
+    // win the top run or the zigzag reads as a kink in the wire. Not much
+    // fatter, though: bulk is what filled the gaps in the first place.
+    g.add(link(zig[i], zig[i + 1], WIRE_R * 1.15, resistor));
+  }
+  // Round the corners of the zigzag. Without these the segments meet in mitred
+  // points that catch light as bright specks and break the line up.
+  for (const p of zig.slice(1, -1)) {
+    const j = new THREE.Mesh(new THREE.SphereGeometry(WIRE_R * 1.15, 14, 10), resistor);
+    j.position.copy(p);
+    g.add(j);
+  }
+
+  // ── The battery: a wide + plate and a narrow - plate ──────────────────────
+  // The width difference IS the symbol. Two equal bars are a capacitor.
+  //
+  // Both plates came in much narrower than the logo draws them (0.52 -> 0.34).
+  // Schematically the logo is right - plates cross the wire and overhang both
+  // sides - but at 26px the overhang is most of what you can see, so two red
+  // bars floated off the left edge and read as marks lying NEXT TO the circuit
+  // rather than parts of it. Pulled in, and with the gap tightened, they sit as
+  // a pair inside the square's edge and the left run reads as interrupted.
+  const plateDepth = 0.15;
+  const pos = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.08, plateDepth), plate);
+  pos.position.set(-X, GAP - 0.015, 0);
+  g.add(pos);
+  // The narrow plate is the one at risk: it is the smallest solid in the icon,
+  // and below about 5px of width it stops being a bar and becomes a speck. Kept
+  // clearly narrower than the + plate, since that contrast is the symbol, but
+  // not as narrow as the logo draws it.
+  const neg = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.078, plateDepth), plate);
+  neg.position.set(-X, -GAP + 0.015, 0);
+  g.add(neg);
+
+  // ── Junction beads on the corners ─────────────────────────────────────────
+  // They do a structural job, not a decorative one: four dots pin the corners of
+  // the square, so the silhouette stays a square rather than four tubes that
+  // happen to nearly meet.
+  for (const c of [TL, TR, BR, BL]) {
+    const b = new THREE.Mesh(new THREE.SphereGeometry(WIRE_R * 1.7, 18, 12), bead);
+    b.position.copy(c);
+    g.add(b);
+  }
+
+  // Barely any. The square outline is the whole read, and rotation turns a square
+  // into a parallelogram - but flat-on, the tubes lose their round highlight and
+  // it goes back to being the SVG. This is the smallest tilt that still shows the
+  // conductors are cylinders.
+  g.rotation.set(0.13, -0.17, 0.02);
+  return g;
+}
+
 export type Icon3DName =
   | "build"
   | "practice"
@@ -1576,7 +1736,7 @@ export type Icon3DName =
   | "account";
 
 export const ICON_MODELS: Record<Icon3DName, () => THREE.Object3D> = {
-  build: buildWireBundle,
+  build: buildSeriesCircuit,
 
   practice: buildPencil,
   troubleshoot: buildMagnifier,
@@ -1608,4 +1768,11 @@ export const PARKED_MODELS: Record<string, () => THREE.Object3D> = {
   resistor: buildResistor,
   solderingIron: buildSolderingIron,
   handBell: buildHandBell,
+  // Held Build until the series-circuit logo replaced it. Verdict at 26px on a
+  // real phone: "I'm not sure what it is at all ... it looks like a hypodermic."
+  // The six staggered cut faces that make it work at 150px merge into one blunt
+  // pointed cylinder at icon size. Worth keeping - the copper-core material
+  // finding (a small flat face cannot be left at the mercy of what it reflects)
+  // came out of this model and is reused across the set - but it is not an icon.
+  wireBundle: buildWireBundle,
 };
