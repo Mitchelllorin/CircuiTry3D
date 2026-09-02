@@ -310,8 +310,14 @@ async function walkBuilder(browser) {
     return { open: !!modal, title: modal && modal.querySelector('.help-title')?.innerText, links };
   });
   check('about.modalOpens', about.open, about.title || 'did not open');
-  check('about.links', about.links.length === 3 && about.links.every(l => l.tappable),
-    about.links.map(l => `${l.href}${l.tappable ? '' : ' NOT-TAPPABLE'}`).join(' | ') || 'no links found');
+  // Four now: the site, Google Play, and the two sibling studio sites. Every
+  // other Play link in the app is behind demo mode or a purchase flow, so this
+  // one is the only unconditional route to the listing from inside the app.
+  const wantLinks = ['circuitry3d.app', 'play.google.com', 'theprints3d.com', 'automotive3d.ca'];
+  const missing = wantLinks.filter(w => !about.links.some(l => (l.href || '').includes(w)));
+  check('about.links', missing.length === 0 && about.links.every(l => l.tappable),
+    (missing.length ? `missing: ${missing.join(', ')} — ` : '') +
+    (about.links.map(l => `${l.href}${l.tappable ? '' : ' NOT-TAPPABLE'}`).join(' | ') || 'no links found'));
 
   // "< Back" has to actually leave About, not just route behind a live modal.
   await page.evaluate(() => document.querySelector('.builder-help-modal.open .help-back')?.click());

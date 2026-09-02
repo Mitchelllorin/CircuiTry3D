@@ -11,7 +11,12 @@
  * the separator dots, and enough text-shadow to sit over anything.
  */
 
-import { APP_SITE_LABEL, APP_SITE_URL, STUDIO_SITES } from "../constants/urls";
+import {
+  APP_SITE_LABEL,
+  APP_SITE_URL,
+  PLAY_STORE_URL,
+  STUDIO_SITES,
+} from "../constants/urls";
 import "../styles/studio-credit.css";
 
 type StudioCreditProps = {
@@ -23,14 +28,31 @@ export default function StudioCredit({ className }: StudioCreditProps) {
 
   return (
     <div className={classes}>
-      <a
-        className="studio-credit__site"
-        href={APP_SITE_URL}
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        {APP_SITE_LABEL}
-      </a>
+      {/* Website and store, side by side — the two things someone means by
+          "where do I find this". Every other Play link in the app is behind a
+          condition (demo mode, or a purchase flow), so without this one there
+          is no plain way to reach the listing from inside the app. */}
+      <p className="studio-credit__links">
+        <a
+          className="studio-credit__site"
+          href={APP_SITE_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          {APP_SITE_LABEL}
+        </a>
+        <span className="studio-credit__sep" aria-hidden="true">
+          {" · "}
+        </span>
+        <a
+          className="studio-credit__site"
+          href={PLAY_STORE_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Google Play
+        </a>
+      </p>
       <p className="studio-credit__makers">
         <span className="studio-credit__lead">From the makers of </span>
         {STUDIO_SITES.map((site, index) => (
