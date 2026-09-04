@@ -1,7 +1,7 @@
 {
   "name": "circu-try-3d",
   "version": "1.0.0",
-  "description": "3D , Interactive , Electric Circuit Builder that utilizes ohms law and visualises current flow and behavior in a electric circuit down to the atomic level - creating a new way to understand the abstract concepts - Illuminating Electricity",
+  "description": "Build electric circuits in 3D and see what happens when they fail — current flow from the wire down to the atom. Illuminating Electricity.",
   "main": "dist-electron/main.js",
   "scripts": {
     "dev": "vite",
