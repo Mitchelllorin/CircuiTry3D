@@ -1,8 +1,6 @@
 # CircuiTry3D
 
-> 👥 **For Everyone** — to facilitate and enhance the learning.
-
-> **Illuminating Electricity** — a 3D, interactive electrical learning platform that makes circuit theory visual and tangible.
+> **Build electric circuits in 3D and see what happens when they fail — current flow from the wire down to the atom. Illuminating Electricity.**
 > Explore current flow from the macro scale all the way down to atomic crystal lattices and quantum probability clouds, powered by Ohm's Law and a proprietary component failure simulation engine.
 
 CircuiTry3D is founded and led by **Mitchell Lorin McKnight**, who built the platform to make circuit theory accessible and intuitive for everyone — because visual learning increases retention for all kinds of learners.
