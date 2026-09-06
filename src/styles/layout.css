@@ -1025,3 +1025,13 @@ html[data-theme="light"] .tips-ticker {
   color: var(--text-secondary);
   text-shadow: 0 1px 2px rgba(255, 255, 255, 0.95);
 }
+
+/* The arena runs its own instrument panel, so the app's tip strip stands down.
+   In workspace the ticker is z-index 1310 pinned 56px off the bottom — which is
+   exactly where the arena dashboard's readouts sit. It was covering I and R
+   outright: half the console unreadable precisely while a part is cooking and
+   those two numbers are the ones you are watching. ArenaView adds .is-arena to
+   the shell while it is mounted and removes it on unmount. */
+.app-shell.is-arena .tips-ticker {
+  display: none;
+}

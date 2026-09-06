@@ -279,6 +279,18 @@ export default function ArenaView({
   // composes into the space actually left for it.
   const [dashHeight, setDashHeight] = useState(0);
 
+  // Mark the shell while the arena is up, so app-level furniture can stand down.
+  // The tips ticker is the reason: in workspace it is z-index 1310 pinned 56px
+  // off the bottom, which lands it exactly on the dashboard's readouts — it was
+  // covering I and R outright, so half the instrument panel could not be read
+  // while a part was cooking. The arena carries its own instrumentation and its
+  // own quick bar; a builder tip strip over the console is not part of it.
+  useEffect(() => {
+    const shell = document.querySelector(".app-shell");
+    shell?.classList.add("is-arena");
+    return () => shell?.classList.remove("is-arena");
+  }, []);
+
   // File the run once, on the transition INTO "complete". Watching the value
   // rather than the transition would re-file the same result on every
   // subsequent render of a finished bench.
