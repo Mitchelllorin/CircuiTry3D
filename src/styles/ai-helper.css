@@ -524,3 +524,19 @@
     bottom: calc(6px + var(--builder-safe-area-bottom, 0px));
   }
 }
+
+/* The Explain hand-off. It is the only chip that opens another panel rather
+   than asking a question, so it reads as the lead action — but stays a chip,
+   not a slab, so the row still looks like one row. */
+.ai-suggestion-chip--explain {
+  background: linear-gradient(135deg, rgba(0, 255, 176, 0.18), rgba(0, 204, 255, 0.16));
+  border-color: rgba(0, 255, 176, 0.42);
+  color: rgba(224, 255, 244, 0.95);
+  font-weight: 600;
+}
+
+.ai-suggestion-chip--explain:hover {
+  background: linear-gradient(135deg, rgba(0, 255, 176, 0.26), rgba(0, 204, 255, 0.24));
+  border-color: rgba(0, 255, 176, 0.62);
+  color: #eafff8;
+}

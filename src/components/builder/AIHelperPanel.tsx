@@ -19,6 +19,12 @@ interface AIHelperPanelProps {
   isOpen: boolean;
   circuitState: LegacyCircuitState | null;
   onClose: () => void;
+  /**
+   * Hands off to the Circuit Explanation panel. The action bar used to carry a
+   * separate "Explain" button next to this one — two buttons, both "the AI, on
+   * this circuit". They are one door now: Explain is the first chip in here.
+   */
+  onExplainCircuit?: () => void;
 }
 
 let _msgId = 0;
@@ -26,7 +32,12 @@ function nextId() {
   return ++_msgId;
 }
 
-export function AIHelperPanel({ isOpen, circuitState, onClose }: AIHelperPanelProps) {
+export function AIHelperPanel({
+  isOpen,
+  circuitState,
+  onClose,
+  onExplainCircuit,
+}: AIHelperPanelProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [isTyping, setIsTyping] = useState(false);
@@ -202,6 +213,15 @@ export function AIHelperPanel({ isOpen, circuitState, onClose }: AIHelperPanelPr
         {/* Suggestion chips (only while no back-and-forth has started) */}
         {showSuggestions && panelSize !== "minimized" && (
           <div className="ai-helper-panel__suggestions" aria-label="Suggested questions">
+            {onExplainCircuit && (
+              <button
+                type="button"
+                className="ai-suggestion-chip ai-suggestion-chip--explain"
+                onClick={onExplainCircuit}
+              >
+                ⚡ Explain this circuit
+              </button>
+            )}
             {SUGGESTED_QUESTIONS.map((q) => (
               <button
                 key={q}

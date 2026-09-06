@@ -30,49 +30,13 @@ type CompactGuidesPanelProps = {
 };
 
 const STORAGE_KEY = "circuitry3d.guides.workflow.v1";
-const GUIDE_ORDER: GuideWorkflowId[] = ["tutorial", "wire-guide"];
+const GUIDE_ORDER: GuideWorkflowId[] = ["wire-guide"];
 
 const DEFAULT_PROGRESS: GuideProgressState = {
-  tutorial: [],
   "wire-guide": [],
 };
 
 const GUIDE_WORKFLOWS: Record<GuideWorkflowId, GuideWorkflowConfig> = {
-  tutorial: {
-    label: "Tutorial Guide",
-    description:
-      "Follow the guided tutorial sequence to complete a full battery-resistor circuit from scratch.",
-    completionSummary:
-      "Tutorial guide complete. Launch the interactive tutorial again anytime to repeat or practice speed.",
-    workspaceSyncCopy:
-      "This guide aligns with the interactive tutorial milestones, so progress here mirrors the in-app tutorial cadence.",
-    steps: [
-      {
-        id: "tutorial-start",
-        title: "Start Interactive Tutorial",
-        detail:
-          "Launch the interactive walkthrough to get live highlights and step-by-step validation.",
-      },
-      {
-        id: "tutorial-build-circuit",
-        title: "Build and close a circuit",
-        detail:
-          "Add the required parts and close the circuit so the simulator reports a complete circuit.",
-      },
-      {
-        id: "tutorial-simulate",
-        title: "Run simulation checkpoint",
-        detail:
-          "Run simulation from the tutorial flow to confirm current can travel through the circuit.",
-      },
-      {
-        id: "tutorial-junctions",
-        title: "Add a junction branch",
-        detail:
-          "In wire mode, tap an existing wire run to drop a junction and branch a new path for parallel analysis practice.",
-      },
-    ],
-  },
   "wire-guide": {
     label: "W.I.R.E. Guide",
     description:

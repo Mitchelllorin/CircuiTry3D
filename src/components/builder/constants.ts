@@ -586,14 +586,19 @@ export const COMPONENT_ACTIONS: ComponentAction[] = [
 export const ENABLE_SCROLLER_MENU = true;
 
 /**
- * The components shown in the always-visible centered quick-add bar
- * in the React Builder workspace: Battery, Resistor, LED, and Junction.
+ * The components shown in the always-visible quick-add row of the action bar.
  * A Wire-mode toggle button is appended separately in the JSX.
- * Together these five shortcuts cover the most common circuit-building
- * tasks without requiring the user to open the full component library panel.
+ *
+ * Battery, Resistor and Junction were dropped from this row — every one of them
+ * is still reachable in the component Library drawer — though be honest about
+ * the cost: that drawer is a film-reel scroller, so it is TWO taps (scroll the
+ * part into the centre bezel, then add it), not one. Junction also keeps its J
+ * shortcut and its split-a-wire behaviour. The row is a shortcut strip,
+ * not a second library, and the space it was spending is worth more to the
+ * circuit than to a duplicate of the drawer below it.
  */
 export const QUICK_ADD_COMPONENTS: ComponentAction[] = (
-  ["battery", "resistor", "led", "switch", "junction"] as const
+  ["led", "switch"] as const
 ).flatMap((id) => {
   const found = COMPONENT_ACTIONS.find((c) => c.id === id);
   return found ? [found] : [];

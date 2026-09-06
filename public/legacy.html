@@ -9305,9 +9305,20 @@ body.android-optimized .zoom-btn {
             // on Android. The part glides, its nameplate hops along behind it, and the
             // whole grab reads as choppy even though the mesh itself is smooth. This is
             // the same exemption the idle turntable already gets, for the same reason.
+            // ...and not while a CINEMATIC is flying the camera. The guided tour
+            // sweeps between parts through _cinematicCtrl at frame rate; the labels
+            // pinned to those parts were still stepping at LABEL_UPDATE_INTERVAL
+            // (5 Hz on Android), so every nameplate lagged the sweep and snapped
+            // back into place five times a second. On screen that is the metrics
+            // visibly SHAKING through the whole tour — the one moment the app is
+            // showing off. Same exemption, same reason as the drag and the idle
+            // turntable: when the camera or the part moves at frame rate, the text
+            // stuck to it has to move at frame rate too.
+            const _cineFlying = (typeof _cinematicCtrl !== 'undefined'
+                && _cinematicCtrl && _cinematicCtrl.isPlaying);
             labelUpdateCounter++;
             if (labelUpdateCounter >= LABEL_UPDATE_INTERVAL || _idleOrbitActive
-                    || isDragging || isPlacing || isRotating || isPanning) {
+                    || isDragging || isPlacing || isRotating || isPanning || _cineFlying) {
                 labelUpdateCounter = 0;
                 updateComponentLabels();
             }

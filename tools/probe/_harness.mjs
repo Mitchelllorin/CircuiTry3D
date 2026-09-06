@@ -1,6 +1,6 @@
 import { chromium } from 'playwright';
 export const CHROME = 'C:/Users/mitch/AppData/Local/ms-playwright/chromium-1228/chrome-win64/chrome.exe';
-export const TOUR = 'circuitry3d:onboarding:tour-dismissed:v2';
+export const TOUR = 'circuitry3d:circuit-sweep:dismissed:v1';
 
 export async function openBuilder({ dismissTour = true, hash = '#/app' } = {}) {
   const browser = await chromium.launch({ headless: true, executablePath: CHROME,

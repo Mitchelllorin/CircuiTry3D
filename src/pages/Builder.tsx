@@ -30,7 +30,7 @@ import ArenaView from "../components/arena/ArenaView";
 import { CircuitSaveModal } from "../components/builder/modals/CircuitSaveModal";
 import { CircuitLoadModal } from "../components/builder/modals/CircuitLoadModal";
 import { CircuitRecoveryBanner } from "../components/builder/modals/CircuitRecoveryBanner";
-import { BuilderGuidedTour } from "../components/builder/tutorial/BuilderGuidedTour";
+import { CircuitSweep } from "../components/builder/tutorial/CircuitSweep";
 import { BuilderBuildAlong } from "../components/builder/tutorial/BuilderBuildAlong";
 import { CompactSettingsPanel } from "../components/builder/panels/CompactSettingsPanel";
 import { useCircuitStorage } from "../context/CircuitStorageContext";
@@ -135,7 +135,7 @@ const JUNCTION_TIP_STORAGE_KEY = "circuitry3d:junction-tip-dismissed:v1";
 // device that had already dismissed it, the app simply had no walkthrough any more,
 // which read as the tour having been deleted. Bumping the key hands it back to
 // everyone once. It is still re-launchable from Help → Take the Tour.
-const TOUR_DISMISSED_KEY = "circuitry3d:onboarding:tour-dismissed:v2";
+const CIRCUIT_SWEEP_DISMISSED_KEY = "circuitry3d:circuit-sweep:dismissed:v1";
 // v2: the three tiers changed shape (tier 1 now keeps Help reachable), so the
 // key is bumped — a device holding an old value gets the new middle default
 // once, then persists its own choice again from there.
@@ -290,80 +290,6 @@ const getNextPracticeProblem = (currentId: string | null) => {
 
   return pool[(index + 1) % pool.length] ?? null;
 };
-const TUTORIAL_SECTIONS: HelpSection[] = [
-  {
-    title: "Getting Started",
-    paragraphs: [
-      "Add components from the Components menu, then place them directly into the 3D workspace.",
-      "Use the Wire tool to connect terminals and close the circuit so current can flow.",
-      "Open the analysis panels on the right to watch live calculations while you build.",
-    ],
-    bullets: [
-      "Quick keys: B (battery), R (resistor), L (LED), S (switch), J (junction).",
-      "Wire tool supports freeform, Manhattan (90-deg), square outside, simple, perimeter, and A* auto-routing modes.",
-      "Analysis panels include W.I.R.E., EIR triangle, power, worksheet, and solve tabs.",
-    ],
-  },
-  {
-    title: "Junction Nodes: The Key to Complex Circuits",
-    paragraphs: [
-      "Junctions (amber dots) let you branch wires anywhere along an existing run. Click any point on a wire to drop a junction, then draw new wires from it.",
-      "This is critical for parallel and series-parallel circuit problems—think 'squares within squares' layouts where branches contain both series and parallel elements.",
-    ],
-    bullets: [
-      "Hover over a wire to see the pulsing '+' indicator where you can add a junction.",
-      "From a junction, draw wires in any direction to create parallel paths.",
-      "Use junctions to break complex problems into series sections and parallel sections for step-by-step solving.",
-      "Junctions automatically merge nearby nodes and maintain circuit connectivity.",
-    ],
-  },
-  {
-    title: "Visual Learning",
-    paragraphs: [
-      "CircuiTry3D leans on the W.I.R.E. colour system so you always know which value you are adjusting.",
-      "Switch between flow visualizations to compare electron movement with conventional current.",
-    ],
-    bullets: [
-      "Colour legend: blue watts, orange current, green resistance, red voltage.",
-      "Electron Flow mode shows semi-transparent particles moving negative to positive.",
-      "Current Flow mode renders solid particles in the conventional positive to negative direction.",
-      "Toggle polarity indicators to keep track of positive and negative terminals while wiring.",
-    ],
-  },
-  {
-    title: "Advanced Features",
-    paragraphs: [
-      "Explore routing, junctions, and layout tools to organise complex practice problems quickly.",
-    ],
-    bullets: [
-      "Swap between free-form, Manhattan, and Square (outside) routes for textbook wiring.",
-      "Drop junctions to branch into parallel paths.",
-      "Auto-arrange builds clean study-ready layouts in a single click.",
-      "Cycle through free, square, and linear layout modes from the View controls.",
-    ],
-  },
-  {
-    title: "Controls",
-    paragraphs: [
-      "Use mouse, keyboard, or touch controls depending on your device.",
-    ],
-    bullets: [
-      "Drag to move components, long-press to edit values, and use two-finger gestures to zoom or pan.",
-      "Keyboard: W toggles wire mode, T toggles rotate mode, Space toggles the builder menu.",
-      "Quick keys add components instantly: B, R, L, S, and J.",
-    ],
-  },
-  {
-    title: "View Controls & Tips",
-    paragraphs: ["Keep the scene readable while you iterate on designs."],
-    bullets: [
-      "Reset View recentres the camera; Fit to Screen frames the active circuit.",
-      "Toggle Grid and Toggle Labels for precision placement or a cleaner screenshot.",
-      "Complete the circuit, use junctions for parallel runs, and experiment with routing modes for tidy builds.",
-    ],
-  },
-];
-
 const WIRE_GUIDE_SECTIONS: HelpSection[] = [
   {
     title: "W.I.R.E. Overview",
@@ -716,8 +642,12 @@ const ABOUT_SECTIONS: HelpSection[] = [
   },
 ];
 
+// "tutorial" is deliberately NOT a key here. It is a routable intent that
+// launches the guided tour, not a panel of text with sections — that is exactly
+// the confusion that produced two rival tutorials. Excluding it makes the
+// compiler enforce the rule: you cannot add tutorial text content back.
 const HELP_VIEW_CONTENT: Record<
-  HelpModalView,
+  Exclude<HelpModalView, "tutorial">,
   {
     title: string;
     description?: string;
@@ -731,12 +661,6 @@ const HELP_VIEW_CONTENT: Record<
       "Browse quick-start advice, navigation tips, and the W.I.R.E. legend.",
     sections: HELP_SECTIONS,
     showLegend: true,
-  },
-  tutorial: {
-    title: "Guided Tutorial",
-    description:
-      "Follow the guided walkthrough tailored for the modern interface.",
-    sections: TUTORIAL_SECTIONS,
   },
   "wire-guide": {
     title: "W.I.R.E. Guide",
@@ -1028,13 +952,6 @@ const IconRuler = ({ className }: IconProps) => (
   </svg>
 );
 
-const IconSparkle = ({ className }: IconProps) => (
-  <svg className={className} viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
-    <path d="M10 2.5 11.2 7.8l5.3 1.2-5.3 1.2L10 15.5l-1.2-5.3L3.5 9l5.3-1.2L10 2.5Z" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
-    <path d="M15.5 2.5 16.1 4.9l2.4.6-2.4.6-.6 2.4-.6-2.4-2.4-.6 2.4-.6.6-2.4Z" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-);
-
 /**
  * Hook to detect when an element is visible in the viewport
  * Used to lazy-load expensive 3D thumbnails only when needed
@@ -1289,6 +1206,11 @@ export default function Builder() {
     gridLineWidth: 1,
     gridHue: 240,
   });
+  // The value is write-only now that the quick-add row no longer highlights the
+  // active tool — legacy.html still reports tool changes, and the setter is
+  // wired to that, so keep the channel open rather than tearing it out.
+  // Readable again: Junction is a real one-tap button once more (on the left
+  // rail now, not the top bar), so it still needs its active/pulsing state.
   const [activeBuilderTool, setActiveBuilderTool] =
     useState<BuilderToolId>("select");
   const [isSimulatePulsing, setSimulatePulsing] = useState(false);
@@ -1340,7 +1262,7 @@ export default function Builder() {
   const [isGuidesWorkspaceMode, setGuidesWorkspaceMode] = useState(false);
   const [isGuidesPanelOpen, setGuidesPanelOpen] = useState(false);
   const [activeGuideWorkflow, setActiveGuideWorkflow] =
-    useState<GuideWorkflowId>("tutorial");
+    useState<GuideWorkflowId>("wire-guide");
   const [isCircuitLocked, setCircuitLocked] = useState(false);
   // Showcase/payoff edit-lock: keeps the demo circuit view-only (camera still free)
   // until the user taps to edit. Declared here so the lock-sync effect can use it.
@@ -1364,14 +1286,8 @@ export default function Builder() {
   });
   const [isGuidedTourOpen, setGuidedTourOpen] = useState(false);
   const [isBuildAlongOpen, setBuildAlongOpen] = useState(false);
-  const [isCurrentFlowPayoffVisible, setCurrentFlowPayoffVisible] =
-    useState(false);
   const [isCurrentFlowPayoffRunning, setCurrentFlowPayoffRunning] =
     useState(false);
-  // Rotating "what am I looking at?" insight shown inside the payoff banner so a
-  // first-time user (who may know nothing about electricity) understands that the
-  // moving particles ARE the current and how Ohm's law shapes the split.
-  const [currentFlowPayoffTipIndex, setCurrentFlowPayoffTipIndex] = useState(0);
   const [isIntroDialogVisible, setIntroDialogVisible] = useState(false);
   // Junction tip starts hidden — it is shown the first time the user
   // explicitly uses the Junction button, not automatically on page load,
@@ -2159,7 +2075,7 @@ export default function Builder() {
     setBuildAlongOpen(true);
   }, [resetWorkspaceSurfaces, setWorkspaceModeWithGlobalSync, triggerBuilderAction]);
   const openGuidesWorkspace = useCallback(
-    (workflow: GuideWorkflowId = "tutorial") => {
+    (workflow: GuideWorkflowId = "wire-guide") => {
       setActiveGuideWorkflow(workflow);
       setWorkspaceModeWithGlobalSync("help");
       resetWorkspaceSurfaces();
@@ -2171,8 +2087,19 @@ export default function Builder() {
 
   const openHelpCenter = useCallback(
     (view: HelpModalView = "overview", _sectionTitle?: string) => {
-      if (view === "overview" || view === "tutorial" || view === "wire-guide") {
-        const workflow: GuideWorkflowId = view === "wire-guide" ? view : "tutorial";
+      // "Tutorial" from anywhere in Help means THE tour — the camera-sweep
+      // walkthrough, and nothing else. It used to open a wall of static text
+      // sections (TUTORIAL_SECTIONS) that merely called itself the Guided
+      // Tutorial, which is how this app ended up with two things named tutorial
+      // and a recurring bug where fixing one broke the other. There is now
+      // exactly one walkthrough and this is the door to it.
+      if (view === "tutorial") {
+        setHelpOpen(false);
+        startGuidedTour();
+        return;
+      }
+      if (view === "overview" || view === "wire-guide") {
+        const workflow: GuideWorkflowId = "wire-guide";
         // These three views live in the Help panel, not the modal. Without
         // this the modal stayed open on top of the panel we just switched to,
         // which is what made "< Back" out of About and Shortcuts look like a
@@ -2183,7 +2110,7 @@ export default function Builder() {
       }
       openHelpWithView(view);
     },
-    [openGuidesWorkspace, openHelpWithView, setHelpOpen],
+    [openGuidesWorkspace, openHelpWithView, setHelpOpen, startGuidedTour],
   );
 
   const assignPracticeProblem = useCallback(
@@ -2281,7 +2208,7 @@ export default function Builder() {
       } else if (pendingMode === "learn") {
         openWorkspacePanelMode("learn");
       } else if (pendingMode === "help") {
-        openGuidesWorkspace("tutorial");
+        openGuidesWorkspace("wire-guide");
       } else if (pendingMode === "wire-guide") {
         openWorkspacePanelMode("wire-guide");
       } else if (
@@ -2550,29 +2477,13 @@ export default function Builder() {
     currentFlowPayoffTimersRef.current = [];
   }, []);
 
-  // Once the user has put the payoff banner away — by ×, by Edit, or by letting it
-  // time out — a retry must NOT shove it back on screen. Effect 2 re-fires the
-  // payoff every 2.5 s for as long as the workspace reports zero components, so on
-  // a build where the circuit never loads that meant six forced re-reveals: dismiss
-  // it, it comes straight back, over and over (reported from the Play build). The
-  // retries exist to reload the CIRCUIT, not to re-narrate it. Only an explicit
-  // Replay clears this.
-  const payoffBannerDismissedRef = useRef(false);
-
   const runCurrentFlowPayoffSequence = useCallback(
-    (
-      options: {
-        reloadPreset?: boolean;
-        revealBanner?: boolean;
-      } = {},
-    ) => {
+    () => {
       if (!isFrameReady) {
         // Iframe not ready yet — mark as pending so Effect 2 picks it up.
         pendingPayoffRef.current = true;
         return;
       }
-
-      const { revealBanner = true } = options;
 
       clearCurrentFlowPayoffTimers();
       setCurrentFlowPayoffRunning(true);
@@ -2589,9 +2500,10 @@ export default function Builder() {
       const retryTimer = window.setTimeout(() => {
         triggerBuilderAction("run-payoff-flow");
         triggerSimulationPulse();
-        if (revealBanner && !payoffBannerDismissedRef.current) {
-          setCurrentFlowPayoffVisible(true);
-        }
+        // The payoff BANNER is gone for good — it was a second narrating card
+        // that popped the instant any walkthrough closed. The payoff SEQUENCE
+        // stays: load-payoff is what builds the showcase circuit, and removing
+        // that would empty the workspace on first run.
       }, PAYOFF_FIRST_RETRY_MS);
 
       // Step 3: Second retry at 1.2 s catches slow devices / first-load jank.
@@ -2624,15 +2536,8 @@ export default function Builder() {
     ],
   );
 
-  const handleReplayCurrentFlowPayoff = useCallback(() => {
-    // Explicit user request — this is the one path that earns the banner back.
-    payoffBannerDismissedRef.current = false;
-    setBottomMenuOpen(true);
-    runCurrentFlowPayoffSequence({ revealBanner: true });
-  }, [runCurrentFlowPayoffSequence, setBottomMenuOpen]);
-
   // Replay the full first-run onboarding on demand: re-show the welcome intro,
-  // which auto-dismisses into the current-flow payoff demo (banner + tips).
+  // which auto-dismisses into the current-flow showcase.
   // The "seen" flags stay set, so this only fires when the user asks for it.
   const handleReplayOnboarding = useCallback(() => {
     setIntroDialogVisible(true);
@@ -2661,7 +2566,7 @@ export default function Builder() {
     // runCurrentFlowPayoffSequence will set pendingPayoffRef if the iframe is
     // not ready yet, and Effect 2 will pick it up when it becomes ready.
     setOnboardingLocked(true);
-    runCurrentFlowPayoffSequence({ revealBanner: true });
+    runCurrentFlowPayoffSequence();
   }, [runCurrentFlowPayoffSequence]);
 
   const handleDismissJunctionTip = useCallback(() => {
@@ -2685,6 +2590,65 @@ export default function Builder() {
   // the backdrop the user lands on and that the point-at-the-parts guided tour
   // walks through. (The old build-it-yourself tutorial is no longer auto-opened;
   // it's being replaced by the tour.)
+  // Two separate questions, and merging them broke the tour:
+  //
+  //   1. SHOULD the tour run?  Decided ON MOUNT. If it is decided later — when
+  //      the iframe reports ready, which on a real phone is many seconds after
+  //      the screen is usable — the tour lands on top of someone already
+  //      building, takes the workspace read-only (setShowcaseLocked) and hides
+  //      the whole action bar (data-tour-active puts `display:none !important`
+  //      on it). From the user's seat: "for no reason I'm kicked out of
+  //      building and back to the beginning", taps stop selecting, long-press
+  //      edit is gone. Deciding at mount means the workspace is locked from the
+  //      first frame and is never live-then-suddenly-locked.
+  //
+  //   2. WHEN does it start?  On frame-ready, NOT at mount. The tour is a timed
+  //      cinematic: every step past the first calls tour-focus to sweep the
+  //      camera. Those are postMessages into the workspace iframe, so starting
+  //      before the frame is listening drops every one of them — the cards tick
+  //      by on their timers and the camera never moves. Opening at mount is how
+  //      the camera sweep went missing.
+  //
+  // So: latch eligibility at mount, open when the frame can actually be swept.
+  const tourEligibleRef = useRef(false);
+  const tourStartedRef = useRef(false);
+  useEffect(() => {
+    // Only run the tour for someone who hasn't dismissed it. Closing the tour
+    // writes CIRCUIT_SWEEP_DISMISSED_KEY ("dismiss for good"), but nothing ever READ it,
+    // so the tour re-opened on every single launch of build mode.
+    let tourDismissed = false;
+    try {
+      tourDismissed =
+        window.localStorage.getItem(CIRCUIT_SWEEP_DISMISSED_KEY) === "1";
+    } catch {
+      /* ignore */
+    }
+
+    if (tourDismissed) {
+      // Returning user: showcase stays as the backdrop, but the workspace is
+      // theirs — unlocked, with the full action bar.
+      tourEligibleRef.current = false;
+      setShowcaseLocked(false);
+      return;
+    }
+
+    // The showcase is view-only — lock it NOW, at mount, so there is no window
+    // in which the user can start building and then have it taken away.
+    tourEligibleRef.current = true;
+    setShowcaseLocked(true);
+    // The showcase has junctions; suppress the junction tip so it can't pop over
+    // the tour.
+    junctionTipTriggeredRef.current = true;
+    // Mount only — see the note above.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Effect 1 — load the showcase circuit on launch: a simple SERIES circuit
+  // (battery → resistor → switch → light, switch closed, current flowing, light
+  // lit), framed at a dynamic 3/4 angle toward the top of the workspace. This is
+  // the backdrop the user lands on and that the point-at-the-parts guided tour
+  // walks through. Once it is built, the camera can be swept — so this is also
+  // where the tour is allowed to start.
   const showcaseLoadedRef = useRef(false);
   useEffect(() => {
     if (!isFrameReady || showcaseLoadedRef.current) {
@@ -2693,37 +2657,12 @@ export default function Builder() {
     showcaseLoadedRef.current = true;
     triggerBuilderAction("load-payoff");
 
-    // Only run the tour for someone who hasn't dismissed it. Closing the tour
-    // writes TOUR_DISMISSED_KEY ("dismiss for good"), but nothing ever READ it,
-    // so the tour re-opened on every single launch of build mode — and while it
-    // is open the shell carries data-tour-active="true", which puts
-    // `display: none !important` on the whole unified action bar. That took the
-    // Wire button (and Run, Undo, Save, Measure) off screen every session, and
-    // the showcase lock on top of it made the workspace read-only. Wiring then
-    // only worked from the tutorial and Practice, which drive it in code.
-    let tourDismissed = false;
-    try {
-      tourDismissed =
-        window.localStorage.getItem(TOUR_DISMISSED_KEY) === "1";
-    } catch {
-      /* ignore */
+    if (tourEligibleRef.current && !tourStartedRef.current) {
+      tourStartedRef.current = true;
+      setGuidedTourOpen(true);
     }
-
-    if (tourDismissed) {
-      // Returning user: showcase stays as the backdrop, but the workspace is
-      // theirs — unlocked, with the full action bar.
-      setShowcaseLocked(false);
-      return;
-    }
-
-    // The showcase is view-only — lock it so the user can't drag/edit the parts
-    // while the guided tour points at them.
-    setShowcaseLocked(true);
-    setGuidedTourOpen(true);
-    // The showcase has junctions; suppress the junction tip so it can't pop over
-    // the tour.
-    junctionTipTriggeredRef.current = true;
   }, [isFrameReady, triggerBuilderAction]);
+
 
   // Both walkthroughs teach the 3D workspace, and their overlay layer (z 1260)
   // paints above every workspace panel. Leaving build mode — into the Arena,
@@ -2803,7 +2742,7 @@ export default function Builder() {
       return;
     }
     console.log("[CT3D-REACT] Effect 2: firing payoff load (frame ready)");
-    runCurrentFlowPayoffSequence({ revealBanner: true });
+    runCurrentFlowPayoffSequence();
 
     let attempts = 0;
     const MAX_ATTEMPTS = 6;
@@ -2833,7 +2772,7 @@ export default function Builder() {
       console.log(
         `[CT3D-REACT] Effect 2: workspace still empty, retrying payoff (attempt ${attempts}/${MAX_ATTEMPTS})`,
       );
-      runCurrentFlowPayoffSequence({ revealBanner: true });
+      runCurrentFlowPayoffSequence();
     }, 2500);
 
     return () => window.clearInterval(retryTimer);
@@ -2841,37 +2780,12 @@ export default function Builder() {
     // above. The interval polls latestCircuitStateRef for fresh counts instead.
   }, [isFrameReady, runCurrentFlowPayoffSequence]);
 
+  // Safety net: never leave the onboarding lock on with nothing on screen that
+  // explains it. Nothing narrates the showcase any more, so the only thing the
+  // lock can do past the intro is make a live workspace feel broken — hand it
+  // over a beat after the intro closes.
   useEffect(() => {
-    if (!isCurrentFlowPayoffVisible) {
-      return;
-    }
-
-    const timer = window.setTimeout(() => {
-      // Hide the payoff banner when it expires. The circuit stays locked
-      // (isOnboardingLocked) so the user can't accidentally move components;
-      // a "tap to edit" chip appears instead, requiring an explicit tap to
-      // begin editing. Long enough to read a few of the slow-rotating tips and
-      // act on the "zoom in" prompt. Timing out counts as dismissed: having sat
-      // through it once, the user should not have it re-revealed by a retry.
-      payoffBannerDismissedRef.current = true;
-      setCurrentFlowPayoffVisible(false);
-    }, 30000);
-
-    return () => {
-      window.clearTimeout(timer);
-    };
-  }, [isCurrentFlowPayoffVisible]);
-
-  // Safety net: auto-unlock if the onboarding lock persists for more than 25s
-  // after the payoff banner has been dismissed.  This prevents users from
-  // getting permanently stuck if the "Start Editing" chip is not visible or
-  // tappable for any reason (CSS conflict, z-index overlap, etc.).
-  useEffect(() => {
-    if (
-      !isOnboardingLocked ||
-      isCurrentFlowPayoffVisible ||
-      isIntroDialogVisible
-    ) {
+    if (!isOnboardingLocked || isIntroDialogVisible) {
       return;
     }
 
@@ -2883,7 +2797,7 @@ export default function Builder() {
     return () => {
       window.clearTimeout(safetyTimer);
     };
-  }, [isOnboardingLocked, isCurrentFlowPayoffVisible, isIntroDialogVisible]);
+  }, [isOnboardingLocked, isIntroDialogVisible]);
 
   const activeWireProfilePayload = useMemo(
     () => toWireProfileBridgePayload(activeWireProfile),
@@ -3082,7 +2996,13 @@ export default function Builder() {
     const demoParam = IS_DEMO_MODE ? "&demo=true" : "";
     return `${normalizedBase}legacy.html?embed=builder${demoParam}`;
   }, []);
-  const activeHelpContent = HELP_VIEW_CONTENT[helpView];
+  // helpView can carry "tutorial" as a routing intent, but that never renders a
+  // panel — openHelpCenter closes Help and launches the tour instead. Fall back
+  // to overview so the panel always has content while that hand-off happens.
+  const activeHelpContent =
+    helpView === "tutorial"
+      ? HELP_VIEW_CONTENT.overview
+      : HELP_VIEW_CONTENT[helpView];
   const layoutModeNames: Record<string, string> = {
     free: "Free",
     square: "Square",
@@ -3208,16 +3128,6 @@ export default function Builder() {
       },
     ];
   }, [activeWireProfile, liveWireMetricsSnapshot]);
-  const shouldShowCurrentFlowPayoffBanner =
-    isCurrentFlowPayoffVisible &&
-    shouldShowEdgeActions &&
-    // The guided tour and build-along each narrate the showcase themselves, on
-    // the camera's schedule. Letting this insight banner cycle on its own 9s
-    // timer at the same time put two unsynced card systems on screen at once
-    // (the "two tutorials running at once" bug). While any walkthrough overlay
-    // is open, it is the sole narrator; the banner returns once it closes.
-    !isGuidedTourOpen &&
-    !isBuildAlongOpen;
 
   // While the current-flow payoff demo is playing (sequence running OR banner
   // showing) the preset circuit must be view-only: a transparent guard sits over
@@ -3225,8 +3135,7 @@ export default function Builder() {
   // the moment the demo auto-dismisses or the user taps Edit/×. This is needed
   // because the returning-user payoff path doesn't lock the iframe, and even the
   // first-run lock can be reset when load-payoff rebuilds the circuit.
-  const isCurrentFlowPayoffLocking =
-    isCurrentFlowPayoffRunning || shouldShowCurrentFlowPayoffBanner;
+  const isCurrentFlowPayoffLocking = isCurrentFlowPayoffRunning;
 
   // (isShowcaseLocked is declared earlier, near isCircuitLocked, so the lock-sync
   // effect can depend on it.) Latch it on once the payoff is loaded/showing.
@@ -3237,32 +3146,7 @@ export default function Builder() {
   // Plain-language insights that cycle through the payoff banner. Each one names
   // something the user can actually see happening on screen, so the showcase
   // teaches instead of just dazzling. Kept short — one idea per card.
-  const currentFlowPayoffTips = useMemo(
-    () => [
-      "⚡ Those crackling bolts of light ARE the electric current — the real flow of energy, invisible in life, shown here in 3D.",
-      "This is a series circuit: one loop, so the SAME current flows through every part. The battery pushes it round and round.",
-      "The colour shows speed: dull red = slow (held back by resistance), through orange and yellow, up to blue-white = ludicrously fast.",
-      "🔍 Pinch or scroll to ZOOM IN — keep going and the current dissolves into electrons, then a copper-atom lattice, then a quantum cloud.",
-      "More resistance → less current. That's Ohm's Law (I = V ÷ R) — the heart of every circuit.",
-      "New to circuits? Tap any part to see what it is and does, or tap the ? Help button anytime.",
-    ],
-    [],
-  );
-  const currentFlowPayoffTip =
-    currentFlowPayoffTips[currentFlowPayoffTipIndex % currentFlowPayoffTips.length];
 
-  // Advance the insight every few seconds while the banner is open; reset to the
-  // first tip whenever it re-appears so each showcase starts from the top.
-  useEffect(() => {
-    if (!shouldShowCurrentFlowPayoffBanner) {
-      setCurrentFlowPayoffTipIndex(0);
-      return;
-    }
-    const intervalId = window.setInterval(() => {
-      setCurrentFlowPayoffTipIndex((index) => index + 1);
-    }, 9000);
-    return () => window.clearInterval(intervalId);
-  }, [shouldShowCurrentFlowPayoffBanner]);
 
   const renderHelpParagraph = (paragraph: string, key: string) => {
     const trimmed = paragraph.trim();
@@ -3477,10 +3361,9 @@ export default function Builder() {
                   component={component}
                   onClick={() => handleComponentAction(component)}
                   disabled={controlsDisabled}
-                  isActive={
-                    component.action === "junction" &&
-                    activeBuilderTool === "junction"
-                  }
+                  // Junction is no longer in this row, so nothing here can be
+                  // the active tool; the pulsing-junction state moved out with it.
+                  isActive={false}
                   title={component.description || component.label}
                   showDescriptor={showThumbDescriptors}
                 />
@@ -3492,7 +3375,7 @@ export default function Builder() {
             {/* Tool actions (formerly left edge) */}
             <button
               type="button"
-              className="edge-action-btn edge-action-btn--clear"
+              className="edge-action-btn--secondary edge-action-btn edge-action-btn--clear"
               onClick={handleClearWorkspace}
               disabled={controlsDisabled}
               aria-disabled={controlsDisabled}
@@ -3518,7 +3401,7 @@ export default function Builder() {
             </button>
             <button
               type="button"
-              className={`edge-action-btn${modeState.isRotateMode ? " edge-action-btn--active" : ""}`}
+              className={`edge-action-btn--secondary edge-action-btn${modeState.isRotateMode ? " edge-action-btn--active" : ""}`}
               onClick={() => triggerBuilderAction("toggle-rotate-mode")}
               disabled={controlsDisabled}
               aria-disabled={controlsDisabled}
@@ -3573,7 +3456,7 @@ export default function Builder() {
             </button>
             <button
               type="button"
-              className="edge-action-btn"
+              className="edge-action-btn--secondary edge-action-btn"
               onClick={() => triggerBuilderAction("redo")}
               disabled={controlsDisabled}
               aria-disabled={controlsDisabled}
@@ -3585,7 +3468,7 @@ export default function Builder() {
             </button>
             <button
               type="button"
-              className="edge-action-btn"
+              className="edge-action-btn--secondary edge-action-btn"
               onClick={() => setIsLoadModalOpen(true)}
               aria-label="Open circuit"
               title="Open saved circuit (Ctrl+O)"
@@ -3595,7 +3478,7 @@ export default function Builder() {
             </button>
             <button
               type="button"
-              className="edge-action-btn"
+              className="edge-action-btn--secondary edge-action-btn"
               onClick={() => setIsSaveModalOpen(true)}
               aria-label="Save circuit"
               title="Save circuit (Ctrl+S)"
@@ -3621,20 +3504,13 @@ export default function Builder() {
               <IconBolt className="edge-action-icon-svg" />
               <span className="edge-action-label" aria-hidden="true">AI</span>
             </button>
+            {/* "Explain" used to be its own button right here — two buttons
+                side by side that both meant "the AI, about this circuit". It is
+                now the first chip inside the assistant, which still opens the
+                Pro-gated explanation panel. */}
             <button
               type="button"
-              className={`edge-action-btn${isExplainPanelOpen ? " edge-action-btn--active" : ""}`}
-              onClick={() => setIsExplainPanelOpen((prev) => !prev)}
-              aria-label={isExplainPanelOpen ? "Close circuit explanation" : "Explain this circuit"}
-              aria-expanded={isExplainPanelOpen}
-              title="Explain Circuit — AI-powered circuit analysis (Pro)"
-            >
-              <IconSparkle className="edge-action-icon-svg" />
-              <span className="edge-action-label" aria-hidden="true">Explain</span>
-            </button>
-            <button
-              type="button"
-              className={`edge-action-btn${(isMeasureWidgetOpen || meterState.armed) ? " edge-action-btn--active" : ""}`}
+              className={`edge-action-btn--secondary edge-action-btn${(isMeasureWidgetOpen || meterState.armed) ? " edge-action-btn--active" : ""}`}
               onClick={() => setMeasureWidgetOpen((o) => !o)}
               aria-label={isMeasureWidgetOpen ? "Close measurement tools" : "Open measurement tools"}
               aria-expanded={isMeasureWidgetOpen}
@@ -3645,7 +3521,7 @@ export default function Builder() {
             </button>
             <button
               type="button"
-              className="edge-action-btn"
+              className="edge-action-btn--secondary edge-action-btn"
               onClick={handleReplayOnboarding}
               aria-label="Replay the intro tour"
               title="Replay intro — welcome message + live current-flow demo"
@@ -3720,7 +3596,7 @@ export default function Builder() {
                   Essential for parallel circuits and combination topologies.
                 </p>
                 <ul className="junction-info-tip-bullets">
-                  <li>Press <kbd>J</kbd> or tap the pulsing <strong>Junction</strong> button in the component bar above</li>
+                  <li>Press <kbd>J</kbd>, or open the <strong>Library</strong> drawer and pick <strong>Junction</strong></li>
                   <li>In Wire mode, click any wire to split it and branch from that point</li>
                   <li aria-label="KCL applies at every junction: sum of currents in equals sum of currents out">KCL applies at every junction: Σ I<sub>in</sub> = Σ I<sub>out</sub></li>
                 </ul>
@@ -3788,63 +3664,6 @@ export default function Builder() {
         </div>
       )}
 
-      {shouldShowCurrentFlowPayoffBanner && (
-        <section
-          className="current-flow-payoff-strip"
-          role="status"
-          aria-live="polite"
-        >
-          <span className="current-flow-payoff-strip__badge" aria-hidden="true">
-            ⚡
-          </span>
-          <p
-            className="current-flow-payoff-strip__tip"
-            key={currentFlowPayoffTipIndex}
-          >
-            {currentFlowPayoffTip}
-          </p>
-          <div className="current-flow-payoff-strip__actions">
-            <button
-              type="button"
-              className="current-flow-payoff-strip__btn current-flow-payoff-strip__btn--primary"
-              onClick={() => {
-                payoffBannerDismissedRef.current = true;
-                setCurrentFlowPayoffVisible(false);
-                setOnboardingLocked(false);
-                setCircuitLocked(false);
-                setShowcaseLocked(false);
-              }}
-            >
-              ✏️ Edit
-            </button>
-            <button
-              type="button"
-              className="current-flow-payoff-strip__btn"
-              onClick={handleReplayCurrentFlowPayoff}
-              disabled={controlsDisabled || isCurrentFlowPayoffRunning}
-              aria-disabled={controlsDisabled || isCurrentFlowPayoffRunning}
-              aria-label="Replay the current-flow demo"
-              title="Replay the current-flow demo"
-            >
-              {isCurrentFlowPayoffRunning ? "…" : "↺"}
-            </button>
-            <button
-              type="button"
-              className="current-flow-payoff-strip__close"
-              aria-label="Dismiss"
-              onClick={() => {
-                payoffBannerDismissedRef.current = true;
-                setCurrentFlowPayoffVisible(false);
-                setOnboardingLocked(false);
-                setCircuitLocked(false);
-                setShowcaseLocked(false);
-              }}
-            >
-              ×
-            </button>
-          </div>
-        </section>
-      )}
 
       <div
         className={`builder-menu-stage builder-menu-stage-left${isLeftMenuOpen ? " open" : ""}`}
@@ -4339,15 +4158,10 @@ export default function Builder() {
                 <button
                   type="button"
                   className="slider-chip"
-                  onClick={() => openGuidesWorkspace("tutorial")}
-                  data-active={
-                    isGuidesWorkspaceMode && activeGuideWorkflow === "tutorial"
-                      ? "true"
-                      : undefined
-                  }
-                  title="Open the Tutorial guide with sequenced build steps."
+                  onClick={startGuidedTour}
+                  title="Replay the guided walkthrough — the camera flies the circuit and explains each part."
                 >
-                  <span className="slider-chip-label">Tutorial Guide</span>
+                  <span className="slider-chip-label">Take the Tour</span>
                 </button>
                 <button
                   type="button"
@@ -4524,7 +4338,7 @@ export default function Builder() {
             let someone drag the showcase apart and lose their bearings.
 
             The lock stays. What moved is the unlock: it now happens when the tour
-            ENDS (see BuilderGuidedTour's onClose below), which is the deliberate
+            ENDS (see CircuitSweep's onClose below), which is the deliberate
             "I am done watching, the workspace is mine" moment. Nobody is left
             with a read-only workspace and no way out. */}
       </div>
@@ -4897,9 +4711,14 @@ export default function Builder() {
       )}
 
 
-      <BuilderGuidedTour
+      <CircuitSweep
         open={isGuidedTourOpen}
         onClose={() => {
+          // ✕ means out of everything. The payoff banner used to be gated on
+          // `!isGuidedTourOpen && !isBuildAlongOpen`, so closing the tour handed
+          // the screen straight to a second cycling card system — from the
+          // user's seat, the tutorial that would not die. The banner is gone
+          // now; keep this the only narrator on the way out.
           // Dismiss for good — it won't auto-open again (Guides menu re-launches it).
           setGuidedTourOpen(false);
           // Ending the tour hands the workspace over. This used to be the job of
@@ -4908,7 +4727,7 @@ export default function Builder() {
           // until a reload.
           setShowcaseLocked(false);
           try {
-            window.localStorage.setItem(TOUR_DISMISSED_KEY, "1");
+            window.localStorage.setItem(CIRCUIT_SWEEP_DISMISSED_KEY, "1");
           } catch {
             /* ignore */
           }
@@ -4923,7 +4742,7 @@ export default function Builder() {
           triggerBuilderAction("clear-workspace");
           setBuildAlongOpen(true);
           try {
-            window.localStorage.setItem(TOUR_DISMISSED_KEY, "1");
+            window.localStorage.setItem(CIRCUIT_SWEEP_DISMISSED_KEY, "1");
           } catch {
             /* ignore */
           }
@@ -4932,7 +4751,9 @@ export default function Builder() {
 
       <BuilderBuildAlong
         open={isBuildAlongOpen}
-        onClose={() => setBuildAlongOpen(false)}
+        onClose={() => {
+          setBuildAlongOpen(false);
+        }}
         circuitState={circuitState}
         modeState={modeState}
         onInvokeAction={triggerBuilderAction}
@@ -4944,6 +4765,10 @@ export default function Builder() {
         isOpen={isAIHelperOpen}
         circuitState={circuitState}
         onClose={() => setIsAIHelperOpen(false)}
+        onExplainCircuit={() => {
+          setIsAIHelperOpen(false);
+          setIsExplainPanelOpen(true);
+        }}
       />
 
       {/* Circuit Explanation Engine — Pro-gated AI-powered analysis panel */}

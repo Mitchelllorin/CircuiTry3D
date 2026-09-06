@@ -6,7 +6,7 @@ const ROTATION_INTERVAL_MS = 45000;
 const STARTUP_DELAY_MS = 90000;
 const ONBOARDING_CHECK_INTERVAL_MS = 10000;
 const DISMISSED_STORAGE_KEY = "circuitry3d:tips-ticker:dismissed:v1";
-const TOUR_DISMISSED_KEY = "circuitry3d:onboarding:tour-dismissed:v2";
+const CIRCUIT_SWEEP_DISMISSED_KEY = "circuitry3d:circuit-sweep:dismissed:v1";
 
 // Onboarding is now the guided tour, full stop. This used to require the tour AND
 // the old interactive tutorial to be finished; that tutorial is gone, and its
@@ -14,7 +14,7 @@ const TOUR_DISMISSED_KEY = "circuitry3d:onboarding:tour-dismissed:v2";
 // the tips ticker back forever.
 function hasCompletedOnboarding(): boolean {
   try {
-    return window.localStorage.getItem(TOUR_DISMISSED_KEY) === "1";
+    return window.localStorage.getItem(CIRCUIT_SWEEP_DISMISSED_KEY) === "1";
   } catch {
     return false;
   }

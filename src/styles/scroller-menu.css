@@ -816,3 +816,30 @@
 @media (prefers-reduced-motion: reduce) {
   .action-bar-toggle-seg { transition: none !important; }
 }
+
+/* ---------------------------------------------------------------------------
+   TIER 1 = ONE LINE.
+
+   The bar is `flex-wrap: wrap`, and 13 buttons plus the cycle toggle do not fit
+   in 412px — so the default tier rendered as TWO rows and ate ~200px of a 915px
+   screen before any circuit was visible. A second row of chrome is not a
+   default; it is the thing the tier system exists to prevent.
+
+   So the resting tier carries only what you cannot build without:
+     Wire · Edit · Run · Undo · AI · Help · the cycle toggle   = 7, one line.
+
+   Everything else — Clear, Rotate, Redo, Load, Save, Measure, Tour — is
+   .edge-action-btn--secondary and is OFF until the user asks for it by cycling
+   the bar up a tier. Nothing is removed; it is one tap away and the workspace
+   gets the row back.
+   --------------------------------------------------------------------------- */
+.unified-action-bar[data-bar-mode="tools"] > .edge-action-btn--secondary {
+  display: none !important;
+}
+
+/* Belt and braces: at the resting tier the bar may not wrap under any
+   circumstance. If a future button pushes past the edge, it must be visibly
+   squeezed here rather than silently starting a second row. */
+.unified-action-bar[data-bar-mode="tools"] {
+  flex-wrap: nowrap;
+}

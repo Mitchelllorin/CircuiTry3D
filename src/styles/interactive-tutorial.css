@@ -644,3 +644,44 @@ html[data-theme="light"] .builder-tour-skip-link:focus-visible {
     animation: none;
   }
 }
+
+/* Skip tour — the one control that outlives the cards.
+   Sits on the card's own anchor (bottom-left) so it occupies the spot the card
+   will reappear in, rather than introducing a second place to look. Chromeless
+   per the app rule: no box, no border, just lit text with a shadow to carry it
+   over the workspace. */
+.builder-tour-exit {
+  pointer-events: auto;
+  position: absolute;
+  left: calc(16px + env(safe-area-inset-left, 0px));
+  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  min-height: 44px;
+  padding: 12px 6px;
+  background: none;
+  border: none;
+  color: rgba(168, 200, 235, 0.78);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  text-shadow:
+    0 1px 3px rgba(2, 6, 16, 0.95),
+    0 0 10px rgba(2, 6, 16, 0.7);
+}
+
+.builder-tour-exit:hover,
+.builder-tour-exit:focus-visible {
+  color: rgba(214, 234, 255, 0.98);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+html[data-theme="light"] .builder-tour-exit {
+  color: rgba(38, 66, 96, 0.82);
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.9);
+}
+
+html[data-theme="light"] .builder-tour-exit:hover,
+html[data-theme="light"] .builder-tour-exit:focus-visible {
+  color: rgba(16, 38, 60, 0.98);
+}

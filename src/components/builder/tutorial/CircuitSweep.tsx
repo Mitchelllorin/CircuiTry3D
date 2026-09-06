@@ -1,10 +1,37 @@
+/**
+ * ══════════════════════════════════════════════════════════════════════════
+ *  THE CIRCUIT SWEEP — the one and only walkthrough in this app. LOCKED.
+ * ══════════════════════════════════════════════════════════════════════════
+ *
+ * A camera-sweep cinematic: the camera flies to each part of the live showcase
+ * circuit while a text card explains it, with the W.I.R.E. terms colour-coded.
+ * Eight cards, eight camera positions, in step.
+ *
+ * It is called Circuit Sweep and NOT "tutorial", "guide", "walkthrough" or
+ * "onboarding" on purpose. This app repeatedly grew a second thing wearing one
+ * of those names — most recently a static wall of text calling itself the
+ * Guided Tutorial behind the Help tab — and every round of fixing one broke the
+ * other. Those are deleted. This is the survivor and it owns the concept.
+ *
+ * RULES, do not relax them:
+ *   1. Do NOT add another tutorial/walkthrough surface. Extend this one.
+ *   2. Do NOT open it before the workspace iframe is ready. Every step past the
+ *      first sweeps the camera by postMessage; sent early they are dropped and
+ *      the cards play over a dead camera. Builder.tsx decides ELIGIBILITY at
+ *      mount and STARTS it on frame-ready. Those are two different things.
+ *   3. Do NOT test it by asserting it opened or that cards appeared — that
+ *      passes while the camera is dead. Assert the camera MOVED:
+ *      tools/probe/drive-95-toursweep.mjs and drive-97-tourcards.mjs.
+ *   4. Build-it-with-me (BuilderBuildAlong) is a separate, deliberate thing.
+ *      It is not a duplicate of this and must not be merged into it.
+ */
 import { useEffect, useState } from "react";
 import type { BuilderInvokeAction } from "../types";
 import { highlightTerms } from "../../../utils/highlightTerms";
 import { Logo3D } from "../branding/Logo3D";
 import "../../../styles/interactive-tutorial.css";
 
-type BuilderGuidedTourProps = {
+type CircuitSweepProps = {
   open: boolean;
   onClose: () => void;
   onInvokeAction: (action: BuilderInvokeAction, data?: Record<string, unknown>) => void;
@@ -150,12 +177,12 @@ const TOUR_STEPS: TourStep[] = [
   },
 ];
 
-export function BuilderGuidedTour({
+export function CircuitSweep({
   open,
   onClose,
   onInvokeAction,
   onStartBuildAlong,
-}: BuilderGuidedTourProps) {
+}: CircuitSweepProps) {
   const [step, setStep] = useState(0);
   const [textVisible, setTextVisible] = useState(false);
 
@@ -239,6 +266,24 @@ export function BuilderGuidedTour({
 
   return (
     <div className="builder-tutorial-layer">
+      {/* An always-present way out. The tour is an autoplaying cinematic: each
+          step sweeps the camera, shows its card for a few seconds, HIDES it,
+          then advances. During those gaps there was no card and therefore no ✕
+          — but the tour was still open, which keeps the workspace locked and
+          the whole action bar hidden. So the screen looked live and idle while
+          nothing responded to a tap, and then a card reappeared out of nowhere.
+          This button outlives the cards, so there is never a moment where the
+          app is held and cannot be released. */}
+      {!showCard && (
+        <button
+          type="button"
+          className="builder-tour-exit"
+          onClick={dismiss}
+          aria-label="Skip the tour and start building"
+        >
+          Skip tour
+        </button>
+      )}
       {showCard && (
         <div className="builder-tutorial-card builder-tutorial-card--tour">
           <div className="builder-tutorial-header">

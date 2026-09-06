@@ -238,7 +238,10 @@ export type WorkspaceMode =
   | "gallery"
   | "settings";
 
-export type GuideWorkflowId = "tutorial" | "wire-guide";
+// One walkthrough only. "tutorial" used to be a second, text-only thing that
+// called itself the Guided Tutorial; it is gone. The walkthrough is the guided
+// tour (BuilderGuidedTour) and it is launched directly, not through a guide id.
+export type GuideWorkflowId = "wire-guide";
 
 export type LegacyModeState = {
   isWireMode: boolean;
