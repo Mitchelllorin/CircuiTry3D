@@ -50,6 +50,14 @@
 
     /* ── Background canvas (animated circuit field from promo) ────── */
     #bg-canvas {
+      /* The backdrop gradient lives here, not in the draw loop. It never
+         changes, and re-filling the whole surface with it every frame was
+         the last thing keeping the landing page from being responsive. */
+      background:
+        radial-gradient(ellipse 150% 100% at 50% 30%,
+          rgba(15,30,80,0.55) 0%,
+          rgba(4,10,30,0.65) 50%,
+          rgba(3,7,22,0.8) 100%);
       position: fixed;
       inset: 0;
       z-index: -1;
@@ -202,14 +210,41 @@
       justify-content: center;
       flex-wrap: wrap;
       gap: 0.3rem 0.6rem;
-      font-size: 0.72rem;
+      /* Scales down rather than wrapping. Four legal links need ~344px at the
+         full size, which fits a 412px phone but not a 375 or a 320 — and there
+         the row broke in two. Shrinking a few tenths of a point is a far better
+         trade than splitting the row Play reviewers read. */
+      font-size: clamp(0.56rem, 2.9vw, 0.72rem);
       border-top: 1px solid var(--border);
       background: var(--bg);
+    }
+    /* The legal row is its own centred line.
+
+       The footer is a COLUMN (so the studio credit can sit under the legal
+       links), and this nav had no layout of its own — the four links were plain
+       inline text. Inline text wraps by text flow and the wrapped line inherits
+       text-align: left, so as soon as the row outgrew a phone width the first
+       link dropped BELOW the others and hard left, out of line with everything
+       on the page. Play requires these links reachable and they are the last
+       thing a reviewer sees, so they have to hold their line.
+
+       Flex with wrap + centre means: one line while they fit, and if they ever
+       do not, they break evenly about the centre instead of orphaning one link
+       to the left. The gap and the tighter link padding buy back the ~30px that
+       pushed four links past 412px in the first place. */
+    .landing-footer nav {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: 0.25rem 0.35rem;
+      text-align: center;
     }
     .landing-footer-link {
       color: rgba(147,197,253,0.5);
       text-decoration: none;
-      padding: 2px 4px;
+      padding: 2px 1px;
+      white-space: nowrap;
       border-radius: 4px;
       transition: color 0.15s ease;
     }
@@ -224,7 +259,7 @@
     .landing-footer {
       flex-direction: column;
       gap: 0.85rem;
-      padding-top: 18px;
+      padding-top: 10px;
     }
     .landing-credit {
       margin: 0;
@@ -300,7 +335,7 @@
        screens. Deliberately whisper-quiet. */
     #fuse-watermark {
       position: fixed;
-      bottom: 72px;
+      bottom: 112px;   /* clears the two-row footer (83px) with room to spare */
       left: 14px;
       z-index: 100;
       font-size: 0.5rem;
@@ -332,8 +367,8 @@
       .logo-mark { width: clamp(72px, 26vh, 116px); }
       .wordmark3d { height: clamp(48px, 17vh, 84px); }
       .wordmark { font-size: clamp(28px, 7vw, 52px); }
-      /* Keep the watermark clear of the CTA on short screens. */
-      #fuse-watermark { bottom: 58px; }
+      /* Clear of the CTA above AND the two-row footer below. */
+      #fuse-watermark { bottom: 98px; }
     }
 
   </style>
@@ -470,8 +505,15 @@
     var globalTime = 0;
 
     function resize() {
-      W = canvas.width  = window.innerWidth  * (window.devicePixelRatio || 1);
-      H = canvas.height = window.innerHeight * (window.devicePixelRatio || 1);
+      // A soft, blurred particle field does not need a retina buffer. At DPR 3
+      // this canvas was 1236x2745 - 3.4 MEGAPIXELS - cleared and gradient-filled
+      // every frame. That put the landing page at 2fps with 1.4s frames, and
+      // every tap on Launch waited ~500ms just to be acknowledged: the button
+      // was never broken, the page was too busy to notice the touch.
+      // Capping the ratio cuts the pixel work ~4x and the blur hides it.
+      var dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+      W = canvas.width  = Math.round(window.innerWidth  * dpr);
+      H = canvas.height = Math.round(window.innerHeight * dpr);
       canvas.style.width  = window.innerWidth  + "px";
       canvas.style.height = window.innerHeight + "px";
       buildNodes();
@@ -518,12 +560,6 @@
       ctx.clearRect(0, 0, W, H);
 
       /* Background gradient */
-      var grad = ctx.createRadialGradient(W * 0.5, H * 0.3, 0, W * 0.5, H * 0.5, W * 0.75);
-      grad.addColorStop(0,   "rgba(15,30,80,0.55)");
-      grad.addColorStop(0.5, "rgba(4,10,30,0.65)");
-      grad.addColorStop(1,   "rgba(3,7,22,0.8)");
-      ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, W, H);
 
       /* Move nodes */
       for (var i = 0; i < nodes.length; i++) {
@@ -598,7 +634,9 @@
         ctx.fill();
       }
 
-      requestAnimationFrame(draw);
+      // 30fps for a slow-drifting backdrop. Halves the work again, and leaves
+      // the main thread free between frames to answer a touch.
+      setTimeout(function () { requestAnimationFrame(draw); }, 33);
     }
 
     resize();
