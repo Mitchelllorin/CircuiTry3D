@@ -5,7 +5,7 @@
 
 CircuiTry3D is founded and led by **Mitchell Lorin McKnight**, who built the platform to make circuit theory accessible and intuitive for everyone — because visual learning increases retention for all kinds of learners.
 
-[![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?logo=vercel)](https://circuitry3d.app)
+[![Deployed on Cloudflare Pages](https://img.shields.io/badge/Deployed%20on-Cloudflare%20Pages-F38020?logo=cloudflare&logoColor=white)](https://circuitry3d.app)
 [![License: ISC](https://img.shields.io/badge/License-ISC-blue.svg)](https://opensource.org/licenses/ISC)
 [![Node >=20](https://img.shields.io/badge/node-%3E%3D20-brightgreen)](https://nodejs.org)
 
@@ -68,7 +68,7 @@ You don't need an engineering background to use CircuiTry3D.
 
 | Platform | Details |
 |---|---|
-| **Web App** | React 19 + Vite 7, deployed on Vercel |
+| **Web build** | React 19 + Vite 7 — the source Capacitor wraps; not separately deployed |
 | **Android App** | Native app via Capacitor, available on Google Play Store |
 
 ---
@@ -83,7 +83,7 @@ You don't need an engineering background to use CircuiTry3D.
 | Mobile | Capacitor 7 |
 | Routing | React Router DOM 7 |
 | Backend/API | GitHub Actions + Upstash Redis |
-| Deployment | Vercel (web), Google Play Store (Android) |
+| Deployment | Google Play Store (Android); circuitry3d.app on Cloudflare Pages |
 | Testing | Vitest + Playwright |
 
 ---
