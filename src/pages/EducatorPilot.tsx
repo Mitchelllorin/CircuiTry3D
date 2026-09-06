@@ -88,7 +88,7 @@ Would you be open to a brief 15-minute conversation so I can show you what the t
 Starting [date/this week], we'll be using CircuiTry3D — a 3D interactive circuit builder — for our [unit name] unit. This is part of an educator pilot program, which means we're among the first classrooms to use the tool, and your feedback genuinely matters.
 
 What you'll be doing:
-• Building circuits in a 3D environment (runs in your browser — no install needed)
+• Building circuits in a 3D environment (free on Google Play)
 • Testing component behavior, Ohm's Law scenarios, and failure modes
 • Completing [assignment name] using the simulation as your lab environment
 
