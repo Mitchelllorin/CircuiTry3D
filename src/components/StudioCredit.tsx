@@ -14,6 +14,7 @@
 import {
   APP_SITE_LABEL,
   APP_SITE_URL,
+  DESKTOP_APP_URL,
   PLAY_STORE_URL,
   STUDIO_SITES,
 } from "../constants/urls";
@@ -31,11 +32,20 @@ export default function StudioCredit({ className }: StudioCreditProps) {
       {/* Website and store, side by side — the two things someone means by
           "where do I find this". Every other Play link in the app is behind a
           condition (demo mode, or a purchase flow), so without this one there
-          is no plain way to reach the listing from inside the app. */}
+          is no plain way to reach the listing from inside the app.
+
+          The address is introduced by what it is FOR. The same app runs in a
+          desktop browser, which is where a 3D circuit is actually comfortable
+          to build — big screen, a mouse — and someone holding a phone has no
+          way to guess that from a bare domain. It also stays written out as
+          plain readable text on purpose: you cannot click a link on your phone
+          onto your computer, you retype it, so the address has to be legible
+          rather than hidden behind a word. */}
       <p className="studio-credit__links">
+        <span className="studio-credit__lead">Use it on a computer at </span>
         <a
           className="studio-credit__site"
-          href={APP_SITE_URL}
+          href={DESKTOP_APP_URL}
           target="_blank"
           rel="noopener noreferrer"
         >

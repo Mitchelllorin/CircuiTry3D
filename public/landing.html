@@ -261,6 +261,22 @@
       gap: 0.85rem;
       padding-top: 10px;
     }
+    /* Where it runs. Sits between the legal row and the studio credit, and is
+       pitched between the two in weight: louder than the credit because it is
+       something a reader might act on, quieter than the legal row. */
+    .landing-platforms {
+      margin: 0;
+      font-size: clamp(0.56rem, 2.7vw, 0.66rem);
+      letter-spacing: 0.015em;
+      color: rgba(147,197,253,0.42);
+      text-align: center;
+    }
+    .landing-platform-link {
+      color: rgba(147,197,253,0.72);
+      text-decoration: none;
+      white-space: nowrap;
+    }
+    .landing-platform-link:hover { color: rgba(147,197,253,0.95); }
     .landing-credit {
       margin: 0;
       font-size: 0.62rem;
@@ -335,7 +351,14 @@
        screens. Deliberately whisper-quiet. */
     #fuse-watermark {
       position: fixed;
-      bottom: 112px;   /* clears the two-row footer (83px) with room to spare */
+      /* MEASURED, not guessed. This has drifted onto the footer twice now,
+         because a fixed offset is a number tuned to whatever the footer
+         happened to be that day — and the footer keeps gaining rows. The
+         script at the bottom publishes the footer's real height as
+         --landing-footer-h and keeps it current with a ResizeObserver, so the
+         mark clears the footer at whatever height it actually is. The 112px
+         fallback only applies before the script runs. */
+      bottom: calc(var(--landing-footer-h, 100px) + 12px);
       left: 14px;
       z-index: 100;
       font-size: 0.5rem;
@@ -367,8 +390,9 @@
       .logo-mark { width: clamp(72px, 26vh, 116px); }
       .wordmark3d { height: clamp(48px, 17vh, 84px); }
       .wordmark { font-size: clamp(28px, 7vw, 52px); }
-      /* Clear of the CTA above AND the two-row footer below. */
-      #fuse-watermark { bottom: 98px; }
+      /* The footer height is measured, so only the extra breathing room above
+         it shrinks on a short screen. */
+      #fuse-watermark { bottom: calc(var(--landing-footer-h, 86px) + 6px); }
     }
 
   </style>
@@ -412,6 +436,16 @@
       <span class="landing-footer-sep" aria-hidden="true">·</span>
       <a class="landing-footer-link" href="/partnerships">Partnerships</a>
     </nav>
+    <!-- Where you can actually run it. Phrased as availability, not an
+         instruction, because this same page is read on a phone and on a
+         desktop and "use it on desktop" is silly to someone already there. -->
+    <p class="landing-platforms">
+      Runs in any browser at
+      <a class="landing-platform-link" href="/#/app">circuitry3d.app</a>
+      <span class="landing-footer-sep" aria-hidden="true">·</span>
+      Android on
+      <a class="landing-platform-link" href="https://play.google.com/store/apps/details?id=com.circuitry3d.app" target="_blank" rel="noopener noreferrer">Google Play</a>
+    </p>
     <p class="landing-credit">
       From the makers of
       <a class="landing-credit-link" href="https://theprints3d.com" target="_blank" rel="noopener noreferrer">ThePrints3D.com</a>
@@ -641,6 +675,34 @@
 
     resize();
     draw();
+  })();
+  </script>
+
+  <!-- ── Publish the footer height ─────────────────────────────────────
+       The F.U.S.E. watermark is fixed to the bottom-left and has to clear the
+       footer. It was doing that with a hard-coded offset, which is a number
+       tuned to the footer of the day — and the footer has now gained a row
+       twice, landing the mark on top of it both times.
+
+       So publish the real height instead of guessing at it. A ResizeObserver
+       keeps it honest through an orientation change, a font swap, or the legal
+       row wrapping on a very narrow screen. -->
+  <script>
+  (function () {
+    var footer = document.querySelector(".landing-footer");
+    if (!footer) return;
+    function publish() {
+      document.documentElement.style.setProperty(
+        "--landing-footer-h", footer.offsetHeight + "px");
+    }
+    publish();
+    if (typeof ResizeObserver === "function") {
+      new ResizeObserver(publish).observe(footer);
+    } else {
+      window.addEventListener("resize", publish);
+    }
+    // Web fonts land after first paint and change the row height under us.
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(publish);
   })();
   </script>
 

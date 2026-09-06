@@ -14,6 +14,17 @@ export const PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=com
 export const APP_SITE_URL = SITE_ORIGIN;
 export const APP_SITE_LABEL = "circuitry3d.app";
 
+/**
+ * Straight into the builder, not the marketing page.
+ *
+ * This is the link you hand someone so they can USE the app on a computer —
+ * the whole point being the big screen and the mouse, which is where a 3D
+ * circuit is actually comfortable to build. The app is a HashRouter, so the
+ * builder lives under /#/app; linking the bare origin drops them on the
+ * landing page with another button to find.
+ */
+export const DESKTOP_APP_URL = `${SITE_ORIGIN}/#/app`;
+
 /** Sibling sites from the same maker — a credit, not a cross-sell. */
 export const STUDIO_SITES = [
   { label: "ThePrints3D.com", href: "https://theprints3d.com" },

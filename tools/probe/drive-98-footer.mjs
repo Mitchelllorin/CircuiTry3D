@@ -29,7 +29,22 @@ for (const s of SIZES) {
     const rects = links.map(a => { const b = a.getBoundingClientRect();
       return { text: a.textContent.trim(), top: Math.round(b.top), left: Math.round(b.left), right: Math.round(b.right) }; });
     const nav = document.querySelector('.landing-footer nav').getBoundingClientRect();
-    return { rects, nav: { left: Math.round(nav.left), right: Math.round(nav.right) }, vw: window.innerWidth };
+    const foot = document.querySelector('.landing-footer').getBoundingClientRect();
+    const mark = document.querySelector('#fuse-watermark')?.getBoundingClientRect();
+    const plat = document.querySelector('.landing-platforms');
+    const platRect = plat?.getBoundingClientRect();
+    return {
+      rects,
+      nav: { left: Math.round(nav.left), right: Math.round(nav.right) },
+      vw: window.innerWidth,
+      footTop: Math.round(foot.top),
+      // The watermark is positioned to clear the footer. The footer just gained
+      // a row, and a fixed bottom offset tuned to the old height silently ends
+      // up sitting on top of it.
+      markOverlapsFooter: !!(mark && mark.bottom > foot.top),
+      platforms: plat ? plat.textContent.replace(/\s+/g, ' ').trim() : null,
+      platformsOneLine: platRect ? platRect.height < 26 : null,
+    };
   });
 
   const tops = [...new Set(r.rects.map(x => x.top))];
@@ -48,6 +63,10 @@ for (const s of SIZES) {
 
   console.log(`${s.name} ${s.width}px  ${oneLine ? 'ONE LINE' : `${tops.length} LINES`}  ${centred ? 'centred' : 'OFF-CENTRE'}  [${clusterL}..${clusterR}] of ${r.vw}`);
   for (const x of r.rects) console.log(`     ${x.text.padEnd(15)} top=${x.top} left=${x.left}`);
+  console.log();
+  console.log('     platforms: ' + (r.platforms || 'MISSING'));
+  if (r.markOverlapsFooter) { console.log('      FAIL watermark overlaps the footer'); fail++; }
+  if (!r.platforms) { console.log('      FAIL platforms line missing'); fail++; }
   if (!oneLine || !centred) fail++;
   await ctx.close();
 }
