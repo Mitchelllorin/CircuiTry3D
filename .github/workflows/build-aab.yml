@@ -1,9 +1,14 @@
 name: Build AAB
 
+# MANUAL ONLY, on purpose.
+#
+# This used to fire on every push to main. Nothing consumes the result
+# automatically: the Play upload is done by hand (the service-account secret is
+# unset), so every push was signing a bundle nobody collected and cancelling the
+# previous one to do it. Build a bundle when there is going to be an upload.
+#
+# Run it from Actions > Build AAB > "Run workflow", or:  gh workflow run build-aab.yml
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
     inputs:
       version_name:
@@ -11,8 +16,9 @@ on:
         required: false
         default: ''
 
-# Only one AAB build at a time; if a new push lands while a build is running
-# cancel the old run so the Play Store always receives the most current commit.
+# Only one AAB build at a time. Now that runs are started by hand, the one being
+# cancelled is a bundle someone asked for — so a second request supersedes the
+# first rather than racing it.
 concurrency:
   group: build-aab
   cancel-in-progress: true
@@ -20,9 +26,10 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    # Screenshot-regeneration commits (tagged [skip screenshots]) only update
-    # image assets; there is no code change that warrants a new AAB.
-    if: github.event_name == 'workflow_dispatch' || !contains(github.event.head_commit.message, '[skip screenshots]')
+    # The [skip screenshots] guard went with the push trigger: every run is a
+    # workflow_dispatch now, which that condition already exempted, so it could
+    # only ever evaluate true. A condition that cannot be false is a false
+    # comfort — and github.event.head_commit does not even exist on dispatch.
     env:
       JAVA_VERSION: '21'
       NODE_VERSION: '20.19.0'
