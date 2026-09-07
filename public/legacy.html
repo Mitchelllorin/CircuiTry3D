@@ -5430,6 +5430,52 @@ body.android-optimized .zoom-btn {
         // see the frame-rate and label notes there.
         let _idleOrbitActive   = false;
 
+        // ── Easter egg: end of shift ─────────────────────────────────────────────
+        // Leave the board alone long enough and the components decide the day is
+        // over. They stand up on little legs, file out toward the same imaginary
+        // door, loiter offstage, then wander back and sit down again.
+        //
+        // The whole thing is a lie told to the GPU. It drives `mesh.position` and
+        // `mesh.rotation` ONLY — never `component.position`, which is what the
+        // netlist, the solver, Arrange and every save file read. So an idle timer
+        // can never corrupt a circuit somebody spent an hour on, and the maths never
+        // notices anyone left their post. Touch anything and resetIdleWalk() puts
+        // every part back on the exact transform it rose from, in a single frame,
+        // with no scurrying-back animation: the joke only works if you can never
+        // catch them in the act.
+        //
+        // Wires deliberately do NOT follow. wire.updatePath() only runs when
+        // something asks it to, so the harness hangs there with gaps in it — the
+        // circuit is still built, the staff have simply gone home.
+        const IDLE_WALK_DELAY_MS = 45000;  // stillness before the first one stands
+        const WALK_STAGGER_MS    = 300;    // gap between one part rising and the next
+        const WALK_STAND_MS      = 700;    // pushing up onto the legs
+        // A stroll, not a sprint. The first cut moved them 20 world units in 2.6 s,
+        // which cleared the screen so fast the board was simply empty two seconds in —
+        // you never saw anybody walk, which is the entire joke.
+        // Measured, not guessed: at the default framing the camera sits ~21 world units
+        // out and the parts span the full screen width, so a part on the far side needs
+        // ~17 units of travel to actually clear the frame. The exit distance therefore
+        // has to stay large — shrink it and they stop half-visible and stand there,
+        // which kills the "they've gone home" illusion. The speed is what got tuned
+        // instead: this is ~4.3 units/s, slow enough to read as a stroll and still get
+        // everybody off before the offstage beat.
+        const WALK_OUT_MS        = 4200;   // the stroll off the board
+        const WALK_AWAY_MS       = 1600;   // offstage
+        const WALK_BACK_MS       = 4200;   // the stroll back
+        const WALK_SIT_MS        = 700;    // settling onto the bench again
+        const WALK_CYCLE_MS      = WALK_STAND_MS + WALK_OUT_MS + WALK_AWAY_MS
+                                 + WALK_BACK_MS + WALK_SIT_MS;
+        const WALK_LIFT          = 0.95;   // how far the body rides above its seat
+        const WALK_STEP_HZ       = 2.6;    // paces per second
+        const WALK_TURN_RATE     = 0.006;  // how fast they pivot toward the door
+        let _idleWalkActive   = false;  // a part is off its seat this frame
+        let _idleWalkStartedAt = 0;     // performance.now() when the shift ended
+        let _idleWalkPrevTime = 0;      // for frame-rate-independent turning
+        let _walkers          = [];     // components currently clocked out
+        let _walkExitDir      = null;   // THREE.Vector3, the way out (screen-right)
+        let _walkExitDist     = 0;      // how far along it before they are gone
+
         // Payoff-circuit safety net — see ensurePayoffCircuitLoaded. Declared here
         // because `_userTouchedWorkspace` is set by the input handler just below.
         let _payoffSelfLoadArmed  = true;   // false once a payoff circuit has been built
@@ -9250,6 +9296,11 @@ body.android-optimized .zoom-btn {
             // to settle first, or every label spends the frame projected against the
             // camera's previous position and trails the board it is pinned to.
             updateIdleOrbit(currentTime);
+            // Must follow updateIdleOrbit — see the note on updateIdleWalk. It reads
+            // the _lastUserInputAt that updateIdleOrbit has just re-stamped for
+            // blockers, which is how the walk inherits every one of the turntable's
+            // hold conditions without duplicating them.
+            updateIdleWalk(currentTime);
 
             globalFlowTime++;
             updateFlowParticles(currentTime);
@@ -9317,8 +9368,13 @@ body.android-optimized .zoom-btn {
             const _cineFlying = (typeof _cinematicCtrl !== 'undefined'
                 && _cinematicCtrl && _cinematicCtrl.isPlaying);
             labelUpdateCounter++;
+            // ...and not while the crew is walking out. Nameplates read mesh.matrixWorld,
+            // so they follow a part off the board for free — but at 5 Hz the name lags
+            // its owner and hops along behind him like it is chasing the bus. Same
+            // exemption, same reason as the drag, the turntable and the cinematic.
             if (labelUpdateCounter >= LABEL_UPDATE_INTERVAL || _idleOrbitActive
-                    || isDragging || isPlacing || isRotating || isPanning || _cineFlying) {
+                    || isDragging || isPlacing || isRotating || isPanning || _cineFlying
+                    || _idleWalkActive) {
                 labelUpdateCounter = 0;
                 updateComponentLabels();
             }
@@ -10016,8 +10072,16 @@ body.android-optimized .zoom-btn {
         // frame). Readable from the host as `iframe.contentWindow.__ct3dIdle`, which
         // is the only way to find out WHY the turntable is holding: every blocker
         // below looks identical from the outside, namely a workspace that sits still.
-        const __ct3dIdle = { blocked: false, reason: 'none', msSinceInput: 0, drifting: false };
+        const __ct3dIdle = { blocked: false, reason: 'none', msSinceInput: 0, drifting: false, walking: false };
         window.__ct3dIdle = __ct3dIdle;
+
+        // Nobody is waiting 45 s to look at the easter egg. Winds the idle clock back
+        // so the crew clocks out on the next frame. Any real input still cancels it,
+        // so this cannot leave the workspace stuck in a walk.
+        window.__ct3dWalkNow = function () {
+            _lastUserInputAt = performance.now() - IDLE_WALK_DELAY_MS;
+            return 'clocking out';
+        };
 
         function idleOrbitBlocked(now) {
             let reason = null;
@@ -10069,6 +10133,15 @@ body.android-optimized .zoom-btn {
                 _idleOrbitPrevTime = 0;
                 return;
             }
+            // Hold the camera still while the crew is clocking out. The turntable has
+            // been drifting for the whole 45 s by then, and letting it keep swinging
+            // through the walk means the parts and the camera are both moving: you
+            // cannot follow anybody, and the one readable beat in the gag — a lamp
+            // strolling off across the floor — turns into visual soup.
+            if (_idleWalkStartedAt) {
+                _idleOrbitPrevTime = 0;
+                return;
+            }
             // The first qualifying frame only seeds the timestamp: with no previous
             // frame there is no honest delta to advance by, and using one would jump
             // the camera by the whole idle delay.
@@ -10088,6 +10161,174 @@ body.android-optimized .zoom-btn {
             // eventually send those tweens the long way around.
             if (cameraAngleX > Math.PI * 2) cameraAngleX -= Math.PI * 2;
             updateCameraPosition();
+        }
+
+        // Two stubby legs, hidden until the shift ends. Built once per component and
+        // parented to its mesh group, so they inherit COMPONENT_SCALE and ride along
+        // with every camera move for free. Each leg hangs off a hip pivot at the top,
+        // so rotating the pivot swings the leg from the hip instead of spinning it
+        // about its own middle.
+        function ensureWalkLegs(component) {
+            if (component._walkLegs) return component._walkLegs;
+            const legs = new THREE.Group();
+            legs.visible = false;
+            const legMat  = new THREE.MeshStandardMaterial({ color: 0x2f3542, roughness: 0.75, metalness: 0.1 });
+            const shinGeo = new THREE.CylinderGeometry(0.075, 0.065, 0.8, 6);
+            const footGeo = new THREE.BoxGeometry(0.26, 0.1, 0.4);
+            component._walkHips = [];
+            for (const side of [-1, 1]) {
+                const hip = new THREE.Group();
+                hip.position.set(side * 0.22, -0.35, 0);
+                const shin = new THREE.Mesh(shinGeo, legMat);
+                shin.position.y = -0.4;              // hangs below the hip pivot
+                hip.add(shin);
+                const foot = new THREE.Mesh(footGeo, legMat);
+                foot.position.set(0, -0.83, 0.07);
+                hip.add(foot);
+                legs.add(hip);
+                component._walkHips.push(hip);
+            }
+            component.mesh.add(legs);
+            component._walkLegs = legs;
+            return legs;
+        }
+
+        // Puts everybody back exactly where they were sitting, in one frame. Restores
+        // the rotation SNAPSHOT taken when they stood rather than recomputing it, so a
+        // part that was leaning or rotated goes back leaning and rotated.
+        function resetIdleWalk() {
+            for (const component of _walkers) {
+                if (!component.mesh) continue;
+                component.mesh.position.copy(component.position);
+                if (component._walkHomeRot) component.mesh.rotation.copy(component._walkHomeRot);
+                if (component._walkLegs) component._walkLegs.visible = false;
+                component._walkFace = 0;
+            }
+            _walkers = [];
+            _idleWalkStartedAt = 0;
+            _idleWalkPrevTime  = 0;
+            _idleWalkActive    = false;
+        }
+
+        // Runs immediately after updateIdleOrbit, and that ordering is load-bearing:
+        // updateIdleOrbit re-stamps _lastUserInputAt on every blocked frame, so "is
+        // anything in the way" — a host panel, the Circuit Sweep tour, a cinematic, a
+        // carried part, a live selection — is already answered by the time the clock is
+        // read here. Blocked reads as "no idle time has passed", which sends the crew
+        // straight back to their seats and makes them wait the full delay again once
+        // the blocker clears.
+        function updateIdleWalk(now) {
+            _idleWalkActive = false;
+            __ct3dIdle.walking = false;
+
+            if (!_lastUserInputAt || !components.length ||
+                    now - _lastUserInputAt < IDLE_WALK_DELAY_MS) {
+                if (_walkers.length) resetIdleWalk();
+                return;
+            }
+
+            if (!_idleWalkStartedAt) {
+                _idleWalkStartedAt = now;
+                _idleWalkPrevTime  = now;
+                // The door is wherever screen-right happens to be. A fixed world
+                // direction was a coin flip: the idle turntable has already been
+                // orbiting for the whole 45 s, so by clock-out time +X can be pointing
+                // straight at the camera or straight away from it, and the crew either
+                // strolls off sideways or marches into the lens. Taking the camera's
+                // right vector (flattened onto the floor) means they always file out
+                // across the screen, whatever angle you left the board at.
+                _walkExitDir = new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld, 0);
+                _walkExitDir.y = 0;
+                if (_walkExitDir.lengthSq() < 1e-6) _walkExitDir.set(1, 0, 0); // top-down view
+                _walkExitDir.normalize();
+                // Far enough to actually be gone, scaled to how far out you are zoomed —
+                // a fixed distance leaves them loitering in frame on a wide shot.
+                _walkExitDist = Math.max(14, cameraDistance * 0.85);
+                // Nearest the door leaves first, so they file out in a queue rather
+                // than crossing through each other.
+                _walkers = components.filter(c => c.mesh)
+                    .sort((a, b) => b.position.dot(_walkExitDir) - a.position.dot(_walkExitDir));
+                for (const c of _walkers) {
+                    c._walkHomeRot = c.mesh.rotation.clone();
+                    c._walkFace    = 0;
+                    ensureWalkLegs(c);
+                }
+            }
+
+            const dt = Math.min(now - _idleWalkPrevTime, 100); // clamp: a backgrounded
+            _idleWalkPrevTime = now;                           // tab must not snap-turn
+            const elapsed   = now - _idleWalkStartedAt;
+            const stepPhase = (now / 1000) * WALK_STEP_HZ * Math.PI * 2;
+
+            // Everyone home and seated → clear the stage and restart the countdown, so
+            // an abandoned phone gets another clock-out one full delay later.
+            if (elapsed > WALK_CYCLE_MS + WALK_STAGGER_MS * Math.max(0, _walkers.length - 1)) {
+                resetIdleWalk();
+                _lastUserInputAt = now;
+                return;
+            }
+
+            for (let i = 0; i < _walkers.length; i++) {
+                const c = _walkers[i];
+                if (!c.mesh) continue;
+
+                let t = elapsed - i * WALK_STAGGER_MS;   // this one's own clock
+                let lift = 0, travel = 0, stepping = false, faceTarget = 0;
+
+                if (t <= 0) {
+                    // Still waiting their turn — untouched on their seat.
+                } else if (t < WALK_STAND_MS) {
+                    lift = t / WALK_STAND_MS;
+                    faceTarget = Math.PI / 2;                       // turning to the door
+                } else if ((t -= WALK_STAND_MS) < WALK_OUT_MS) {
+                    lift = 1; travel = t / WALK_OUT_MS; stepping = true;
+                    faceTarget = Math.PI / 2;
+                } else if ((t -= WALK_OUT_MS) < WALK_AWAY_MS) {
+                    lift = 1; travel = 1;
+                    faceTarget = -Math.PI / 2;                      // turns around offstage
+                } else if ((t -= WALK_AWAY_MS) < WALK_BACK_MS) {
+                    lift = 1; travel = 1 - t / WALK_BACK_MS; stepping = true;
+                    faceTarget = -Math.PI / 2;
+                } else if ((t -= WALK_BACK_MS) < WALK_SIT_MS) {
+                    lift = 1 - t / WALK_SIT_MS;                     // settling back down
+                } else {
+                    lift = 0; travel = 0;                           // home, seated
+                }
+
+                // Bob rides on the lift so it fades out as they sit, instead of the
+                // body twitching at the exact moment it lands on the bench.
+                const bob = stepping ? Math.abs(Math.sin(stepPhase)) * 0.06 * lift : 0;
+                const along = _walkExitDist * travel;
+                c.mesh.position.set(
+                    c.position.x + _walkExitDir.x * along,
+                    c.position.y + WALK_LIFT * lift + bob,
+                    c.position.z + _walkExitDir.z * along
+                );
+
+                // Time-based turn, so the pivot takes the same wall-clock time at 30,
+                // 60 or 120 fps.
+                c._walkFace += (faceTarget - c._walkFace) * Math.min(1, dt * WALK_TURN_RATE);
+                c.mesh.rotation.set(
+                    c._walkHomeRot.x,
+                    c._walkHomeRot.y + c._walkFace,
+                    c._walkHomeRot.z,
+                    c._walkHomeRot.order
+                );
+
+                const legs = c._walkLegs;
+                if (legs) {
+                    legs.visible = lift > 0.01;
+                    const swing = stepping ? Math.sin(stepPhase) * 0.6 : 0;
+                    if (c._walkHips) {
+                        c._walkHips[0].rotation.x =  swing;
+                        c._walkHips[1].rotation.x = -swing;   // opposite leg, obviously
+                    }
+                }
+
+                if (lift > 0.01 || travel > 0.001) _idleWalkActive = true;
+            }
+
+            __ct3dIdle.walking = _idleWalkActive;
         }
 
         function zoomIn() {
