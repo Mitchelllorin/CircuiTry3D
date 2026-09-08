@@ -5449,7 +5449,10 @@ body.android-optimized .zoom-btn {
         // circuit is still built, the staff have simply gone home.
         const IDLE_WALK_DELAY_MS = 45000;  // stillness before the first one stands
         const WALK_STAGGER_MS    = 300;    // gap between one part rising and the next
-        const WALK_STAND_MS      = 700;    // pushing up onto the legs
+        // Long enough for three beats, because the gag is a sequence and not a pose:
+        // stand up, hat on, pick up the briefcase. At 700 ms they happened on top of
+        // each other and read as one blurry twitch.
+        const WALK_STAND_MS      = 1100;   // pushing up, then hat, then briefcase
         // A stroll, not a sprint. The first cut moved them 20 world units in 2.6 s,
         // which cleared the screen so fast the board was simply empty two seconds in —
         // you never saw anybody walk, which is the entire joke.
@@ -5463,7 +5466,7 @@ body.android-optimized .zoom-btn {
         const WALK_OUT_MS        = 4200;   // the stroll off the board
         const WALK_AWAY_MS       = 1600;   // offstage
         const WALK_BACK_MS       = 4200;   // the stroll back
-        const WALK_SIT_MS        = 700;    // settling onto the bench again
+        const WALK_SIT_MS        = 800;    // hat off, case down, settling onto the bench
         const WALK_CYCLE_MS      = WALK_STAND_MS + WALK_OUT_MS + WALK_AWAY_MS
                                  + WALK_BACK_MS + WALK_SIT_MS;
         const WALK_LIFT          = 0.95;   // how far the body rides above its seat
@@ -10170,6 +10173,36 @@ body.android-optimized .zoom-btn {
         // about its own middle.
         function ensureWalkLegs(component) {
             if (component._walkLegs) return component._walkLegs;
+
+            // Measure the bare part FIRST — before any kit is parented to it, so the
+            // legs hanging below and the case sticking out to the side cannot pollute
+            // the numbers the kit is then placed from.
+            //
+            // Yaw is zeroed for the measurement and put straight back. Box3 is
+            // axis-aligned in WORLD space, so a part sitting at 90° would otherwise
+            // report its length as its width and hand the briefcase a nonsense offset.
+            // Measuring unrotated gives the part's own extents, which is what the kit
+            // (parented into that same rotating frame) actually needs.
+            // Only the parts you can SEE. setFromObject would swallow the invisible
+            // selection box, which is deliberately far bigger than the component it
+            // catches taps for — measuring that put the hat floating in the air above
+            // the head and the briefcase hovering out in space beside the part rather
+            // than in its hand. The connection nubs are skipped for the same reason.
+            const savedRot = component.mesh.rotation.clone();
+            component.mesh.rotation.set(0, 0, 0);
+            component.mesh.updateMatrixWorld(true);
+            const bbox = new THREE.Box3();
+            component.mesh.traverse((o) => {
+                if (!o.isMesh) return;
+                if (o.userData && (o.userData.isSelectionBox || o.userData.isConnectionPoint)) return;
+                bbox.expandByObject(o);
+            });
+            component.mesh.rotation.copy(savedRot);
+            component.mesh.updateMatrixWorld(true);
+            const local = (v, fallback) => Number.isFinite(v) ? v / COMPONENT_SCALE : fallback;
+            const topY  = local(bbox.max.y - component.mesh.position.y, 0.7);
+            const halfX = local(bbox.max.x - component.mesh.position.x, 0.5);
+
             const legs = new THREE.Group();
             legs.visible = false;
             const legMat  = new THREE.MeshStandardMaterial({ color: 0x2f3542, roughness: 0.75, metalness: 0.1 });
@@ -10190,6 +10223,38 @@ body.android-optimized .zoom-btn {
             }
             component.mesh.add(legs);
             component._walkLegs = legs;
+
+            // A bowler. Nothing else reads as "clocking off" at this size.
+            const hat     = new THREE.Group();
+            hat.visible   = false;
+            const feltMat = new THREE.MeshStandardMaterial({ color: 0x23262e, roughness: 0.9, metalness: 0.05 });
+            const brim    = new THREE.Mesh(new THREE.CylinderGeometry(0.30, 0.32, 0.035, 12), feltMat);
+            const crown   = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.19, 0.20, 12), feltMat);
+            crown.position.y = 0.11;
+            hat.add(brim, crown);
+            hat.userData.restY = topY + 0.06;
+            component.mesh.add(hat);
+            component._walkHat = hat;
+
+            // Briefcase, carried at the side. No arms to hang it from, so it floats at
+            // hand height and swings against the stride — at this scale the eye reads
+            // the swing and does not go looking for the arm.
+            //
+            // Parked just CLEAR of the measured body rather than at a fixed offset. A
+            // fixed 0.5 put it inside anything longer than a resistor: on screen the
+            // case stopped reading as luggage and became a brown slab bolted through
+            // the part, closer to the camera than the body it was covering.
+            const briefcase = new THREE.Group();
+            briefcase.visible = false;
+            const caseMat = new THREE.MeshStandardMaterial({ color: 0x6b4423, roughness: 0.65, metalness: 0.08 });
+            const body    = new THREE.Mesh(new THREE.BoxGeometry(0.30, 0.22, 0.10), caseMat);
+            const handle  = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.045, 0.028), caseMat);
+            handle.position.y = 0.13;
+            briefcase.add(body, handle);
+            briefcase.position.set(halfX + 0.24, -0.15, 0.05);
+            component.mesh.add(briefcase);
+            component._walkCase = briefcase;
+
             return legs;
         }
 
@@ -10202,6 +10267,8 @@ body.android-optimized .zoom-btn {
                 component.mesh.position.copy(component.position);
                 if (component._walkHomeRot) component.mesh.rotation.copy(component._walkHomeRot);
                 if (component._walkLegs) component._walkLegs.visible = false;
+                if (component._walkHat)  component._walkHat.visible  = false;
+                if (component._walkCase) component._walkCase.visible = false;
                 component._walkFace = 0;
             }
             _walkers = [];
@@ -10274,23 +10341,36 @@ body.android-optimized .zoom-btn {
 
                 let t = elapsed - i * WALK_STAGGER_MS;   // this one's own clock
                 let lift = 0, travel = 0, stepping = false, faceTarget = 0;
+                let hatOn = 0, caseOn = 0;
+                const ramp = (x) => Math.max(0, Math.min(1, x));
 
                 if (t <= 0) {
                     // Still waiting their turn — untouched on their seat.
                 } else if (t < WALK_STAND_MS) {
-                    lift = t / WALK_STAND_MS;
+                    // Overlapping beats, in the order it was asked for: up on the legs
+                    // first, hat while still straightening, briefcase last.
+                    const p = t / WALK_STAND_MS;
+                    lift   = ramp(p / 0.55);
+                    hatOn  = ramp((p - 0.40) / 0.30);
+                    caseOn = ramp((p - 0.65) / 0.30);
                     faceTarget = Math.PI / 2;                       // turning to the door
                 } else if ((t -= WALK_STAND_MS) < WALK_OUT_MS) {
-                    lift = 1; travel = t / WALK_OUT_MS; stepping = true;
+                    lift = 1; hatOn = 1; caseOn = 1;
+                    travel = t / WALK_OUT_MS; stepping = true;
                     faceTarget = Math.PI / 2;
                 } else if ((t -= WALK_OUT_MS) < WALK_AWAY_MS) {
-                    lift = 1; travel = 1;
+                    lift = 1; hatOn = 1; caseOn = 1; travel = 1;
                     faceTarget = -Math.PI / 2;                      // turns around offstage
                 } else if ((t -= WALK_AWAY_MS) < WALK_BACK_MS) {
-                    lift = 1; travel = 1 - t / WALK_BACK_MS; stepping = true;
+                    lift = 1; hatOn = 1; caseOn = 1;
+                    travel = 1 - t / WALK_BACK_MS; stepping = true;
                     faceTarget = -Math.PI / 2;
                 } else if ((t -= WALK_BACK_MS) < WALK_SIT_MS) {
-                    lift = 1 - t / WALK_SIT_MS;                     // settling back down
+                    // Case down, hat off, then sit — the morning routine in reverse.
+                    const p = t / WALK_SIT_MS;
+                    lift   = 1 - p;
+                    caseOn = 1 - ramp(p / 0.45);
+                    hatOn  = 1 - ramp(p / 0.60);
                 } else {
                     lift = 0; travel = 0;                           // home, seated
                 }
@@ -10323,6 +10403,22 @@ body.android-optimized .zoom-btn {
                         c._walkHips[0].rotation.x =  swing;
                         c._walkHips[1].rotation.x = -swing;   // opposite leg, obviously
                     }
+                }
+
+                const hat = c._walkHat;
+                if (hat) {
+                    hat.visible = hatOn > 0.01;
+                    hat.scale.setScalar(hatOn);
+                    // Drops the last bit onto the head instead of fading in on it, so
+                    // you read "putting a hat on" rather than "a hat appeared".
+                    hat.position.y = hat.userData.restY + (1 - hatOn) * 0.7;
+                }
+
+                const briefcase = c._walkCase;
+                if (briefcase) {
+                    briefcase.visible = caseOn > 0.01;
+                    briefcase.scale.setScalar(caseOn);
+                    briefcase.rotation.z = stepping ? Math.sin(stepPhase) * 0.28 : 0;
                 }
 
                 if (lift > 0.01 || travel > 0.001) _idleWalkActive = true;

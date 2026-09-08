@@ -15,6 +15,8 @@ const snap = () => f.evaluate(() => ({
   real: components.map(c => `${c.position.x.toFixed(3)},${c.position.y.toFixed(3)},${c.position.z.toFixed(3)}`).join('|'),
   mesh: components.map(c => `${c.mesh.position.x.toFixed(3)},${c.mesh.position.y.toFixed(3)},${c.mesh.position.z.toFixed(3)}`).join('|'),
   legsOn: components.filter(c => c._walkLegs && c._walkLegs.visible).length,
+  hatOn: components.filter(c => c._walkHat && c._walkHat.visible).length,
+  caseOn: components.filter(c => c._walkCase && c._walkCase.visible).length,
   reason: window.__ct3dIdle?.reason, since: window.__ct3dIdle?.msSinceInput,
 }));
 
@@ -30,7 +32,7 @@ const samples = [];
 for (let i = 0; i < 18; i++) {
   await page.waitForTimeout(800);
   const sm = await snap(); samples.push(sm);
-  console.log(`   t+${((i+1)*0.8).toFixed(1)}s walking=${sm.walking} legs=${sm.legsOn} since=${sm.since} blocked=${sm.reason}`);
+  console.log(`   t+${((i+1)*0.8).toFixed(1)}s walking=${sm.walking} legs=${sm.legsOn} hat=${sm.hatOn} case=${sm.caseOn} since=${sm.since} blocked=${sm.reason}`);
 }
 
 const moved  = samples.filter(s => s.mesh !== before.mesh);
@@ -38,6 +40,8 @@ const walked = samples.filter(s => s.walking);
 const legs   = samples.filter(s => s.legsOn > 0);
 check('walk.happens', moved.length > 0, `${moved.length}/18 samples had parts off their seats`);
 check('walk.flag', walked.length > 0, `__ct3dIdle.walking true on ${walked.length}/18 (drives the nameplate throttle)`);
+check('walk.props', samples.some(s => s.hatOn > 0) && samples.some(s => s.caseOn > 0),
+  `hats peak ${Math.max(...samples.map(s => s.hatOn))}, briefcases peak ${Math.max(...samples.map(s => s.caseOn))}`);
 check('walk.legs', legs.length > 0, `legs visible on ${legs.length}/18, peak ${Math.max(...samples.map(s => s.legsOn))} parts`);
 
 // THE load-bearing assertion.
@@ -54,7 +58,8 @@ await page.waitForTimeout(120);           // a couple of frames, not an animatio
 const after = await snap();
 check('walk.caught-out', midStride.mesh !== before.mesh, 'parts were genuinely away when input landed');
 check('walk.snap-back', after.mesh === before.mesh, after.mesh === before.mesh ? 'every part back on its exact transform' : 'parts did not return to their seats');
-check('walk.legs-stowed', after.legsOn === 0, `${after.legsOn} parts still showing legs`);
+check('walk.kit-stowed', after.legsOn === 0 && after.hatOn === 0 && after.caseOn === 0,
+  `legs ${after.legsOn}, hats ${after.hatOn}, cases ${after.caseOn} left showing`);
 
 const errs = logs.filter(l => l.type === 'pageerror' || l.type === 'weberror');
 check('console.clean', errs.length === 0, errs.length ? errs[0].text : 'no page errors');
