@@ -34,10 +34,12 @@ export default function StudioCredit({ className }: StudioCreditProps) {
           condition (demo mode, or a purchase flow), so without this one there
           is no plain way to reach the listing from inside the app.
 
-          The address is introduced by what it is FOR. The same app runs in a
-          desktop browser, which is where a 3D circuit is actually comfortable
-          to build — big screen, a mouse — and someone holding a phone has no
-          way to guess that from a bare domain. It also stays written out as
+          The address is introduced by what it is FOR. The same app runs on a
+          computer, which is where a 3D circuit is actually comfortable to
+          build — big screen, a mouse — and someone holding a phone has no way
+          to guess that from a bare domain. (Never say "browser" here: the
+          domain IS the product, and the word makes it sound like a technical
+          requirement.) It also stays written out as
           plain readable text on purpose: you cannot click a link on your phone
           onto your computer, you retype it, so the address has to be legible
           rather than hidden behind a word. */}

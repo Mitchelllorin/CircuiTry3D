@@ -85,7 +85,7 @@ info@circuitry3d.app
 
 1. **Safety**: "Students learn what component failure looks like before they're in a real lab. That reduces the chance of damage to equipment — or to themselves."
 2. **Standards alignment**: "Our platform maps to NGSS PS3 (Energy) and CTE Electronics pathway standards — failure analysis is explicitly in those frameworks."
-3. **No hardware required**: "Runs in any browser. No installation, no device requirements beyond a Chromebook or tablet."
+3. **No hardware required**: "Runs online at circuitry3d.app, or as an Android app. No installation, no device requirements beyond a Chromebook or tablet."
 4. **Proven concepts**: "Physics-accurate failure modeling is used in professional EDA tools costing thousands per seat. We bring that capability to the high school classroom."
 
 ### Grant Funding Angle

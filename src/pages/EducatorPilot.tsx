@@ -62,7 +62,7 @@ Looking forward to hearing from you!
 
 I wanted to share an opportunity that could strengthen our [Physics / Electronics / CTE] program at essentially no cost.
 
-CircuiTry3D is a browser-based 3D circuit simulator that lets students build and stress-test real circuits at the atomic level — including component failure physics (short circuits, thermal runaway, etc.) that are impossible to replicate safely in a lab. I've been exploring their Educator Pilot Program and believe it would be an excellent fit for [School Name].
+CircuiTry3D is a 3D circuit simulator that lets students build and stress-test real circuits at the atomic level — including component failure physics (short circuits, thermal runaway, etc.) that are impossible to replicate safely in a lab. I've been exploring their Educator Pilot Program and believe it would be an excellent fit for [School Name].
 
 Pilot terms (for reference):
 • Completely free teacher access — no individual subscription required
@@ -121,7 +121,7 @@ CLASS CONTEXT
 WHAT'S WORKING WELL
 • [Specific feature or workflow students responded to positively]
 • [Any "aha moment" or unexpected learning outcome]
-• [Ease of access / browser reliability]
+• [Ease of access / how reliably it ran on your devices]
 
 FRICTION POINTS
 • [Anything that slowed the lesson or confused students]

@@ -397,7 +397,7 @@ export default function PlayStoreCompliance() {
           <p className="screenshot-download-note">
             <strong>Tip:</strong> Use the{" "}
             <Link to="/screenshots" style={{ color: "var(--brand-primary)" }}>Screenshot Generator</Link>{" "}
-            to produce fresh screenshots at any time directly in your browser — no build step needed.
+            to produce fresh screenshots at any time, right here — no build step needed.
             Then re-upload to the Play Console.
           </p>
         </div>
