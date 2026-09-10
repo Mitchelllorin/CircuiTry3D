@@ -1444,6 +1444,25 @@
             /* Anchor point is bottom-centre of label so it always floats
                completely above the 3D component — never on top of it. */
             transform: translate(-50%, -100%);
+            /* Width must come from the TEXT and nothing else. This is absolutely
+               positioned, so a shrink-to-fit box gets squeezed by however much room
+               is left between its anchor and the edge of the screen — and the idle
+               turntable walks every plate toward an edge and back. Measured: a plate
+               drifting toward the right edge changed width by 25px without one
+               character of its readout changing, and since the box is centred on its
+               anchor, half of every one of those pixels came straight off the text
+               position. That is the shake. max-content takes the screen edge out of
+               the layout entirely; the plate simply overhangs. */
+            width: max-content;
+            max-width: none;
+            white-space: nowrap;
+            /* Fixed-width digits. Because the plate is CENTRED on its anchor, any
+               change in text width moves every line in it by half the difference —
+               so a live reading ticking 0.91 → 1.01 A used to shove the whole
+               readout sideways. Tabular figures make every digit the same width,
+               which leaves only a genuine change in digit COUNT able to move it. */
+            font-variant-numeric: tabular-nums;
+            font-feature-settings: "tnum" 1;
         }
         
         .branding-overlay {
@@ -5448,11 +5467,25 @@ body.android-optimized .zoom-btn {
         // something asks it to, so the harness hangs there with gaps in it — the
         // circuit is still built, the staff have simply gone home.
         const IDLE_WALK_DELAY_MS = 45000;  // stillness before the first one stands
-        const WALK_STAGGER_MS    = 300;    // gap between one part rising and the next
+        // ── Pacing: an end of shift, not a fire drill ────────────────────────────
+        // The first cut released everybody 300 ms apart, so on any real board the
+        // entire staff was up and moving inside a second and a half. That is a
+        // evacuation. What was asked for is a shift ending: people leave in ones and
+        // twos, somebody is still packing up while the pair ahead are halfway to the
+        // door, and it takes a while for the place to empty.
+        //
+        // So they go out in PAIRS, and a pair does not stand until the pair ahead of
+        // them is most of the way off the board. Two on their feet at once is the
+        // ceiling, and most of the time it is two who are nowhere near each other in
+        // the cycle — one leaving, one already strolling back. WALK_STAGGER_MS is
+        // deliberately just under stand + out, which is what enforces that.
+        const WALK_PAIR_SIZE     = 2;      // how many clock out together
+        const WALK_PAIR_OFFSET_MS = 1100;  // the second of a pair follows a beat behind
         // Long enough for three beats, because the gag is a sequence and not a pose:
         // stand up, hat on, pick up the briefcase. At 700 ms they happened on top of
-        // each other and read as one blurry twitch.
-        const WALK_STAND_MS      = 1100;   // pushing up, then hat, then briefcase
+        // each other and read as one blurry twitch. Slower now to match the stroll —
+        // a part that snaps to its feet and then ambles off reads as two animations.
+        const WALK_STAND_MS      = 1800;   // pushing up, then hat, then briefcase
         // A stroll, not a sprint. The first cut moved them 20 world units in 2.6 s,
         // which cleared the screen so fast the board was simply empty two seconds in —
         // you never saw anybody walk, which is the entire joke.
@@ -5461,16 +5494,27 @@ body.android-optimized .zoom-btn {
         // ~17 units of travel to actually clear the frame. The exit distance therefore
         // has to stay large — shrink it and they stop half-visible and stand there,
         // which kills the "they've gone home" illusion. The speed is what got tuned
-        // instead: this is ~4.3 units/s, slow enough to read as a stroll and still get
-        // everybody off before the offstage beat.
-        const WALK_OUT_MS        = 4200;   // the stroll off the board
-        const WALK_AWAY_MS       = 1600;   // offstage
-        const WALK_BACK_MS       = 4200;   // the stroll back
-        const WALK_SIT_MS        = 800;    // hat off, case down, settling onto the bench
+        // instead: ~17 units over 9 s is ~1.9 units/s, an unhurried walking pace, and
+        // slow enough that you can watch one particular part make the whole trip.
+        const WALK_OUT_MS        = 9000;   // the stroll off the board
+        const WALK_AWAY_MS       = 2600;   // offstage
+        const WALK_BACK_MS       = 9000;   // the stroll back
+        const WALK_SIT_MS        = 1400;   // hat off, case down, settling onto the bench
         const WALK_CYCLE_MS      = WALK_STAND_MS + WALK_OUT_MS + WALK_AWAY_MS
                                  + WALK_BACK_MS + WALK_SIT_MS;
+        // Gap between one pair clocking out and the next pair standing. A whole cycle
+        // plus a breath, and that number is not arbitrary: anything shorter and pair
+        // N is still strolling back while pair N+1 is heading out, which puts FOUR
+        // parts on the floor at once and is exactly the fire-drill look this was
+        // supposed to replace. One pair on the floor at a time is the whole brief.
+        // The cost is honest — a board of eight parts takes four cycles to empty and
+        // refill — but this only ever runs on a phone somebody has already put down.
+        const WALK_STAGGER_MS    = WALK_CYCLE_MS + 800;
         const WALK_LIFT          = 0.95;   // how far the body rides above its seat
-        const WALK_STEP_HZ       = 2.6;    // paces per second
+        // Paces per second. Tied to the travel speed, not chosen for its own sake: at
+        // ~1.9 units/s this is ~1.2 units per pace. Leave it at the old 2.6 Hz and the
+        // legs scissor away far faster than the body advances — they moonwalk.
+        const WALK_STEP_HZ       = 1.6;
         const WALK_TURN_RATE     = 0.006;  // how fast they pivot toward the door
         let _idleWalkActive   = false;  // a part is off its seat this frame
         let _idleWalkStartedAt = 0;     // performance.now() when the shift ended
@@ -6586,7 +6630,19 @@ body.android-optimized .zoom-btn {
 
             updateLabelPosition() {
                 if (!this.labelDiv || !this.mesh) return;
-                
+
+                // A part that has clocked out gets no readout. Nameplates are pinned to
+                // mesh.matrixWorld, and a walking part bobs on every pace — so the live
+                // metrics were physically bouncing up and down a couple of times a
+                // second, which on screen is just the numbers shaking. Hiding them is
+                // also the honest answer: the readout describes a part sitting in the
+                // circuit, and this one has gone home. It comes straight back when they
+                // sit down, and resetIdleWalk clears the flag if you touch anything.
+                if (this._walkOff) {
+                    this.labelDiv.style.display = 'none';
+                    return;
+                }
+
                 const worldPos = new THREE.Vector3();
                 worldPos.setFromMatrixPosition(this.mesh.matrixWorld);
                 worldPos.y += 2.5; // Anchor just above the component
@@ -6605,8 +6661,19 @@ body.android-optimized .zoom-btn {
 
             updateLabels() {
                 if (!this.labelDiv) return;
-                this.labelDiv.innerHTML = this.renderNameplateMarkup();
-                
+                // Rewriting identical innerHTML is not free: it drops every glyph in the
+                // plate and re-lays it out, and analyzeCircuit re-runs every couple of
+                // seconds on a circuit whose numbers have not changed at all. Guarding
+                // it also means the only time a nameplate's WIDTH can change is when the
+                // reading genuinely changed — and width is movement here, because the
+                // plate is centred on its anchor (translate(-50%)), so a wider readout
+                // slides every line in it sideways by half the difference.
+                const markup = this.renderNameplateMarkup();
+                if (markup !== this._lastNameplateMarkup) {
+                    this._lastNameplateMarkup = markup;
+                    this.labelDiv.innerHTML = markup;
+                }
+
                 this.updateLabelPosition();
             }
 
@@ -10270,11 +10337,24 @@ body.android-optimized .zoom-btn {
                 if (component._walkHat)  component._walkHat.visible  = false;
                 if (component._walkCase) component._walkCase.visible = false;
                 component._walkFace = 0;
+                // Back on the payroll: the nameplate is allowed to show again, and
+                // updateLabelPosition puts it back on the next label pass.
+                component._walkOff = false;
             }
             _walkers = [];
             _idleWalkStartedAt = 0;
             _idleWalkPrevTime  = 0;
             _idleWalkActive    = false;
+        }
+
+        // How long the i-th part in the queue waits before it stands. Whole pairs move
+        // together, one pair per WALK_STAGGER_MS, and the second of each pair trails
+        // its partner by a beat so the two are never in lockstep — nothing looks more
+        // mechanical than two parts standing on the same frame.
+        function walkerDelay(i) {
+            if (i <= 0) return 0;
+            return Math.floor(i / WALK_PAIR_SIZE) * WALK_STAGGER_MS
+                 + (i % WALK_PAIR_SIZE) * WALK_PAIR_OFFSET_MS;
         }
 
         // Runs immediately after updateIdleOrbit, and that ordering is load-bearing:
@@ -10329,7 +10409,7 @@ body.android-optimized .zoom-btn {
 
             // Everyone home and seated → clear the stage and restart the countdown, so
             // an abandoned phone gets another clock-out one full delay later.
-            if (elapsed > WALK_CYCLE_MS + WALK_STAGGER_MS * Math.max(0, _walkers.length - 1)) {
+            if (elapsed > WALK_CYCLE_MS + walkerDelay(_walkers.length - 1)) {
                 resetIdleWalk();
                 _lastUserInputAt = now;
                 return;
@@ -10339,7 +10419,7 @@ body.android-optimized .zoom-btn {
                 const c = _walkers[i];
                 if (!c.mesh) continue;
 
-                let t = elapsed - i * WALK_STAGGER_MS;   // this one's own clock
+                let t = elapsed - walkerDelay(i);        // this one's own clock
                 let lift = 0, travel = 0, stepping = false, faceTarget = 0;
                 let hatOn = 0, caseOn = 0;
                 const ramp = (x) => Math.max(0, Math.min(1, x));
@@ -10375,9 +10455,24 @@ body.android-optimized .zoom-btn {
                     lift = 0; travel = 0;                           // home, seated
                 }
 
-                // Bob rides on the lift so it fades out as they sit, instead of the
-                // body twitching at the exact moment it lands on the bench.
-                const bob = stepping ? Math.abs(Math.sin(stepPhase)) * 0.06 * lift : 0;
+                // ── Gait ─────────────────────────────────────────────────────────
+                // The first cut swung the legs and left the body bolt upright, which
+                // read as Riverdance: furious footwork under a torso that has no idea
+                // it is happening. A body walks too. Three things move together, all
+                // riding on `lift` so they fade out as somebody sits rather than
+                // twitching at the moment they land on the bench:
+                //   RISE  — twice per stride, once per foot, hence the abs(). This is
+                //           the one that was already here, at a third of the size.
+                //   ROLL  — the weight shifts onto whichever leg is planted, so the
+                //           body tips toward it. Once per stride, in step with the hips
+                //           below (same stepPhase, no abs), which is what ties the
+                //           torso to the legs instead of leaving them independent.
+                //   LEAN  — you fall forwards into a walk and catch yourself. A
+                //           constant tilt while travelling; it comes off when they stop.
+                const gait = stepping ? lift : 0;
+                const bob  = Math.abs(Math.sin(stepPhase)) * 0.16 * gait;
+                const roll = Math.sin(stepPhase) * 0.11 * gait;
+                const lean = 0.12 * gait;
                 const along = _walkExitDist * travel;
                 c.mesh.position.set(
                     c.position.x + _walkExitDir.x * along,
@@ -10389,9 +10484,9 @@ body.android-optimized .zoom-btn {
                 // 60 or 120 fps.
                 c._walkFace += (faceTarget - c._walkFace) * Math.min(1, dt * WALK_TURN_RATE);
                 c.mesh.rotation.set(
-                    c._walkHomeRot.x,
+                    c._walkHomeRot.x + lean,
                     c._walkHomeRot.y + c._walkFace,
-                    c._walkHomeRot.z,
+                    c._walkHomeRot.z + roll,
                     c._walkHomeRot.order
                 );
 
@@ -10421,7 +10516,10 @@ body.android-optimized .zoom-btn {
                     briefcase.rotation.z = stepping ? Math.sin(stepPhase) * 0.28 : 0;
                 }
 
-                if (lift > 0.01 || travel > 0.001) _idleWalkActive = true;
+                // Read by updateLabelPosition: a part that is off its seat carries no
+                // nameplate, so the live metrics cannot ride the walk bob and shake.
+                c._walkOff = lift > 0.01 || travel > 0.001;
+                if (c._walkOff) _idleWalkActive = true;
             }
 
             __ct3dIdle.walking = _idleWalkActive;
