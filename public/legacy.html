@@ -1465,6 +1465,28 @@
             font-feature-settings: "tnum" 1;
         }
         
+        /* A line somebody says on their way out. Deliberately built like a nameplate
+           and not like a speech bubble: no background, no border, no padding, just
+           text with a shadow hard enough to survive whatever is behind it. A padded
+           slab floating over the board would read as UI, and UI is the one thing this
+           gag must not look like. */
+        .walk-speech {
+            position: absolute;
+            pointer-events: none;
+            z-index: 12;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            font-style: italic;
+            font-weight: 600;
+            color: #e8eef6;
+            white-space: nowrap;
+            width: max-content;
+            text-shadow:
+                0 0 2px rgba(0, 0, 0, 0.95),
+                0 0 8px rgba(0, 0, 0, 0.85);
+            transform: translate(-50%, -100%);
+            opacity: 0;
+        }
+
         .branding-overlay {
             position: fixed;
             top: 20px;
@@ -5500,6 +5522,15 @@ body.android-optimized .zoom-btn {
         const WALK_AWAY_MS       = 2600;   // offstage
         const WALK_BACK_MS       = 9000;   // the stroll back
         const WALK_SIT_MS        = 1400;   // hat off, case down, settling onto the bench
+        // ── The goodbyes ─────────────────────────────────────────────────────────
+        // Ralph Wolf and Sam Sheepdog, which is the reference the user gave: they
+        // spend the whole day trying to kill each other and then clock out on
+        // first-name terms, perfectly cordial. The comedy is entirely in how ORDINARY
+        // it is, so the lines are flat and short and nobody is doing a bit.
+        const WALK_TALK_AT_MS    = 2400;   // into the stroll before the first one speaks
+        const WALK_TALK_REPLY_MS = 1800;   // the beat before the answer comes back
+        const WALK_TALK_HOLD_MS  = 2800;   // how long a line stays up
+        const WALK_TALK_FADE_MS  = 320;    // in and out
         const WALK_CYCLE_MS      = WALK_STAND_MS + WALK_OUT_MS + WALK_AWAY_MS
                                  + WALK_BACK_MS + WALK_SIT_MS;
         // Gap between one pair clocking out and the next pair standing. A whole cycle
@@ -5516,6 +5547,38 @@ body.android-optimized .zoom-btn {
         // legs scissor away far faster than the body advances — they moonwalk.
         const WALK_STEP_HZ       = 1.6;
         const WALK_TURN_RATE     = 0.006;  // how fast they pivot toward the door
+
+        // ── The payroll ──────────────────────────────────────────────────────────
+        // Names for the goodbyes, and the user drew a hard line around them:
+        //
+        //   "whatever we do it cannot affect anything else of course but ya sure
+        //    assign them names ... so long as this is all just for the gag ... but it
+        //    cant affect anything else its not even there doesnt exist its a myth"
+        //
+        // So this is the SAME safety argument as mesh.position vs component.position,
+        // one level up. A name is never written to the component's data, never
+        // serialised, never shown on a nameplate, never seen by the solver, the
+        // netlist, a save file or the parts list. It is computed onto a transient
+        // `_walkName` when somebody stands up and wiped by resetIdleWalk when they sit
+        // back down. Outside the twelve seconds of the gag these people do not exist.
+        // drive-101 asserts it: the component payload has to come back byte-identical.
+        //
+        // Deliberately unremarkable, and of a period with the bowler hat. A name that
+        // is trying to be funny kills the joke, which is that this is just Tuesday.
+        const WALK_NAMES = {
+            battery: 'Gus',      resistor: 'Bill',     led: 'Ralph',      switch: 'Mac',
+            capacitor: 'Doug',   'capacitor-ceramic': 'Pete',             inductor: 'Hank',
+            diode: 'Vern',       'zener-diode': 'Hal', photodiode: 'Merle',
+            thermistor: 'Otis',  crystal: 'Cliff',     bjt: 'Marv',       'bjt-npn': 'Wally',
+            'bjt-pnp': 'Dutch',  darlington: 'Curtis', mosfet: 'Rex',     fuse: 'Stan',
+            potentiometer: 'Dale', lamp: 'Chuck',      ground: 'Earl',    ac_source: 'Roy',
+            motor: 'Sam',        speaker: 'Lou',       opamp: 'Sid',      transformer: 'Walt',
+            relay: 'Norm',       'voltage-regulator': 'Frank',
+        };
+        // For the second resistor on the board. Sharing a name would read as a bug.
+        const WALK_SPARE_NAMES = ['Ernie', 'Floyd', 'Wendell', 'Buster', 'Sarge', 'Moe',
+                                  'Cy', 'Rube', 'Elmer', 'Ike', 'Woody', 'Pinky'];
+
         let _idleWalkActive   = false;  // a part is off its seat this frame
         let _idleWalkStartedAt = 0;     // performance.now() when the shift ended
         let _idleWalkPrevTime = 0;      // for frame-rate-independent turning
@@ -10340,6 +10403,13 @@ body.android-optimized .zoom-btn {
                 // Back on the payroll: the nameplate is allowed to show again, and
                 // updateLabelPosition puts it back on the next label pass.
                 component._walkOff = false;
+                // The name goes with them. It exists for the length of the gag and
+                // then it does not exist at all — see the note on WALK_NAMES.
+                component._walkName = undefined;
+                if (component._walkSpeech) {
+                    component._walkSpeech.remove();
+                    component._walkSpeech = null;
+                }
             }
             _walkers = [];
             _idleWalkStartedAt = 0;
@@ -10355,6 +10425,53 @@ body.android-optimized .zoom-btn {
             if (i <= 0) return 0;
             return Math.floor(i / WALK_PAIR_SIZE) * WALK_STAGGER_MS
                  + (i % WALK_PAIR_SIZE) * WALK_PAIR_OFFSET_MS;
+        }
+
+        // Hands out first names for the length of the gag and no longer. Uniqueness
+        // matters — two parts answering to Bill reads as a bug, not a coincidence — so
+        // a duplicate takes the next unused spare. Nothing here touches the component's
+        // real data; see the note on WALK_NAMES.
+        function assignWalkNames(walkers) {
+            const taken = new Set();
+            for (const c of walkers) {
+                let name = WALK_NAMES[c.type] || 'Bud';
+                if (taken.has(name)) {
+                    name = WALK_SPARE_NAMES.find(s => !taken.has(s)) || (name + ' Jr');
+                }
+                taken.add(name);
+                c._walkName = name;
+            }
+        }
+
+        // What the i-th walker says on the way out, or '' for the stretch of the walk
+        // where nobody is saying anything — which is most of it.
+        //
+        // Both halves of a pair are timed off the PAIR's clock rather than their own,
+        // because their own clocks are already staggered by WALK_PAIR_OFFSET_MS and
+        // stacking one offset on the other put the answer a full three seconds after
+        // the question. Off the shared clock the reply lands on the beat.
+        function walkSpeechFor(i, pairT) {
+            const seat    = i % WALK_PAIR_SIZE;
+            const partner = _walkers[seat === 0 ? i + 1 : i - 1];
+            const sayAt   = WALK_STAND_MS + WALK_TALK_AT_MS + seat * WALK_TALK_REPLY_MS;
+            const since   = pairT - sayAt;
+            if (since < 0 || since > WALK_TALK_HOLD_MS) return null;
+
+            // Ramp in, hold, ramp out. Never a hard cut — a line that appears fully
+            // formed reads as a notification.
+            const fade = Math.min(1, since / WALK_TALK_FADE_MS,
+                                     (WALK_TALK_HOLD_MS - since) / WALK_TALK_FADE_MS);
+
+            // Odd number of parts, so the last one walks out alone. Somebody muttering
+            // goodnight to an empty room is funnier than pretending they have company.
+            if (!partner || !partner._walkName) {
+                return seat === 0 ? { text: 'Night.', fade } : null;
+            }
+            return {
+                text: seat === 0 ? `See ya tomorrow, ${partner._walkName}.`
+                                 : `Same to you, ${partner._walkName}.`,
+                fade
+            };
         }
 
         // Runs immediately after updateIdleOrbit, and that ordering is load-bearing:
@@ -10395,6 +10512,7 @@ body.android-optimized .zoom-btn {
                 // than crossing through each other.
                 _walkers = components.filter(c => c.mesh)
                     .sort((a, b) => b.position.dot(_walkExitDir) - a.position.dot(_walkExitDir));
+                assignWalkNames(_walkers);
                 for (const c of _walkers) {
                     c._walkHomeRot = c.mesh.rotation.clone();
                     c._walkFace    = 0;
@@ -10420,6 +10538,8 @@ body.android-optimized .zoom-btn {
                 if (!c.mesh) continue;
 
                 let t = elapsed - walkerDelay(i);        // this one's own clock
+                // The pair's shared clock, which is what the goodbyes are timed off.
+                const pairT = elapsed - Math.floor(i / WALK_PAIR_SIZE) * WALK_STAGGER_MS;
                 let lift = 0, travel = 0, stepping = false, faceTarget = 0;
                 let hatOn = 0, caseOn = 0;
                 const ramp = (x) => Math.max(0, Math.min(1, x));
@@ -10520,6 +10640,33 @@ body.android-optimized .zoom-btn {
                 // nameplate, so the live metrics cannot ride the walk bob and shake.
                 c._walkOff = lift > 0.01 || travel > 0.001;
                 if (c._walkOff) _idleWalkActive = true;
+
+                // ── Goodbyes ─────────────────────────────────────────────────────
+                // Anchored to the SEAT plus the travel, deliberately leaving out `bob`
+                // and `roll`. The nameplates had to be hidden during the walk because
+                // they rode the gait and shook (see updateLabelPosition); hanging a
+                // line of dialogue off the same bouncing transform would have walked
+                // straight back into it. The text glides, the part underneath it bobs.
+                const line = c._walkOff ? walkSpeechFor(i, pairT) : null;
+                if (line) {
+                    if (!c._walkSpeech) {
+                        c._walkSpeech = document.createElement('div');
+                        c._walkSpeech.className = 'walk-speech';
+                        c._walkSpeech.style.fontSize = isMobile ? '15px' : '13px';
+                        document.body.appendChild(c._walkSpeech);
+                    }
+                    if (c._walkSpeech.textContent !== line.text) c._walkSpeech.textContent = line.text;
+                    const say = worldToScreen(new THREE.Vector3(
+                        c.position.x + _walkExitDir.x * along,
+                        c.position.y + WALK_LIFT * lift + 2.9,
+                        c.position.z + _walkExitDir.z * along
+                    ));
+                    c._walkSpeech.style.left    = say.x + 'px';
+                    c._walkSpeech.style.top     = say.y + 'px';
+                    c._walkSpeech.style.opacity = say.z > 1 ? 0 : line.fade;
+                } else if (c._walkSpeech) {
+                    c._walkSpeech.style.opacity = 0;
+                }
             }
 
             __ct3dIdle.walking = _idleWalkActive;
