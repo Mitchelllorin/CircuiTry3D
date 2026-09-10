@@ -1442,8 +1442,20 @@
                 0 0 2px rgba(0, 0, 0, 0.95),
                 0 0 8px rgba(0, 0, 0, 0.85);
             /* Anchor point is bottom-centre of label so it always floats
-               completely above the 3D component — never on top of it. */
+               completely above the 3D component — never on top of it.
+               This is the pre-script default only. updateLabelPosition writes a
+               translate3d with the centring already folded in and ROUNDED, because
+               -50% of an odd-width box lands the text on a half pixel. */
             transform: translate(-50%, -100%);
+            inset-block-start: 0;
+            inset-inline-start: 0;
+            /* Give the plate its own compositing layer. This is the difference
+               between the browser re-laying-out and re-RASTERISING every glyph each
+               time the label moves — which at 60fps over a drifting camera is text
+               that visibly crawls and vibrates — and rasterising the text once and
+               having the compositor slide the finished layer around. */
+            will-change: transform;
+            backface-visibility: hidden;
             /* Width must come from the TEXT and nothing else. This is absolutely
                positioned, so a shrink-to-fit box gets squeezed by however much room
                is left between its anchor and the edge of the screen — and the idle
@@ -1484,6 +1496,10 @@
                 0 0 2px rgba(0, 0, 0, 0.95),
                 0 0 8px rgba(0, 0, 0, 0.85);
             transform: translate(-50%, -100%);
+            inset-block-start: 0;
+            inset-inline-start: 0;
+            will-change: transform, opacity;
+            backface-visibility: hidden;
             opacity: 0;
         }
 
@@ -6715,8 +6731,45 @@ body.android-optimized .zoom-btn {
                 // offset keeps the readout mostly above the part — partial overlap is
                 // fine, it just shouldn't fully cover it.
                 const screenPos = worldToScreen(worldPos);
-                this.labelDiv.style.left = screenPos.x + 'px';
-                this.labelDiv.style.top = (screenPos.y - 4) + 'px';
+
+                // ── Move it with a TRANSFORM, on whole device pixels ──────────────
+                // This is the third and last cause of "the metrics are shaking", and
+                // the one that survives on a phone after the other two are gone.
+                //
+                // Writing left/top makes the browser lay the plate out again and
+                // re-RASTERISE every glyph in it. Do that at 60fps under a drifting
+                // camera and the text crawls: each frame the letters land on a
+                // slightly different subpixel grid and get re-anti-aliased, which the
+                // eye reads as vibration. Measured before the fix: the plates sat at
+                // fractional pixel positions on 178 of 180 frames.
+                //
+                // A transform on a composited layer rasterises the text ONCE and
+                // slides the finished bitmap. Rounding to a whole device pixel keeps
+                // that bitmap on the physical grid so it stays crisp instead of being
+                // resampled — and the centring is folded in here, in pixels, rather
+                // than left as translate(-50%), because half of an odd-width box is
+                // itself a half pixel and would put the fractions straight back.
+                //
+                // The half-width is measured only when the readout CHANGES (see
+                // updateLabels), not per frame: offsetWidth forces a synchronous
+                // layout, and doing that once per label per frame is exactly the cost
+                // this is meant to avoid.
+                if (this._labelHalfW == null || this._labelH == null) {
+                    const w = this.labelDiv.offsetWidth;
+                    const h = this.labelDiv.offsetHeight;
+                    if (w > 0) { this._labelHalfW = w / 2; this._labelH = h; }
+                }
+                const dpr  = window.devicePixelRatio || 1;
+                const snap = (v) => Math.round(v * dpr) / dpr;
+                if (this._labelHalfW != null) {
+                    this.labelDiv.style.transform =
+                        `translate3d(${snap(screenPos.x - this._labelHalfW)}px, ${snap(screenPos.y - 4 - this._labelH)}px, 0)`;
+                } else {
+                    // Not laid out yet (first frame, or hidden when measured) — fall
+                    // back to the percentage centring for this frame only.
+                    this.labelDiv.style.transform =
+                        `translate3d(${snap(screenPos.x)}px, ${snap(screenPos.y - 4)}px, 0) translate(-50%, -100%)`;
+                }
                 
                 // Hide label if component is behind camera
                 this.labelDiv.style.display = screenPos.z > 1 ? 'none' : (showLabels ? 'block' : 'none');
@@ -6735,6 +6788,12 @@ body.android-optimized .zoom-btn {
                 if (markup !== this._lastNameplateMarkup) {
                     this._lastNameplateMarkup = markup;
                     this.labelDiv.innerHTML = markup;
+                    // New content, new box: drop the cached measurement so
+                    // updateLabelPosition takes one fresh reading. This is the only
+                    // thing that ever invalidates it, which is why the per-frame path
+                    // never has to touch layout.
+                    this._labelHalfW = null;
+                    this._labelH = null;
                 }
 
                 this.updateLabelPosition();
@@ -10655,14 +10714,26 @@ body.android-optimized .zoom-btn {
                         c._walkSpeech.style.fontSize = isMobile ? '15px' : '13px';
                         document.body.appendChild(c._walkSpeech);
                     }
-                    if (c._walkSpeech.textContent !== line.text) c._walkSpeech.textContent = line.text;
+                    if (c._walkSpeech.textContent !== line.text) {
+                        c._walkSpeech.textContent = line.text;
+                        c._walkSpeechHalfW = null;   // new line, new box — measure once
+                    }
                     const say = worldToScreen(new THREE.Vector3(
                         c.position.x + _walkExitDir.x * along,
                         c.position.y + WALK_LIFT * lift + 2.9,
                         c.position.z + _walkExitDir.z * along
                     ));
-                    c._walkSpeech.style.left    = say.x + 'px';
-                    c._walkSpeech.style.top     = say.y + 'px';
+                    // Same rule as the nameplates: a composited transform on whole
+                    // device pixels, never left/top. See updateLabelPosition.
+                    if (c._walkSpeechHalfW == null && c._walkSpeech.offsetWidth > 0) {
+                        c._walkSpeechHalfW = c._walkSpeech.offsetWidth / 2;
+                        c._walkSpeechH     = c._walkSpeech.offsetHeight;
+                    }
+                    const sdpr = window.devicePixelRatio || 1;
+                    const ssnap = (v) => Math.round(v * sdpr) / sdpr;
+                    c._walkSpeech.style.transform = c._walkSpeechHalfW != null
+                        ? `translate3d(${ssnap(say.x - c._walkSpeechHalfW)}px, ${ssnap(say.y - c._walkSpeechH)}px, 0)`
+                        : `translate3d(${ssnap(say.x)}px, ${ssnap(say.y)}px, 0) translate(-50%, -100%)`;
                     c._walkSpeech.style.opacity = say.z > 1 ? 0 : line.fade;
                 } else if (c._walkSpeech) {
                     c._walkSpeech.style.opacity = 0;

@@ -35,6 +35,16 @@ const sample = () => f.evaluate(() => {
       shown: c.labelDiv.style.display !== 'none' && r.width > 0,
       top: +r.top.toFixed(2),
       w: +r.width.toFixed(2),
+      // Moved by transform, never by left/top: left/top re-lay-out and
+      // re-rasterise every glyph, which at frame rate is text that crawls.
+      usesOffsets: !!(c.labelDiv.style.left || c.labelDiv.style.top),
+      // ...and landing on a whole DEVICE pixel, so the glyph bitmap sits on the
+      // physical grid instead of being resampled a little differently each frame.
+      offGrid: (() => {
+        const d = window.devicePixelRatio || 1;
+        const off = (v) => Math.abs(v * d - Math.round(v * d));
+        return Math.max(off(r.left), off(r.top)) > 0.02;
+      })(),
       text: c.labelDiv.innerText.replace(/\s+/g, ' ').trim(),
       // How far the mesh has been shoved off the seat the solver still believes
       // it occupies. Non-zero means the walk (or anything else) is driving it.
@@ -67,6 +77,18 @@ check('rest.width-stable', widthDrift <= 1,
   `widest swing ${widthDrift.toFixed(2)}px (budget 1px — tabular-nums + the markup guard in updateLabels)`);
 check('rest.text-stable', textChurn === 0,
   textChurn ? `${textChurn} plates rewrote their readout with nothing happening` : 'no plate rewrote itself at rest');
+
+// The third cause, and the one that only shows up on a real screen: a plate moved
+// with left/top is laid out and re-rasterised on every update, so at 60fps under a
+// drifting camera the letters land on a different subpixel grid each frame and
+// crawl. A composited transform on whole device pixels rasterises once.
+const offsetMovers = rest.flatMap(s => s.rows.filter(r => r.usesOffsets)).length;
+const offGrid = rest.flatMap(s => s.rows.filter(r => r.offGrid)).length;
+const restSamples = rest.reduce((n, s) => n + s.rows.length, 0);
+check('rest.transform-not-offsets', offsetMovers === 0,
+  offsetMovers ? `${offsetMovers}/${restSamples} samples still positioned with left/top` : 'every plate is moved by transform alone');
+check('rest.whole-device-pixels', offGrid === 0,
+  offGrid ? `${offGrid}/${restSamples} samples sat off the device pixel grid — this is the crawl you see on a phone` : 'every plate landed on a whole device pixel');
 
 // ── While the crew is clocked out ────────────────────────────────────────────
 // THE assertion. A part that is off its seat carries no nameplate, so there is

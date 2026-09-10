@@ -254,7 +254,19 @@
   /* Narrower than it was (180px). With a full roster these plates are the
      densest thing on screen, and a wide plate collides with its neighbours long
      before a narrow one does. */
-  max-inline-size: 116px;
+  /* FIXED, not max-. The plate is written with translate(-50%), i.e. centred on
+     its anchor, so its width IS its horizontal position: shrink-to-fit meant that
+     every time a compact plate's load ticked from 62% to 100% the box got wider
+     and the whole readout slid sideways under itself. That is the shake. A fixed
+     box cannot move, and the content is centred inside it so nothing drifts off
+     its part. Same rule as the builder's .component-label-floating. */
+  inline-size: 116px;
+  text-align: center;
+  /* Rasterise the text once and let the compositor slide it. Moving a plate by
+     re-layout re-anti-aliases every glyph, which at frame rate reads as crawling
+     text — see updateLabelPosition in legacy.html for the long version. */
+  will-change: transform;
+  backface-visibility: hidden;
   padding: 0 2px;
   /* NO panel — float the readout directly over the 3D like the main builder's
      component labels. A tight text-shadow carries legibility against the dark
@@ -2550,6 +2562,9 @@
 .arena-nameplate__brief {
   display: none;
   align-items: baseline;
+  /* Centred in the now-fixed-width plate, so the compact readout still sits over
+     its part instead of hanging off the left edge of the box. */
+  justify-content: center;
   gap: 6px;
   white-space: nowrap;
 }

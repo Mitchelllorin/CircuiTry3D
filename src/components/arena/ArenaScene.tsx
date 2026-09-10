@@ -4962,9 +4962,20 @@ export function ArenaScene({
           plate.bottom = Math.max(plate.bottom, plate.height + plateCeiling);
         }
 
+        // Land every plate on a whole DEVICE pixel, with the centring folded in as
+        // pixels rather than left as translate(-50%).
+        //
+        // Two reasons, and they are the same two the builder's nameplates were fixed
+        // for. A fractional position makes the compositor resample the plate's text a
+        // little differently every frame, which the eye reads as the letters
+        // vibrating; and -50% of an odd-width box is itself a half pixel, so the
+        // percentage form puts the fraction straight back even when the anchor is
+        // clean. The width is fixed in CSS now, so halfPlate is a constant.
+        const dpr = window.devicePixelRatio || 1;
+        const snap = (value: number) => Math.round(value * dpr) / dpr;
         for (const plate of plateLayout) {
           plate.element.style.transform =
-            `translate3d(${plate.x}px, ${plate.bottom}px, 0) translate(-50%, -100%)`;
+            `translate3d(${snap(plate.x - plate.width / 2)}px, ${snap(plate.bottom - plate.height)}px, 0)`;
         }
         plateLayout.length = 0;
 

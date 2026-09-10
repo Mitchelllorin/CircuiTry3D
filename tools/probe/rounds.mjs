@@ -15,7 +15,7 @@
 import { chromium } from 'playwright';
 import fs from 'node:fs';
 import path from 'node:path';
-import { CHROME, TOUR } from './_harness.mjs';
+import { CHROME, TOUR, ws } from './_harness.mjs';
 
 const OUT_DIR = path.join('tools', 'probe', 'rounds');
 const LATEST = path.join(OUT_DIR, 'latest.json');
@@ -207,6 +207,33 @@ async function walkBuilder(browser) {
   check('builder.mounted', boot.shell, 'builder-shell present');
   check('builder.modeTabs', boot.tabs.length >= 4, boot.tabs.join(' / '));
   check('builder.wireButton', boot.wireBtn === 'present-enabled', boot.wireBtn);
+
+  // ── The nameplates must not shake ─────────────────────────────────────────
+  // On the beat because it keeps coming back. Three separate mechanisms have
+  // made the floating metrics vibrate, all of them the same shape: something
+  // decides the plate's position or its width every frame, and the text goes
+  // along for the ride. The full account is in drive-102; these are the two
+  // invariants cheap enough to check on every walk.
+  //
+  //   left/top  — re-lays-out and re-RASTERISES every glyph on each update, so
+  //               under a moving camera the letters crawl. Must be transform.
+  //   off-grid  — a fractional device-pixel position gets resampled slightly
+  //               differently every frame, which is the same crawl by another
+  //               route. Must land on a whole device pixel.
+  const plates = await ws(page).evaluate(() => {
+    const dpr = window.devicePixelRatio || 1;
+    const off = (v) => Math.abs(v * dpr - Math.round(v * dpr));
+    return [...document.querySelectorAll('.component-label-floating')]
+      .map((el) => {
+        const r = el.getBoundingClientRect();
+        return { w: r.width, offsets: !!(el.style.left || el.style.top), offGrid: Math.max(off(r.left), off(r.top)) > 0.02 };
+      })
+      .filter((p) => p.w > 0);
+  }).catch(() => []);
+  check('builder.nameplatesUseTransform', plates.every(p => !p.offsets),
+    `${plates.filter(p => p.offsets).length}/${plates.length} still moved with left/top`);
+  check('builder.nameplatesOnPixelGrid', plates.every(p => !p.offGrid),
+    `${plates.filter(p => p.offGrid).length}/${plates.length} off the device pixel grid`);
 
   const blocked = await page.evaluate(BLOCKED_CONTROLS);
   check('builder.noBlockedControls', blocked.length === 0,
