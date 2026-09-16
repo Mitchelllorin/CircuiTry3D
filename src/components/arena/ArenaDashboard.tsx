@@ -13,6 +13,11 @@ type ArenaDashboardProps = {
   onSeriesOhmsChange: (ohms: number) => void;
   /** Throwing the switch runs the bench. */
   onThrowSwitch: () => void;
+  /** Which bench you are standing at — one part to failure, or a field of them. */
+  mode: "bench" | "battle";
+  onSwitchMode: (mode: "bench" | "battle") => void;
+  /** Put the bench back to untested: clears failures, scorch and the result. */
+  onReset: () => void;
   /**
    * Reports how tall the console currently is, so the scene can compose the
    * circuit into the space left above it. Measured rather than assumed: the
@@ -59,6 +64,9 @@ export function ArenaDashboard({
   seriesOhms,
   onSeriesOhmsChange,
   onThrowSwitch,
+  mode,
+  onSwitchMode,
+  onReset,
   onHeightChange,
 }: ArenaDashboardProps) {
   const rootRef = useRef<HTMLElement | null>(null);
@@ -168,6 +176,41 @@ export function ArenaDashboard({
             aria-label="Series resistance in the supply line"
           />
         </label>
+
+        {/* ── Bench row ─────────────────────────────────────────────────
+            Which bench, and put it back. These lived in a params panel that
+            covered ~60% of a phone — y208 to y757 — so the 3D bench the arena
+            exists to show was a strip at the top of the screen. Everything else
+            that panel held was already on the quick bar (parts, conditions) or
+            this console (the switch); these two were the only reason left to
+            have it. Silkscreen text, no boxes: they are legends on the panel,
+            not a second row of buttons. */}
+        <div className="arena-dash__bench-row">
+          <div className="arena-dash__mode" role="group" aria-label="Bench">
+            {(
+              [
+                ["bench", "Solo"],
+                ["battle", "Battle"],
+              ] as const
+            ).map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                className={`arena-dash__mode-btn${mode === value ? " is-on" : ""}`}
+                aria-pressed={mode === value}
+                // Not mid-run: walking to the other bench would abandon a test
+                // that is still cooking a part.
+                disabled={running && mode !== value}
+                onClick={() => mode !== value && onSwitchMode(value)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <button type="button" className="arena-dash__reset" onClick={onReset}>
+            ↺ Reset
+          </button>
+        </div>
 
         {/* The switch. Still the thing that starts the bench, and still the
             biggest control on the panel, because it is the one you throw. */}

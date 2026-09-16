@@ -4346,8 +4346,6 @@ export default function Builder() {
       {activeWorkspacePanelMode === "arena" && (
         <ArenaView
           variant="workspace"
-          panelOpen={isWorkspacePanelOpen}
-          onTogglePanel={() => setWorkspacePanelOpen((open) => !open)}
           onNavigateBack={closeArenaWorkspace}
         />
       )}

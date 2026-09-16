@@ -19,6 +19,12 @@ type ArenaQuickBarProps = {
   /** Rendered inside the third sheet — see the Results button. */
   board: ReactNode;
   /**
+   * Shown under the picker in the Parts sheet — the F.U.S.E. forecast. It is
+   * how you decide WHICH part is worth a run, so it belongs where you choose
+   * the part, not in a panel you have to open over the bench to read.
+   */
+  partsFooter?: ReactNode;
+  /**
    * One more control on the end of the strip — battle mode puts Ramp/Free run
    * here. It belongs with these and not on the console: like Parts and
    * Conditions it says what the next run IS, where the console's faders and
@@ -59,6 +65,7 @@ export function ArenaQuickBar({
   onSelectScenario,
   status,
   board,
+  partsFooter,
   extra,
 }: ArenaQuickBarProps) {
   const [sheet, setSheet] = useState<"parts" | "scenario" | "board" | null>(null);
@@ -101,6 +108,45 @@ export function ArenaQuickBar({
       window.removeEventListener("orientationchange", place);
     };
   }, []);
+  /**
+   * A sheet has to actually leave, and reaching for the model is one of the
+   * ways out. Two gaps this closes:
+   *
+   * Escape used to fall straight through to the builder's own handler and
+   * shut the WHOLE arena — press it to put the parts picker away and you were
+   * back in build mode. It listens in the CAPTURE phase and stops propagation
+   * there, which is what keeps that other window-level listener from also
+   * firing: both are bound to window, so bubble-phase stopPropagation would
+   * have been too late.
+   *
+   * And a tap on the bench did nothing — the sheet just sat over the thing
+   * you were reaching for. Now anything outside the strip puts it away, with
+   * the CONSOLE exempt: the board is deliberately readable during a run, and
+   * throwing the switch to start the next one must not close what you opened
+   * to compare against.
+   */
+  useEffect(() => {
+    if (!sheet) return;
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.stopPropagation();
+      setSheet(null);
+    };
+    const onPointerDown = (event: PointerEvent) => {
+      const target = event.target as Element | null;
+      if (target?.closest?.(".arena-quickbar, .arena-dash")) return;
+      setSheet(null);
+    };
+
+    window.addEventListener("keydown", onKeyDown, true);
+    window.addEventListener("pointerdown", onPointerDown, true);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown, true);
+      window.removeEventListener("pointerdown", onPointerDown, true);
+    };
+  }, [sheet]);
+
   const running = status === "battling";
   const selected = agents.find((agent) => agent.id === selectedAgentId) ?? null;
 
@@ -167,6 +213,7 @@ export function ArenaQuickBar({
             disabled={running}
             full={rosterFull}
           />
+          {partsFooter}
         </div>
       ) : null}
 

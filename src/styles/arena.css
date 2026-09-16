@@ -2350,7 +2350,7 @@
    you throw rather than ride, so it stays the biggest target on the console. */
 .arena-dash__switch {
   grid-column: 2;
-  grid-row: 1 / span 2;
+  grid-row: 1 / span 3;
   align-self: stretch;
   justify-content: center;
   display: flex;
@@ -2400,6 +2400,89 @@
   .arena-dash__switch-lever {
     transition: none;
   }
+}
+
+/* ── Bench row: Solo | Battle, and Reset ───────────────────────────────
+   Legends, not buttons. No fill, no border, no pill — the console already is
+   the container, and a row of boxed buttons inside it is exactly the "big
+   full-width buttons" the panel this replaces was made of. The lit word is the
+   selected bench; the touch target is padding with no visible edge. */
+.arena-dash__bench-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-inline-size: 0;
+}
+.arena-dash__mode {
+  display: flex;
+  gap: 16px;
+}
+/* Doubled up on .arena-dash deliberately. builder-ui.css carries an app-wide
+   touch floor — `.builder-shell button { min-height: 44px }` — which outranks
+   a single class and was clamping these legends to 44, four short of the
+   gloved-hand minimum. Measured at 50x44 before this. Physical properties for
+   the same reason: they have to be the same property as the rule they beat. */
+.arena-dash .arena-dash__mode-btn,
+.arena-dash .arena-dash__reset {
+  position: relative;
+  margin: 0;
+  padding: 0 4px;
+  /* The legend stays small to the eye; the target does not. 48px is the
+     gloved-hand floor, and 13px is the smallest text allowed on a phone. */
+  min-height: 48px;
+  min-width: 48px;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(148, 163, 184, 0.72);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+  cursor: pointer;
+}
+/* The selected bench is lit AND underscored. Colour alone is the failure that
+   keeps coming back: it is gone for a colour-blind user and gone again for
+   anyone reading this panel in sunlight, which on a jobsite is most of them.
+   The rule is drawn with a pseudo-element so lighting it costs no layout. */
+.arena-dash .arena-dash__mode-btn.is-on {
+  color: #9fd8ff;
+  text-shadow:
+    0 0 8px rgba(159, 216, 255, 0.55),
+    0 1px 3px rgba(0, 0, 0, 0.9);
+}
+.arena-dash .arena-dash__mode-btn.is-on::after {
+  content: "";
+  position: absolute;
+  inset-inline: 2px;
+  /* Sits under the word, not under the 48px target — a rule floating a
+     finger's width below its label does not read as belonging to it. */
+  inset-block-end: calc(50% - 0.9em);
+  block-size: 2px;
+  border-radius: 2px;
+  background: #9fd8ff;
+  box-shadow: 0 0 6px rgba(159, 216, 255, 0.6);
+}
+/* Both carry the doubled .arena-dash so they still outrank the shared block
+   above them, which had to be raised to beat the app-wide touch floor. */
+.arena-dash .arena-dash__reset {
+  color: rgba(226, 232, 240, 0.88);
+}
+.arena-dash .arena-dash__mode-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* The bench's own results — safe-to / leaves-safe / fails and the SOA bar —
+   now open from Results on the quick bar instead of sitting in a panel over
+   the bench. Spaced from the board below them. */
+.arena-quickbar__sheet .arena-bench-envelope {
+  margin-block-end: 10px;
+}
+.arena-quickbar__sheet .arena-log-panel {
+  margin-block-start: 10px;
 }
 
 /* ── Leaderboard ───────────────────────────────────────────────────────

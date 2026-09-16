@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useWorkspaceMode } from "../../context/WorkspaceModeContext";
 import "../../styles/arena.css";
-import { WorkspaceModePanel } from "../builder/panels/WorkspaceModePanel";
 import { ArenaOverlay } from "./ArenaOverlay";
-import { ArenaPanelContent } from "./ArenaPanelContent";
+import { ArenaFuseForecast } from "./ArenaFuseForecast";
+import { ArenaTestLog } from "./ArenaInstrumentation";
 import { ArenaLeaderboard } from "./ArenaLeaderboard";
 import { ArenaPartEditor } from "./ArenaPartEditor";
 import { ArenaDashboard } from "./ArenaDashboard";
@@ -34,8 +34,6 @@ export default function ArenaView({
   variant = "page",
   onNavigateBack,
   onOpenBuilder,
-  panelOpen = true,
-  onTogglePanel,
 }: ArenaViewProps) {
   const { setWorkspaceMode } = useWorkspaceMode();
   const isWorkspace = variant === "workspace";
@@ -342,37 +340,6 @@ export default function ArenaView({
     setTransitionPhase((phase) => (phase === "exiting" ? phase : "exiting"));
   }, [isWorkspace]);
 
-  /**
-   * Starting a run collapses the params panel, wherever the run was started
-   * from. This is not a nicety — the camera does not work without it.
-   *
-   * While that panel is open the scene holds a locked, slowly swaying preview
-   * pose and hands the camera to nobody: no push-in, no field walk, no cut to
-   * a part that just died. All of that lives in the branch that only runs once
-   * the panel is closed AND the sweep into the arena has finished.
-   *
-   * It used to be guaranteed because the only way to start a run was the
-   * panel's own button, which collapsed it on the way. Then the switch moved
-   * to the fixed console, which can be thrown with the panel still open — and
-   * every run started that way played out under a camera that was never given
-   * the wheel. From the outside: "the zoom-in is just gone."
-   */
-  const collapsePanelForRun = useCallback(() => {
-    if (panelOpen && typeof onTogglePanel === "function") {
-      onTogglePanel();
-    }
-  }, [panelOpen, onTogglePanel]);
-
-  const handleStartRun = useCallback(() => {
-    startTest();
-    collapsePanelForRun();
-  }, [startTest, collapsePanelForRun]);
-
-  const handleStartFreeRun = useCallback(() => {
-    startFreeRun();
-    collapsePanelForRun();
-  }, [startFreeRun, collapsePanelForRun]);
-
   const winner = useMemo(
     () => agents.find((agent) => agent.id === winnerId) ?? null,
     [agents, winnerId],
@@ -391,9 +358,6 @@ export default function ArenaView({
         <>
           <ArenaBenchView
             roster={arenaAgents}
-            panelOpen={panelOpen}
-            onTogglePanel={onTogglePanel ?? (() => undefined)}
-            onNavigateBack={handleReturnToWorkspace}
             onSwitchToBattle={() => setArenaMode("battle")}
             // One selection and one roster across both arena modes, so walking
             // from the bench into a battle keeps the part you were looking at.
@@ -435,13 +399,16 @@ export default function ArenaView({
           stressFactor={stressFactor}
           stressMax={scenario.stressMax}
           progress={progress}
-          onStartTest={handleStartRun}
+          onStartTest={startTest}
           onLoadChange={setLoad}
           winnerName={winnerName}
           winnerId={winnerId}
           survivorCount={survivorCount}
           workspaceMode
-          panelOpen={panelOpen}
+          // There is no params panel any more, so the scene is never holding
+          // its locked preview pose: the camera belongs to the user and to the
+          // run (push-in, failure cut, victor shot) from the moment you arrive.
+          panelOpen={false}
           selectedAgentId={selectedAgentId}
           onSelectAgent={setSelectedAgentId}
           onLongPressAgent={setEditingAgentId}
@@ -515,36 +482,34 @@ export default function ArenaView({
           scenario={scenario}
           onSelectScenario={selectScenario}
           status={status}
-          board={<ArenaLeaderboard entries={board} onClear={handleClearBoard} />}
-          extra={
+          // Read before a run, where the part is chosen — see ArenaBenchView.
+          partsFooter={
+            <ArenaFuseForecast
+              agents={agents}
+              scenario={scenario}
+              status={status}
+              selectedAgentId={selectedAgentId}
+              onSelectAgent={setSelectedAgentId}
+            />
+          }
+          board={
             <>
-              {/* Getting BETWEEN the two benches was only possible from inside
-                  the params panel — so leaving meant opening a panel over the
-                  bench you were leaving, and doing it again to come back. The
-                  same argument that moved Parts and Conditions up here applies
-                  harder to an exit: a way out that is behind a door is not
-                  much of a way out. */}
-              <button
-                type="button"
-                className="arena-quickbar__btn"
-                onClick={() => setArenaMode("bench")}
-              >
-                <span className="arena-quickbar__label">Switch to</span>
-                <span className="arena-quickbar__value">Solo bench</span>
-              </button>
-              {/* Renamed from "Mode", which now would have collided with the
-                  switch above it. This one is what KIND of run the switch
-                  starts; the other is which bench you are standing at. */}
-              <button
-                type="button"
-                className={`arena-quickbar__btn${freeRun ? " is-open" : ""}`}
-                onClick={freeRun ? resetTest : handleStartFreeRun}
-                aria-pressed={freeRun}
-              >
-                <span className="arena-quickbar__label">Run</span>
-                <span className="arena-quickbar__value">{freeRun ? "Free run" : "Ramp"}</span>
-              </button>
+              <ArenaLeaderboard entries={board} onClear={handleClearBoard} />
+              <ArenaTestLog log={log} winnerName={winnerName} heading="Test Log" />
             </>
+          }
+          extra={
+            /* What KIND of run the switch starts. Which bench you are standing
+               at is on the console's bench row now, next to Reset. */
+            <button
+              type="button"
+              className={`arena-quickbar__btn${freeRun ? " is-open" : ""}`}
+              onClick={freeRun ? resetTest : startFreeRun}
+              aria-pressed={freeRun}
+            >
+              <span className="arena-quickbar__label">Run</span>
+              <span className="arena-quickbar__value">{freeRun ? "Free run" : "Ramp"}</span>
+            </button>
           }
         />
 
@@ -558,41 +523,15 @@ export default function ArenaView({
           seriesOhms={seriesOhms}
           onSeriesOhmsChange={(ohms) => applySupply(voltsMultiple, ohms)}
           onHeightChange={setDashHeight}
-          onThrowSwitch={status === "battling" ? resetTest : handleStartRun}
+          onThrowSwitch={status === "battling" ? resetTest : startTest}
+          mode="battle"
+          onSwitchMode={(next) => {
+            if (next === "bench") setArenaMode("bench");
+          }}
+          onReset={resetTest}
         />
-        <WorkspaceModePanel
-          title="Component Arena"
-          subtitle={sessionLabel}
-          isOpen={panelOpen}
-          onToggle={onTogglePanel ?? (() => undefined)}
-          className="workspace-mode-panel--arena"
-        >
-          <ArenaPanelContent
-            agents={agents}
-            log={log}
-            mostStressedId={mostStressedId}
-            status={status}
-            stressFactor={stressFactor}
-            progress={progress}
-            winnerName={winnerName}
-            survivorCount={survivorCount}
-            scenario={scenario}
-            summary={summary}
-            onSelectScenario={selectScenario}
-            onStartTest={handleStartRun}
-            onResetTest={resetTest}
-            onReturnToWorkspace={handleReturnToWorkspace}
-            onOpenBuilder={onOpenBuilder}
-            onSwitchToBench={() => setArenaMode("bench")}
-            immersive={!panelOpen}
-            selectedAgentId={selectedAgentId}
-            onSelectAgent={setSelectedAgentId}
-            onAddComponent={handleAddComponent}
-            onRemoveAgent={handleRemoveAgent}
-            onEditAgent={setEditingAgentId}
-            rosterFull={rosterSources.length >= ARENA_ROSTER_MAX}
-          />
-        </WorkspaceModePanel>
+        {/* The params panel that sat here is gone — see ArenaBenchView for why,
+            and where each thing it carried went. */}
       </div>
     );
   }

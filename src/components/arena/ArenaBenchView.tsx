@@ -1,11 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { WorkspaceModePanel } from "../builder/panels/WorkspaceModePanel";
 import { ArenaScene } from "./ArenaScene";
-import { ArenaScenarioSelect, ArenaTestLog } from "./ArenaInstrumentation";
+import { ArenaTestLog } from "./ArenaInstrumentation";
 import { ArenaFuseForecast } from "./ArenaFuseForecast";
 import { ArenaDashboard } from "./ArenaDashboard";
 import { ArenaQuickBar } from "./ArenaQuickBar";
-import { ArenaRosterPicker } from "./ArenaRosterPicker";
 import type { ComponentAction } from "../builder/types";
 import type { BenchStressor } from "./useBenchSession";
 import { useBenchSession } from "./useBenchSession";
@@ -16,9 +14,6 @@ import type { ArenaBattleAgent } from "./types";
 type ArenaBenchViewProps = {
   /** Components available to bench-test (the same roster battle mode uses). */
   roster: ArenaBattleAgent[];
-  panelOpen: boolean;
-  onTogglePanel: () => void;
-  onNavigateBack: () => void;
   /** Switch to head-to-head battle mode. */
   onSwitchToBattle: () => void;
   /**
@@ -50,24 +45,31 @@ type ArenaBenchViewProps = {
   onRunComplete: (agents: ArenaBattleAgent[], scenarioName: string) => void;
 };
 
-/** v1 wires "current"; the rest are shown disabled so the path is visible. */
-const STRESSORS: { id: BenchStressor; label: string; ready: boolean }[] = [
-  { id: "current", label: "Current", ready: true },
-  { id: "voltage", label: "Voltage", ready: false },
-  { id: "temperature", label: "Temperature", ready: false },
-  { id: "time", label: "Time @ load", ready: false },
-];
+/**
+ * v1 ramps current only. The Voltage / Temperature / Time chips that used to
+ * advertise the rest were never wired ("soon"), and went with the panel.
+ */
+const STRESSOR: BenchStressor = "current";
 
 function fmtAmps(value: number | null): string {
   if (value == null || !Number.isFinite(value)) return "—";
   return value >= 1 ? `${value.toFixed(2)} A` : `${Math.round(value * 1000)} mA`;
 }
 
+/**
+ * The solo bench: one part, ramped until it breaks.
+ *
+ * There is no params panel any more. It covered y208–757 of a 915px phone —
+ * the 3D bench was a strip along the top — and nearly everything in it was a
+ * second copy of something already on the arena: the part picker and the
+ * conditions are on the quick bar, the Test button is the console's switch,
+ * Battle mode and Reset are on the console's bench row. The three things only
+ * the panel carried moved to where they are used: the F.U.S.E. forecast into
+ * the Parts sheet (it is how you choose a part), the envelope and the test log
+ * into Results (they are what a run found).
+ */
 export default function ArenaBenchView({
   roster,
-  panelOpen,
-  onTogglePanel,
-  onNavigateBack,
   onSwitchToBattle,
   selectedAgentId,
   onSelectAgent,
@@ -78,8 +80,6 @@ export default function ArenaBenchView({
   board,
   onRunComplete,
 }: ArenaBenchViewProps) {
-  const [stressor] = useState<BenchStressor>("current");
-
   // Nothing selected still has to bench SOMETHING, so it falls back to the
   // first part rather than showing an empty bench.
   const component = useMemo(
@@ -100,7 +100,7 @@ export default function ArenaBenchView({
     resetTest,
     selectScenario,
     setLoad,
-  } = useBenchSession({ component, stressor });
+  } = useBenchSession({ component, stressor: STRESSOR });
 
   // The supply, mirroring battle mode: the controls are DOM, so their values
   // are React state and the load maths comes from the one shared module.
@@ -126,22 +126,6 @@ export default function ArenaBenchView({
   // How much of the canvas the console covers, measured live, so the circuit
   // composes into the space actually left for it.
   const [dashHeight, setDashHeight] = useState(0);
-
-  /**
-   * Starting a run closes the params panel — the camera is inert until it is.
-   *
-   * With the panel open the scene holds a locked preview pose and gives the
-   * camera to nobody, so the push-in onto the part, the walk across the bench
-   * and the cut to a failure all sit out the entire run. Same trap as battle
-   * mode: it was guaranteed only while the panel's own button was the sole way
-   * to start, and the console switch quietly broke that.
-   */
-  const handleStartRun = useCallback(() => {
-    startTest();
-    if (panelOpen) {
-      onTogglePanel();
-    }
-  }, [startTest, panelOpen, onTogglePanel]);
 
   const running = status === "battling";
   const complete = status === "complete";
@@ -173,6 +157,65 @@ export default function ArenaBenchView({
     };
   }, [envelope, agent, stressFactor]);
 
+  // ── The envelope the user discovered ──
+  const envelopeReadout =
+    envelope && (complete || running) ? (
+      <div className="arena-bench-envelope" aria-label="Operating envelope">
+        <div className="arena-bench-envelope__row">
+          <span className="arena-bench-envelope__k arena-bench-envelope__k--safe">
+            Safe to
+          </span>
+          <strong>{fmtAmps(envelope.safeMax)}</strong>
+        </div>
+        <div className="arena-bench-envelope__row">
+          <span className="arena-bench-envelope__k arena-bench-envelope__k--degrade">
+            Leaves safe zone
+          </span>
+          <strong>{fmtAmps(envelope.degradeAt)}</strong>
+        </div>
+        <div className="arena-bench-envelope__row">
+          <span className="arena-bench-envelope__k arena-bench-envelope__k--fail">
+            {envelope.survived ? "Survived ramp" : "Fails"}
+          </span>
+          <strong>
+            {envelope.survived
+              ? `≥ ${fmtAmps(envelope.rampMax)}`
+              : `${fmtAmps(envelope.failAt)}${
+                  envelope.failureName ? ` · ${envelope.failureName}` : ""
+                }`}
+          </strong>
+        </div>
+
+        {/* Safe-operating-area bar (current axis 0 → ramp max) */}
+        {soa ? (
+          <div
+            className="arena-bench-soa"
+            aria-label="Safe operating area along the current axis"
+          >
+            <div
+              className="arena-bench-soa__safe"
+              style={{ width: `${soa.safe ?? 0}%` }}
+            />
+            {soa.fail != null ? (
+              <div
+                className="arena-bench-soa__fail-marker"
+                style={{ left: `${soa.fail}%` }}
+              />
+            ) : null}
+            {soa.now != null && running ? (
+              <div
+                className="arena-bench-soa__now"
+                style={{ left: `${soa.now}%` }}
+              />
+            ) : null}
+            <span className="arena-bench-soa__axis">
+              0 — {fmtAmps(envelope.rampMax)}
+            </span>
+          </div>
+        ) : null}
+      </div>
+    ) : null;
+
   return (
     <div
       className="arena-view arena-view--workspace arena-view--bench"
@@ -187,7 +230,7 @@ export default function ArenaBenchView({
         stressFactor={stressFactor}
         stressMax={scenario.stressMax}
         progress={progress}
-        onStartTest={handleStartRun}
+        onStartTest={startTest}
         onLoadChange={setLoad}
         winnerName={null}
         // A solo bench has one part, so surviving IS winning — it gets the
@@ -196,7 +239,9 @@ export default function ArenaBenchView({
         winnerId={agent && agent.phase !== "failed" ? agent.id : null}
         survivorCount={agent && agent.phase !== "failed" ? 1 : 0}
         workspaceMode
-        panelOpen={panelOpen}
+        // No panel, so never "open": the scene only hands the camera to the
+        // user (push-in, cut to a failure, orbit) once this is false.
+        panelOpen={false}
         // The solo bench already had a selected part — it just had no way to
         // pick one by touching it. Handing the scene the arena's selection
         // means tapping the part on the board, tapping its chip, and tapping
@@ -223,26 +268,29 @@ export default function ArenaBenchView({
         scenario={scenario}
         onSelectScenario={selectScenario}
         status={status}
-        board={board}
-        extra={
-          /* The way to the other bench, without going through the panel.
-             It names its DESTINATION, not the current state — every other
-             entry in this strip shows what is loaded (Parts, Conditions), but
-             a control that announces where you already are does not read as a
-             way out. An exit is named for the other side of the door. */
-          <button
-            type="button"
-            className="arena-quickbar__btn"
-            onClick={onSwitchToBattle}
-            disabled={running}
-          >
-            <span className="arena-quickbar__label">Switch to</span>
-            <span className="arena-quickbar__value">Head-to-head</span>
-          </button>
+        // Same reading as battle mode, against this bench's own scenario —
+        // which on a bench is also how you choose WHICH part is worth testing
+        // before you spend a run on it.
+        partsFooter={
+          <ArenaFuseForecast
+            agents={roster}
+            scenario={scenario}
+            status={status}
+            selectedAgentId={component?.id ?? null}
+            onSelectAgent={onSelectAgent}
+          />
+        }
+        board={
+          <>
+            {envelopeReadout}
+            {board}
+            <ArenaTestLog log={log} winnerName={null} heading="Test Log" />
+          </>
         }
       />
 
-      {/* The console: fixed at the bottom, carrying only the live-run controls. */}
+      {/* The console: fixed at the bottom — the live-run controls, and which
+          bench you are at. */}
       <ArenaDashboard
         status={status}
         voltsMultiple={liveVolts}
@@ -251,202 +299,13 @@ export default function ArenaBenchView({
         seriesOhms={seriesOhms}
         onSeriesOhmsChange={(ohms) => applySupply(voltsMultiple, ohms)}
         onHeightChange={setDashHeight}
-        onThrowSwitch={running ? resetTest : handleStartRun}
+        onThrowSwitch={running ? resetTest : startTest}
+        mode="bench"
+        onSwitchMode={(next) => {
+          if (next === "battle") onSwitchToBattle();
+        }}
+        onReset={resetTest}
       />
-      <WorkspaceModePanel
-        title="Solo Bench"
-        subtitle="Stress one part to find where it breaks"
-        isOpen={panelOpen}
-        onToggle={onTogglePanel}
-        className="workspace-mode-panel--arena"
-      >
-        <div className="arena-panel arena-bench-panel">
-          <div className="arena-panel__controls">
-            <div className="arena-panel__meta">
-              <span className="arena-eyebrow">Solo Stress Bench · Playable Datasheet</span>
-              {/* Status read-out, not controls — styled as flat badges (see
-                  arena.css .arena-panel__meta-pills--status) so they don't read
-                  as clickable chips. The live phase is a polite live region. */}
-              <div className="arena-panel__meta-pills arena-panel__meta-pills--status">
-                <span>{component ? component.name : "No part selected"}</span>
-                <span>Ramping {stressor}</span>
-                <span role="status" aria-live="polite">
-                  {complete
-                    ? envelope?.survived
-                      ? "Survived the ramp"
-                      : "Failure point found"
-                    : running
-                      ? "Test running"
-                      : "Ready to test"}
-                </span>
-              </div>
-            </div>
-            <div className="arena-panel__actions">
-              <button
-                type="button"
-                className="arena-button arena-button--secondary"
-                onClick={onSwitchToBattle}
-              >
-                Battle mode
-              </button>
-              <button
-                type="button"
-                className="arena-button arena-button--secondary"
-                onClick={resetTest}
-              >
-                Reset
-              </button>
-              <button
-                type="button"
-                className="arena-button arena-button--ghost"
-                onClick={onNavigateBack}
-              >
-                Return to Workspace
-              </button>
-            </div>
-          </div>
-
-          {/* ── Component picker ──
-              The SAME picker the battle arena uses, over the same library the
-              workspace builds from. This used to be a bespoke chip row that
-              could only offer whatever the builder had last exported, so the
-              bench — the screen the arena actually opens on — was the one place
-              you could not choose what to test. */}
-          <ArenaRosterPicker
-            agents={roster}
-            selectedAgentId={component?.id ?? null}
-            onSelectAgent={onSelectAgent}
-            onAddComponent={onAddComponent}
-            onRemoveAgent={onRemoveAgent}
-            onEditAgent={onEditAgent}
-            disabled={running}
-            full={rosterFull}
-          />
-
-          {/* ── Stressor picker (v1: current) ── */}
-          <div className="arena-bench-picker" role="group" aria-label="Choose the stressor to ramp">
-            <span className="arena-bench-picker__label">Ramp this</span>
-            <div className="arena-bench-picker__chips">
-              {STRESSORS.map((s) => (
-                <button
-                  key={s.id}
-                  type="button"
-                  aria-pressed={s.id === stressor}
-                  className={`arena-bench-chip arena-bench-chip--stressor${
-                    s.id === stressor ? " is-active" : ""
-                  }`}
-                  disabled={!s.ready || running}
-                  title={s.ready ? undefined : "Coming soon"}
-                >
-                  <span className="arena-bench-chip__name">{s.label}</span>
-                  {!s.ready ? (
-                    <span className="arena-bench-chip__rating">soon</span>
-                  ) : null}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <ArenaScenarioSelect
-            scenario={scenario}
-            onSelect={selectScenario}
-            disabled={running}
-          />
-
-          {/* Same reading as battle mode, against this bench's own scenario —
-              which on a bench is also how you choose WHICH part is worth
-              testing before you spend a run on it. */}
-          <ArenaFuseForecast
-            agents={roster}
-            scenario={scenario}
-            status={status}
-            selectedAgentId={component?.id ?? null}
-            onSelectAgent={onSelectAgent}
-          />
-
-          <button
-            type="button"
-            className="arena-bench-run"
-            onClick={handleStartRun}
-            disabled={running || !component}
-          >
-            {running
-              ? `Ramping… ${fmtAmps(
-                  component ? component.metrics.current * stressFactor : null,
-                )}`
-              : complete
-                ? `↻ Re-run test`
-                : `▶ Test`}
-          </button>
-
-          {/* ── The envelope the user discovered ── */}
-          {envelope && (complete || running) ? (
-            <div className="arena-bench-envelope" aria-label="Operating envelope">
-              <div className="arena-bench-envelope__row">
-                <span className="arena-bench-envelope__k arena-bench-envelope__k--safe">
-                  Safe to
-                </span>
-                <strong>{fmtAmps(envelope.safeMax)}</strong>
-              </div>
-              <div className="arena-bench-envelope__row">
-                <span className="arena-bench-envelope__k arena-bench-envelope__k--degrade">
-                  Leaves safe zone
-                </span>
-                <strong>{fmtAmps(envelope.degradeAt)}</strong>
-              </div>
-              <div className="arena-bench-envelope__row">
-                <span className="arena-bench-envelope__k arena-bench-envelope__k--fail">
-                  {envelope.survived ? "Survived ramp" : "Fails"}
-                </span>
-                <strong>
-                  {envelope.survived
-                    ? `≥ ${fmtAmps(envelope.rampMax)}`
-                    : `${fmtAmps(envelope.failAt)}${
-                        envelope.failureName ? ` · ${envelope.failureName}` : ""
-                      }`}
-                </strong>
-              </div>
-
-              {/* Safe-operating-area bar (current axis 0 → ramp max) */}
-              {soa ? (
-                <div
-                  className="arena-bench-soa"
-                  aria-label="Safe operating area along the current axis"
-                >
-                  <div
-                    className="arena-bench-soa__safe"
-                    style={{ width: `${soa.safe ?? 0}%` }}
-                  />
-                  {soa.fail != null ? (
-                    <div
-                      className="arena-bench-soa__fail-marker"
-                      style={{ left: `${soa.fail}%` }}
-                    />
-                  ) : null}
-                  {soa.now != null && running ? (
-                    <div
-                      className="arena-bench-soa__now"
-                      style={{ left: `${soa.now}%` }}
-                    />
-                  ) : null}
-                  <span className="arena-bench-soa__axis">
-                    0 — {fmtAmps(envelope.rampMax)}
-                  </span>
-                </div>
-              ) : null}
-            </div>
-          ) : null}
-
-          {/* The per-part test card is gone. It was the last survivor of the
-              old card grid, and on the solo bench it restated what the scene
-              already says better: the floating nameplate carries the part's
-              live W.I.R.E. figures and its temperature against its own limit,
-              and the F.U.S.E. readout carries WHY it died. A panel repeating
-              all of that is just a second place to look. */}
-
-          <ArenaTestLog log={log} winnerName={null} heading="Test Log" />
-        </div>
-      </WorkspaceModePanel>
     </div>
   );
 }

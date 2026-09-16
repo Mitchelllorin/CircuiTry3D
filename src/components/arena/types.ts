@@ -6,14 +6,10 @@ export type ArenaViewProps = {
   variant?: ArenaViewVariant;
   onNavigateBack?: () => void;
   onOpenBuilder?: () => void;
-  /**
-   * Workspace variant only: whether the params/metrics panel is expanded.
-   * When the panel collapses the camera cinematically sweeps into the arena
-   * and full orbit control is handed to the user.
-   */
-  panelOpen?: boolean;
-  /** Workspace variant only: toggle the params panel (the collapse arrow). */
-  onTogglePanel?: () => void;
+  /* The arena had a panelOpen/onTogglePanel pair here for the params panel
+     that used to cover the bench. There is no such panel on either bench any
+     more — see ArenaBenchView for where everything it held went — so the
+     arena never hands the camera to nobody, and there is nothing to toggle. */
 };
 
 export type ArenaSourceComponent = {
