@@ -3969,6 +3969,14 @@ export function ArenaScene({
           controls.update();
         }
 
+        // Every nameplate and readout below is projected BEFORE renderer.render,
+        // and Vector3.project() reads camera.matrixWorldInverse — which three only
+        // rebuilds inside render(). lookAt() (called by every branch above, and by
+        // OrbitControls.update) refreshes it from the new position with the OLD
+        // rotation. Without this line each plate is placed through last frame's
+        // aim and the bench is drawn through this frame's: the builder measured
+        // that gap at up to 37px under a moving camera, changing every frame.
+        camera.updateMatrixWorld();
 
         if (statusRef.current !== lastStatus) {
           lastStatus = statusRef.current;

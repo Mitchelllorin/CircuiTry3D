@@ -6306,7 +6306,10 @@ body.android-optimized .zoom-btn {
         }
 
         // Helper function to convert 3D world position to 2D screen coordinates
-        function worldToScreen(worldPosition) {
+        // canvasRect is optional: a caller projecting many points in one pass
+        // (updateComponentLabels) measures the canvas once and hands it in, because
+        // getBoundingClientRect after a style write forces a synchronous layout.
+        function worldToScreen(worldPosition, canvasRect) {
             const vector = worldPosition.clone();
             vector.project(camera);
 
@@ -6316,7 +6319,7 @@ body.android-optimized .zoom-btn {
             let width, height, offsetX, offsetY;
 
             if (canvas) {
-                const rect = canvas.getBoundingClientRect();
+                const rect = canvasRect || canvas.getBoundingClientRect();
                 width   = rect.width  || window.innerWidth  || document.documentElement.clientWidth;
                 height  = rect.height || window.innerHeight || document.documentElement.clientHeight;
                 offsetX = rect.left;
@@ -6402,7 +6405,10 @@ body.android-optimized .zoom-btn {
                 this.labelDiv.style.textAlign = 'center';
                 this.labelDiv.style.lineHeight = '1.2';
                 this.labelDiv.innerHTML = this.renderNameplateMarkup();
-                
+                // A new element has no transform yet, so the "has it moved?" guard in
+                // updateLabelPosition must not remember a previous element's.
+                this._lastLabelTransform = null;
+
                 document.body.appendChild(this.labelDiv);
                 this.updateLabelPosition();
             }
@@ -6707,7 +6713,7 @@ body.android-optimized .zoom-btn {
                 this.updateLabels();
             }
 
-            updateLabelPosition() {
+            updateLabelPosition(canvasRect) {
                 if (!this.labelDiv || !this.mesh) return;
 
                 // A part that has clocked out gets no readout. Nameplates are pinned to
@@ -6730,7 +6736,7 @@ body.android-optimized .zoom-btn {
                 // follows its namesake as the camera orbits/zooms. A small screen
                 // offset keeps the readout mostly above the part — partial overlap is
                 // fine, it just shouldn't fully cover it.
-                const screenPos = worldToScreen(worldPos);
+                const screenPos = worldToScreen(worldPos, canvasRect);
 
                 // ── Move it with a TRANSFORM, on whole device pixels ──────────────
                 // This is the third and last cause of "the metrics are shaking", and
@@ -6761,18 +6767,22 @@ body.android-optimized .zoom-btn {
                 }
                 const dpr  = window.devicePixelRatio || 1;
                 const snap = (v) => Math.round(v * dpr) / dpr;
-                if (this._labelHalfW != null) {
-                    this.labelDiv.style.transform =
-                        `translate3d(${snap(screenPos.x - this._labelHalfW)}px, ${snap(screenPos.y - 4 - this._labelH)}px, 0)`;
-                } else {
+                const transform = this._labelHalfW != null
+                    ? `translate3d(${snap(screenPos.x - this._labelHalfW)}px, ${snap(screenPos.y - 4 - this._labelH)}px, 0)`
                     // Not laid out yet (first frame, or hidden when measured) — fall
                     // back to the percentage centring for this frame only.
-                    this.labelDiv.style.transform =
-                        `translate3d(${snap(screenPos.x)}px, ${snap(screenPos.y - 4)}px, 0) translate(-50%, -100%)`;
+                    : `translate3d(${snap(screenPos.x)}px, ${snap(screenPos.y - 4)}px, 0) translate(-50%, -100%)`;
+                // This runs every rendered frame now (see updateComponentLabels), so
+                // a plate that has not moved must cost nothing: no write, no style
+                // invalidation. On a still board that is every plate on every frame.
+                if (transform !== this._lastLabelTransform) {
+                    this._lastLabelTransform = transform;
+                    this.labelDiv.style.transform = transform;
                 }
-                
+
                 // Hide label if component is behind camera
-                this.labelDiv.style.display = screenPos.z > 1 ? 'none' : (showLabels ? 'block' : 'none');
+                const display = screenPos.z > 1 ? 'none' : (showLabels ? 'block' : 'none');
+                if (this.labelDiv.style.display !== display) this.labelDiv.style.display = display;
             }
 
             updateLabels() {
@@ -9415,9 +9425,6 @@ body.android-optimized .zoom-btn {
         // Android targets 30 fps to reduce GPU/CPU pressure on constrained WebViews;
         // desktop and non-Android mobile stay at 60 fps.
         const TARGET_FRAME_INTERVAL = isAndroid ? (1000 / 30) : (1000 / 60);
-        let labelUpdateCounter = 0;
-        // Update labels less frequently on Android to reduce DOM manipulation overhead.
-        const LABEL_UPDATE_INTERVAL = isAndroid ? 6 : 3;
         // Watchdog: tracks how many consecutive frames the flow is active but particles are absent.
         // Used to detect and recover from silent particle-creation failures on Android.
         let _flowWatchdogFrames = 0;
@@ -9537,39 +9544,20 @@ body.android-optimized .zoom-btn {
                 }
             }
 
-            // Only update labels every few frames to reduce DOM manipulation
-            // overhead — but NOT while the turntable is drifting. At the Android
-            // interval that is one label move every 200 ms: the board glides and the
-            // text pinned to it jumps five times a second, which reads as the whole
-            // rotation being choppy even though the 3D itself is smooth.
-            // ...and not while the user is moving something either. Dragging a part,
-            // orbiting, panning or pinching all move the 3D at frame rate while the
-            // labels pinned to it were still stepping at LABEL_UPDATE_INTERVAL — 5 Hz
-            // on Android. The part glides, its nameplate hops along behind it, and the
-            // whole grab reads as choppy even though the mesh itself is smooth. This is
-            // the same exemption the idle turntable already gets, for the same reason.
-            // ...and not while a CINEMATIC is flying the camera. The guided tour
-            // sweeps between parts through _cinematicCtrl at frame rate; the labels
-            // pinned to those parts were still stepping at LABEL_UPDATE_INTERVAL
-            // (5 Hz on Android), so every nameplate lagged the sweep and snapped
-            // back into place five times a second. On screen that is the metrics
-            // visibly SHAKING through the whole tour — the one moment the app is
-            // showing off. Same exemption, same reason as the drag and the idle
-            // turntable: when the camera or the part moves at frame rate, the text
-            // stuck to it has to move at frame rate too.
-            const _cineFlying = (typeof _cinematicCtrl !== 'undefined'
-                && _cinematicCtrl && _cinematicCtrl.isPlaying);
-            labelUpdateCounter++;
-            // ...and not while the crew is walking out. Nameplates read mesh.matrixWorld,
-            // so they follow a part off the board for free — but at 5 Hz the name lags
-            // its owner and hops along behind him like it is chasing the bus. Same
-            // exemption, same reason as the drag, the turntable and the cinematic.
-            if (labelUpdateCounter >= LABEL_UPDATE_INTERVAL || _idleOrbitActive
-                    || isDragging || isPlacing || isRotating || isPanning || _cineFlying
-                    || _idleWalkActive) {
-                labelUpdateCounter = 0;
-                updateComponentLabels();
-            }
+            // Labels move on EVERY rendered frame, in the same frame as the draw.
+            //
+            // They used to move every LABEL_UPDATE_INTERVAL frames (5 Hz on Android)
+            // with a growing list of exemptions — idle turntable, drag, placing,
+            // rotating, panning, cinematic, walk-off — each added after that motion
+            // was caught making the text hop behind its part. A list like that is
+            // only ever as complete as the last bug report: the failure camera shake
+            // was never on it. Any time the camera or a part moves at frame rate, the
+            // text pinned to it has to as well, so there is no list any more.
+            //
+            // The saving the throttle was after survives: updateLabelPosition skips
+            // the DOM write for a plate that has not moved, so a still board writes
+            // nothing at all.
+            updateComponentLabels();
 
             if (renderer) {
                 renderer.render(scene, camera);
@@ -9577,13 +9565,34 @@ body.android-optimized .zoom-btn {
         }
 
         function updateComponentLabels() {
-            // Update all component label positions
-            // Cache the length to avoid re-evaluation each iteration
+            if (!camera) return;
+            // ── Bring the matrices up to date BEFORE projecting anything ─────────
+            // This is the shaking you can see: the plate against its part. Measured
+            // on a real GPU by drive-104 before this line existed — plates up to 37px
+            // off their part while a finger orbits, 9px on the idle turntable, and
+            // moving that much from one frame to the next.
+            //
+            // Vector3.project() reads camera.matrixWorldInverse, and three only
+            // rebuilds that inside renderer.render(). updateCameraPosition() ends in
+            // camera.lookAt(), which refreshes the inverse from the NEW position with
+            // the OLD rotation and only then turns the camera. So every label was
+            // projected through a camera that never existed — this frame's place,
+            // last frame's aim — and the 3D was then drawn through the real one. The
+            // gap is one step of the orbit, and it changes with every frame's finger
+            // speed and frame time, which is exactly what shaking is. The throttle,
+            // width, walk-bob and pixel-grid fixes were all real; none could reach it.
+            camera.updateMatrixWorld();
+            // One canvas measurement for the whole pass instead of one per label.
+            const canvasRect = renderer && renderer.domElement
+                ? renderer.domElement.getBoundingClientRect() : null;
             const componentCount = components.length;
             for (let i = 0; i < componentCount; i++) {
                 const component = components[i];
+                // Same staleness on the part's side: a mesh moved this frame (drag,
+                // placement, the walk-off) keeps last frame's matrixWorld until render.
+                if (component.mesh) component.mesh.updateWorldMatrix(true, false);
                 if (component.updateLabelPosition) {
-                    component.updateLabelPosition();
+                    component.updateLabelPosition(canvasRect);
                 }
                 // Update polarity indicator positions only if indicators are visible
                 if (showPolarityIndicators && component.updatePolarityPositions) {
