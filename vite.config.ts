@@ -27,12 +27,34 @@ export default defineConfig(({ mode }) => {
         }
       }
     },
+    /**
+     * ONE APP, ONE PORT, ALWAYS - so a phone bookmark stays true.
+     *
+     * Every app here defaulted to 5173, so whichever dev server happened to be
+     * running answered on the same address and a saved URL pointed at whatever
+     * was up last. That is why a bookmark never held. One number per app, fixed,
+     * and `strictPort` so a clash is reported rather than silently walked past:
+     *
+     *   3000  CircuiTry3D      5176  TheCell3D
+     *   5173  ThePrints3D      5177  ThePyramids3D
+     *   5174  AutoMotive3D     5178  AnyPlanet3D
+     *   5175  AnyBody3D
+     *
+     * Reachable from the phone at http://rainmaker:<port> over Tailscale, which
+     * is per-machine and already set up - nothing about it is per app. Vite
+     * waves through IP addresses but NOT bare hostnames, so `rainmaker` and the
+     * tailnet domain have to be named in allowedHosts or the phone gets
+     * "Blocked request. This host is not allowed" and it reads like a broken
+     * network instead of a host check doing its job.
+     */
     server: {
       port: 3000,
+      strictPort: true,
       open: true,
       // Bind to 0.0.0.0 so the dev server is reachable from phones/tablets on
-      // the same LAN (e.g. Android testing via the QR code at http://<lan-ip>:3000).
-      host: true
+      // the same LAN, and from the phone over Tailscale at http://rainmaker:3000.
+      host: true,
+      allowedHosts: ['rainmaker', '.ts.net', '.ngrok-free.app', '.ngrok-free.dev', '.ngrok.app', '.trycloudflare.com']
     },
     preview: {
       port: 4173
