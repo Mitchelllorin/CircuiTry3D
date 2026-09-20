@@ -24,12 +24,55 @@
 
 import { chromium } from 'playwright';
 import { writeFile, mkdir } from 'fs/promises';
+import { existsSync, readdirSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = dirname(__filename);
 const ROOT       = join(__dirname, '..');
+
+/**
+ * The browser this machine actually has, rather than the one this copy of
+ * Playwright would like.
+ *
+ * The bundled Playwright asks for a pinned revision of the headless shell —
+ * 1194 here — and refuses to start if it is missing, which it was: the machine
+ * carries chromium 1228 and 1243, both perfectly capable of taking the shot.
+ * That is why this script stopped producing anything at all. tools/probe runs
+ * full chrome by explicit path for the same reason; do the same, and pick the
+ * newest build present so an install of a newer one does not break it again.
+ *
+ * Returns null when nothing is found, which lets Playwright try its own way
+ * and report its own (clear) error.
+ */
+function resolveChrome() {
+  const roots = [
+    process.env.PLAYWRIGHT_BROWSERS_PATH,
+    process.env.LOCALAPPDATA && join(process.env.LOCALAPPDATA, 'ms-playwright'),
+    process.env.HOME && join(process.env.HOME, '.cache', 'ms-playwright'),
+  ].filter(Boolean);
+
+  const found = [];
+  for (const root of roots) {
+    if (!existsSync(root)) continue;
+    for (const entry of readdirSync(root)) {
+      const rev = /^chromium-(\d+)$/.exec(entry);
+      if (!rev) continue;                       // full chrome only, not the shell
+      for (const rel of [
+        ['chrome-win64', 'chrome.exe'],
+        ['chrome-win', 'chrome.exe'],
+        ['chrome-linux', 'chrome'],
+        ['chrome-mac', 'Chromium.app', 'Contents', 'MacOS', 'Chromium'],
+      ]) {
+        const exe = join(root, entry, ...rel);
+        if (existsSync(exe)) found.push({ rev: Number(rev[1]), exe });
+      }
+    }
+  }
+  found.sort((a, b) => b.rev - a.rev);
+  return found.length ? found[0].exe : null;
+}
 
 // ── CLI flags ────────────────────────────────────────────────────────────────
 const ARGS      = process.argv.slice(2);
@@ -82,30 +125,220 @@ const COMPONENTS = [
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-async function sendAction(page, action, data = {}) {
-  await page.evaluate(({ action, data }) => {
-    window.postMessage({ type: 'builder:invoke-action', payload: { action, data } }, '*');
-  }, { action, data });
+/**
+ * Drive the builder by calling its functions, not by posting to it.
+ *
+ * This used to postMessage `builder:invoke-action` / `builder:add-component`,
+ * the same bridge the React host uses. It cannot work here, and that is why
+ * every shot in public/component-shots was wrong. legacy.html only registers
+ * the bridge listener when it is running INSIDE an iframe:
+ *
+ *     if (window.parent && window.parent !== window) {
+ *         window.addEventListener('message', handleBuilderBridgeMessage);
+ *     }
+ *
+ * This script opens legacy.html top-level, so there is no parent, the listener
+ * is never attached, and every clear / add / fit went into the void — silently,
+ * because postMessage cannot fail. What got captured was whatever the page
+ * booted with: the four-part demo circuit, or nothing at all.
+ *
+ * The functions are plain top-level declarations in that page's script, so
+ * page.evaluate reaches them directly. That also gives us a real failure when
+ * one goes missing, instead of a blank picture.
+ */
+async function callInBuilder(page, fn, label) {
+  const result = await page.evaluate(fn);
+  if (result && result.error) {
+    throw new Error(`${label} failed in the builder: ${result.error}`);
+  }
+  return result;
+}
+
+const ACTIONS = {
+  'clear-workspace': () => {
+    try { clearAll(); return { ok: true }; } catch (e) { return { error: String(e.message || e) }; }
+  },
+  'fit-screen': () => {
+    try { fitToScreen(); return { ok: true }; } catch (e) { return { error: String(e.message || e) }; }
+  },
+  /**
+   * Frame the one part on the bench, and take the control ring off it.
+   *
+   * fitToScreen() floors the camera at distance 6, which is right for a whole
+   * circuit and far too far for a single component — a battery is about 1.5
+   * units across, so it fitted to a speck. The old script then zoomed OUT
+   * twice on top of that. Frame from the part's own bounding box instead.
+   *
+   * A freshly added part is also the active one, so it wears the selection
+   * ring. That belongs in the app, not in a library photograph.
+   */
+  'frame-part': () => {
+    try {
+      const part = components[0];
+      if (!part || !part.mesh) return { error: 'no part on the bench to frame' };
+
+      // Measure the part you can SEE. Every component carries an invisible
+      // selection box sized for raycasting and connection-point spheres out at
+      // the ends of its leads; expandByObject swallows both, so a resistor
+      // measured ~2.5 units instead of ~1.2 and the camera parked twice as far
+      // back as it needed to. That is why these read as specks in a big grid.
+      const box = new THREE.Box3();
+      part.mesh.updateWorldMatrix(true, true);
+      part.mesh.traverse((o) => {
+        if (!o.isMesh) return;
+        const ud = o.userData || {};
+        if (ud.isSelectionBox || ud.isConnectionPoint || ud.wireHitSphere) return;
+        box.expandByObject(o);
+      });
+      if (box.isEmpty()) box.expandByObject(part.mesh);
+
+      const center = box.getCenter(new THREE.Vector3());
+      const size = box.getSize(new THREE.Vector3());
+      const maxDim = Math.max(size.x, size.y, size.z) || 1;
+
+      cameraTarget.copy(center);
+      // 1.5x the part fills the frame without clipping its leads, and the floor
+      // stops a tiny part (a ground symbol) from swelling to fill the screen.
+      cameraDistance = Math.max(1.8, maxDim * 1.5);
+      updateCameraPosition();
+      return {
+        ok: true,
+        maxDim: Number(maxDim.toFixed(2)),
+        distance: Number(cameraDistance.toFixed(2)),
+      };
+    } catch (e) { return { error: String(e.message || e) }; }
+  },
+
+  /**
+   * Strip the editing furniture, immediately before the shutter.
+   *
+   * A newly added part is the active one, so it wears the selector ring, and
+   * its terminals carry connection-point blobs for wiring. Both are editor
+   * affordances and neither belongs in a photograph of the part. This runs
+   * last, after the overlay is in, because clearing it earlier loses the race:
+   * the part gets made active again while the camera is still settling, and
+   * the ring turns up in the shot anyway.
+   */
+  'clean-for-shot': () => {
+    try {
+      // Tell the page a human just touched it.
+      //
+      // The workspace has two idle behaviours on a timer since `_lastUserInputAt`:
+      // it starts a slow turntable orbit after 6s, and after 45s the components
+      // stand up and walk off the bench to clock out. A capture run is minutes
+      // of zero input, so by a few components in, the parts were strolling away
+      // and the camera was drifting — which is most of what "blank captures"
+      // actually were. Reset the clock before every shot.
+      _lastUserInputAt = performance.now();
+
+      selectedComponent = null;
+      activeComponent = null;
+      if (typeof selectedComponents !== 'undefined' && selectedComponents.clear) {
+        selectedComponents.clear();
+      }
+      if (typeof selectionRing !== 'undefined' && selectionRing) {
+        selectionRing.visible = false;
+      }
+      // The green ring on the grid is the snap indicator — it marks where the
+      // NEXT part would drop, so it hangs about after an add and reads as if it
+      // belonged to the component being photographed. It is not the selection
+      // ring, which is why clearing the selection never got rid of it.
+      if (typeof hideSnapIndicator === 'function') {
+        hideSnapIndicator();
+      }
+      let hidden = 0;
+      components.forEach((part) => {
+        if (!part || !part.mesh) return;
+        part.mesh.traverse((o) => {
+          if (o.userData && o.userData.isConnectionPoint && o.visible) {
+            o.visible = false;
+            hidden += 1;
+          }
+        });
+      });
+      return {
+        ok: true,
+        hiddenConnectionPoints: hidden,
+        activeAfter: !!activeComponent,
+        ringVisible: typeof selectionRing !== 'undefined' && selectionRing ? selectionRing.visible : null,
+      };
+    } catch (e) { return { error: String(e.message || e) }; }
+  },
+};
+
+async function sendAction(page, action) {
+  const fn = ACTIONS[action];
+  if (!fn) throw new Error(`No builder action mapped for "${action}"`);
+  await callInBuilder(page, fn, action);
 }
 
 async function addComponent(page, componentType) {
-  await page.evaluate((componentType) => {
-    window.postMessage({ type: 'builder:add-component', payload: { componentType } }, '*');
+  const res = await page.evaluate((type) => {
+    try {
+      addComponent(type, 0, null);
+      return { ok: true, count: typeof components !== 'undefined' ? components.length : null };
+    } catch (e) {
+      return { error: String(e.message || e) };
+    }
   }, componentType);
+  if (res && res.error) {
+    throw new Error(`addComponent("${componentType}") failed: ${res.error}`);
+  }
+  return res;
+}
+
+/** How many parts are on the bench right now. */
+async function componentCount(page) {
+  return page.evaluate(() => (typeof components !== 'undefined' ? components.length : -1));
 }
 
 /**
- * Open legacy.html and wait for the 3-D canvas to be ready.
+ * Wait until the bench stops changing on its own.
+ *
+ * `_builderReady` means the scene exists, not that the page has finished
+ * putting its starter circuit on the bench — that lands a moment later. Clear
+ * before it arrives and it simply reappears, which is the same blank-shot
+ * failure wearing a different hat. Poll until the count holds still.
+ */
+async function waitForBenchToSettle(page, timeoutMs = 20_000) {
+  const started = Date.now();
+  let last = await componentCount(page);
+  let stableSince = Date.now();
+  while (Date.now() - started < timeoutMs) {
+    await page.waitForTimeout(250);
+    const now = await componentCount(page);
+    if (now !== last) {
+      last = now;
+      stableSince = Date.now();
+      continue;
+    }
+    if (Date.now() - stableSince >= 1000) return last;
+  }
+  return last;
+}
+
+/**
+ * Open legacy.html and wait for the 3-D scene to actually exist.
+ *
+ * `_builderReady` is the page's own signal that init() finished and the Three.js
+ * scene is up — the same flag it makes the React host wait for before letting
+ * anything call addComponent(). Waiting on it beats a fixed sleep, which is a
+ * guess that gets it wrong on a slow machine and wastes time on a fast one.
  */
 async function openBuilder(page) {
   const url = `${BASE_URL}/legacy.html`;
   await page.goto(url, { waitUntil: 'networkidle', timeout: 45_000 });
   await page.waitForSelector('canvas', { timeout: 20_000 });
-  // Extra settle time for THREE.js / WebGL initialisation
-  await page.waitForTimeout(3000);
+  await page.waitForFunction(
+    () => typeof _builderReady !== 'undefined' && _builderReady === true,
+    null,
+    { timeout: 60_000 },
+  );
   // Dismiss any tutorial/splash overlay
   await page.keyboard.press('Escape').catch(() => {});
   await page.waitForTimeout(500);
+  // Let the starter circuit finish arriving before anyone clears it.
+  await waitForBenchToSettle(page);
 }
 
 /**
@@ -246,8 +479,12 @@ async function main() {
 
   await mkdir(OUTPUT_DIR, { recursive: true });
 
+  const chromePath = resolveChrome();
+  console.log(`  Browser    : ${chromePath ?? "Playwright's own"}\n`);
+
   const browser = await chromium.launch({
     headless: true,
+    ...(chromePath ? { executablePath: chromePath } : {}),
     args: [
       '--no-sandbox',
       '--disable-setuid-sandbox',
@@ -277,26 +514,40 @@ async function main() {
     const comp = components[i];
     console.log(`  [${String(i + 1).padStart(2, '0')}/${components.length}]  ${comp.label}`);
 
-    // Clear previous components
+    // Clear previous components — and prove it, because a workspace that did
+    // not clear is how the demo circuit ended up in every shot.
     await sendAction(page, 'clear-workspace');
     await page.waitForTimeout(400);
+    const left = await componentCount(page);
+    if (left !== 0) {
+      throw new Error(`Workspace did not clear before ${comp.id}: ${left} part(s) still on the bench`);
+    }
 
     // Add this component to the workspace
     await addComponent(page, comp.id);
     await page.waitForTimeout(1800);
+    const now = await componentCount(page);
+    if (now !== 1) {
+      throw new Error(`Expected exactly 1 part on the bench for ${comp.id}, found ${now}`);
+    }
 
-    // Fit it neatly to screen
-    await sendAction(page, 'fit-screen');
-    await page.waitForTimeout(800);
-
-    // Small zoom-out so the component sits centred with breathing room
-    await sendAction(page, 'zoom-out');
-    await sendAction(page, 'zoom-out');
-    await page.waitForTimeout(400);
+    // Frame the part itself, centred, with the control ring off.
+    await sendAction(page, 'frame-part');
+    await page.waitForTimeout(700);
 
     // Inject the cinematic overlay
     await injectOverlay(page, comp);
     await page.waitForTimeout(200);
+
+    // Last thing before the shutter: take the editor's furniture off the part.
+    const clean = await callInBuilder(page, ACTIONS['clean-for-shot'], 'clean-for-shot');
+    await page.waitForTimeout(250);
+    const stillRinged = await page.evaluate(
+      () => (typeof selectionRing !== 'undefined' && selectionRing ? selectionRing.visible : false),
+    );
+    if (stillRinged) {
+      console.warn(`         !  selector ring still showing on ${comp.id} (clean: ${JSON.stringify(clean)})`);
+    }
 
     // Capture the screenshot
     const png  = await page.screenshot({ type: 'png', fullPage: false });
