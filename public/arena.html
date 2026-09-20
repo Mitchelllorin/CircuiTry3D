@@ -4334,6 +4334,7 @@ html.is-embedded .lib-toggle {
             core = new THREE.Mesh(new THREE.OctahedronGeometry(0.75, 0), material);
             break;
           }
+        }
 
         group.add(core);
         group.userData.core = core;
@@ -5776,6 +5777,17 @@ html.is-embedded .lib-toggle {
           applyCutawayToGroup(componentGroupB, state.selectedB.type || state.selectedB.family || "", state.showCutaway);
         }
       }
+
+      /**
+       * Put a component's failure state on screen, or take it off again.
+       * Lost its declaration line in an edit, which left the body loose in the
+       * file and cost the whole script: the stray closing brace ended up
+       * closing buildComponent's switch, so every function after it nested one
+       * level deeper and the loose body ran on every build with no `failure`
+       * in scope — "failure is not defined", thrown before a single component
+       * was drawn.
+       */
+      function updateFailureVisuals(group, failure) {
         if (!group) {
           return;
         }
