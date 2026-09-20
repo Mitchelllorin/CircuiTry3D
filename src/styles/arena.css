@@ -9,6 +9,23 @@
   --arena-cyan: #22d3ee;
   --arena-orange: #f97316;
   --arena-shadow: 0 20px 60px rgba(2, 6, 23, 0.45);
+
+  /* ── Ink for text on a nameplate ───────────────────────────────────────
+     A plate is glass: rgba(21,28,37,.78) over whatever the part is doing.
+     Composited over a WHITE backdrop — a part turning a lit face to the
+     camera — that chip is only rgb(72,78,85), so ink has to clear 4.5:1
+     against THAT, not against the dark dome it is usually seen on.
+
+     --arena-muted (#94a3b8) reads fine on a solid panel and manages 3.28:1
+     here, which is why the muted lines on a plate were the ones that went
+     when a part lit up. These are the same hues carried up until they clear
+     the floor on white and on black both. drive-106 holds them there. */
+  --plate-ink: #e8eef5;   /* primary readouts            6.8:1 on white */
+  --plate-ink-2: #cbd5e1; /* secondary: status, ident    5.7:1 on white */
+  --plate-temp: #d6e4ff;  /* the temperature line        6.6:1 on white */
+  --plate-warn: #fde68a;  /* stressed                    6.8:1 on white */
+  --plate-crit: #fed7aa;  /* critical                    6.2:1 on white */
+  --plate-bad: #fecaca;   /* failed / open / too hot     5.8:1 on white */
 }
 
 .arena-view {
@@ -267,18 +284,49 @@
      text — see updateLabelPosition in legacy.html for the long version. */
   will-change: transform;
   backface-visibility: hidden;
-  padding: 0 2px;
-  /* NO panel — float the readout directly over the 3D like the main builder's
-     component labels. A tight text-shadow carries legibility against the dark
-     dome instead of a padded slate slab (which obscured the models). */
-  border: none;
-  background: transparent;
+  /* ── A chip, because a text-shadow is not a backdrop ───────────────────
+     This floated bare on the 3D for a long time, on the argument that a tight
+     text-shadow would carry it against the dark dome and a padded slate slab
+     would cover the models. The first half does not survive measurement.
+
+     drive-106 hides the plates, reads the render underneath them and asks, of
+     every readout, what share of the ground it is standing on beats its own
+     ink at 4.5:1. Bare, at three camera angles: the E glyph lost 94% of its
+     own area, the part name 36%, most readouts 20-40%. The dome is not dark
+     where the plates are — they sit over lit parts, copper wire and failure
+     flashes, which is precisely where they have to be.
+
+     The slab was the right thing to reject and the wrong conclusion to draw.
+     A chip is tint plus BLUR, and the blur is what does the work: it destroys
+     the high-contrast detail behind the glyphs that a shadow cannot touch.
+     Same treatment as every other surface in the family, same 0.72 alpha
+     floor. Re-measured after: everything on it reads 0%, on the same frames.
+
+     It stays tight — 4px of padding, no shadow, a hairline — so it is a chip
+     hugging its text and not the slate box that was thrown out. Only the
+     focused plate carries the full stack; the rest are one line (see
+     --compact), so what is actually over the model is a 116x16 sliver. */
+  padding: 4px 6px;
+  border-radius: 8px;
+  border: 1px solid rgba(148, 197, 255, 0.16);
+  background: rgba(21, 28, 37, 0.78);
+  backdrop-filter: blur(14px) saturate(1.15);
+  -webkit-backdrop-filter: blur(14px) saturate(1.15);
   box-shadow: none;
+  /* Kept on top of the chip, not instead of it: the plates move, and a glyph
+     edge over a blurred bright patch still reads better with it. */
   text-shadow:
     0 1px 3px rgba(0, 0, 0, 0.92),
     0 0 2px rgba(0, 0, 0, 0.85);
   transition: opacity 180ms ease;
   font-variant-numeric: tabular-nums;
+}
+/* Android webviews without backdrop-filter get no blur at all, so the tint has
+   to carry the whole job alone — heavier, per the family's starter tokens. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .arena-nameplate {
+    background: rgba(21, 28, 37, 0.94);
+  }
 }
 /* ── F.U.S.E.™ watermark ────────────────────────────────────────────────────
    Copied from the main workspace (legacy.html #fuse-watermark) so the mark is
@@ -310,9 +358,11 @@
 }
 
 /* ── Load dial readout ──────────────────────────────────────────────────────
-   Same rule as .arena-nameplate: no slab, no border, no background. Just the
-   number floating over the 3D with a tight text-shadow doing the legibility
-   work. The reference line is what makes the value mean something. */
+   Same rule as .arena-nameplate, and it changed for the same measured reason:
+   a chip, because text on a canvas is not readable once the canvas moves. This
+   one sits over the middle of the bench where the parts light up, so it had
+   the brightest ground of anything on the screen. The reference line is what
+   makes the value mean something. */
 .arena-dial-label {
   position: absolute;
   inset-block-start: 0;
@@ -321,12 +371,15 @@
   flex-direction: column;
   align-items: center;
   gap: 1px;
-  padding: 1px 3px;
+  padding: 4px 8px;
   /* Bounded so the strip wraps instead of spilling past the scene edges and
      over the corner watermark on a portrait phone. */
   max-inline-size: min(88vw, 26rem);
-  border: none;
-  background: transparent;
+  border-radius: 9px;
+  border: 1px solid rgba(148, 197, 255, 0.16);
+  background: rgba(21, 28, 37, 0.78);
+  backdrop-filter: blur(14px) saturate(1.15);
+  -webkit-backdrop-filter: blur(14px) saturate(1.15);
   box-shadow: none;
   pointer-events: none;
   text-align: center;
@@ -336,6 +389,11 @@
   transition: opacity 180ms ease;
   font-variant-numeric: tabular-nums;
   opacity: 0;
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .arena-dial-label {
+    background: rgba(21, 28, 37, 0.94);
+  }
 }
 .arena-dial-label__value {
   font-size: 1.02rem;
@@ -457,16 +515,16 @@
   font-size: 0.46rem;
   font-weight: 800;
   letter-spacing: 0.07em;
-  color: var(--arena-muted);
+  color: var(--plate-ink-2);
 }
 .arena-nameplate--stressed .arena-nameplate__status {
-  color: #fcd34d;
+  color: var(--plate-warn);
 }
 .arena-nameplate--critical .arena-nameplate__status {
-  color: #fdba74;
+  color: var(--plate-crit);
 }
 .arena-nameplate--failed .arena-nameplate__status {
-  color: #fca5a5;
+  color: var(--plate-bad);
 }
 
 .arena-nameplate__track {
@@ -508,28 +566,28 @@
   font-weight: 700;
   letter-spacing: 0.07em;
   text-transform: uppercase;
-  color: var(--arena-muted);
+  color: var(--plate-ink-2);
 }
 .arena-nameplate__metrics b i {
   font-style: normal;
   font-size: 0.54rem;
   font-weight: 600;
-  color: var(--arena-muted);
+  color: var(--plate-ink-2);
 }
 .arena-nameplate__ident {
   margin-block-start: 0;
   font-size: 0.52rem;
-  color: var(--arena-muted);
+  color: var(--plate-ink-2);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 .arena-nameplate__metrics .is-hot,
 .arena-nameplate__metrics .is-hot b {
-  color: #fca5a5;
+  color: var(--plate-bad);
 }
 .arena-nameplate__metrics .is-open {
-  color: #fca5a5;
+  color: var(--plate-bad);
   font-weight: 800;
 }
 
@@ -545,12 +603,22 @@
    A column always has current in the same place.
    Gap is tighter than the workspace's 10px because these plates float over the
    parts themselves and four rows at that spacing turns a label into a panel. */
+/* The dense block earns a solid inset — glass for the frame, solid for the
+   figures. Not decoration: the four W.I.R.E. glyphs are the only text on the
+   plate that is not near-white, and #4a90ff and #ff4444 are dark enough that
+   over glass laid on a bright part they still measured 17% and 29% of their
+   area under 4.5:1. On a known opaque ground they clear it outright, and the
+   family's colour coding survives intact — which was the point of colouring
+   them, so W here is the same W as on the console. */
 .arena-nameplate__wire {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: 2px;
-  margin-block-start: 2px;
+  margin-block-start: 3px;
+  padding: 3px 5px;
+  border-radius: 5px;
+  background: #151c25;
   font-size: 0.78rem;
   line-height: 1.35;
   font-variant-numeric: tabular-nums;
@@ -581,16 +649,21 @@
   margin-block-start: 1px;
   font-size: 0.62rem;
   font-weight: 700;
-  color: rgba(200, 220, 255, 0.82);
+  color: var(--plate-temp);
   font-variant-numeric: tabular-nums;
 }
 .arena-nameplate__temp i {
   font-style: normal;
+  /* The rated figure is the quieter half of "167°C/105°C rated", and weight is
+     what makes it quieter — 600 against the actual's 700. It used to be dimmed
+     as well, .72 on top of a .82 colour, which stacked to an effective .59 and
+     put the rated value at 3.25:1 over a lit part. Opacity is the wrong tool
+     for a hierarchy that has to stay readable: the figure the user is meant to
+     compare against is the one that was disappearing. */
   font-weight: 600;
-  opacity: 0.72;
 }
 .arena-nameplate__temp.is-hot {
-  color: #fca5a5;
+  color: var(--plate-bad);
 }
 
 /* Load readout on the 3D stage. Bottom-RIGHT so it never crowds the
@@ -2074,6 +2147,7 @@
   line-height: 1.4;
 }
 
+
 .arena-catalog-reference__list {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
@@ -2678,7 +2752,7 @@
 .arena-nameplate__brief-load {
   font-size: 0.66rem;
   font-variant-numeric: tabular-nums;
-  color: rgba(148, 163, 184, 0.9);
+  color: var(--plate-ink-2);
 }
 /* Past its rating is the one thing worth shouting about in the small form. */
 .arena-nameplate__brief-load.is-over {
