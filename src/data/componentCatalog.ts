@@ -61,11 +61,97 @@ export type CatalogComponent = {
   };
 };
 
+/**
+ * The line that has to appear wherever a branded part is shown.
+ *
+ * Defined once, here, because it used to be carried by the optional
+ * `simulation` block — which meant the 51 entries that never got one showed no
+ * disclaimer at all. The least-verified entries were the unprotected ones,
+ * which is exactly backwards. Nothing in this sentence depends on which part
+ * is on screen, so it does not belong on a part.
+ */
+export const CATALOG_DISCLAIMER =
+  "Manufacturer names and part numbers identify real parts. CircuiTry3D is not " +
+  "affiliated with or endorsed by any manufacturer listed, and the behavior shown " +
+  "is CircuiTry3D's own educational model, not a manufacturer part model.";
+
+/** Families whose name is an acronym and reads wrong in lower case. */
+
+const FAMILY_LABEL: Record<string, string> = {
+
+  bjt: "BJT",
+
+  "bjt-npn": "NPN BJT",
+
+  "bjt-pnp": "PNP BJT",
+
+  led: "LED",
+
+  ic: "IC",
+
+  mosfet: "MOSFET",
+
+  opamp: "op-amp",
+
+  zener_diode: "Zener diode",
+
+};
+
+
+const familyLabel = (type: string) =>
+
+  FAMILY_LABEL[type] ?? type.replace(/_/g, " ");
+
+
+/** "Vishay" -> "Vishay's", but "Texas Instruments" -> "Texas Instruments'". */
+
+
+const possessive = (name: string) => (name.endsWith("s") ? `${name}'` : `${name}'s`);
+
+
+
+/** What is known about where a catalog entry's figures came from. */
+export type CatalogProvenance = {
+  /** Whether the engine represents this device, or only files the facts. */
+  status: "modeled" | "reference-only";
+  detail: string;
+  /** True when the figures were entered from the manufacturer's own page. */
+  sourceBacked: boolean;
+};
+
+/**
+ * Provenance for any entry, declared or not.
+ *
+ * Fidelity and provenance are two different axes, and conflating them is how
+ * this went wrong the first time. A jellybean like 2N3904 or LM7805 is modeled
+ * honestly — the generic engine does represent it — while its figures are
+ * still typical published values nobody has checked against the manufacturer's
+ * own page. Such a part is not "reference-only"; it is modeled and unverified,
+ * and a reader is entitled to both halves rather than to silence.
+ *
+ * Defaulting to `modeled` keeps `builderTypeFor` deciding exactly what it
+ * decided before: only an explicit `reference-only` withholds a part.
+ */
+export function provenanceFor(part: CatalogComponent): CatalogProvenance {
+  if (part.simulation) {
+    return { ...part.simulation, sourceBacked: Boolean(part.source) };
+  }
+  return {
+    status: "modeled",
+    detail:
+      `Modeled with CircuiTry3D's generic ${familyLabel(part.type)} engine. ` +
+      `Catalog figures are typical published values for this industry-standard ` +
+      `part and have not been verified against ${possessive(part.manufacturer)} own product page.`,
+    sourceBacked: false,
+  };
+}
+
 export const CATALOG_COMPONENTS: CatalogComponent[] = [
   // ── Batteries ─────────────────────────────────────────────────────────────
   {
     id: "energizer-522-9v",
     manufacturer: "Energizer",
+    partNumber: "522",
     name: "522 9V Alkaline",
     spec: "PP3 · 9V · 565mAh · alkaline",
     type: "battery",
@@ -75,6 +161,7 @@ export const CATALOG_COMPONENTS: CatalogComponent[] = [
   {
     id: "duracell-mn1604-9v",
     manufacturer: "Duracell",
+    partNumber: "MN1604",
     name: "MN1604 9V",
     spec: "PP3 · 9V · 550mAh · alkaline",
     type: "battery",
@@ -131,6 +218,7 @@ export const CATALOG_COMPONENTS: CatalogComponent[] = [
   {
     id: "yageo-cfr-1k",
     manufacturer: "Yageo",
+    partNumber: "CFR-25JB-52-1K",
     name: "CFR-25JB-52-1K",
     spec: "axial · 1kΩ · 5% · 250mW",
     type: "resistor",
@@ -140,6 +228,7 @@ export const CATALOG_COMPONENTS: CatalogComponent[] = [
   {
     id: "yageo-cfr-10k",
     manufacturer: "Yageo",
+    partNumber: "CFR-25JB-52-10K",
     name: "CFR-25JB-52-10K",
     spec: "axial · 10kΩ · 5% · 250mW",
     type: "resistor",
@@ -149,6 +238,7 @@ export const CATALOG_COMPONENTS: CatalogComponent[] = [
   {
     id: "bourns-cr0603-100k",
     manufacturer: "Bourns",
+    partNumber: "CR0603-FX-1003ELF",
     name: "CR0603-FX-1003ELF",
     spec: "0603 · 100kΩ · 1% · 100mW",
     type: "resistor",
@@ -160,6 +250,7 @@ export const CATALOG_COMPONENTS: CatalogComponent[] = [
   {
     id: "murata-gcj-1uf",
     manufacturer: "Murata",
+    partNumber: "GCJ316R71H105KA12D",
     name: "GCJ316R71H105KA12D",
     spec: "0805 · 1µF · 50V · X7R",
     type: "capacitor",
@@ -169,6 +260,7 @@ export const CATALOG_COMPONENTS: CatalogComponent[] = [
   {
     id: "tdk-c3225x5r-10uf",
     manufacturer: "TDK",
+    partNumber: "C3225X5R1C106K",
     name: "C3225X5R1C106K",
     spec: "1210 · 10µF · 16V · X5R",
     type: "capacitor",
@@ -178,6 +270,7 @@ export const CATALOG_COMPONENTS: CatalogComponent[] = [
   {
     id: "panasonic-eeufm-100uf",
     manufacturer: "Panasonic",
+    partNumber: "EEU-FM1E101",
     name: "EEU-FM1E101",
     spec: "radial · 100µF · 25V · 105°C",
     type: "capacitor",
@@ -187,6 +280,7 @@ export const CATALOG_COMPONENTS: CatalogComponent[] = [
   {
     id: "nichicon-ufw-470uf",
     manufacturer: "Nichicon",
+    partNumber: "UFW1C471MED",
     name: "UFW1C471MED",
     spec: "radial · 470µF · 16V · 105°C",
     type: "capacitor",
@@ -198,6 +292,7 @@ export const CATALOG_COMPONENTS: CatalogComponent[] = [
   {
     id: "vishay-tlhr5400-red",
     manufacturer: "Vishay",
+    partNumber: "TLHR5400",
     name: "TLHR5400",
     spec: "T-1 3/4 · red · 2.0V · 20mA · 630nm",
     type: "led",
@@ -207,6 +302,7 @@ export const CATALOG_COMPONENTS: CatalogComponent[] = [
   {
     id: "wurth-led-green",
     manufacturer: "Würth Elektronik",
+    partNumber: "151031VS06000",
     name: "151031VS06000",
     spec: "SMD · green · 2.1V · 20mA · 525nm",
     type: "led",
@@ -216,6 +312,7 @@ export const CATALOG_COMPONENTS: CatalogComponent[] = [
   {
     id: "osram-lb-d47b-blue",
     manufacturer: "Osram",
+    partNumber: "LB D47B-R2T1-35",
     name: "LB D47B-R2T1-35",
     spec: "SMD · blue · 3.0V · 20mA · 470nm",
     type: "led",
@@ -225,6 +322,7 @@ export const CATALOG_COMPONENTS: CatalogComponent[] = [
   {
     id: "cree-c503b-wan-white",
     manufacturer: "Cree",
+    partNumber: "C503B-WAN-CB0F0251",
     name: "C503B-WAN-CB0F0251",
     spec: "T-1 3/4 · white · 3.2V · 20mA · 6000K",
     type: "led",
@@ -234,6 +332,7 @@ export const CATALOG_COMPONENTS: CatalogComponent[] = [
   {
     id: "lumileds-lxhl-mm01-yellow",
     manufacturer: "Lumileds",
+    partNumber: "LXHL-MM01",
     name: "LXHL-MM01 Yellow",
     spec: "T-1 3/4 · yellow · 2.1V · 20mA · 585nm",
     type: "led",
@@ -245,6 +344,7 @@ export const CATALOG_COMPONENTS: CatalogComponent[] = [
   {
     id: "on-semi-1n4148",
     manufacturer: "ON Semiconductor",
+    partNumber: "1N4148",
     name: "1N4148",
     spec: "DO-35 · 100V · 300mA · signal",
     type: "diode",
@@ -254,6 +354,7 @@ export const CATALOG_COMPONENTS: CatalogComponent[] = [
   {
     id: "on-semi-1n4007",
     manufacturer: "ON Semiconductor",
+    partNumber: "1N4007",
     name: "1N4007",
     spec: "DO-41 · 1000V · 1A · rectifier",
     type: "diode",
@@ -263,6 +364,7 @@ export const CATALOG_COMPONENTS: CatalogComponent[] = [
   {
     id: "nxp-bat43",
     manufacturer: "NXP",
+    partNumber: "BAT43",
     name: "BAT43",
     spec: "DO-35 · 30V · 200mA · Schottky",
     type: "diode",
@@ -272,6 +374,7 @@ export const CATALOG_COMPONENTS: CatalogComponent[] = [
   {
     id: "vishay-1n5819",
     manufacturer: "Vishay",
+    partNumber: "1N5819",
     name: "1N5819",
     spec: "DO-41 · 40V · 1A · Schottky",
     type: "diode",
@@ -283,6 +386,7 @@ export const CATALOG_COMPONENTS: CatalogComponent[] = [
   {
     id: "on-semi-2n2222a",
     manufacturer: "ON Semiconductor",
+    partNumber: "2N2222A",
     name: "2N2222A",
     spec: "TO-18 · NPN · 40V · 600mA · 625mW",
     type: "bjt",
@@ -292,6 +396,7 @@ export const CATALOG_COMPONENTS: CatalogComponent[] = [
   {
     id: "on-semi-2n3904",
     manufacturer: "ON Semiconductor",
+    partNumber: "2N3904",
     name: "2N3904",
     spec: "TO-92 · NPN · 40V · 200mA",
     type: "bjt",
@@ -301,6 +406,7 @@ export const CATALOG_COMPONENTS: CatalogComponent[] = [
   {
     id: "stmicro-bc547",
     manufacturer: "STMicroelectronics",
+    partNumber: "BC547",
     name: "BC547",
     spec: "TO-92 · NPN · 45V · 100mA · 500mW",
     type: "bjt",
@@ -310,6 +416,7 @@ export const CATALOG_COMPONENTS: CatalogComponent[] = [
   {
     id: "on-semi-tip31c",
     manufacturer: "ON Semiconductor",
+    partNumber: "TIP31C",
     name: "TIP31C",
     spec: "TO-220 · NPN · 100V · 3A · 40W",
     type: "bjt",
@@ -321,6 +428,7 @@ export const CATALOG_COMPONENTS: CatalogComponent[] = [
   {
     id: "infineon-irf540n",
     manufacturer: "Infineon",
+    partNumber: "IRF540N",
     name: "IRF540N",
     spec: "TO-220 · N-MOSFET · 100V · 33A",
     type: "mosfet",
@@ -330,6 +438,7 @@ export const CATALOG_COMPONENTS: CatalogComponent[] = [
   {
     id: "vishay-si2302ads",
     manufacturer: "Vishay",
+    partNumber: "SI2302ADS",
     name: "SI2302ADS",
     spec: "SOT-23 · N-MOSFET · 20V · 2.3A",
     type: "mosfet",
@@ -339,6 +448,7 @@ export const CATALOG_COMPONENTS: CatalogComponent[] = [
   {
     id: "on-semi-2n7000",
     manufacturer: "ON Semiconductor",
+    partNumber: "2N7000",
     name: "2N7000",
     spec: "TO-92 · N-MOSFET · 60V · 200mA",
     type: "mosfet",
@@ -350,6 +460,7 @@ export const CATALOG_COMPONENTS: CatalogComponent[] = [
   {
     id: "ti-lm7805",
     manufacturer: "Texas Instruments",
+    partNumber: "LM7805",
     name: "LM7805",
     spec: "TO-220 · 5V · 1.5A",
     type: "voltage_regulator",
@@ -359,6 +470,7 @@ export const CATALOG_COMPONENTS: CatalogComponent[] = [
   {
     id: "ti-lm7812",
     manufacturer: "Texas Instruments",
+    partNumber: "LM7812",
     name: "LM7812",
     spec: "TO-220 · 12V · 1.5A",
     type: "voltage_regulator",
@@ -368,6 +480,7 @@ export const CATALOG_COMPONENTS: CatalogComponent[] = [
   {
     id: "ti-lm317",
     manufacturer: "Texas Instruments",
+    partNumber: "LM317T",
     name: "LM317T",
     spec: "TO-220 · adj 1.2–37V · 1.5A",
     type: "voltage_regulator",
@@ -377,6 +490,7 @@ export const CATALOG_COMPONENTS: CatalogComponent[] = [
   {
     id: "microchip-mcp1700-3v3",
     manufacturer: "Microchip",
+    partNumber: "MCP1700-3302E/TO",
     name: "MCP1700-3302E/TO",
     spec: "TO-92 · 3.3V · 250mA · LDO",
     type: "voltage_regulator",
@@ -388,6 +502,7 @@ export const CATALOG_COMPONENTS: CatalogComponent[] = [
   {
     id: "ti-lm358",
     manufacturer: "Texas Instruments",
+    partNumber: "LM358N",
     name: "LM358N",
     spec: "DIP-8 · dual op-amp · 32V supply",
     type: "opamp",
@@ -397,6 +512,7 @@ export const CATALOG_COMPONENTS: CatalogComponent[] = [
   {
     id: "ti-lm741",
     manufacturer: "Texas Instruments",
+    partNumber: "LM741CN",
     name: "LM741CN",
     spec: "DIP-8 · single op-amp · 18V supply",
     type: "opamp",
@@ -406,6 +522,7 @@ export const CATALOG_COMPONENTS: CatalogComponent[] = [
   {
     id: "analog-devices-op07",
     manufacturer: "Analog Devices",
+    partNumber: "OP07CP",
     name: "OP07CP",
     spec: "DIP-8 · ultra-low offset · 22V supply",
     type: "opamp",
@@ -417,6 +534,7 @@ export const CATALOG_COMPONENTS: CatalogComponent[] = [
   {
     id: "ti-ne555",
     manufacturer: "Texas Instruments",
+    partNumber: "NE555P",
     name: "NE555P",
     spec: "DIP-8 · timer · 4.5–16V",
     type: "ic",
@@ -426,6 +544,7 @@ export const CATALOG_COMPONENTS: CatalogComponent[] = [
   {
     id: "microchip-pic12f675",
     manufacturer: "Microchip",
+    partNumber: "PIC12F675-I/P",
     name: "PIC12F675-I/P",
     spec: "DIP-8 · 8-bit MCU · 4MHz · 3.5–5.5V",
     type: "ic",
@@ -437,6 +556,7 @@ export const CATALOG_COMPONENTS: CatalogComponent[] = [
   {
     id: "sumida-cdrh4d28-470",
     manufacturer: "Sumida",
+    partNumber: "CDRH4D28-470",
     name: "CDRH4D28-470",
     spec: "SMD shielded · 47µH · 700mA sat · 0.22Ω DCR",
     type: "inductor",
@@ -446,6 +566,7 @@ export const CATALOG_COMPONENTS: CatalogComponent[] = [
   {
     id: "bourns-srr1260-101y",
     manufacturer: "Bourns",
+    partNumber: "SRR1260-101Y",
     name: "SRR1260-101Y",
     spec: "SMD shielded · 100µH · 2.1A sat · 0.061Ω DCR",
     type: "inductor",
@@ -455,6 +576,7 @@ export const CATALOG_COMPONENTS: CatalogComponent[] = [
   {
     id: "vishay-ihlp2020-10uh",
     manufacturer: "Vishay",
+    partNumber: "IHLP2020BZER100M5A",
     name: "IHLP2020BZER100M5A",
     spec: "SMD shielded · 10µH · 4.6A sat · 0.023Ω DCR",
     type: "inductor",
@@ -466,6 +588,7 @@ export const CATALOG_COMPONENTS: CatalogComponent[] = [
   {
     id: "littelfuse-251001",
     manufacturer: "Littelfuse",
+    partNumber: "251001",
     name: "251001",
     spec: "axial · 1A · 250V · fast blow · glass",
     type: "fuse",
@@ -475,6 +598,7 @@ export const CATALOG_COMPONENTS: CatalogComponent[] = [
   {
     id: "littelfuse-250500",
     manufacturer: "Littelfuse",
+    partNumber: "250500",
     name: "250500",
     spec: "axial · 500mA · 250V · fast blow · glass",
     type: "fuse",
@@ -484,6 +608,7 @@ export const CATALOG_COMPONENTS: CatalogComponent[] = [
   {
     id: "schurter-ato-5a",
     manufacturer: "Schurter",
+    partNumber: "0034.3512",
     name: "0034.3512",
     spec: "ATO blade · 5A · 32V · automotive",
     type: "fuse",
@@ -498,6 +623,7 @@ export const CATALOG_COMPONENTS: CatalogComponent[] = [
   {
     id: "abracon-abls-16mhz",
     manufacturer: "Abracon",
+    partNumber: "ABLS-16.000MHZ-B4-T",
     name: "ABLS-16.000MHZ-B4-T",
     spec: "HC-49/US · 16MHz · 18pF · ±20ppm",
     type: "crystal",
@@ -506,6 +632,7 @@ export const CATALOG_COMPONENTS: CatalogComponent[] = [
   {
     id: "ecs-8mhz",
     manufacturer: "ECS",
+    partNumber: "ECS-80-20-4X",
     name: "ECS-80-20-4X",
     spec: "HC-49/US · 8MHz · 20pF · ±30ppm",
     type: "crystal",
@@ -516,6 +643,7 @@ export const CATALOG_COMPONENTS: CatalogComponent[] = [
   {
     id: "vishay-ntcle100-10k",
     manufacturer: "Vishay",
+    partNumber: "NTCLE100E3103JB0",
     name: "NTCLE100E3103JB0",
     spec: "NTC · 10kΩ @25°C · B=3950K · 5%",
     type: "thermistor",
@@ -527,7 +655,8 @@ export const CATALOG_COMPONENTS: CatalogComponent[] = [
   // one pins its Builder part explicitly.
   {
     id: "on-semi-2n3906",
-    manufacturer: "ON Semi",
+    manufacturer: "ON Semiconductor",
+    partNumber: "2N3906",
     name: "2N3906",
     spec: "TO-92 · PNP · 40V · 200mA",
     type: "bjt",
@@ -966,6 +1095,7 @@ export const CATALOG_COMPONENTS: CatalogComponent[] = [
   {
     id: "ti-74hc595",
     manufacturer: "Texas Instruments",
+    partNumber: "SN74HC595N",
     name: "SN74HC595N",
     spec: "DIP-16 · 8-bit shift register · 2–6V",
     type: "ic",
@@ -975,6 +1105,7 @@ export const CATALOG_COMPONENTS: CatalogComponent[] = [
   {
     id: "ti-cd4011be",
     manufacturer: "Texas Instruments",
+    partNumber: "CD4011BE",
     name: "CD4011BE",
     spec: "DIP-14 · quad NAND · 3–18V",
     type: "ic",

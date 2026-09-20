@@ -75,6 +75,7 @@ import {
   REAL_PART_LIBRARY_ACTIONS,
   UNIFIED_COMPONENT_ACTIONS,
 } from "../components/builder/componentLibrary";
+import { CATALOG_DISCLAIMER } from "../data/componentCatalog";
 import {
   DEFAULT_LABEL_LEVEL,
   clampLabelVisibilityLevel,
@@ -3769,6 +3770,15 @@ export default function Builder() {
                 (UNIFIED_COMPONENT_ACTIONS) and filter under the same category tabs,
                 so there is no longer a separate stacked section to hide behind the
                 reel. */}
+            {/* The branded parts sit in that same picker, so the attribution has to
+                be reachable from it and not only from the Arena's catalog block.
+                Collapsed: the user summons it, it costs no space shut, and it is one
+                tap either way — a permanent paragraph of legal text in a component
+                picker would be a slab nobody reads. */}
+            <details className="builder-brand-note">
+              <summary>About the branded parts</summary>
+              <p>{CATALOG_DISCLAIMER}</p>
+            </details>
           </div>
         </nav>
       </div>

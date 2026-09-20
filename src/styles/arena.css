@@ -2133,7 +2133,11 @@
 .arena-catalog-reference {
   margin: 4px 0;
   color: var(--arena-muted);
-  font-size: 0.72rem;
+  /* 0.82rem, not 0.72: the family floor is 13px on a phone and 0.72rem
+     lands at ~11.5px. This block is the provenance surface — the one
+     place a reader is sent to check where a figure came from — so it is
+     the last thing that should be squinted at. */
+  font-size: 0.82rem;
 }
 
 .arena-catalog-reference summary {
@@ -2147,6 +2151,19 @@
   line-height: 1.4;
 }
 
+.arena-catalog-reference__count {
+  color: var(--arena-text);
+  font-weight: 600;
+}
+
+/* Reads as a caution, not an alarm: an unverified figure is still a real
+   published figure. Muted rather than the amber the status column carries,
+   so it does not shout over it. */
+.arena-catalog-reference__unverified {
+  color: rgba(148, 163, 184, 0.9);
+  font-style: italic;
+  white-space: nowrap;
+}
 
 .arena-catalog-reference__list {
   display: grid;

@@ -6309,3 +6309,38 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
     background-position: 200% 0;
   }
 }
+
+/* ── Branded-part attribution ───────────────────────────────────────────────
+   Every manufacturer name and part number in the picker belongs to somebody
+   else. The statement of that lives in one place in the code
+   (CATALOG_DISCLAIMER) and surfaces here and in the Arena's catalog block, so
+   it cannot go missing on one of them again.
+
+   A details, not a permanent paragraph: shut it is one line at the foot of the
+   picker, open it is three, and the user chooses which. Legal text that sits
+   open forever in a component picker is a slab, and slabs do not get read. */
+.builder-brand-note {
+  margin: 8px 0 0;
+  /* 13px floor, same as everywhere else in the family. */
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--ink-2, rgba(148, 163, 184, 0.9));
+}
+
+.builder-brand-note summary {
+  cursor: pointer;
+  /* 48px tap target: the summary is the whole control. */
+  min-block-size: var(--tap, 48px);
+  display: flex;
+  align-items: center;
+  color: var(--ink, #e8eef5);
+  font-weight: 600;
+}
+
+.builder-brand-note p {
+  margin: 0 0 4px;
+  /* Dense text earns a solid inset — this sits inside a translucent menu. */
+  padding: 10px;
+  border-radius: 6px;
+  background: var(--panel-solid, #151c25);
+}
