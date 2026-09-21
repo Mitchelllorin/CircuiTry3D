@@ -17,7 +17,7 @@ weren't looking.
   rest of the beat goes unwalked.
 - **The route grows when a screen ships.** A new screen that isn't on the beat is
   a screen nobody will look at again.
-- **Report the walk, not a verdict.** "Walked 51 of 51, six notes" beats
+- **Report the walk, not a verdict.** "Walked 54 of 54, six notes" beats
   "looks good."
 
 ---
@@ -93,74 +93,85 @@ weren't looking.
 25. Every toggle's on-state differs in **shape**, not colour alone — a fill, a
     border, a check. Check it at a window if you can get to one.
 
+26. **Explode** — the burst button at the foot of the right column opens the
+    slider beside it. Drag it to the top: every part lifts straight up off the
+    board and its leads stretch down to the wires it was connected to. Drag it
+    back: they sit down exactly where they were, not a grid square off.
+27. Hold it partway. Orbit, select a part, open its edit modal, run the sim,
+    drag a part — every one still works, and the explode holds through all of
+    it. Tap the canvas: the slider closes and the parts stay up. Only
+    **Assemble**, or the slider at the bottom, brings them down.
+28. Fit to Screen at 0% and again at 100% — the same framing both times, with
+    the lifted parts inside it. The camera does not move while the slider does.
+
 ## 7 · The bottom bar — Insights
 
-26. The **Insights** tab opens the bottom bar. **Analysis**: the four W.I.R.E.
+29. The **Insights** tab opens the bottom bar. **Analysis**: the four W.I.R.E.
     tiles — Watts, Amps, Ohms, Volts. Tap each for its calculation.
-27. Run the simulation and watch the tiles move. Digits hold their columns as
+30. Run the simulation and watch the tiles move. Digits hold their columns as
     values update; they do not dance.
-28. **Settings**: Workspace Skin, Flow Visualisation, Polarity Markers, Design
+31. **Settings**: Workspace Skin, Flow Visualisation, Polarity Markers, Design
     Grid, Component Labels. Flip all five, both ways.
-29. Workspace Skin — pick a skin, import a background, cancel out of it.
-30. **Guides**: W.I.R.E. Guide, Keyboard Shortcuts, About CircuiTry3D, Help
+32. Workspace Skin — pick a skin, import a background, cancel out of it.
+33. **Guides**: W.I.R.E. Guide, Keyboard Shortcuts, About CircuiTry3D, Help
     Center. Open each, close each.
 
 ## 8 · Nameplates
 
-31. Cycle **Component Labels** through its three stops: off → names and values →
+34. Cycle **Component Labels** through its three stops: off → names and values →
     names, values and live metrics. Third press is back to off, not a fourth
     stop.
-32. With the sim running, rated sits beside actual, and the plate goes to warning
+35. With the sim running, rated sits beside actual, and the plate goes to warning
     colour **approaching** the limit, not after it.
-33. Crowd parts together and watch what the plates do when they collide.
+36. Crowd parts together and watch what the plates do when they collide.
 
 ## 9 · Save, load, recover
 
-34. Save a circuit. Load it back. Load with nothing saved — the empty state says
+37. Save a circuit. Load it back. Load with nothing saved — the empty state says
     so.
-35. Kill the app mid-build and relaunch: the recovery banner offers the work
+38. Kill the app mid-build and relaunch: the recovery banner offers the work
     back, and taking it returns the circuit intact.
 
 ## 10 · Practice and troubleshoot
 
-36. **Practice**: Series Circuit, Parallel Circuit, Mixed Circuit, Combo
+39. **Practice**: Series Circuit, Parallel Circuit, Mixed Circuit, Combo
     Challenge. Then Random Practice Problem and the Table Method Guide.
-37. **Troubleshoot** — work one fault through to the end.
+40. **Troubleshoot** — work one fault through to the end.
 
 ## 11 · The Arena
 
-38. **Component Arena Sync** carries the active build across. Sync with an empty
+41. **Component Arena Sync** carries the active build across. Sync with an empty
     workspace too, and with the biggest circuit you have.
-39. The quick bar: **Parts**, **Board**, **Conditions**, **Results**.
-40. **Bench** — put a part on the bench, set Supply and Series R, Run. Run again.
+42. The quick bar: **Parts**, **Board**, **Conditions**, **Results**.
+43. **Bench** — put a part on the bench, set Supply and Series R, Run. Run again.
     Watch the instrumentation while it runs.
-41. **Battle** — Solo and Throw. A winner is declared and the leaderboard takes
+44. **Battle** — Solo and Throw. A winner is declared and the leaderboard takes
     it.
-42. **Conditions** — every scenario: Lab Bench, Desert Heat, Arctic Cold,
+45. **Conditions** — every scenario: Lab Bench, Desert Heat, Arctic Cold,
     Orbit / Vacuum, Engine Bay, Overvolt Surge.
-43. **Stress Test** and the fuse forecast. Take a part past its rating and watch
+46. **Stress Test** and the fuse forecast. Take a part past its rating and watch
     it go — the failure reads as the part failing, and the plates keep reading
     through it.
-44. The part editor and the roster picker, both directions. The catalog
+47. The part editor and the roster picker, both directions. The catalog
     reference: every branded part says whose it is and where its figures came
     from.
 
 ## 12 · The rest of the doors
 
-45. Learn, Arcade, Classroom, Community, Account, Pricing, Textbook, Gallery —
+48. Learn, Arcade, Classroom, Community, Account, Pricing, Textbook, Gallery —
     open each from the workspace, and check the back route out of each.
-46. Settings page. About → **More from the 3D family**: all eight siblings, one
+49. Settings page. About → **More from the 3D family**: all eight siblings, one
     line each, linked to their own sites, with CircuiTry3D listed but not linked.
-47. Legal: Privacy, Data Safety, Delete Account, Terms, App Access, Play Store
+50. Legal: Privacy, Data Safety, Delete Account, Terms, App Access, Play Store
     compliance. Every one reachable from inside the app, not only the landing.
-48. A route that does not exist → the not-found page, and a way back from it.
+51. A route that does not exist → the not-found page, and a way back from it.
 
 ## 13 · Leaving and coming back
 
-49. Background the app and return, at every state, including with a panel open
+52. Background the app and return, at every state, including with a panel open
     and mid-simulation.
-50. Rotate to landscape and back at the same states.
-51. Android back button from a panel, from a modal, from a workspace mode, and at
+53. Rotate to landscape and back at the same states.
+54. Android back button from a panel, from a modal, from a workspace mode, and at
     the root. It never leaves you somewhere you can't get out of.
 
 ---
@@ -168,7 +179,8 @@ weren't looking.
 ## Then: driving for bugs
 
 Not part of the route — a separate pass, same build. Hammer one control. Two at
-once. Rotate mid-action. Background and return with a panel open. Select,
+once. Rotate mid-action. Background and return with a panel open. Slam explode to both ends,
+fast, over and over, while orbiting. Select,
 deselect, select something else with a panel open. Empty, exactly one, and
 maximum data — an empty workspace, a single resistor, and the biggest circuit
 you have. Interrupt it. Kill it dirty and relaunch. Back button everywhere
@@ -191,7 +203,7 @@ walk, so a wrong name in the route cannot derail it. This is not the beat: the
 beat is a cold start on the real phone at 360×640, and none of the below was
 seen on a device. Six notes, logged not fixed, per the rule. Note 4 fixed since.
 
-1. **Step 46 — "More from the 3D family" does not exist.** What exists is
+1. **Step 49 — "More from the 3D family" does not exist.** What exists is
    `StudioCredit` ("From the makers of"), mounted three places: Help modal →
    About, Builder → About, and the Settings page. `constants/urls.ts`
    `STUDIO_SITES` lists two of the eight siblings, and the landing footer
@@ -203,22 +215,29 @@ seen on a device. Six notes, logged not fixed, per the rule. Note 4 fixed since.
    This is the same defect, in the same component, as ThePrints3D note 1. It is
    one shared fix across the family, not two per-app ones.
 
-2. **The family's signature control is not in the flagship.** There is no explode
-   anywhere in CircuiTry3D — the only `explode` in the tree is the failure
-   particle effect, a part physically letting go. The data layer for it is
-   already built: `componentCompositions.ts` carries `internalLayers` "for
-   cutaway / exploded 3D view", and `Component3DLibrary.ts` exports
-   `getComponent3DWithInternals()` to merge them in. **Nothing calls it.**
+2. **Explode — DECIDED 2026-09-21: both levels, one slider.** With nothing
+   selected the circuit comes apart; with a part selected, that part opens up.
+   The circuit's real axis is straight up off the board — the way you pull a
+   part — with the leads stretching down to the traces.
 
-   Worth saying plainly before anyone wires a slider to it: a circuit is not an
-   assembly. A resistor has no assembly axis to come off along, so "parts travel
-   along their real assembly axis" does not translate here the way it does for a
-   wall or an engine. What the internals data supports is a *part* opening up to
-   show its construction — a different interaction wearing the same name. Which
-   of the two CircuiTry3D should have is Mitchell's call, and **the explode line
-   of the bug drive cannot be walked until it is.**
+   **Circuit level is built** (steps 26–28). The lift lives only on the mesh;
+   `component.position` is never touched, so saves, undo, the solver and the
+   arena export all keep reading the assembled board. Wires are routed flat at
+   y = 0, so each lifted terminal gets a vertical lead down to its wire.
 
-3. **Nameplate collision handling was never built.** Step 33 asks what the plates
+   **Part level is next:** `getComponent3DWithInternals()` and the
+   `internalLayers` data are still unused, and are what it will run on.
+
+   One placement call to check on the phone: ThePrints3D keeps its slider on
+   screen permanently. This column had no room for that at 360×640, so here the
+   persistent part is one button and the same vertical slider opens beside it.
+   One extra tap, and it is the one place the two apps differ.
+
+   Known and left for later: current-flow particles run along the flat wire
+   only, not up the new leads; a part dragged while lifted follows the finger's
+   point on the board, not the lifted part.
+
+3. **Nameplate collision handling was never built.** Step 36 asks what the plates
    do when they collide; the answer in the code is nothing. There is no ranking,
    no tier-drop for the loser, no leader lines, no three-at-full cap and no dot
    clustering — `labelVisibility.ts` is a global tier and that is all. The tiers
@@ -256,7 +275,7 @@ seen on a device. Six notes, logged not fixed, per the rule. Note 4 fixed since.
 5. **Type and targets in the workspace chrome are under the minimums.**
    `builder-ui.css` has **80** `font-size` declarations below 13px, and tap
    targets at 28, 32, 36, 38, 42, 44 and 46px against a 48×48 floor. Check them
-   with a thumb at steps 13, 23 and 28, not with a cursor.
+   with a thumb at steps 13, 23 and 31, not with a cursor.
 
 6. **Twenty-three distinct z-index values, against the four that exist.**
    `-1 0 1 2 3 4 5 6 10 15 20 40 100 110 620 1000 1100 1200 1220 1250 1260 1310

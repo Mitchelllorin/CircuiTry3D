@@ -109,6 +109,7 @@ import "../styles/circuit-explain.css";
 import "../styles/scroller-menu.css";
 import { ScrollerMenu } from "../components/builder/ScrollerMenu";
 import { InsightsFilmReel } from "../components/builder/InsightsFilmReel";
+import { ExplodeControl } from "../components/builder/ExplodeControl";
 import CurrentFlowAnimation from '../components/CurrentFlowAnimation';
 
 type WorkspacePanelMode =
@@ -1704,6 +1705,11 @@ export default function Builder() {
   const [isAIHelperOpen, setIsAIHelperOpen] = useState(false);
   const [isExplainPanelOpen, setIsExplainPanelOpen] = useState(false);
   const [isMeasureWidgetOpen, setMeasureWidgetOpen] = useState(false);
+  // Explode is a view, not a mode: the amount lives here, out of the iframe, so
+  // it survives rotation, selection, panels opening and the frame reloading. It
+  // only goes back to zero when the user takes it there.
+  const [explodeAmount, setExplodeAmount] = useState(0);
+  const [isExplodeOpen, setExplodeOpen] = useState(false);
   const [isCinematicOpen, setIsCinematicOpen] = useState(false);
   const [cinematicIsPlaying, setCinematicIsPlaying] = useState(false);
   const [cinematicIsRecording, setCinematicIsRecording] = useState(false);
@@ -1711,6 +1717,26 @@ export default function Builder() {
   const [cinematicRecordError, setCinematicRecordError] = useState<string | null>(null);
   const [showGalleryToast, setShowGalleryToast] = useState(false);
   const galleryToastTimerRef = useRef<number | null>(null);
+
+  // Hand the explode amount to the scene — again whenever the frame comes (back)
+  // up, so a reloaded workspace picks up where the slider was left.
+  useEffect(() => {
+    if (!isFrameReady) return;
+    triggerBuilderAction("set-explode", { amount: explodeAmount });
+  }, [isFrameReady, explodeAmount, triggerBuilderAction]);
+
+  // Reaching for the model puts the explode slider away. The canvas is inside the
+  // iframe, so the scene reports the press (legacy:canvas-press).
+  useEffect(() => {
+    if (!isExplodeOpen) return;
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data && typeof event.data === "object" && event.data.type === "legacy:canvas-press") {
+        setExplodeOpen(false);
+      }
+    };
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, [isExplodeOpen]);
 
   // "Center circuit in available space": measure the UI that occludes the canvas
   // (top metrics ticker + the bottom-sheet workspace panel) and push CSS-px insets
@@ -1797,7 +1823,8 @@ export default function Builder() {
     isLoadModalOpen ||
     isAIHelperOpen ||
     isMeasureWidgetOpen ||
-    isCinematicOpen;
+    isCinematicOpen ||
+    isExplodeOpen;
   // NOT in that list, deliberately: isGuidedTourOpen / isBuildAlongOpen. Effect 1
   // opens the guided tour on EVERY launch, so counting it as "a panel is open"
   // meant the turntable was blocked from the moment the app started and never
@@ -4441,6 +4468,15 @@ export default function Builder() {
               <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
             </svg>
           </button>
+          {/* Explode — foot of the right edge, the same place ThePrints3D keeps
+              it, and the nearest spot in this column to the thumb. */}
+          <ExplodeControl
+            amount={explodeAmount}
+            onAmountChange={setExplodeAmount}
+            isOpen={isExplodeOpen}
+            onOpenChange={setExplodeOpen}
+            disabled={controlsDisabled}
+          />
         </div>
       )}
 

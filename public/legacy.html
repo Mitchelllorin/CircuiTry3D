@@ -3676,6 +3676,21 @@
         // "ready" before the Three.js scene actually exists.
         let _builderReady = false;
         let components = [], wires = [], junctions = [];
+
+        // ── Explode (circuit level) ───────────────────────────────────────────
+        // A VIEW, never an edit: every part lifts straight up off the board, the
+        // way you would pull it, and its leads stretch down to the traces it was
+        // wired to. component.position is never touched — saves, undo, the solver,
+        // the arena export and snapping all keep reading the assembled board. Only
+        // mesh.position.y carries the lift, re-applied every frame so anything that
+        // writes the mesh back to position (drag, arrange, load) cannot knock a
+        // part down to the board mid-explode.
+        const EXPLODE_LIFT = 3.0;   // world units at 100% — about one part-length clear
+        let _explodeTarget = 0;     // 0..1, from the host slider
+        let _explodeCurrent = 0;    // eased toward the target each frame
+        let _explodeLiftNow = 0;    // world units applied to every part right now
+        let _explodeApplied = false;
+        let _explodePrevTime = 0;
         let isWireMode = false, isRotateMode = false, wireStart = null;
         let isMeasureMode = false;
         let measureStartPoint = null;
@@ -4196,6 +4211,9 @@ body.android-optimized .zoom-btn {
                                 break;
                             case 'fit-screen':
                                 if (typeof fitToScreen === 'function') fitToScreen();
+                                break;
+                            case 'set-explode':
+                                setExplodeAmount(data.amount);
                                 break;
                             case 'set-view-insets': {
                                 // "Center in available space": React measures the
@@ -9430,6 +9448,107 @@ body.android-optimized .zoom-btn {
         let _flowWatchdogFrames = 0;
         let _flowWatchdogAttempts = 0;
 
+        // ── Explode driver ───────────────────────────────────────────────────
+        // Called once per frame from _animateBody, after the idle walk and before
+        // the failure motion (which owns its own part and adds the lift itself).
+        const _riserGeomCache = new Map(); // radius → unit-height cylinder
+
+        function setExplodeAmount(amount) {
+            const v = Number(amount);
+            _explodeTarget = Number.isFinite(v) ? Math.max(0, Math.min(1, v)) : 0;
+            // A crew that has clocked out cannot also be lifted off the board.
+            if (_explodeTarget > 0 && typeof resetIdleWalk === 'function' && _walkers.length) {
+                resetIdleWalk();
+            }
+        }
+
+        function _riserGeometry(radius) {
+            let g = _riserGeomCache.get(radius);
+            if (!g) {
+                g = new THREE.CylinderGeometry(radius, radius, 1, isMobile ? 7 : 10);
+                _riserGeomCache.set(radius, g);
+            }
+            return g;
+        }
+
+        // Two vertical leads per wire, one at each end, living inside the wire's
+        // own group so they are removed with it. updatePath() replaces that group,
+        // so they are rebuilt lazily whenever the group they sit in has changed.
+        function _ensureWireRisers(wire) {
+            if (!wire.wireGroup) return null;
+            if (wire._risers && wire._risers.group === wire.wireGroup) return wire._risers;
+            const radii = getWireRadii(activeWireProfile);
+            const make = () => {
+                const lead = new THREE.Group();
+                lead.add(new THREE.Mesh(_riserGeometry(radii.conductorRadius), getSharedConductorMaterial()));
+                if (radii.hasJacket && wire._jacketMaterial) {
+                    lead.add(new THREE.Mesh(_riserGeometry(radii.jacketRadius), wire._jacketMaterial));
+                }
+                lead.visible = false;
+                wire.wireGroup.add(lead);
+                return lead;
+            };
+            wire._risers = { group: wire.wireGroup, start: make(), end: make() };
+            return wire._risers;
+        }
+
+        // The flat wire is routed at y = 0 (createRightAngledWirePath projects both
+        // ends onto the board), so a lifted terminal needs a lead straight down to it.
+        function _placeRiser(lead, top, show) {
+            const len = top.y;
+            if (!show || len < 0.05) { lead.visible = false; return; }
+            lead.visible = true;
+            lead.position.set(top.x, len / 2, top.z);
+            lead.scale.set(1, len, 1);
+        }
+
+        function updateExplode(now) {
+            const dt = _explodePrevTime ? Math.min(now - _explodePrevTime, 100) / 1000 : 0;
+            _explodePrevTime = now;
+
+            // Resting assembled: nothing to do, and the board is exactly as it was
+            // before explode existed. Put it back once, on the way in.
+            if (_explodeTarget === 0 && _explodeCurrent === 0) {
+                if (_explodeApplied) {
+                    _explodeApplied = false;
+                    _explodeLiftNow = 0;
+                    components.forEach(c => {
+                        if (c.mesh && !workspaceFailMotion.has(c.id)) c.mesh.position.y = c.position.y;
+                    });
+                    wires.forEach(w => {
+                        if (w._risers) { w._risers.start.visible = false; w._risers.end.visible = false; }
+                    });
+                }
+                return;
+            }
+
+            // Ease toward the slider — brief, ~200 ms, and instant under reduced motion.
+            const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            if (reduce) {
+                _explodeCurrent = _explodeTarget;
+            } else {
+                _explodeCurrent += (_explodeTarget - _explodeCurrent) * (1 - Math.exp(-14 * dt));
+                if (Math.abs(_explodeTarget - _explodeCurrent) < 1e-3) _explodeCurrent = _explodeTarget;
+            }
+            const t = _explodeCurrent;
+            _explodeLiftNow = EXPLODE_LIFT * t * t * (3 - 2 * t); // smoothstep
+            _explodeApplied = true;
+
+            components.forEach(c => {
+                if (!c.mesh || workspaceFailMotion.has(c.id)) return;
+                c.mesh.position.y = c.position.y + _explodeLiftNow;
+                c.mesh.updateMatrixWorld(true);
+            });
+
+            const show = _explodeLiftNow > 0.01;
+            wires.forEach(w => {
+                const r = _ensureWireRisers(w);
+                if (!r) return;
+                _placeRiser(r.start, w.getStartPosition(), show);
+                _placeRiser(r.end, w.getEndPosition(), show);
+            });
+        }
+
         function animate(currentTime) {
             requestAnimationFrame(animate);
             // The loop is re-queued FIRST, so a throw below cannot stop it. It
@@ -9500,6 +9619,7 @@ body.android-optimized .zoom-btn {
             // blockers, which is how the walk inherits every one of the turntable's
             // hold conditions without duplicating them.
             updateIdleWalk(currentTime);
+            updateExplode(currentTime);
 
             globalFlowTime++;
             updateFlowParticles(currentTime);
@@ -10554,6 +10674,7 @@ body.android-optimized .zoom-btn {
             __ct3dIdle.walking = false;
 
             if (!_lastUserInputAt || !components.length ||
+                    _explodeTarget > 0 || _explodeLiftNow > 0 ||
                     now - _lastUserInputAt < IDLE_WALK_DELAY_MS) {
                 if (_walkers.length) resetIdleWalk();
                 return;
@@ -11250,6 +11371,14 @@ body.android-optimized .zoom-btn {
             canvas.addEventListener('mouseup', handleMouseUp);
             canvas.addEventListener('wheel', handleWheel, { passive: false });
             canvas.addEventListener('contextmenu', e => e.preventDefault());
+
+            // Reaching for the model dismisses the host's transient surfaces. The
+            // canvas lives in this iframe, so the host cannot see the tap itself.
+            canvas.addEventListener('pointerdown', () => {
+                if (window.parent && window.parent !== window) {
+                    window.parent.postMessage({ type: 'legacy:canvas-press' }, '*');
+                }
+            }, { passive: true });
 
             // Pen/stylus support via Pointer Events API
             canvas.addEventListener('pointerdown', handlePenDown, { passive: false });
@@ -16826,6 +16955,10 @@ body.android-optimized .zoom-btn {
             junctions.forEach(junction => {
                 if (junction.mesh) box.expandByObject(junction.mesh);
             });
+
+            // Fit what the board looks like fully exploded, whatever the slider
+            // says now: the meshes already carry the current lift, so add the rest.
+            if (components.length) box.max.y += EXPLODE_LIFT - _explodeLiftNow;
             
             const center = box.getCenter(new THREE.Vector3());
             const size = box.getSize(new THREE.Vector3());
@@ -24619,7 +24752,10 @@ Need more detail? Open the Table Method Guide in the Builder sidebar for printab
                 startedAt: performance.now(),
                 sig,
                 base: {
-                    x: m.position.x, y: m.position.y, z: m.position.z,
+                    // Stored on the BOARD, not at the exploded height — the live
+                    // lift is added back each frame so explode keeps working on a
+                    // part that is dying.
+                    x: m.position.x, y: m.position.y - _explodeLiftNow, z: m.position.z,
                     rotZ: m.rotation.z,
                     sx: m.scale.x, sy: m.scale.y, sz: m.scale.z,
                 },
@@ -24632,7 +24768,7 @@ Need more detail? Open the Table Method Guide in the Builder sidebar for printab
             const comp = components.find(c => c.id === componentId);
             if (comp && comp.mesh) {
                 const b = entry.base;
-                comp.mesh.position.set(b.x, b.y, b.z);
+                comp.mesh.position.set(b.x, b.y + _explodeLiftNow, b.z);
                 comp.mesh.rotation.z = b.rotZ;
                 comp.mesh.scale.set(b.sx, b.sy, b.sz);
             }
@@ -24696,7 +24832,7 @@ Need more detail? Open the Table Method Guide in the Builder sidebar for printab
                     }
                 }
 
-                m.position.set(b.x + ox, b.y + oy, b.z + oz);
+                m.position.set(b.x + ox, b.y + oy + _explodeLiftNow, b.z + oz);
                 m.rotation.z = rotZ;
                 m.scale.set(b.sx * sx, b.sy * sy, b.sz * sz);
             });

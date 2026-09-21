@@ -1089,6 +1089,85 @@ body.builder-body::before {
   opacity: 0.45;
 }
 
+/* ── Explode ───────────────────────────────────────────────────────────────
+   One button at the foot of the zoom column; the slider opens beside it, to the
+   left, anchored to the button rather than placed on the screen. It is a
+   transient surface — summoned, and gone on a canvas tap — so it is solid
+   rather than glass: nothing to fall back from, readable over any part. */
+.explode-control {
+  position: relative;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* Apart is a different SHAPE, not just a colour: a filled face and a heavier
+   ring, so it reads in sunlight and to a colour-blind eye. */
+.explode-toggle--apart {
+  background: rgba(56, 189, 248, 0.3);
+  border: 2px solid rgba(120, 224, 255, 0.95);
+  color: #f1f8ff;
+}
+
+.explode-pop {
+  position: absolute;
+  right: calc(100% + 8px);
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 8px;
+  background: var(--glass-bg-solid);
+  border: var(--glass-border);
+  border-radius: var(--radius-tab);
+  box-shadow: var(--glass-shadow);
+  color: rgba(226, 240, 255, 0.96);
+  max-height: calc(100dvh - 24px - var(--builder-safe-area-bottom, 0px));
+  overflow-y: auto;
+}
+
+.explode-pop__label {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.explode-pop__value {
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  color: rgba(180, 215, 255, 0.92);
+}
+
+.explode-pop__slider {
+  /* vertical-lr + rtl puts 0 at the BOTTOM and apart at the top — the way the
+     parts travel. slider-vertical is the pre-Chrome-111 spelling, kept for
+     older Android WebViews; the two agree on direction. Same as ThePrints3D. */
+  writing-mode: vertical-lr;
+  direction: rtl;
+  -webkit-appearance: slider-vertical;
+  appearance: slider-vertical;
+  width: 48px;                          /* the thumb's target, not the track's */
+  height: clamp(96px, 28vh, 160px);
+  margin: 0;
+  accent-color: #38bdf8;
+  cursor: pointer;
+  touch-action: none;                   /* the drag is the slider's, not a scroll */
+}
+
+.explode-pop__reset {
+  min-height: 48px;
+  min-width: 48px;
+  padding: 0 10px;
+  border-radius: var(--radius-control);
+  border: var(--glass-border);
+  background: rgba(30, 40, 70, 0.9);
+  color: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
 /* ── Measurement Tools FAB ──────────────────────────────────────────────────
    Positioned at top-left corner, just below the action bar.
    One tap opens the Insights drawer (DMM, analysis).
