@@ -189,7 +189,7 @@ turned into fixes._
 Every label on the route was checked against the source before the first real
 walk, so a wrong name in the route cannot derail it. This is not the beat: the
 beat is a cold start on the real phone at 360×640, and none of the below was
-seen on a device. Six notes, logged not fixed, per the rule.
+seen on a device. Six notes, logged not fixed, per the rule. Note 4 fixed since.
 
 1. **Step 46 — "More from the 3D family" does not exist.** What exists is
    `StudioCredit` ("From the makers of"), mounted three places: Help modal →
@@ -227,26 +227,31 @@ seen on a device. Six notes, logged not fixed, per the rule.
    with no number is the stop nobody reaches for. That part is a decision, not a
    gap. The collision behaviour is the gap.
 
-4. **The glass is at 0.44, and the two things holding it up are both missing on
-   the device that needs them.** `builder-ui.css:27` sets
-   `--glass-bg: rgba(11, 12, 34, 0.44)`, well under the 0.72 floor. It is
-   argued, and the argument is good: readability comes from a 20px blur plus a
-   `--glass-text-shadow` halo on every glass label, and "See-through menus" off
-   flips the whole UI to 0.95 in one line.
+4. **FIXED 2026-09-21 — the glass had nothing under it when the blur was
+   missing.** `builder-ui.css:27` sets `--glass-bg: rgba(11, 12, 34, 0.44)`,
+   well under the 0.72 floor. That is argued, and the argument holds: the blur
+   plus a `--glass-text-shadow` halo carry the text, and "See-through menus"
+   off flips the UI to 0.95. But it all rests on the blur, and there were two
+   holes in it:
 
-   But the argument rests entirely on the blur, and the blur has two holes in
-   it. `builder-ui.css` has **25** `backdrop-filter:` declarations and **zero**
-   `@supports not (backdrop-filter: …)` blocks — so on an Android webview
-   without backdrop-filter, that is a 44%-opacity wash with no blur behind it,
-   over a model that changes colour as it turns. And only **11** of the 25 are
-   paired with `-webkit-backdrop-filter`, against the instruction in the file's
-   own header ("Always pair -webkit-backdrop-filter with backdrop-filter") — so
-   on a webview that needs the prefix, 14 surfaces lose the blur while still
-   believing they have it.
+   - **No fallback.** Zero `@supports not (backdrop-filter: …)` blocks, so
+     where the engine has no blur the menus were a 44% wash over the model.
+     Now one block takes `--glass-bg` and `--glass-bg-chrome` to 0.94 and the
+     panel scrim to a flat 0.72 — the same flip as the user toggle, applied by
+     the engine.
+   - **12 of 18 real blur declarations had no `-webkit-` pair**, against the
+     file's own header. All 18 are paired now. (The first count here said 14
+     of 25; that included `backdrop-filter: none` lines, where pairing does
+     nothing.)
 
-   Either one alone is the unreadable-screen bug, and both will show on a phone
-   and not on this laptop. `arena.css` has the fallback (two blocks, lines 326
-   and 393); `builder-ui.css` is the one carrying the risk.
+   Where each hole actually bites, so the walk looks in the right place: the
+   missing prefix is a **Safari** problem — iPhone and Mac visitors to
+   circuitry3d.app on Safari before 18 — not an Android one; Chromium, and so
+   the Android WebView, has taken the unprefixed property since 76. The missing
+   fallback bites on an old or un-updated WebView and on Firefox before 103.
+   Neither is the Play build on a current phone. Check it on an iPhone in
+   Safari if one is to hand; on the Android walk, step 22 with the rail open
+   over a bright part should look exactly as it did.
 
 5. **Type and targets in the workspace chrome are under the minimums.**
    `builder-ui.css` has **80** `font-size` declarations below 13px, and tap

@@ -186,6 +186,7 @@ body.builder-body::before {
     transparent
   );
   backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
   z-index: var(--z-builder-logo);
   display: flex;
   align-items: center;
@@ -567,6 +568,7 @@ body.builder-body::before {
   height: 28px;
   padding: 0;
   backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   box-shadow: 0 4px 12px rgba(3, 12, 32, 0.5);
 }
 
@@ -646,6 +648,7 @@ body.builder-body::before {
   border: 1px solid rgba(168, 216, 255, 0.2);
   border-radius: 20px;
   backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   box-shadow: 0 4px 16px rgba(3, 8, 28, 0.48);
   opacity: 0;
   transform: translateY(8px);
@@ -1166,6 +1169,7 @@ body.builder-body::before {
   border: 1px solid var(--builder-border, rgba(168, 216, 255, 0.28));
   border-radius: 999px;
   backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
   box-shadow: 0 2px 16px rgba(3, 8, 28, 0.55);
   white-space: nowrap;
 }
@@ -1652,6 +1656,7 @@ body.builder-body::before {
   border: 1px solid rgba(168, 216, 255, 0.35);
   border-radius: 14px;
   backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45), 0 0 12px rgba(168, 216, 255, 0.12);
   animation: junction-tip-in 0.25s ease;
   pointer-events: auto;
@@ -1955,6 +1960,22 @@ body.ct-opaque-menus {
   --glass-bg-chrome: var(--glass-bg-solid);
 }
 
+/* No blur available → the glass has nothing holding it up. 0.44 only reads
+   because the blur flattens the scene behind it; without the blur it is a
+   thin wash over a model that changes colour as it turns. So go heavy — the
+   same flip as "see-through menus" off, applied by the engine instead of the
+   user. The scrim goes to the flat .72 a scrim should be. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  :root {
+    --glass-bg: rgba(11, 12, 34, 0.94);
+    --glass-bg-chrome: rgba(11, 12, 34, 0.94);
+  }
+
+  .builder-panel-overlay {
+    background: rgba(12, 10, 36, 0.72);
+  }
+}
+
 .builder-menu {
   position: relative;
   /* Unified glass surface: almost-transparent, readability from the blur. */
@@ -2191,6 +2212,7 @@ body.ct-opaque-menus {
   inset: 0;
   background: rgba(12, 10, 36, 0.625);
   backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -4126,6 +4148,7 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
   gap: 10px;
   z-index: var(--z-builder-side-panel);
   backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   text-align: center;
 }
 
@@ -4313,6 +4336,7 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
     inset 0 0 0 1px rgba(168, 216, 255, 0.08);
   overflow: hidden;
   backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   display: flex;
   flex-direction: column;
 }
@@ -4645,6 +4669,7 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
   background: rgba(6, 16, 36, 0.92);
   box-shadow: 0 20px 48px rgba(3, 12, 32, 0.6);
   backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
   color: #d8ecff;
   transform-origin: bottom right;
   transform: scale(0.96) translateY(12px);
@@ -5053,6 +5078,7 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
   inset: 0;
   background: rgba(10, 20, 40, 0.82);
   backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -5946,6 +5972,7 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
   inset: 0;
   background: rgba(4, 9, 26, 0.72);
   backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   z-index: var(--z-full-overlay);
   display: flex;
   align-items: center;
@@ -5968,6 +5995,7 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
   padding: clamp(12px, 3vw, 20px);
   padding-top: 50px;
   backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   display: flex;
   flex-direction: column;
   gap: 8px;
