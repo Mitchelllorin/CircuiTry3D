@@ -5,6 +5,7 @@ import {
   roundTo,
   formatNumber,
   formatMetricValue,
+  formatEngineering,
   solveWireMetrics,
   mergeMetrics,
   emptyWireMetrics,
@@ -120,6 +121,40 @@ describe('formatNumber', () => {
 
   it('should respect the digits parameter for small numbers', () => {
     expect(formatNumber(0.12345, 4)).toBe('0.1235');
+  });
+});
+
+describe('formatEngineering', () => {
+  it('shows milliamps and milliwatts instead of rounding them away', () => {
+    expect(formatEngineering(0.0045, 'A')).toBe('4.5 mA');
+    expect(formatEngineering(0.0405, 'W')).toBe('40.5 mW');
+    expect(formatEngineering(0.10899182561307888, 'A')).toBe('109 mA');
+    expect(formatEngineering(0.16200000000000003, 'W')).toBe('162 mW');
+  });
+
+  it('keeps whole units and bigger prefixes', () => {
+    expect(formatEngineering(1.3087, 'W')).toBe('1.31 W');
+    expect(formatEngineering(12, 'V')).toBe('12 V');
+    expect(formatEngineering(4700, 'Ω')).toBe('4.7 kΩ');
+  });
+
+  it('goes down to micro and handles sign', () => {
+    expect(formatEngineering(0.000002, 'A')).toBe('2 µA');
+    expect(formatEngineering(-0.0045, 'A')).toBe('-4.5 mA');
+  });
+
+  it('moves up a prefix when rounding carries over', () => {
+    expect(formatEngineering(0.0009996, 'A')).toBe('1 mA');
+  });
+
+  it('respects the requested significant figures', () => {
+    expect(formatEngineering(0.0045123, 'A', 4)).toBe('4.512 mA');
+  });
+
+  it('handles zero and non-numbers', () => {
+    expect(formatEngineering(0, 'A')).toBe('0 A');
+    expect(formatEngineering(NaN, 'A')).toBe('—');
+    expect(formatEngineering(undefined, 'A')).toBe('—');
   });
 });
 

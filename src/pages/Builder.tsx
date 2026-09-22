@@ -108,6 +108,7 @@ import { ScrollerMenu } from "../components/builder/ScrollerMenu";
 import { InsightsFilmReel } from "../components/builder/InsightsFilmReel";
 import { ExplodeControl } from "../components/builder/ExplodeControl";
 import { HelpSheet } from "../components/builder/HelpSheet";
+import { formatEngineering } from "../utils/electrical";
 import CurrentFlowAnimation from '../components/CurrentFlowAnimation';
 
 type WorkspacePanelMode =
@@ -2605,13 +2606,15 @@ export default function Builder() {
         id: "watts",
         letter: "W",
         label: "Watts",
-        value: `${Number.isFinite(watts) ? watts.toFixed(activeWireProfile ? 3 : 2) : "0.00"} W`,
+        // Engineering units, not fixed decimals: toFixed turned 40.5 mW into
+        // "0.04 W" and 4.5 mA into "0.004 A" — a tenth low.
+        value: formatEngineering(Number.isFinite(watts) ? watts : 0, "W", activeWireProfile ? 4 : 3),
       },
       {
         id: "current",
         letter: "I",
         label: "Current",
-        value: `${Number.isFinite(amps) ? amps.toFixed(activeWireProfile ? 4 : 3) : "0.000"} A`,
+        value: formatEngineering(Number.isFinite(amps) ? amps : 0, "A", activeWireProfile ? 4 : 3),
       },
       {
         id: "resistance",

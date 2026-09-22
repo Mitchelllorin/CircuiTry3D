@@ -93,6 +93,46 @@ export function formatMetricValue(value: number | null | undefined, key: WireMet
   return `${formatNumber(value, digits)} ${METRIC_UNITS[key]}`;
 }
 
+const SI_PREFIXES = [
+  { exponent: 6, symbol: "M" },
+  { exponent: 3, symbol: "k" },
+  { exponent: 0, symbol: "" },
+  { exponent: -3, symbol: "m" },
+  { exponent: -6, symbol: "µ" },
+  { exponent: -9, symbol: "n" },
+] as const;
+
+/**
+ * A live reading in engineering units: 0.0045 A → "4.5 mA", 0.0405 W →
+ * "40.5 mW", 0.109 A → "109 mA".
+ *
+ * Fixed decimals are right for a worksheet answer and wrong for a live readout:
+ * `toFixed(3)` turned 4.5 mA into "0.004 A" — a tenth low — and 40.5 mW into
+ * "0.04 W". An apprentice reads those as the circuit's value. This keeps the
+ * significant figures and moves the prefix instead.
+ */
+export function formatEngineering(
+  value: number | null | undefined,
+  unit: string,
+  significant = 3,
+): string {
+  if (!isFiniteNumber(value)) {
+    return "—";
+  }
+  // Round first, so a value that rounds up into the next prefix (0.9996 mA)
+  // is shown in that prefix ("1 mA"), not as "1000 µA".
+  const rounded = Number(value.toPrecision(significant));
+  if (rounded === 0) {
+    return `0 ${unit}`;
+  }
+  const magnitude = Math.abs(rounded);
+  const prefix =
+    SI_PREFIXES.find((p) => magnitude >= 10 ** p.exponent * (1 - 1e-9)) ??
+    SI_PREFIXES[SI_PREFIXES.length - 1];
+  const scaled = Number((rounded / 10 ** prefix.exponent).toPrecision(significant));
+  return `${scaled} ${prefix.symbol}${unit}`;
+}
+
 export type SolveWireMetricsOptions = {
   tolerance?: number;
   maxIterations?: number;
