@@ -77,22 +77,22 @@ export function HelpSheet({ isOpen, section, onClose }: HelpSheetProps) {
 
   return (
     <div
-      className={`help-sheet${isOpen ? " help-sheet--open" : ""}`}
+      className={`ws-sheet help-sheet${isOpen ? " ws-sheet--open" : ""}`}
       role="dialog"
       aria-modal="true"
       aria-labelledby="help-sheet-title"
       aria-hidden={!isOpen}
       onClick={onClose}
     >
-      <div className="help-sheet__card" onClick={(event) => event.stopPropagation()}>
-        <header className="help-sheet__head">
-          <h2 className="help-sheet__title" id="help-sheet-title">Help</h2>
-          <button type="button" className="help-sheet__close" onClick={onClose} aria-label="Close help">
+      <div className="ws-sheet__card" onClick={(event) => event.stopPropagation()}>
+        <header className="ws-sheet__head">
+          <h2 className="ws-sheet__title" id="help-sheet-title">Help</h2>
+          <button type="button" className="ws-sheet__close" onClick={onClose} aria-label="Close help">
             ✕
           </button>
         </header>
 
-        <div className="help-sheet__body" ref={bodyRef}>
+        <div className="ws-sheet__body" ref={bodyRef}>
           <p className="help-sheet__lead">
             Want the walkthrough again? <strong>Learn → Take the Tour</strong>.
           </p>
@@ -148,7 +148,7 @@ export function HelpSheet({ isOpen, section, onClose }: HelpSheetProps) {
               <li>Drag to orbit. Pinch to zoom. Drag with two fingers to pan.</li>
               <li><strong>⊡</strong> on the right edge fits the circuit to the screen.</li>
               <li>
-                <strong>Explode</strong> — the burst button at the bottom of the right edge. Slide it up
+                <strong>Explode</strong> — the button at the bottom of the right edge. Slide it up
                 and every part lifts off the board, leads stretched down to the wires, so you can see
                 what connects to what. <strong>Assemble</strong> puts it back.
               </li>

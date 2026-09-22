@@ -82,7 +82,7 @@
   --builder-safe-area-bottom: env(safe-area-inset-bottom, 0px);
   --builder-safe-area-left: env(safe-area-inset-left, 0px);
   --builder-safe-area-right: env(safe-area-inset-right, 0px);
-  --builder-ticker-height: 32px;
+  --builder-ticker-height: 48px;   /* the W.I.R.E. readout is a tap target */
   --builder-ticker-gap: 8px;
   /* ── Overlap rule ──────────────────────────────────────────────────────
      Reusable safe-zone for bottom-anchored toasts/banners/tips: they reserve a
@@ -979,12 +979,6 @@ body.builder-body::before {
     transform: none;
   }
 
-  /* On very small screens, the bottom Insights drawer and edge actions fight for space.
-     Hide edge actions and zoom controls while the drawer is open to avoid button/menu overlaps. */
-  .builder-shell[data-bottom-menu-open="true"] .workspace-edge-actions,
-  .builder-shell[data-bottom-menu-open="true"] .circuit-zoom-controls {
-    display: none;
-  }
 }
 
 /* Zoom controls — bottom-right perimeter corner, stacked vertically.
@@ -4031,12 +4025,27 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
 }
 
 .ticker-wire-metric {
+  /* A button since the readout opens the working behind the numbers — but it
+     carries no button chrome, only its own tint-free text on the canvas. */
+  appearance: none;
+  border: none;
+  background: none;
   display: inline-flex;
   align-items: baseline;
   gap: 6px;
-  font-size: 11px;
+  min-height: 48px;
+  padding: 0 6px;
+  font: inherit;
+  font-size: 13px;
   letter-spacing: 0.08em;
   color: rgba(200, 220, 255, 0.9);
+  cursor: pointer;
+}
+
+.ticker-wire-metric:focus-visible {
+  outline: 2px solid #38bdf8;
+  outline-offset: -2px;
+  border-radius: 8px;
 }
 
 .ticker-wire-letter {
@@ -5110,7 +5119,7 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
 /* ── Help sheet ────────────────────────────────────────────────────────────
    Transient: the user opened it and ✕ / Esc / a tap outside puts it away, so
    the card is solid, not glass. The backdrop is a flat scrim with no text on it. */
-.help-sheet {
+.ws-sheet {
   position: fixed;
   inset: 0;
   /* A modal: above the nav bar (1210) and the W.I.R.E. readout (1310). */
@@ -5129,16 +5138,16 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
   transition: opacity 0.2s ease;
 }
 
-.help-sheet--open {
+.ws-sheet--open {
   opacity: 1;
   pointer-events: auto;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .help-sheet { transition: none; }
+  .ws-sheet { transition: none; }
 }
 
-.help-sheet__card {
+.ws-sheet__card {
   display: flex;
   flex-direction: column;
   width: 100%;
@@ -5152,7 +5161,7 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
   overflow: hidden;
 }
 
-.help-sheet__head {
+.ws-sheet__head {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -5161,7 +5170,7 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
   border-bottom: 1px solid rgba(168, 216, 255, 0.16);
 }
 
-.help-sheet__title {
+.ws-sheet__title {
   margin: 0;
   font-size: 18px;
   font-weight: 700;
@@ -5169,7 +5178,7 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
   text-transform: uppercase;
 }
 
-.help-sheet__close {
+.ws-sheet__close {
   min-width: 48px;
   min-height: 48px;
   border: none;
@@ -5180,12 +5189,12 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
   cursor: pointer;
 }
 
-.help-sheet__close:focus-visible {
+.ws-sheet__close:focus-visible {
   outline: 2px solid #38bdf8;
   outline-offset: -4px;
 }
 
-.help-sheet__body {
+.ws-sheet__body {
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -5365,7 +5374,7 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
     --builder-menu-bottom-height: 216px;
     --builder-menu-toggle-width: 36px;
     --builder-menu-toggle-height: 64px;
-    --builder-ticker-height: 28px;
+    --builder-ticker-height: 48px;
     /* --builder-ticker-top is derived from the measured mode-bar height in :root;
        do not pin it per breakpoint again. Only the gap is tuned here. */
     --app-mode-bar-gap-below: 9px;
@@ -5405,7 +5414,7 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
     --builder-menu-bottom-height: 188px;
     --builder-menu-toggle-width: 34px;
     --builder-menu-toggle-height: 56px;
-    --builder-ticker-height: 24px;
+    --builder-ticker-height: 48px;
     --builder-floating-action-offset: 120px;
     --builder-floating-button-size: 40px;
     /* Derived in :root from the live mode-bar height — see the note there. */
@@ -5594,7 +5603,10 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
     /* Reduce bottom drawer footprint on short screens. */
     --builder-menu-bottom-height: 160px;
     --builder-menu-toggle-height: 44px;
-    --builder-ticker-height: 0px;
+    /* Was 0 — the readout was hidden outright on a short landscape phone. It
+       is now the only place the circuit's figures live, and the door to the
+       working behind them, so it keeps its height here too. */
+    --builder-ticker-height: 48px;
     --builder-ticker-gap: 0px;
     /* Carries the caption band too, for the narrow-landscape case where this
        block and the 640px one both match; without it this would win and put the

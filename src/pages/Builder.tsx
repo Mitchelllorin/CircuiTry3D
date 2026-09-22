@@ -105,9 +105,9 @@ import "../styles/cinematic.css";
 import "../styles/circuit-explain.css";
 import "../styles/scroller-menu.css";
 import { ScrollerMenu } from "../components/builder/ScrollerMenu";
-import { InsightsFilmReel } from "../components/builder/InsightsFilmReel";
 import { ExplodeControl } from "../components/builder/ExplodeControl";
 import { HelpSheet } from "../components/builder/HelpSheet";
+import { AnalysisSheet } from "../components/builder/AnalysisSheet";
 import { formatEngineering } from "../utils/electrical";
 import CurrentFlowAnimation from '../components/CurrentFlowAnimation';
 
@@ -1167,8 +1167,6 @@ export default function Builder() {
     setLeftMenuOpen,
     isRightMenuOpen,
     setRightMenuOpen,
-    isBottomMenuOpen,
-    setBottomMenuOpen,
   } = useResponsiveLayout();
   const isCoarsePointer = useMemo(() => {
     if (typeof window === "undefined") {
@@ -1246,6 +1244,8 @@ export default function Builder() {
   // only goes back to zero when the user takes it there.
   const [explodeAmount, setExplodeAmount] = useState(0);
   const [isExplodeOpen, setExplodeOpen] = useState(false);
+  // The W.I.R.E. readout is the control now; this is what it opens.
+  const [isAnalysisOpen, setAnalysisOpen] = useState(false);
   const [isCinematicOpen, setIsCinematicOpen] = useState(false);
   const [cinematicIsPlaying, setCinematicIsPlaying] = useState(false);
   const [cinematicIsRecording, setCinematicIsRecording] = useState(false);
@@ -2657,6 +2657,33 @@ export default function Builder() {
   // teaches instead of just dazzling. Kept short — one idea per card.
 
 
+  // What the workspace SHOWS — off the old Insights tab, into Settings. The
+  // skin row is not here: the panel opens straight onto the skin picker.
+  const displaySettings = useMemo(
+    () => [
+      ...SETTINGS_ITEMS.filter((setting) => setting.action !== "open-workspace-skins").map(
+        (setting) => ({
+          id: setting.id,
+          label: setting.label,
+          description: setting.getDescription(modeState, { currentFlowLabel }),
+          isActive: setting.isActive?.(modeState) ?? false,
+          disabled: controlsDisabled,
+          onSelect: () => triggerBuilderAction(setting.action, setting.data),
+        }),
+      ),
+      {
+        id: "component-descriptors",
+        label: "Component Descriptors",
+        description: showThumbDescriptors
+          ? "Descriptions shown under icons"
+          : "Descriptions hidden",
+        isActive: showThumbDescriptors,
+        onSelect: () => setShowThumbDescriptors((v) => !v),
+      },
+    ],
+    [modeState, currentFlowLabel, controlsDisabled, triggerBuilderAction, showThumbDescriptors],
+  );
+
   const workspacePanelMeta = useMemo(() => {
     switch (activeWorkspacePanelMode) {
       case "learn":
@@ -2811,7 +2838,6 @@ export default function Builder() {
       className="builder-shell"
       data-left-menu-open={isLeftMenuOpen ? "true" : "false"}
       data-right-menu-open={isRightMenuOpen ? "true" : "false"}
-      data-bottom-menu-open={isBottomMenuOpen ? "true" : "false"}
       data-tour-active={isGuidedTourOpen ? "true" : "false"}
     >
     <CurrentFlowAnimation />
@@ -3421,212 +3447,22 @@ export default function Builder() {
         </nav>
       </div>
 
-      <div
-        className={`builder-menu-stage builder-menu-stage-bottom${isBottomMenuOpen ? " open" : ""}`}
-      >
-        <button
-          type="button"
-          className="builder-menu-toggle builder-menu-toggle-bottom"
-          onClick={() => setBottomMenuOpen((open) => !open)}
-          aria-expanded={isBottomMenuOpen}
-          aria-label={
-            isBottomMenuOpen
-              ? "Collapse analysis and guidance"
-              : "Expand analysis and guidance"
-          }
-          title={
-            isBottomMenuOpen
-              ? "Collapse analysis and guidance"
-              : "Expand analysis and guidance"
-          }
-        >
-          <span className="toggle-icon" aria-hidden="true">
-            <IconChevron direction={isBottomMenuOpen ? "down" : "up"} />
-          </span>
-          <span className="toggle-text">Insights</span>
-        </button>
-        <nav
-          className="builder-menu builder-menu-bottom"
-          role="navigation"
-          aria-label="Analysis, practice, and guides"
-        >
-          {isBottomMenuOpen && (
-            <button
-              type="button"
-              className="builder-menu-bottom-close"
-              onClick={() => setBottomMenuOpen(false)}
-              aria-label="Close insights panel"
-              title="Close insights"
-            >
-              ✕
-            </button>
-          )}
-          <div className="builder-menu-scroll builder-menu-scroll-bottom">
-            <div className="slider-section">
-              <span className="slider-heading">Analysis</span>
-              <InsightsFilmReel
-                metrics={wireMetrics}
-                wireProfile={{
-                  gaugeLabel: activeWireProfile
-                    ? activeWireProfile.gaugeLabel
-                    : "Default builder wire",
-                  resistancePer: activeWireProfile
-                    ? `${activeWireSegmentResistance.toFixed(4)} Ω/m`
-                    : `${DEFAULT_WIRE_SEGMENT_RESISTANCE_OHM.toFixed(3)} Ω/m`,
-                  isActive: Boolean(activeWireProfile),
-                }}
-              />
-            </div>
-            <div className="slider-section">
-              <span className="slider-heading">Environment</span>
-              <div className="menu-track menu-track-chips">
-                <div
-                  role="status"
-                  style={{
-                    fontSize: "11px",
-                    color: "rgba(136, 204, 255, 0.78)",
-                    textAlign: "center",
-                    padding: "8px 12px",
-                    borderRadius: "10px",
-                    border: "1px solid rgba(136, 204, 255, 0.22)",
-                    background: "rgba(14, 30, 58, 0.48)",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    justifyContent: "center",
-                  }}
-                >
-                  <span style={{ fontSize: "16px" }}>{activeEnvironment.icon}</span>
-                  <span>Active: {activeEnvironment.name}</span>
-                </div>
-                <button
-                  type="button"
-                  className="slider-chip"
-                  onClick={() => setEnvironmentalPanelOpen(true)}
-                  title="Open Environmental Conditions panel to simulate different operating environments"
-                  data-active={activeEnvironment.id !== "standard" ? "true" : undefined}
-                >
-                  <span className="slider-chip-label">Configure Environment</span>
-                </button>
-              </div>
-            </div>
-            <div className="slider-section">
-              <span className="slider-heading">Settings</span>
-              <div className="slider-stack">
-                {SETTINGS_ITEMS.map((setting) => {
-                  const description = setting.getDescription(modeState, {
-                    currentFlowLabel,
-                  });
-                  const isSettingPanelTabActive =
-                    isSettingsPanelOpen &&
-                    setting.action === "open-workspace-skins";
-                  const isActive =
-                    (setting.isActive?.(modeState) ?? false) || isSettingPanelTabActive;
-                  return (
-                    <button
-                      key={setting.id}
-                      type="button"
-                      className="slider-btn slider-btn-stacked"
-                      onClick={() => {
-                        if (setting.action === "open-workspace-skins") {
-                          setSettingsPanelOpen(true);
-                          setRightMenuOpen(true);
-                        } else {
-                          triggerBuilderAction(setting.action, setting.data);
-                        }
-                      }}
-                      disabled={controlsDisabled}
-                      aria-disabled={controlsDisabled}
-                      aria-pressed={isActive}
-                      data-active={
-                        isActive ? "true" : undefined
-                      }
-                      title={
-                        controlsDisabled ? controlDisabledTitle : description
-                      }
-                      data-intent="settings"
-                    >
-                      <span className="slider-label">{setting.label}</span>
-                      <span className="slider-description">{description}</span>
-                    </button>
-                  );
-                })}
-                {/* React-only toggle: plain-language descriptors under the
-                    component thumbnails in the quick-add bar. */}
-                <button
-                  type="button"
-                  className="slider-btn slider-btn-stacked"
-                  onClick={() => setShowThumbDescriptors((v) => !v)}
-                  aria-pressed={showThumbDescriptors}
-                  data-active={showThumbDescriptors ? "true" : undefined}
-                  title={
-                    showThumbDescriptors
-                      ? "Hide plain-language descriptions under component icons"
-                      : "Show plain-language descriptions under component icons"
-                  }
-                  data-intent="settings"
-                >
-                  <span className="slider-label">Component Descriptors</span>
-                  <span className="slider-description">
-                    {showThumbDescriptors
-                      ? "Descriptions shown under icons"
-                      : "Descriptions hidden"}
-                  </span>
-                </button>
-              </div>
-            </div>
-            <div className="slider-section">
-              <span className="slider-heading">Guides</span>
-              <div className="menu-track menu-track-chips">
-                <button
-                  type="button"
-                  className="slider-chip"
-                  onClick={() => openGuidesWorkspace("wire-guide")}
-                  data-active={
-                    isGuidesWorkspaceMode && activeGuideWorkflow === "wire-guide"
-                      ? "true"
-                      : undefined
-                  }
-                  title="Open the W.I.R.E. guide for worksheet-first solving."
-                >
-                  <span className="slider-chip-label">W.I.R.E. Guide</span>
-                </button>
-                <button
-                  type="button"
-                  className="slider-chip"
-                  onClick={() => openHelpCenter("shortcuts")}
-                  title="Open the keyboard and gesture shortcuts reference."
-                >
-                  <span className="slider-chip-label">Keyboard Shortcuts</span>
-                </button>
-                <button
-                  type="button"
-                  className="slider-chip"
-                  onClick={() => openHelpCenter("about")}
-                  title="Open feature notes and platform details."
-                >
-                  <span className="slider-chip-label">About CircuiTry3D</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </nav>
-      </div>
-
-
       <div className="builder-ticker-feed" role="status" aria-live="polite">
         <div className="ticker-wire-fixed" role="group" aria-label="W.I.R.E. live metrics">
           {wireMetrics.map((metric) => (
-            <span
+            <button
+              type="button"
               key={`ticker-wire-fixed-${metric.id}`}
               className={`ticker-wire-metric ticker-wire-metric--${metric.id}`}
-              title={`${metric.label}: ${metric.value}`}
+              onClick={() => setAnalysisOpen(true)}
+              title={`${metric.label}: ${metric.value} — tap for the working`}
+              aria-label={`${metric.label}: ${metric.value}. Open the numbers.`}
             >
               <span className="ticker-wire-letter" aria-hidden="true">
                 {metric.letter}
               </span>
               <span className="ticker-wire-value">{metric.value}</span>
-            </span>
+            </button>
           ))}
         </div>
         <div className="ticker-wrapper">
@@ -3871,6 +3707,19 @@ export default function Builder() {
         </WorkspaceModePanel>
       )}
 
+      <AnalysisSheet
+        isOpen={isAnalysisOpen}
+        onClose={() => setAnalysisOpen(false)}
+        metrics={wireMetrics}
+        wireProfile={{
+          gaugeLabel: activeWireProfile ? activeWireProfile.gaugeLabel : "Default builder wire",
+          resistancePer: activeWireProfile
+            ? `${activeWireSegmentResistance.toFixed(4)} Ω/m`
+            : `${DEFAULT_WIRE_SEGMENT_RESISTANCE_OHM.toFixed(3)} Ω/m`,
+          isActive: Boolean(activeWireProfile),
+        }}
+      />
+
       <HelpSheet
         isOpen={isHelpOpen}
         section={helpView === "shortcuts" || helpView === "about" ? helpView : "overview"}
@@ -3892,6 +3741,12 @@ export default function Builder() {
           onCustomSkinOpacityChange={setCustomWorkspaceSkinOpacity}
           onClearCustomSkin={clearCustomWorkspaceSkin}
           onResetWorkspaceSkin={resetWorkspaceSkin}
+          displaySettings={displaySettings}
+          environment={{
+            icon: activeEnvironment.icon,
+            name: activeEnvironment.name,
+            onConfigure: () => setEnvironmentalPanelOpen(true),
+          }}
         />
       )}
 

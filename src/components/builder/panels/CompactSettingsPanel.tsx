@@ -10,6 +10,16 @@ import "../../../styles/compact-settings.css";
 // settings section is showing keep compiling and can grow again later.
 export type SettingsPanelTab = "workspace-skins";
 
+/** One display toggle: what the workspace shows, not what the circuit does. */
+export type DisplaySetting = {
+  id: string;
+  label: string;
+  description: string;
+  isActive: boolean;
+  disabled?: boolean;
+  onSelect: () => void;
+};
+
 type CompactSettingsPanelProps = {
   isOpen: boolean;
   onToggle: () => void;
@@ -24,6 +34,10 @@ type CompactSettingsPanelProps = {
   onCustomSkinOpacityChange: (nextOpacity: number) => void;
   onClearCustomSkin: () => void;
   onResetWorkspaceSkin: () => void;
+  /** Flow, polarity, grid, nameplates, descriptors — moved here off the
+      Insights tab, which cost the bottom edge of the workspace. */
+  displaySettings: DisplaySetting[];
+  environment: { icon: string; name: string; onConfigure: () => void };
 };
 
 export function CompactSettingsPanel({
@@ -40,6 +54,8 @@ export function CompactSettingsPanel({
   onCustomSkinOpacityChange,
   onClearCustomSkin,
   onResetWorkspaceSkin,
+  displaySettings,
+  environment,
 }: CompactSettingsPanelProps) {
   return (
     <div className={`compact-settings-panel${isOpen ? " open" : ""}`}>
@@ -62,6 +78,44 @@ export function CompactSettingsPanel({
       </div>
       {isOpen && (
         <div className="compact-settings-body">
+          <section className="compact-settings-section">
+            <h3 className="compact-settings-heading">Display</h3>
+            <div className="compact-settings-stack">
+              {displaySettings.map((setting) => (
+                <button
+                  key={setting.id}
+                  type="button"
+                  className="compact-settings-row"
+                  onClick={setting.onSelect}
+                  disabled={setting.disabled}
+                  aria-pressed={setting.isActive}
+                  data-active={setting.isActive ? "true" : undefined}
+                >
+                  <span className="compact-settings-row-label">{setting.label}</span>
+                  <span className="compact-settings-row-value">{setting.description}</span>
+                </button>
+              ))}
+            </div>
+          </section>
+
+          <section className="compact-settings-section">
+            <h3 className="compact-settings-heading">Environment</h3>
+            <button
+              type="button"
+              className="compact-settings-row"
+              onClick={environment.onConfigure}
+              data-active={environment.name !== "Standard Conditions" ? "true" : undefined}
+            >
+              <span className="compact-settings-row-label">
+                <span aria-hidden="true">{environment.icon}</span> {environment.name}
+              </span>
+              <span className="compact-settings-row-value">Heat, cold, supply and load</span>
+            </button>
+          </section>
+
+          <section className="compact-settings-section">
+            <h3 className="compact-settings-heading">Workspace skin</h3>
+          </section>
           <WorkspaceSkinModal
             isOpen={isOpen}
             skinOptions={skinOptions}
