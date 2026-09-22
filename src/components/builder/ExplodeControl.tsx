@@ -88,22 +88,25 @@ export function ExplodeControl({
         aria-label={isExploded ? `Explode, ${percent}% apart` : "Explode"}
         title="Explode"
       >
-        {/* Drawn, not an emoji, so it takes currentColor like the rest of the
-            column. Same burst-and-bomb glyph as ThePrints3D. */}
+        {/* A part lifted off the board, leads stretched down to it, with an up
+            arrow: what this explode does. Drawn, so it takes currentColor like
+            the rest of the column. It replaced ThePrints3D's burst glyph, which
+            at 18px in this column read as a second Settings gear. */}
         <svg
           viewBox="0 0 24 24"
           width="18"
           height="18"
           fill="none"
           stroke="currentColor"
-          strokeWidth="1.5"
+          strokeWidth="1.7"
           strokeLinecap="round"
           strokeLinejoin="round"
           aria-hidden="true"
         >
-          <path d="M23 12 18.3 14.6 19.8 19.8 14.6 18.3 12 23 9.4 18.3 4.2 19.8 5.7 14.6 1 12 5.7 9.4 4.2 4.2 9.4 5.7 12 1 14.6 5.7 19.8 4.2 18.3 9.4 Z" />
-          <circle cx="11.4" cy="12.6" r="3.1" />
-          <path d="M13.6 10.4 15.2 8.8" />
+          <path d="M3 21h18" />
+          <rect x="6.5" y="8" width="11" height="5" rx="1.2" />
+          <path d="M9 13v8M15 13v8" strokeDasharray="1.6 1.9" />
+          <path d="M12 6V2M10 4l2-2 2 2" />
         </svg>
       </button>
     </div>
