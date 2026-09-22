@@ -284,10 +284,7 @@ export type HelpLegendItem = {
 
 export type HelpModalView =
   | "overview"
-  | "tutorial"
   | "wire-guide"
-  | "schematic"
-  | "practice"
   | "shortcuts"
   | "about";
 

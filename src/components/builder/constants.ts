@@ -870,14 +870,14 @@ export const HELP_ENTRIES: HelpEntry[] = [
     id: "about",
     label: "About CircuiTry3D",
     description:
-      "Learn what is new in v2.5 and how the simulator supports teaching.",
+      "What CircuiTry3D is, how to reach us, and the rest of the 3D family.",
     view: "about",
   },
   {
     id: "help-center",
     label: "Help Center",
     description:
-      "Open quick-start tips, navigation help, and the W.I.R.E. legend.",
+      "How to build a circuit, read it, and get around the workspace.",
     view: "overview",
   },
 ];
