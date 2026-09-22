@@ -801,7 +801,7 @@
                             Tucking the bar away must never cost the primary tool.
    --------------------------------------------------------------------------- */
 .unified-action-bar[data-bar-mode="hidden"]
-  > *:not(.action-bar-cycle):not(.edge-action-btn--wire):not(.edge-action-btn--help) {
+  > *:not(.action-bar-cycle):not(.edge-action-btn--wire) {
   display: none !important;
 }
 
@@ -826,9 +826,12 @@
    default; it is the thing the tier system exists to prevent.
 
    So the resting tier carries only what you cannot build without:
-     Wire · Edit · Run · Undo · AI · Help · the cycle toggle   = 7, one line.
+     Wire · Undo · Run · Clear · the cycle toggle   = 5, one line.
 
-   Everything else — Clear, Rotate, Redo, Load, Save, Measure, Tour — is
+   The bar sits on the BOTTOM edge now, not floating below the ticker across
+   the middle of the workspace. Clear is out front by request and asks before
+   it wipes; Help left the bar for the nav. Everything else — Rotate, Edit,
+   Redo, Load, Save, Measure, the assistant — is
    .edge-action-btn--secondary and is OFF until the user asks for it by cycling
    the bar up a tier. Nothing is removed; it is one tap away and the workspace
    gets the row back.

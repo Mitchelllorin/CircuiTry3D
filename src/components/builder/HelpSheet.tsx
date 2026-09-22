@@ -102,7 +102,7 @@ export function HelpSheet({ isOpen, section, onClose }: HelpSheetProps) {
             <ol>
               <li>Tap <strong>LIBRARY</strong> on the left edge. Tap a part to bring it to the middle, then tap it again to pick it up.</li>
               <li>Tap the board where you want it.</li>
-              <li>Tap <strong>WIRE</strong>. Tap one terminal, then another — that's a wire. Keep going until the loop is closed back to the battery.</li>
+              <li>Tap <strong>WIRE</strong> on the bottom bar. Tap one terminal, then another — that's a wire. Keep going until the loop is closed back to the battery.</li>
               <li>Tap <strong>WIRE</strong> again when you're done.</li>
             </ol>
             <p>
@@ -120,8 +120,12 @@ export function HelpSheet({ isOpen, section, onClose }: HelpSheetProps) {
               <li>Press and hold a part to edit its values, re-wire it, rotate it, or delete it.</li>
               <li>Press and hold a wire to delete it, drop a junction on it, or change how it routes.</li>
               <li>
-                <strong>⊞</strong> beside Help opens the rest of the tools: Clear, Rotate, Redo, Open,
-                Save, Measure. Clear empties the board — Undo brings it back.
+                <strong>Clear</strong> empties the board. It asks first: the button turns to
+                <strong>Sure?</strong> and only the second tap clears. Undo still brings it back.
+              </li>
+              <li>
+                <strong>⊞</strong> at the end of the bottom bar opens the rest of the tools: Rotate,
+                Edit, Redo, Open, Save, Measure and the assistant.
               </li>
             </ul>
           </section>
@@ -134,7 +138,7 @@ export function HelpSheet({ isOpen, section, onClose }: HelpSheetProps) {
               <div><dt className="help-sheet__r">R</dt><dd>Ohms — resistance</dd></div>
               <div><dt className="help-sheet__e">E</dt><dd>Volts — voltage</dd></div>
             </dl>
-            <p>The top readout is the whole circuit.</p>
+            <p>The top readout is the whole circuit — tap it for the working behind the numbers.</p>
             <p>
               The tag button on the right edge cycles the nameplates on every part: off, then names
               and values, then live readings.

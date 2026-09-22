@@ -1256,8 +1256,12 @@ body.builder-body::before {
    so the canvas shows through between buttons.
    ─────────────────────────────────────────────────────────────────────── */
 .unified-action-bar {
+  /* The bottom edge, under the thumb — not floating in the middle of the
+     workspace, which is the model's. It sat below the ticker at the top, which
+     put the primary build tools straight across the circuit. */
   position: fixed;
-  top: calc(var(--builder-ticker-top, 72px) + var(--builder-ticker-height, 32px) + 2px + var(--builder-safe-area-top));
+  bottom: calc(var(--builder-safe-area-bottom, 0px) + 6px);
+  top: auto;
   left: 0;
   right: 0;
   transform: none;
@@ -1384,6 +1388,16 @@ body.builder-body::before {
    plus a matching glow. Same information, no rectangle, and nothing left that
    can have an edge to blend.
    ───────────────────────────────────────────────────────────────────────── */
+/* Clear, armed: the next tap wipes the board. The label changes to "Sure?" and
+   the button takes a filled face and a heavy edge — shape, not colour alone.
+   Specific enough to beat the containerless rule below. */
+.unified-action-bar .edge-action-btn--clear.edge-action-btn--armed {
+  background: rgba(229, 100, 63, 0.32);
+  border: 2px solid rgba(255, 138, 128, 0.95);
+  border-radius: 12px;
+  color: #ffd9d4;
+}
+
 .unified-action-bar .edge-action-btn--clear,
 .unified-action-bar .edge-action-btn--simulate,
 .unified-action-bar .edge-action-btn--ai,

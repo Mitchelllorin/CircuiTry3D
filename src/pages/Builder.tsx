@@ -1760,7 +1760,9 @@ export default function Builder() {
       } else if (pendingMode === "learn") {
         openWorkspacePanelMode("learn");
       } else if (pendingMode === "help") {
-        openGuidesWorkspace("wire-guide");
+        // The nav's Help tab is the one door to Help now that the workspace bar
+        // no longer carries a Help button. The W.I.R.E. guide has its own tab.
+        setHelpOpen(true);
       } else if (pendingMode === "wire-guide") {
         openWorkspacePanelMode("wire-guide");
       } else if (
@@ -2013,9 +2015,28 @@ export default function Builder() {
     setTroubleshootStatus("Fix verified. Editing unlocked for this circuit.");
   }, []);
 
+  // Clear is out front on the bottom bar now, under a thumb, and it empties
+  // the board. So it asks: the first tap arms it and the button says so, the
+  // second clears, and it disarms itself after a few seconds. A dialog would
+  // block the webview; this does not.
+  const [isClearArmed, setClearArmed] = useState(false);
+  const clearArmTimerRef = useRef<number | null>(null);
+  useEffect(
+    () => () => {
+      if (clearArmTimerRef.current !== null) window.clearTimeout(clearArmTimerRef.current);
+    },
+    [],
+  );
   const handleClearWorkspace = useCallback(() => {
+    if (clearArmTimerRef.current !== null) window.clearTimeout(clearArmTimerRef.current);
+    if (!isClearArmed) {
+      setClearArmed(true);
+      clearArmTimerRef.current = window.setTimeout(() => setClearArmed(false), 4000);
+      return;
+    }
+    setClearArmed(false);
     triggerBuilderAction("clear-workspace");
-  }, [triggerBuilderAction]);
+  }, [isClearArmed, triggerBuilderAction]);
 
   const handleRunSimulationClick = useCallback(() => {
     triggerBuilderAction("run-simulation");
@@ -2876,15 +2897,21 @@ export default function Builder() {
             {/* Tool actions (formerly left edge) */}
             <button
               type="button"
-              className="edge-action-btn--secondary edge-action-btn edge-action-btn--clear"
+              className={`edge-action-btn edge-action-btn--clear${isClearArmed ? " edge-action-btn--armed" : ""}`}
               onClick={handleClearWorkspace}
               disabled={controlsDisabled}
               aria-disabled={controlsDisabled}
-              aria-label="Clear workspace"
-              title="Clear all components, wires, and analysis data"
+              aria-label={isClearArmed ? "Tap again to clear the board" : "Clear the board"}
+              title={
+                isClearArmed
+                  ? "Tap again to clear the board — Undo brings it back"
+                  : "Clear the board (asks first)"
+              }
             >
               <IconTrash className="edge-action-icon-svg" />
-              <span className="edge-action-label" aria-hidden="true">Clear</span>
+              <span className="edge-action-label" aria-hidden="true">
+                {isClearArmed ? "Sure?" : "Clear"}
+              </span>
             </button>
             <button
               type="button"
@@ -2915,7 +2942,7 @@ export default function Builder() {
             </button>
             <button
               type="button"
-              className="edge-action-btn"
+              className="edge-action-btn--secondary edge-action-btn"
               onClick={() => triggerBuilderAction("set-tool", { tool: "select" })}
               disabled={controlsDisabled}
               aria-disabled={controlsDisabled}
@@ -2996,7 +3023,7 @@ export default function Builder() {
             {/* AI & Measurement tools — integrated into action bar */}
             <button
               type="button"
-              className={`edge-action-btn edge-action-btn--ai${isAIHelperOpen ? " edge-action-btn--active" : ""}`}
+              className={`edge-action-btn--secondary edge-action-btn edge-action-btn--ai${isAIHelperOpen ? " edge-action-btn--active" : ""}`}
               onClick={() => setIsAIHelperOpen((prev) => !prev)}
               aria-label={isAIHelperOpen ? "Close Circuit AI" : "Open Circuit AI assistant"}
               aria-expanded={isAIHelperOpen}
@@ -3019,18 +3046,6 @@ export default function Builder() {
             >
               <IconRuler className="edge-action-icon-svg" />
               <span className="edge-action-label" aria-hidden="true">Measure</span>
-            </button>
-            <button
-              type="button"
-              className="edge-action-btn edge-action-btn--help"
-              onClick={() => openHelpWithView("overview")}
-              aria-label="Open help"
-              title="Help — how to build, read and get around"
-            >
-              <span className="edge-action-icon-svg edge-action-icon-emoji" aria-hidden="true">
-                ?
-              </span>
-              <span className="edge-action-label" aria-hidden="true">Help</span>
             </button>
 
             {/* Single reveal toggle — cycles hidden → tools (partial) → full → hidden.
