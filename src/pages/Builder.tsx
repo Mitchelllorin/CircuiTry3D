@@ -126,9 +126,6 @@ type WorkspacePanelMode =
   | "settings";
 
 const DEFAULT_WIRE_SEGMENT_RESISTANCE_OHM = 0.01;
-const CURRENT_FLOW_PAYOFF_STORAGE_KEY =
-  "circuitry3d:onboarding:current-flow-payoff:v2";
-const INTRO_DIALOG_STORAGE_KEY = "circuitry3d:onboarding:v1";
 const JUNCTION_TIP_STORAGE_KEY = "circuitry3d:junction-tip-dismissed:v1";
 // Set once the user dismisses the guided tour "for good" — after that it no longer
 // auto-opens on launch (still re-launchable from the Guides menu).
@@ -1152,12 +1149,6 @@ function QuickAddButton({
   );
 }
 
-const INTRO_WELCOME = {
-  icon: "⚡",
-  title: "Welcome to CircuiTry3D",
-  body: "Build real electric circuits in 3D and watch the current actually flow — no experience needed. New to this? Start by tapping a part below (a Battery powers everything), add a Resistor and an LED, connect them with wires, and press Run. Not sure what a part is? Tap it to see what it does, or tap the ? Help button anytime.",
-};
-
 const GALLERY_TOAST_DURATION_MS = 6000;
 
 // The unified component library now lives in its own module, because the Arena
@@ -1290,7 +1281,6 @@ export default function Builder() {
   const [isBuildAlongOpen, setBuildAlongOpen] = useState(false);
   const [isCurrentFlowPayoffRunning, setCurrentFlowPayoffRunning] =
     useState(false);
-  const [isIntroDialogVisible, setIntroDialogVisible] = useState(false);
   // Junction tip starts hidden — it is shown the first time the user
   // explicitly uses the Junction button, not automatically on page load,
   // so that it never blocks the 3D canvas or grid on first visit.
@@ -2564,39 +2554,6 @@ export default function Builder() {
     ],
   );
 
-  // Replay the full first-run onboarding on demand: re-show the welcome intro,
-  // which auto-dismisses into the current-flow showcase.
-  // The "seen" flags stay set, so this only fires when the user asks for it.
-  const handleReplayOnboarding = useCallback(() => {
-    setIntroDialogVisible(true);
-    setCircuitLocked(true);
-  }, [setCircuitLocked]);
-
-  const handleDismissIntroDialog = useCallback(() => {
-    setIntroDialogVisible(false);
-
-    // Mark intro as seen so it doesn't appear again
-    try {
-      window.localStorage.setItem(INTRO_DIALOG_STORAGE_KEY, "1");
-    } catch {
-      // ignore storage write failures
-    }
-
-    try {
-      window.localStorage.setItem(CURRENT_FLOW_PAYOFF_STORAGE_KEY, "seen");
-    } catch {
-      // ignore storage write failures
-    }
-
-    // Launch the current-flow payoff demo immediately after closing the intro.
-    // Lock the circuit as onboarding-locked so the preset circuit stays
-    // view-only until the user explicitly taps "Edit Circuit".
-    // runCurrentFlowPayoffSequence will set pendingPayoffRef if the iframe is
-    // not ready yet, and Effect 2 will pick it up when it becomes ready.
-    setOnboardingLocked(true);
-    runCurrentFlowPayoffSequence();
-  }, [runCurrentFlowPayoffSequence]);
-
   const handleDismissJunctionTip = useCallback(() => {
     setJunctionTipVisible(false);
     try {
@@ -2727,18 +2684,6 @@ export default function Builder() {
     return () => window.clearTimeout(id);
   }, [isGuidedTourOpen, circuitState, triggerBuilderAction]);
 
-  // Effect 1b — auto-dismiss the intro dialog after a short display so the
-  // user reaches the payoff 3D circuit without needing to tap anything.
-  useEffect(() => {
-    if (!isIntroDialogVisible) {
-      return;
-    }
-    const timer = window.setTimeout(() => {
-      handleDismissIntroDialog();
-    }, 3500);
-    return () => window.clearTimeout(timer);
-  }, [isIntroDialogVisible, handleDismissIntroDialog]);
-
   // Mirror the latest circuit state into a ref so the payoff retry loop below can
   // read the live component count WITHOUT taking `circuitState` as an effect
   // dependency. Depending on it created an infinite loop: firing load-payoff runs
@@ -2813,7 +2758,7 @@ export default function Builder() {
   // lock can do past the intro is make a live workspace feel broken — hand it
   // over a beat after the intro closes.
   useEffect(() => {
-    if (!isOnboardingLocked || isIntroDialogVisible) {
+    if (!isOnboardingLocked) {
       return;
     }
 
@@ -2825,7 +2770,7 @@ export default function Builder() {
     return () => {
       window.clearTimeout(safetyTimer);
     };
-  }, [isOnboardingLocked, isIntroDialogVisible]);
+  }, [isOnboardingLocked]);
 
   const activeWireProfilePayload = useMemo(
     () => toWireProfileBridgePayload(activeWireProfile),
@@ -3209,7 +3154,7 @@ export default function Builder() {
       case "learn":
         return {
           title: "Learn",
-          subtitle: "Two ways in — watch the circuit explain itself, or build one with me.",
+          subtitle: "Watch the circuit explain itself, part by part.",
         };
       case "arena":
         return {
@@ -3310,12 +3255,6 @@ export default function Builder() {
               <span className="learn-launch-title">Take the Tour</span>
               <span className="learn-launch-sub">
                 The camera walks the circuit and names every part as it goes.
-              </span>
-            </button>
-            <button type="button" className="learn-launch-btn" onClick={startBuildAlong}>
-              <span className="learn-launch-title">Build it with me</span>
-              <span className="learn-launch-sub">
-                A clean workspace, one step at a time, until it lights.
               </span>
             </button>
           </div>
@@ -3549,18 +3488,6 @@ export default function Builder() {
             </button>
             <button
               type="button"
-              className="edge-action-btn--secondary edge-action-btn"
-              onClick={handleReplayOnboarding}
-              aria-label="Replay the intro tour"
-              title="Replay intro — welcome message + live current-flow demo"
-            >
-              <span className="edge-action-icon-svg edge-action-icon-emoji" aria-hidden="true">
-                ▶
-              </span>
-              <span className="edge-action-label" aria-hidden="true">Tour</span>
-            </button>
-            <button
-              type="button"
               className="edge-action-btn edge-action-btn--help"
               onClick={() => openHelpWithView("overview")}
               aria-label="Open help, guides and tutorials"
@@ -3642,55 +3569,6 @@ export default function Builder() {
         </Fragment>
       )}
 
-      {isIntroDialogVisible && (
-        <div
-          className="builder-intro-dialog-backdrop"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="intro-dialog-title"
-        >
-          <div className="builder-intro-dialog-card">
-            <button
-              type="button"
-              className="builder-intro-dialog-close"
-              aria-label="Close introduction"
-              onClick={handleDismissIntroDialog}
-            >
-              ×
-            </button>
-
-            <div className="builder-intro-dialog-kicker">
-              CircuiTry3D
-            </div>
-
-            <div
-              className="builder-intro-dialog-step-icon"
-              aria-hidden="true"
-            >
-              {INTRO_WELCOME.icon}
-            </div>
-            <h2
-              className="builder-intro-dialog-title"
-              id="intro-dialog-title"
-            >
-              {INTRO_WELCOME.title}
-            </h2>
-            <p className="builder-intro-dialog-body">
-              {INTRO_WELCOME.body}
-            </p>
-
-            <div className="builder-intro-dialog-actions">
-              <button
-                type="button"
-                className="builder-intro-dialog-btn builder-intro-dialog-btn--primary"
-                onClick={handleDismissIntroDialog}
-              >
-                Start Building →
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
 
       <div
@@ -4195,14 +4073,6 @@ export default function Builder() {
                 <button
                   type="button"
                   className="slider-chip"
-                  onClick={startGuidedTour}
-                  title="Replay the guided walkthrough — the camera flies the circuit and explains each part."
-                >
-                  <span className="slider-chip-label">Take the Tour</span>
-                </button>
-                <button
-                  type="button"
-                  className="slider-chip"
                   onClick={() => openGuidesWorkspace("wire-guide")}
                   data-active={
                     isGuidesWorkspaceMode && activeGuideWorkflow === "wire-guide"
@@ -4212,22 +4082,6 @@ export default function Builder() {
                   title="Open the W.I.R.E. guide for worksheet-first solving."
                 >
                   <span className="slider-chip-label">W.I.R.E. Guide</span>
-                </button>
-                <button
-                  type="button"
-                  className="slider-chip"
-                  onClick={startGuidedTour}
-                  title="Replay the guided tour of the showcase circuit."
-                >
-                  <span className="slider-chip-label">Take the Tour</span>
-                </button>
-                <button
-                  type="button"
-                  className="slider-chip"
-                  onClick={startBuildAlong}
-                  title="Build a circuit yourself, step by step."
-                >
-                  <span className="slider-chip-label">Build it with me</span>
                 </button>
                 <button
                   type="button"

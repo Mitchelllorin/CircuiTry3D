@@ -30,7 +30,7 @@ const NAV_TABS: TabConfig[] = [
   { mode: "practice",     icon: "📝", label: "Practice",    title: "Guided worksheets and W.I.R.E. problems" },
   { mode: "troubleshoot", icon: "🩺", label: "Troubleshoot",title: "Fix broken circuits and restore current flow" },
   { mode: "arena",        icon: "⚡", label: "Arena",       title: "Component testing and advanced simulation" },
-  { mode: "learn",        icon: "🎓", label: "Learn",       title: "Take the guided tour, or build a circuit with me" },
+  { mode: "learn",        icon: "🎓", label: "Learn",       title: "Take the guided tour" },
   { mode: "help",         icon: "📚", label: "Help",        title: "W.I.R.E. guide, shortcuts, and reference" },
   { mode: "wire-guide",   icon: "",   label: "Wire Guide",  title: "Wire guide, formulas, and gauge recommendations" },
   { mode: "textbook",     icon: "📖", label: "Textbook",    title: "Year 1 & Year 2 Electrical Studies Textbook" },

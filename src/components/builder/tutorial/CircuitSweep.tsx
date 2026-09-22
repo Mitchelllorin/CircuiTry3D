@@ -1,7 +1,12 @@
 /**
  * ══════════════════════════════════════════════════════════════════════════
  *  THE CIRCUIT SWEEP — the one and only walkthrough in this app. LOCKED.
+ *  ID: CT3D-TUTORIAL-1 — part 1 of the first-run tutorial. PROTECTED.
  * ══════════════════════════════════════════════════════════════════════════
+ *
+ * Protected by Mitchell's instruction (2026-09-22): the camera narration, the
+ * text cards, first-open firing and its showcase lock stay exactly as they are.
+ * Part 2 is CT3D-TUTORIAL-2 (BuilderBuildAlong), reached from the last card.
  *
  * A camera-sweep cinematic: the camera flies to each part of the live showcase
  * circuit while a text card explains it, with the W.I.R.E. terms colour-coded.

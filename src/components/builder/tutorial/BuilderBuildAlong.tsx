@@ -1,3 +1,14 @@
+/**
+ * ══════════════════════════════════════════════════════════════════════════
+ *  BUILD IT WITH ME
+ *  ID: CT3D-TUTORIAL-2 — part 2 of the first-run tutorial. PROTECTED.
+ * ══════════════════════════════════════════════════════════════════════════
+ *
+ * The continuation of CT3D-TUTORIAL-1 (CircuitSweep): the tour's last card
+ * hands off here, onto a clean workspace, one step at a time. Protected by
+ * Mitchell's instruction (2026-09-22) — it stays as it is. It is entered from
+ * the tour, not from its own button.
+ */
 import { useEffect, useRef, useState } from "react";
 import type {
   BuilderInvokeAction,
