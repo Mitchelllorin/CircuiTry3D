@@ -63,8 +63,6 @@ import {
   COMPONENT_ACTIONS,
   QUICK_ADD_COMPONENTS,
   WIRE_TOOL_ACTIONS,
-  CURRENT_MODE_ACTIONS,
-  VIEW_CONTROL_ACTIONS,
   SETTINGS_ITEMS,
   ENABLE_SCROLLER_MENU,
 } from "../components/builder/constants";
@@ -1165,8 +1163,6 @@ export default function Builder() {
   const {
     isLeftMenuOpen,
     setLeftMenuOpen,
-    isRightMenuOpen,
-    setRightMenuOpen,
   } = useResponsiveLayout();
   const isCoarsePointer = useMemo(() => {
     if (typeof window === "undefined") {
@@ -2693,6 +2689,21 @@ export default function Builder() {
         }),
       ),
       {
+        id: "layout-mode",
+        label: "Layout mode",
+        description: layoutModeLabel,
+        isActive: false,
+        disabled: controlsDisabled,
+        onSelect: () => triggerBuilderAction("cycle-layout"),
+      },
+      {
+        id: "cinematic-camera",
+        label: "Cinematic camera",
+        description: "Fly the circuit and record it",
+        isActive: isCinematicOpen,
+        onSelect: () => setIsCinematicOpen(true),
+      },
+      {
         id: "component-descriptors",
         label: "Component Descriptors",
         description: showThumbDescriptors
@@ -2702,7 +2713,15 @@ export default function Builder() {
         onSelect: () => setShowThumbDescriptors((v) => !v),
       },
     ],
-    [modeState, currentFlowLabel, controlsDisabled, triggerBuilderAction, showThumbDescriptors],
+    [
+      modeState,
+      currentFlowLabel,
+      controlsDisabled,
+      triggerBuilderAction,
+      showThumbDescriptors,
+      layoutModeLabel,
+      isCinematicOpen,
+    ],
   );
 
   const workspacePanelMeta = useMemo(() => {
@@ -2858,7 +2877,6 @@ export default function Builder() {
     <div
       className="builder-shell"
       data-left-menu-open={isLeftMenuOpen ? "true" : "false"}
-      data-right-menu-open={isRightMenuOpen ? "true" : "false"}
       data-tour-active={isGuidedTourOpen ? "true" : "false"}
     >
     <CurrentFlowAnimation />
@@ -3237,230 +3255,6 @@ export default function Builder() {
         </nav>
       </div>
 
-      <div
-        className={`builder-menu-stage builder-menu-stage-right${isRightMenuOpen ? " open" : ""}`}
-      >
-        <button
-          type="button"
-          className="builder-menu-toggle builder-menu-toggle-right"
-          onClick={() => setRightMenuOpen((open) => !open)}
-          aria-expanded={isRightMenuOpen}
-          aria-label={
-            isRightMenuOpen
-              ? "Collapse mode and view controls"
-              : "Expand mode and view controls"
-          }
-          title={
-            isRightMenuOpen
-              ? "Collapse mode and view controls"
-              : "Expand mode and view controls"
-          }
-        >
-          <span className="toggle-icon" aria-hidden="true">
-            <IconChevron direction={isRightMenuOpen ? "right" : "left"} />
-          </span>
-          <span className="toggle-text">Controls</span>
-        </button>
-        <nav
-          className="builder-menu builder-menu-right"
-          role="complementary"
-          aria-label="Mode and view controls"
-        >
-          <div className="builder-menu-scroll">
-            <div className="slider-section">
-              <span className="slider-heading">Visualization</span>
-              <div className="slider-stack">
-                {CURRENT_MODE_ACTIONS.map((action) => {
-                  const isFlowToggle = action.action === "toggle-current-flow";
-                  const isPolarityToggle = action.action === "toggle-polarity";
-                  const isLayoutCycle = action.action === "cycle-layout";
-                  const isActionActive = isFlowToggle
-                    ? modeState.currentFlowStyle === "solid"
-                    : isPolarityToggle
-                      ? modeState.showPolarityIndicators
-                      : false;
-
-                  const description = (() => {
-                    if (isFlowToggle) {
-                      return `${currentFlowLabel} visualisation active`;
-                    }
-                    if (isPolarityToggle) {
-                      return modeState.showPolarityIndicators
-                        ? "Polarity markers visible"
-                        : "Polarity markers hidden";
-                    }
-                    if (isLayoutCycle) {
-                      return `Current layout: ${layoutModeLabel}`;
-                    }
-                    return action.description;
-                  })();
-
-                  return (
-                    <button
-                      key={action.id}
-                      type="button"
-                      className="slider-btn slider-btn-stacked"
-                      onClick={() =>
-                        triggerBuilderAction(action.action, action.data)
-                      }
-                      disabled={controlsDisabled}
-                      aria-disabled={controlsDisabled}
-                      title={
-                        controlsDisabled
-                          ? controlDisabledTitle
-                          : action.description
-                      }
-                      data-active={isActionActive ? "true" : undefined}
-                      aria-pressed={
-                        isFlowToggle || isPolarityToggle
-                          ? isActionActive
-                          : undefined
-                      }
-                    >
-                      <span className="slider-label">{action.label}</span>
-                      <span className="slider-description">{description}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-            <div className="slider-section">
-              <span className="slider-heading">View</span>
-              <div className="slider-stack">
-                {VIEW_CONTROL_ACTIONS.map((action) => {
-                  const isGridToggle = action.action === "toggle-grid";
-                  const isLabelToggle = action.action === "toggle-labels";
-                  const isActionActive =
-                    (isGridToggle && modeState.showGrid) ||
-                    (isLabelToggle && labelVisibilityLevel > 0);
-                  const description = (() => {
-                    if (isGridToggle) {
-                      return modeState.showGrid
-                        ? "Grid visible"
-                        : "Grid hidden";
-                    }
-                    if (isLabelToggle) {
-                      return labelVisibilityDescription;
-                    }
-                    return action.description;
-                  })();
-
-                  return (
-                    <button
-                      key={action.id}
-                      type="button"
-                      className="slider-btn slider-btn-stacked"
-                      onClick={() =>
-                        triggerBuilderAction(action.action, action.data)
-                      }
-                      disabled={controlsDisabled}
-                      aria-disabled={controlsDisabled}
-                      title={
-                        controlsDisabled
-                          ? controlDisabledTitle
-                          : action.description
-                      }
-                      data-active={isActionActive ? "true" : undefined}
-                      aria-pressed={
-                        isGridToggle || isLabelToggle
-                          ? isActionActive
-                          : undefined
-                      }
-                    >
-                      <span className="slider-label">{action.label}</span>
-                      <span className="slider-description">{description}</span>
-                    </button>
-                  );
-                })}
-              </div>
-              <div className="slider-section">
-                <span className="slider-heading">Grid Style</span>
-                <div className="builder-logo-setting">
-                  <label htmlFor="grid-brightness-slider">Brightness</label>
-                  <div className="setting-input">
-                    <input
-                      id="grid-brightness-slider"
-                      type="range"
-                      min={10}
-                      max={100}
-                      step={5}
-                      value={modeState.gridBrightness}
-                      onChange={(e) => {
-                        const brightness = Number(e.target.value);
-                        setModeState((prev) => ({ ...prev, gridBrightness: brightness }));
-                        triggerBuilderAction("set-grid-style", {
-                          brightness,
-                          lineWidth: modeState.gridLineWidth,
-                          hue: modeState.gridHue,
-                        });
-                      }}
-                      disabled={controlsDisabled}
-                      aria-valuetext={`${modeState.gridBrightness}% brightness`}
-                    />
-                    <span className="setting-value">{modeState.gridBrightness}%</span>
-                  </div>
-                </div>
-                <div className="builder-logo-setting">
-                  <label htmlFor="grid-linewidth-slider">Line Width</label>
-                  <div className="setting-input">
-                    <input
-                      id="grid-linewidth-slider"
-                      type="range"
-                      min={1}
-                      max={3}
-                      step={0.5}
-                      value={modeState.gridLineWidth}
-                      onChange={(e) => {
-                        const lineWidth = Number(e.target.value);
-                        setModeState((prev) => ({ ...prev, gridLineWidth: lineWidth }));
-                        triggerBuilderAction("set-grid-style", {
-                          brightness: modeState.gridBrightness,
-                          lineWidth,
-                          hue: modeState.gridHue,
-                        });
-                      }}
-                      disabled={controlsDisabled}
-                      aria-valuetext={`${modeState.gridLineWidth}px line width`}
-                    />
-                    <span className="setting-value">{modeState.gridLineWidth}px</span>
-                  </div>
-                </div>
-                <div className="builder-logo-setting">
-                  <label htmlFor="grid-hue-slider">Color</label>
-                  <div className="setting-input">
-                    <input
-                      id="grid-hue-slider"
-                      type="range"
-                      min={0}
-                      max={359}
-                      step={1}
-                      value={modeState.gridHue}
-                      className="grid-hue-slider"
-                      onChange={(e) => {
-                        const hue = Number(e.target.value);
-                        setModeState((prev) => ({ ...prev, gridHue: hue }));
-                        triggerBuilderAction("set-grid-style", {
-                          brightness: modeState.gridBrightness,
-                          lineWidth: modeState.gridLineWidth,
-                          hue,
-                        });
-                      }}
-                      disabled={controlsDisabled}
-                      aria-valuetext={`${modeState.gridHue}° hue`}
-                    />
-                    <span
-                      className="setting-value"
-                      style={{ color: `hsl(${modeState.gridHue},80%,70%)` }}
-                    >
-                      {modeState.gridHue}°
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </nav>
-      </div>
 
       <div className="builder-ticker-feed" role="status" aria-live="polite">
         <div className="ticker-wire-fixed" role="group" aria-label="W.I.R.E. live metrics">
@@ -3628,6 +3422,19 @@ export default function Builder() {
           <button
             type="button"
             className="circuit-zoom-btn"
+            onClick={() => triggerBuilderAction("reset-camera")}
+            disabled={controlsDisabled}
+            aria-label="Reset the view"
+            title="Reset the view"
+          >
+            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="7" />
+              <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            className="circuit-zoom-btn"
             onClick={() => triggerBuilderAction("zoom-out")}
             disabled={controlsDisabled}
             aria-label="Zoom out"
@@ -3648,23 +3455,6 @@ export default function Builder() {
               <path d="M20.59 13.41 13.42 20.6a2 2 0 0 1-2.83 0L3 13V3h10l7.59 7.59a2 2 0 0 1 0 2.82z" />
               <circle cx="7.5" cy="7.5" r="1.2" />
             </svg>
-          </button>
-          <button
-            type="button"
-            className={`cinematic-fab${isCinematicOpen ? " active" : ""}${cinematicIsRecording ? " cinematic-fab--recording" : ""}`}
-            onClick={() => setIsCinematicOpen((prev) => !prev)}
-            aria-label={isCinematicOpen ? "Close cinematic camera" : "Open cinematic camera"}
-            aria-expanded={isCinematicOpen}
-            title="Cinematic Camera"
-          >
-            {cinematicIsRecording ? (
-              <><span className="cinematic-rec-dot" aria-hidden="true" />REC</>
-            ) : (
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="m22 8-6 4 6 4V8z" />
-                <rect x="2" y="6" width="14" height="12" rx="2" />
-              </svg>
-            )}
           </button>
           {/* Settings — the gear lives out in the workspace control stack (below the
               cinematic camera); all settings open from here. */}
@@ -3757,6 +3547,91 @@ export default function Builder() {
           onClearCustomSkin={clearCustomWorkspaceSkin}
           onResetWorkspaceSkin={resetWorkspaceSkin}
           displaySettings={displaySettings}
+          gridStyle={
+            <>
+                <div className="builder-logo-setting">
+                  <label htmlFor="grid-brightness-slider">Brightness</label>
+                  <div className="setting-input">
+                    <input
+                      id="grid-brightness-slider"
+                      type="range"
+                      min={10}
+                      max={100}
+                      step={5}
+                      value={modeState.gridBrightness}
+                      onChange={(e) => {
+                        const brightness = Number(e.target.value);
+                        setModeState((prev) => ({ ...prev, gridBrightness: brightness }));
+                        triggerBuilderAction("set-grid-style", {
+                          brightness,
+                          lineWidth: modeState.gridLineWidth,
+                          hue: modeState.gridHue,
+                        });
+                      }}
+                      disabled={controlsDisabled}
+                      aria-valuetext={`${modeState.gridBrightness}% brightness`}
+                    />
+                    <span className="setting-value">{modeState.gridBrightness}%</span>
+                  </div>
+                </div>
+                <div className="builder-logo-setting">
+                  <label htmlFor="grid-linewidth-slider">Line Width</label>
+                  <div className="setting-input">
+                    <input
+                      id="grid-linewidth-slider"
+                      type="range"
+                      min={1}
+                      max={3}
+                      step={0.5}
+                      value={modeState.gridLineWidth}
+                      onChange={(e) => {
+                        const lineWidth = Number(e.target.value);
+                        setModeState((prev) => ({ ...prev, gridLineWidth: lineWidth }));
+                        triggerBuilderAction("set-grid-style", {
+                          brightness: modeState.gridBrightness,
+                          lineWidth,
+                          hue: modeState.gridHue,
+                        });
+                      }}
+                      disabled={controlsDisabled}
+                      aria-valuetext={`${modeState.gridLineWidth}px line width`}
+                    />
+                    <span className="setting-value">{modeState.gridLineWidth}px</span>
+                  </div>
+                </div>
+                <div className="builder-logo-setting">
+                  <label htmlFor="grid-hue-slider">Color</label>
+                  <div className="setting-input">
+                    <input
+                      id="grid-hue-slider"
+                      type="range"
+                      min={0}
+                      max={359}
+                      step={1}
+                      value={modeState.gridHue}
+                      className="grid-hue-slider"
+                      onChange={(e) => {
+                        const hue = Number(e.target.value);
+                        setModeState((prev) => ({ ...prev, gridHue: hue }));
+                        triggerBuilderAction("set-grid-style", {
+                          brightness: modeState.gridBrightness,
+                          lineWidth: modeState.gridLineWidth,
+                          hue,
+                        });
+                      }}
+                      disabled={controlsDisabled}
+                      aria-valuetext={`${modeState.gridHue}° hue`}
+                    />
+                    <span
+                      className="setting-value"
+                      style={{ color: `hsl(${modeState.gridHue},80%,70%)` }}
+                    >
+                      {modeState.gridHue}°
+                    </span>
+                  </div>
+                </div>
+            </>
+          }
           environment={{
             icon: activeEnvironment.icon,
             name: activeEnvironment.name,

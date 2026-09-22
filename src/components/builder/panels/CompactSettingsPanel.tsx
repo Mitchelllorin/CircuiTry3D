@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import type {
   WorkspaceSkinId,
   WorkspaceSkinOption,
@@ -38,6 +39,8 @@ type CompactSettingsPanelProps = {
       Insights tab, which cost the bottom edge of the workspace. */
   displaySettings: DisplaySetting[];
   environment: { icon: string; name: string; onConfigure: () => void };
+  /** The grid brightness / width / colour sliders, off the old CONTROLS tab. */
+  gridStyle?: ReactNode;
 };
 
 export function CompactSettingsPanel({
@@ -56,6 +59,7 @@ export function CompactSettingsPanel({
   onResetWorkspaceSkin,
   displaySettings,
   environment,
+  gridStyle,
 }: CompactSettingsPanelProps) {
   return (
     <div className={`compact-settings-panel${isOpen ? " open" : ""}`}>
@@ -112,6 +116,13 @@ export function CompactSettingsPanel({
               <span className="compact-settings-row-value">Heat, cold, supply and load</span>
             </button>
           </section>
+
+          {gridStyle && (
+            <section className="compact-settings-section">
+              <h3 className="compact-settings-heading">Grid style</h3>
+              {gridStyle}
+            </section>
+          )}
 
           <section className="compact-settings-section">
             <h3 className="compact-settings-heading">Workspace skin</h3>
