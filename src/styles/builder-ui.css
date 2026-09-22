@@ -1017,8 +1017,11 @@ body.builder-body::before {
 .circuit-zoom-controls {
   position: fixed;
   bottom: calc(36px + var(--builder-safe-area-bottom, 0px));
-  /* Pushed hard to the right edge, out of the way of the workspace. */
-  right: calc(2px + env(safe-area-inset-right, 0px));
+  /* Beside the right rail's tab, not under it. Hard against the edge (2px) the
+     column shared its x with the Controls tab, which sits mid-height on this
+     same edge and covered Zoom in, Fit, Zoom out and Labels - on a 360x640
+     phone and on a short landscape screen alike. */
+  right: calc(var(--builder-menu-toggle-width) + 6px + env(safe-area-inset-right, 0px));
   top: auto;
   left: auto;
   transform: none;
