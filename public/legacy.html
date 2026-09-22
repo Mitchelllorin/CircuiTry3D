@@ -329,6 +329,11 @@
             transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
         }
 
+        .component-context-menu button[data-action="delete"] {
+            border: 1px dashed rgba(255, 138, 128, 0.7);
+            color: #ffb4ab;
+        }
+
         .component-context-menu button:hover,
         .component-context-menu button:focus {
             border-color: rgba(136, 204, 255, 0.5);
@@ -14139,6 +14144,7 @@ body.android-optimized .zoom-btn {
                     <button type="button" data-action="edit" role="menuitem">Edit Values</button>
                     <button type="button" data-action="wire" role="menuitem">Wire Edit</button>
                     <button type="button" data-action="rotate" role="menuitem">Rotate Component</button>
+                    <button type="button" data-action="delete" role="menuitem">Delete Part</button>
                 </div>
             `;
 
@@ -14250,6 +14256,26 @@ body.android-optimized .zoom-btn {
                 case 'rotate':
                     rotateComponent(component, { animate: true, silent: false });
                     break;
+                case 'delete': {
+                    // The only way to remove ONE part on a touch screen — the
+                    // keyboard Delete key was the only way before. No confirm:
+                    // it is saved for undo first, and Undo brings it back.
+                    let name = component.type || 'Part';
+                    try { name = component.getComponentIdentifier() || name; } catch (_e) { /* keep type */ }
+                    saveState();
+                    if (selectedComponent === component) {
+                        selectedComponent = null;
+                        activeComponent = null;
+                        isDragging = false;
+                    }
+                    if (selectedComponents && typeof selectedComponents.delete === 'function') {
+                        selectedComponents.delete(component);
+                    }
+                    component.remove();
+                    analyzeCircuit();
+                    setStatus(`✓ ${name} deleted — Undo brings it back`);
+                    break;
+                }
                 case 'wire':
                     enableWireMode({ silent: true });
                     if (connectionPoint?.data) {

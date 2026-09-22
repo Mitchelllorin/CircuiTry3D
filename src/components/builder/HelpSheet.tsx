@@ -117,7 +117,7 @@ export function HelpSheet({ isOpen, section, onClose }: HelpSheetProps) {
             <ul>
               <li><strong>Undo</strong> takes back the last thing you did.</li>
               <li>Drag a part to move it. Its wires follow.</li>
-              <li>Press and hold a part to edit its values, re-wire it, or rotate it.</li>
+              <li>Press and hold a part to edit its values, re-wire it, rotate it, or delete it.</li>
               <li>Press and hold a wire to delete it, drop a junction on it, or change how it routes.</li>
               <li>
                 <strong>⊞</strong> beside Help opens the rest of the tools: Clear, Rotate, Redo, Open,
