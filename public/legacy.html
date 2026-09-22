@@ -2897,30 +2897,49 @@
         }
 
         /* ── FUSE™ Corner Watermark ────────────────────────────────────────── */
+        /* The mark stays on the workspace, but it is text over a live 3D scene,
+           so it carries its own chip: tint plus blur, with a heavier fill where
+           there is no blur to lean on. It was 8px type at 55% opacity straight
+           on the canvas, which vanished over any bright part of the model. */
         #fuse-watermark {
             position: fixed;
-            bottom: 72px;
-            left: 14px;
+            bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+            left: calc(14px + env(safe-area-inset-left, 0px));
             z-index: 100;
-            font-size: 0.5rem;
+            padding: 6px 10px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 153, 68, 0.3);
+            background: rgba(11, 12, 34, 0.78);
+            backdrop-filter: blur(14px) saturate(1.15);
+            -webkit-backdrop-filter: blur(14px) saturate(1.15);
+            font-size: 13px;
             font-weight: 900;
             letter-spacing: 0.14em;
-            color: rgba(255, 153, 68, 0.55);
-            text-shadow: 0 0 8px rgba(255, 120, 20, 0.28);
+            color: rgba(255, 173, 102, 0.95);
             pointer-events: none;
             user-select: none;
             text-transform: uppercase;
             line-height: 1.3;
         }
 
+        @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+            #fuse-watermark { background: rgba(11, 12, 34, 0.94); }
+        }
+
+        /* A phone corner has no room for the full descriptor; the mark itself
+           carries it, and the aria-label still reads it out in full. */
+        @media (max-width: 560px) {
+            #fuse-watermark .fuse-watermark-sub { display: none; }
+        }
+
         #fuse-watermark .fuse-watermark-sub {
             display: block;
-            font-size: 0.42rem;
+            font-size: 11px;
             font-weight: 600;
             letter-spacing: 0.06em;
-            color: rgba(148, 163, 184, 0.45);
+            color: rgba(198, 214, 233, 0.92);
             text-shadow: none;
-            margin-top: 1px;
+            margin-top: 2px;
         }
 
         /* ── AC/DC Hazard Warning Panel ────────────────────────────────────── */

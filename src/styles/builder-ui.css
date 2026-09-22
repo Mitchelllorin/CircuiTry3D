@@ -1305,7 +1305,8 @@ body.builder-body::before {
 /* Show compact text labels under each icon */
 .unified-action-bar .edge-action-label {
   display: block;
-  font-size: 7px;
+  /* 7px was a caption on a floating strip. This is the build bar now. */
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -1318,7 +1319,7 @@ body.builder-body::before {
 }
 .unified-action-bar .quick-add-btn-label {
   display: block;
-  font-size: 7px;
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
