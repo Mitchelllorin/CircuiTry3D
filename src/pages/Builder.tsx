@@ -2637,10 +2637,17 @@ export default function Builder() {
   const isCurrentFlowPayoffLocking = isCurrentFlowPayoffRunning;
 
   // (isShowcaseLocked is declared earlier, near isCircuitLocked, so the lock-sync
-  // effect can depend on it.) Latch it on once the payoff is loaded/showing.
+  // effect can depend on it.) Latch it on once the payoff is loaded/showing —
+  // but ONLY while the tour (CT3D-TUTORIAL-1) is on screen. Effect 2 runs the
+  // payoff on every session, for everyone, to keep the canvas from coming up
+  // blank; latching unconditionally locked every returning user's workspace on
+  // launch with nothing on screen to unlock it, and a payoff retry landing after
+  // the tour's × re-locked a first-time user too. The tour's own lock is set by
+  // its own paths (eligibility at mount, startGuidedTour) and released by its ×,
+  // so gating here changes nothing for the tour.
   useEffect(() => {
-    if (isCurrentFlowPayoffLocking) setShowcaseLocked(true);
-  }, [isCurrentFlowPayoffLocking]);
+    if (isCurrentFlowPayoffLocking && isGuidedTourOpen) setShowcaseLocked(true);
+  }, [isCurrentFlowPayoffLocking, isGuidedTourOpen]);
 
   // Plain-language insights that cycle through the payoff banner. Each one names
   // something the user can actually see happening on screen, so the showcase
