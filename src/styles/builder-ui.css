@@ -983,8 +983,7 @@ body.builder-body::before {
 
 /* Zoom controls — bottom-right perimeter corner, stacked vertically.
    No container box — just the three bare symbol buttons.
-   Offset by the toggle tab width so the Controls panel toggle (32px wide at right:0)
-   never obscures the zoom buttons. */
+   Nothing else shares the right edge now, so it sits hard against it. */
 /* During the guided tour the workspace is a clean stage — hide the quick-action
    buttons and the zoom controls so nothing blocks the circuit. They return for
    the build-along / normal use. */
@@ -1011,11 +1010,10 @@ body.builder-body::before {
 .circuit-zoom-controls {
   position: fixed;
   bottom: calc(36px + var(--builder-safe-area-bottom, 0px));
-  /* Beside the right rail's tab, not under it. Hard against the edge (2px) the
-     column shared its x with the Controls tab, which sits mid-height on this
-     same edge and covered Zoom in, Fit, Zoom out and Labels - on a 360x640
-     phone and on a short landscape screen alike. */
-  right: calc(var(--builder-menu-toggle-width) + 6px + env(safe-area-inset-right, 0px));
+  /* Hard against the right edge. It used to step 46px in around the CONTROLS
+     tab; that tab is gone, and the step put the column inside the middle of a
+     360px screen for nothing. */
+  right: calc(8px + env(safe-area-inset-right, 0px));
   top: auto;
   left: auto;
   transform: none;
@@ -1263,7 +1261,13 @@ body.builder-body::before {
      no labels, no plates — so the rail is as narrow as the glyphs. */
   position: fixed;
   bottom: 15%;
-  top: auto;
+  /* A ceiling as well as a floor: under the nav and the W.I.R.E. readout.
+     Without it the rail grew upward with every button - past the readout on a
+     short landscape screen, and off the top of a phone when the tier opened. */
+  top: calc(
+    var(--builder-ticker-top, 72px) + var(--builder-ticker-height, 48px) + 8px +
+      var(--builder-safe-area-top, 0px)
+  );
   /* Clear of the LIBRARY tab, which owns the same edge at mid-height — the
      mirror of what the view column does around the Controls tab. */
   left: calc(var(--builder-menu-toggle-width) + 6px + var(--builder-safe-area-left, 0px));
@@ -1271,11 +1275,14 @@ body.builder-body::before {
   transform: none;
   z-index: var(--z-builder-floats);
   display: flex;
+  /* Stacks up from the bottom; when the space between floor and ceiling runs
+     out it starts a second column beside the first, never off the screen. */
   flex-direction: column;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   justify-content: flex-end;
+  align-content: flex-start;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   padding: 0;
   /* ↓ No container — transparent strip only */
   background: transparent;
@@ -1289,6 +1296,12 @@ body.builder-body::before {
 /* Re-enable pointer events for the actual buttons */
 .unified-action-bar > * {
   pointer-events: all;
+}
+
+/* On the rail the component shortcuts are rail items like any other, so they
+   stack and wrap with the column instead of forming a row across the canvas. */
+.unified-action-bar .quick-add-btn-wrapper {
+  display: contents;
 }
 
 /* quick-add-btn-wrapper — flex row containing the QuickAddButtons */
@@ -1544,14 +1557,13 @@ body.builder-body::before {
 
 /* On narrow phones: tighten gap so 2 rows fit neatly */
 @media (max-width: 480px) {
-  .unified-action-bar {
-    gap: 2px;
-    padding: 2px 3px;
-  }
+  /* A phone is where the glove is: the rail keeps 48px targets 8px apart. It
+     was 42px at 2px here, from when this was a two-row strip squeezed across
+     the width. As a column it has the height to spare. */
   .unified-action-bar .edge-action-btn {
-    width: 42px;
-    min-height: 42px;
-    min-width: 42px;
+    width: 48px;
+    min-height: 48px;
+    min-width: 48px;
     padding: 4px 2px 3px;
     /* No box left to round. */
     border-radius: 0;
@@ -5733,13 +5745,6 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
 
   /* Tighten quick-add bar to sit just below the reduced 44px header. */
   .quick-add-bar {
-    top: calc(52px + var(--builder-safe-area-top));
-  }
-
-  /* Move the unified action bar below the mode bar.  In landscape the ticker
-     variables are 0px, which would put the bar at top:~2px (under the mode bar).
-     Use the same 52px clearance as the quick-add-bar override above. */
-  .unified-action-bar {
     top: calc(52px + var(--builder-safe-area-top));
   }
 

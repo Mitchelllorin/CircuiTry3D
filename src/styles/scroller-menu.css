@@ -840,9 +840,7 @@
   display: none !important;
 }
 
-/* Belt and braces: at the resting tier the bar may not wrap under any
-   circumstance. If a future button pushes past the edge, it must be visibly
-   squeezed here rather than silently starting a second row. */
-.unified-action-bar[data-bar-mode="tools"] {
-  flex-wrap: nowrap;
-}
+/* The resting tier used to be forced onto one row here, for the bottom strip.
+   The bar is a left-edge column now and wraps into a second column only when
+   the screen is too short for five - squeezing it instead would shrink the
+   targets under 48px. */
