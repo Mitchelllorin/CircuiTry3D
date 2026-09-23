@@ -4,7 +4,6 @@ import { useTranslation } from "react-i18next";
 import Home from "../pages/Home";
 import BrandSignature from "../components/BrandSignature";
 import GlobalModeBar from "../components/GlobalModeBar";
-import TipsTicker from "../components/TipsTicker";
 import ErrorBoundary from "../components/ErrorBoundary";
 import DemoBanner from "../components/DemoBanner";
 import EngagementPromptManager from "../components/EngagementPromptManager";
@@ -206,8 +205,8 @@ function AppLayout() {
         <Outlet />
       </main>
       {isWorkspace && <EngagementPromptManager />}
-      {/* Tips & facts ticker - workspace only */}
-      {isWorkspace && <TipsTicker />}
+      {/* The Tips & Facts ticker used to sit here, cycling cards over the
+          workspace on its own. Nothing narrates the workspace now. */}
       {/* Site footer with legal links - shown on all pages except landing, workspace & promo */}
       {!isLanding && !isWorkspace && !isAnyPromo && (
         <footer className="app-footer">

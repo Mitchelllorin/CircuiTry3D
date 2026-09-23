@@ -123,7 +123,6 @@ type WorkspacePanelMode =
   | "settings";
 
 const DEFAULT_WIRE_SEGMENT_RESISTANCE_OHM = 0.01;
-const JUNCTION_TIP_STORAGE_KEY = "circuitry3d:junction-tip-dismissed:v1";
 // Set once the user dismisses the guided tour "for good" — after that it no longer
 // auto-opens on launch (still re-launchable from the Guides menu).
 // Bumped v1 → v2 deliberately. Closing the tour writes this key and NOTHING ever
@@ -829,10 +828,8 @@ export default function Builder() {
   // Junction tip starts hidden — it is shown the first time the user
   // explicitly uses the Junction button, not automatically on page load,
   // so that it never blocks the 3D canvas or grid on first visit.
-  const [isJunctionTipVisible, setJunctionTipVisible] = useState(false);
   // Session-level guard: once the tip has been triggered (or suppressed) this
   // session, never trigger it again regardless of localStorage availability.
-  const junctionTipTriggeredRef = useRef(false);
 
   // Global workspace mode context - sync with local state
   const globalModeContext = useWorkspaceMode();
@@ -1841,25 +1838,6 @@ export default function Builder() {
 
       if (component.action === "junction") {
         postToBuilder({ type: "builder:add-junction" });
-        // Show the junction info tip the first time the user places a junction.
-        // The ref guards against re-showing within the same session even if
-        // localStorage is unavailable, while the storage key prevents it on
-        // subsequent visits.
-        if (!junctionTipTriggeredRef.current) {
-          junctionTipTriggeredRef.current = true;
-          try {
-            if (window.localStorage.getItem(JUNCTION_TIP_STORAGE_KEY) !== "1") {
-              setJunctionTipVisible(true);
-              // Auto-dismiss after 12 seconds as safety net
-              setTimeout(() => {
-                setJunctionTipVisible(false);
-                try { window.localStorage.setItem(JUNCTION_TIP_STORAGE_KEY, "1"); } catch {}
-              }, 12000);
-            }
-          } catch {
-            // ignore storage read failures — ref prevents repeat triggers
-          }
-        }
         return;
       }
 
@@ -2105,15 +2083,6 @@ export default function Builder() {
     ],
   );
 
-  const handleDismissJunctionTip = useCallback(() => {
-    setJunctionTipVisible(false);
-    try {
-      window.localStorage.setItem(JUNCTION_TIP_STORAGE_KEY, "1");
-    } catch {
-      // ignore storage write failures
-    }
-  }, []);
-
   useEffect(() => {
     return () => {
       clearCurrentFlowPayoffTimers();
@@ -2172,9 +2141,6 @@ export default function Builder() {
     // in which the user can start building and then have it taken away.
     tourEligibleRef.current = true;
     setShowcaseLocked(true);
-    // The showcase has junctions; suppress the junction tip so it can't pop over
-    // the tour.
-    junctionTipTriggeredRef.current = true;
     // Mount only — see the note above.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -3106,33 +3072,6 @@ export default function Builder() {
             </button>
           </div>
 
-          {/* Junction info tip — shown until dismissed, explains the role
-              of junctions and how to use them so they are never missed */}
-          {isJunctionTipVisible && !isGuidedTourOpen && !isBuildAlongOpen && (
-            <div className="junction-info-tip" role="note" aria-label="Junction nodes tip">
-              <span className="junction-info-tip-icon" aria-hidden="true">─●─</span>
-              <div className="junction-info-tip-body">
-                <p className="junction-info-tip-title">Junction Nodes — critical for complex circuits</p>
-                <p className="junction-info-tip-text">
-                  Drop a <strong>Junction ─●─</strong> anywhere on a wire to instantly branch it.
-                  Essential for parallel circuits and combination topologies.
-                </p>
-                <ul className="junction-info-tip-bullets">
-                  <li>Press <kbd>J</kbd>, or open the <strong>Library</strong> drawer and pick <strong>Junction</strong></li>
-                  <li>In Wire mode, click any wire to split it and branch from that point</li>
-                  <li aria-label="KCL applies at every junction: sum of currents in equals sum of currents out">KCL applies at every junction: Σ I<sub>in</sub> = Σ I<sub>out</sub></li>
-                </ul>
-              </div>
-              <button
-                type="button"
-                className="junction-info-tip-close"
-                aria-label="Dismiss junction tip"
-                onClick={handleDismissJunctionTip}
-              >
-                ×
-              </button>
-            </div>
-          )}
         </Fragment>
       )}
 
