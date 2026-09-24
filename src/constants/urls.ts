@@ -28,5 +28,7 @@ export const DESKTOP_APP_URL = `${SITE_ORIGIN}/#/app`;
 /** Sibling sites from the same maker — a credit, not a cross-sell. */
 export const STUDIO_SITES = [
   { label: "ThePrints3D.com", href: "https://theprints3d.com" },
-  { label: "Automotive3D.ca", href: "https://automotive3d.ca" },
+  { label: "AutoMotive3D.ca", href: "https://automotive3d.ca" },
+  { label: "AnyBody3D.com", href: "https://anybody3d.com" },
+  { label: "TheCell3D.com", href: "https://thecell3d.com" },
 ] as const;
