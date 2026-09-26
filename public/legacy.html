@@ -4107,12 +4107,16 @@ body.android-optimized .zoom-btn {
                         ? payload.initialProperties
                         : null;
                     if (typeof componentType === 'string' && typeof addComponent === 'function') {
+                        // The first part added starts the user's own circuit on a
+                        // clean board, not among the showcase parts.
+                        if (isPayoffCircuit) clearAll(false);
                         addComponent(componentType, 0, initialProperties);
                     }
                     break;
                 }
                 case 'builder:add-junction': {
                     if (typeof addJunction === 'function') {
+                        if (isPayoffCircuit) clearAll(false);
                         addJunction();
                     }
                     break;
@@ -4306,7 +4310,7 @@ body.android-optimized .zoom-btn {
                                 try {
                                     if (typeof data.bgBrightness === 'number' || typeof data.bgHue === 'number') {
                                         applySceneBackground(
-                                            typeof data.bgBrightness === 'number' ? data.bgBrightness : 35,
+                                            typeof data.bgBrightness === 'number' ? data.bgBrightness : 60,
                                             typeof data.bgHue === 'number' ? data.bgHue : 222
                                         );
                                     }
@@ -4537,6 +4541,13 @@ body.android-optimized .zoom-btn {
         let layoutMode = 'square'; // 'free', 'square', 'linear' — default: textbook-style square
         let showPolarityIndicators = true;
         let isCircuitEditLocked = false; // When true, prevents editing components/wires (for practice mode)
+        // The tour's showcase circuit is a display piece: view-only for as long as
+        // it is on the board, not just while the tour runs. Unlocked, one stray
+        // touch after the tour sent its battery across the grid. clearAll() drops
+        // isPayoffCircuit, so Clear, the build-along hand-off and Practice all
+        // hand back an editable board. Owned here rather than by the host's
+        // lock message, which lost a startup race and left the showcase live.
+        function isEditLocked() { return isCircuitEditLocked || isPayoffCircuit; }
         
         let practiceQuestions = {
             series_basic: {
@@ -9150,7 +9161,7 @@ body.android-optimized .zoom-btn {
                 const initHeight = (window.innerHeight || document.documentElement.clientHeight || 640);
 
                 scene = new THREE.Scene();
-                scene.background = new THREE.Color(0x0e1322);
+                scene.background = new THREE.Color(0x19284b);   // = applySceneBackground(60, 222)
                 
                 // Use safe non-zero viewport dimensions.  On Android/Capacitor
                 // the local-bundle iframe can execute before the browser layout
@@ -9238,7 +9249,7 @@ body.android-optimized .zoom-btn {
                     ? Math.min(window.devicePixelRatio, 1.5)
                     : Math.min(window.devicePixelRatio, 2));
                 renderer.setSize(_vw, _vh);
-                renderer.setClearColor(0x0e1322, 1);
+                renderer.setClearColor(0x19284b, 1);   // = applySceneBackground(60, 222)
                 // Android System WebView (Capacitor) may have older GLSL compiler that
                 // misprecises or fails to compile the ACES tone-mapping fragment shader,
                 // resulting in invisible / black materials (including current-flow particles).
@@ -9295,7 +9306,7 @@ body.android-optimized .zoom-btn {
                 mouse = new THREE.Vector2();
                 
                 // Lighting - key + fill + hemisphere for richer PBR shading
-                const directionalLight = new THREE.DirectionalLight(0xffffff, isMobile ? 1.0 : 1.35);
+                const directionalLight = new THREE.DirectionalLight(0xffffff, isMobile ? 1.5 : 1.6);
                 directionalLight.position.set(10, 10, 5);
                 if (renderShadows) {
                     directionalLight.castShadow = true;
@@ -9313,7 +9324,7 @@ body.android-optimized .zoom-btn {
                 scene.add(directionalLight);
 
                 // Cool-blue fill light from the opposite side to soften harsh shadows
-                const fillLight = new THREE.DirectionalLight(0x9fc4ff, isMobile ? 0.35 : 0.5);
+                const fillLight = new THREE.DirectionalLight(0x9fc4ff, isMobile ? 0.6 : 0.65);
                 fillLight.position.set(-8, 4, -6);
                 scene.add(fillLight);
 
@@ -9324,7 +9335,7 @@ body.android-optimized .zoom-btn {
                 }
 
                 // HemisphereLight replaces plain AmbientLight for sky/ground gradient illumination
-                const hemisphereLight = new THREE.HemisphereLight(0x6aa6dd, 0x2a1a3a, isMobile ? 0.6 : 0.6);
+                const hemisphereLight = new THREE.HemisphereLight(0x6aa6dd, 0x2a1a3a, 1.0);
                 scene.add(hemisphereLight);
 
                 // ── Image-based lighting (IBL) ────────────────────────────────
@@ -11472,7 +11483,7 @@ body.android-optimized .zoom-btn {
             const ctrl = e.ctrlKey || e.metaKey;
 
             // When circuit is locked, only allow view controls (h, f, g) and escape
-            if (isCircuitEditLocked) {
+            if (isEditLocked()) {
                 if (['h', 'f', 'g', 'escape'].includes(key)) {
                     e.preventDefault();
                     switch (key) {
@@ -11622,7 +11633,7 @@ body.android-optimized .zoom-btn {
                 longPressStartPos = { x: touch.clientX, y: touch.clientY };
 
                 // If locked, only allow camera rotation - no component interaction
-                if (isCircuitEditLocked) {
+                if (isEditLocked()) {
                     isRotating = true;
                     isPanning = false;
                     return;
@@ -11854,7 +11865,7 @@ body.android-optimized .zoom-btn {
         function handleMouseDown(e) {
             if (e.button === 0) {
                 // Allow camera rotation even when locked, but not component interaction
-                if (isCircuitEditLocked) {
+                if (isEditLocked()) {
                     // Only enable camera rotation when locked - no component interaction
                     isRotating = true;
                     lastTouchPos = { x: e.clientX, y: e.clientY };
@@ -12168,13 +12179,14 @@ body.android-optimized .zoom-btn {
         /**
          * applySceneBackground — set the 3D void colour behind the circuit from the
          * app Settings page. brightness 0–100 drives lightness; hue 0–360 tints it.
-         * Kept deliberately dark so the energized current and components still pop.
+         * Dark enough at the default that the current still glows, but the top of
+         * the slider has to actually reach a lit room — 0.19 max read as black.
          */
         function applySceneBackground(brightness, hue) {
             if (!scene) return;
-            const b = _clamp(brightness, 0, 100, 35);
+            const b = _clamp(brightness, 0, 100, 60);
             const h = _clamp(hue, 0, 360, 222);
-            const lightness = 0.02 + (b / 100) * 0.17; // 0.02 .. 0.19 — always a dark void
+            const lightness = 0.04 + (b / 100) * 0.26; // 0.04 .. 0.30; default 60 → 0.20
             const color = new THREE.Color().setHSL(h / 360, 0.5, lightness);
             scene.background = color;
             if (scene.fog && scene.fog.color) scene.fog.color.copy(color);

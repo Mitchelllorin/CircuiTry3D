@@ -99,7 +99,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
     geometryDetail: 70,
   },
   workspace: {
-    bgBrightness: 35,
+    bgBrightness: 60,
     bgHue: 222,
     gridBrightness: 50,
     gridLineWidth: 1,
@@ -174,11 +174,25 @@ function mergeWithDefaults(stored: unknown): AppSettings {
   return base;
 }
 
+// The background default went 35 → 60 on 2026-09-26. Everyone who had opened
+// the app already had the whole blob saved, 35 included, so a new default alone
+// never reached them — which is why "it's so dark" kept coming back unchanged.
+// Lift a saved 35 once; a value someone actually chose is left alone.
+const BG_LIFT_KEY = "circuitry:bg-default-60";
+const OLD_BG_DEFAULT = 35;
+
 function loadSettings(): AppSettings {
   if (typeof window === "undefined") return DEFAULT_APP_SETTINGS;
   try {
     const raw = window.localStorage.getItem(APP_SETTINGS_STORAGE_KEY);
-    return mergeWithDefaults(raw ? JSON.parse(raw) : null);
+    const merged = mergeWithDefaults(raw ? JSON.parse(raw) : null);
+    if (window.localStorage.getItem(BG_LIFT_KEY) !== "1") {
+      if (merged.workspace.bgBrightness === OLD_BG_DEFAULT) {
+        merged.workspace.bgBrightness = DEFAULT_APP_SETTINGS.workspace.bgBrightness;
+      }
+      window.localStorage.setItem(BG_LIFT_KEY, "1");
+    }
+    return merged;
   } catch {
     return DEFAULT_APP_SETTINGS;
   }
