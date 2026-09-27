@@ -1179,6 +1179,32 @@ export default function Builder() {
   }, []);
   const shouldAnimateLibraryThumbnails = isLeftMenuOpen && !isCoarsePointer;
 
+  // The Library opens beside the build rail, not over it. The rail wraps into a
+  // second column on short screens, so its right edge is measured, not assumed
+  // (read by .builder-menu-stage-left.open in builder-ui.css).
+  useEffect(() => {
+    const rail = document.querySelector<HTMLElement>(".unified-action-bar");
+    if (!rail) return;
+    const publish = () => {
+      let right = 0;
+      rail.querySelectorAll<HTMLElement>(":scope > *").forEach((child) => {
+        const r = child.getBoundingClientRect();
+        if (r.width > 0) right = Math.max(right, r.right);
+      });
+      if (right > 0) {
+        document.documentElement.style.setProperty("--builder-rail-right", `${Math.round(right)}px`);
+      }
+    };
+    publish();
+    const observer = new ResizeObserver(publish);
+    observer.observe(rail);
+    window.addEventListener("resize", publish);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", publish);
+    };
+  }, [isLeftMenuOpen]);
+
   // Action bar visibility mode — persisted to localStorage
   const [actionBarMode, setActionBarMode] = useState<ActionBarMode>(() => {
     try {

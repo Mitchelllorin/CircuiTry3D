@@ -6195,3 +6195,34 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
   border-radius: 6px;
   background: var(--panel-solid, #151c25);
 }
+
+/* ============================================
+   Library opens BESIDE the build rail, below the top readouts.
+   It used to open at the screen edge over the rail (Clear / Wire / Run
+   gone while it was open) and, centred on 34% of the height, ran up
+   over the wordmark and the meters. Last in the file so it wins over
+   every breakpoint above. --builder-rail-right is measured by Builder.
+   ============================================ */
+.builder-shell .builder-menu-stage-left {
+  --lib-top-clear: calc(
+    var(--builder-ticker-top, 72px) + var(--builder-ticker-height, 48px) + 8px +
+      var(--builder-safe-area-top, 0px)
+  );
+  --lib-h: min(
+    var(--builder-menu-left-height),
+    calc(100dvh - var(--lib-top-clear) - 12px - var(--builder-safe-area-bottom, 0px))
+  );
+  top: var(--lib-top-clear);
+  bottom: auto;
+  height: var(--lib-h);
+  transform: translateX(calc(-1 * var(--builder-menu-left-width)));
+}
+
+.builder-shell .builder-menu-stage-left.open {
+  transform: translateX(calc(var(--builder-rail-right, 112px) + 8px));
+}
+
+.builder-shell .builder-menu-stage-left .builder-menu-left {
+  height: var(--lib-h);
+  max-height: var(--lib-h);
+}

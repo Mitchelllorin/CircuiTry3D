@@ -4402,10 +4402,12 @@ body.android-optimized .zoom-btn {
                                 setStatus('🔓 Circuit unlocked - you can now edit');
                                 break;
                             case 'zoom-in':
+                                aimZoomAtCircuit();
                                 cameraDistance = Math.max(ZOOM_MIN, cameraDistance - Math.max(ZOOM_IN_MIN_STEP, cameraDistance * ZOOM_STEP_PROPORTIONAL));
                                 updateCameraPosition();
                                 break;
                             case 'zoom-out':
+                                aimZoomAtCircuit();
                                 cameraDistance = Math.min(ZOOM_MAX, cameraDistance + Math.max(ZOOM_OUT_MIN_STEP, cameraDistance * ZOOM_STEP_PROPORTIONAL));
                                 updateCameraPosition();
                                 break;
@@ -5676,6 +5678,16 @@ body.android-optimized .zoom-btn {
         ['pointerdown', 'pointerup', 'wheel', 'keydown', 'touchstart', 'touchmove'].forEach(
             (evt) => document.addEventListener(evt, noteWorkspaceInput, { capture: true, passive: true })
         );
+        // The host's rail, Library and zoom column are outside this document, so
+        // building entirely from them looked idle here: 45 s in, the parts grew
+        // legs and walked off mid-build. Same origin, so listen there too.
+        try {
+            if (window.parent && window.parent !== window && window.parent.document) {
+                ['pointerdown', 'keydown', 'wheel', 'touchstart'].forEach(
+                    (evt) => window.parent.document.addEventListener(evt, noteWorkspaceInput, { capture: true, passive: true })
+                );
+            }
+        } catch (e) { /* cross-origin host: frame input alone still counts */ }
         // Mouse movement counts only while a button is held. An idle desktop mouse
         // emits stray moves, and a cursor merely passing over the canvas is not the
         // same as somebody working.
@@ -11642,7 +11654,7 @@ body.android-optimized .zoom-btn {
                 // One-tap placement: a part is held as a ghost (just added from the
                 // library). Snap it under the finger now so a plain tap drops it right
                 // here; a drag then fine-tunes before lift. Skip rotation/long-press.
-                if (isPlacing && selectedComponent) {
+                if (isPlacing && selectedComponent && !commitGhostIfPressElsewhere(touch.clientX, touch.clientY)) {
                     cancelLongPress();
                     isRotating = false;
                     isPanning = false;
@@ -11874,7 +11886,7 @@ body.android-optimized .zoom-btn {
 
                 // One-tap placement: a held ghost part (just added from the library)
                 // drops where you click. Snap it under the cursor now; mouseup commits.
-                if (isPlacing && selectedComponent) {
+                if (isPlacing && selectedComponent && !commitGhostIfPressElsewhere(e.clientX, e.clientY)) {
                     cancelLongPress();
                     isRotating = false;
                     isPanning = false;
@@ -15518,6 +15530,52 @@ body.android-optimized .zoom-btn {
             }
         }
 
+        // A part just added from the library is held as a ghost, and the next
+        // press used to drop it under the finger whatever that press was aimed
+        // at. Tapping a terminal to start a wire dragged the held lamp onto the
+        // battery. The ghost now only takes presses on empty board; a press on
+        // another part, terminal or junction places the ghost where it sits and
+        // then does what the press was for.
+        function pressLandsOnOtherPart(clientX, clientY) {
+            if (!renderer || !camera) return false;
+            const rect = renderer.domElement.getBoundingClientRect();
+            const w = rect.width || window.innerWidth;
+            const h = rect.height || window.innerHeight;
+            const ndc = new THREE.Vector2(
+                ((clientX - rect.left) / w) * 2 - 1,
+                -((clientY - rect.top) / h) * 2 + 1
+            );
+            raycaster.setFromCamera(ndc, camera);
+            const held = selectedComponent;
+            const targets = [];
+            components.forEach(comp => {
+                if (!comp || comp === held) return;
+                if (comp.selectionBox) targets.push(comp.selectionBox);
+                (comp.connectionPoints || []).forEach(pt => {
+                    targets.push(pt);
+                    if (pt.userData && pt.userData.wireHitSphere) targets.push(pt.userData.wireHitSphere);
+                });
+            });
+            junctions.forEach(j => {
+                if (j && j.connectionPoint) targets.push(j.connectionPoint);
+                if (j && j.selectionSphere) targets.push(j.selectionSphere);
+            });
+            return targets.length > 0 && raycaster.intersectObjects(targets, false).length > 0;
+        }
+
+        // Place a held ghost where it sits (the normal drop: grid snap, auto-wire
+        // near wires, circuit-state push).
+        function commitHeldGhost() {
+            if (isPlacing && selectedComponent) handleRelease();
+            else isPlacing = false;
+        }
+
+        function commitGhostIfPressElsewhere(clientX, clientY) {
+            if (!pressLandsOnOtherPart(clientX, clientY)) return false;
+            commitHeldGhost();
+            return true;
+        }
+
         function handleRelease() {
             isDragging = false;
             dragArmed = false;
@@ -17033,6 +17091,16 @@ body.android-optimized .zoom-btn {
             return box;
         }
 
+        // Centre of the parts as they sit right now, without the headroom
+        // circuitFitBox adds for a full explode. Aiming at the padded box sat
+        // an assembled circuit low in the frame with empty space above it.
+        function circuitAimPoint() {
+            const box = new THREE.Box3();
+            components.forEach(comp => { if (comp.mesh) expandByDrawn(box, comp.mesh); });
+            junctions.forEach(j => { if (j.mesh) expandByDrawn(box, j.mesh); });
+            return box.isEmpty() ? null : box.getCenter(new THREE.Vector3());
+        }
+
         // Share of the free width/height the circuit may fill; the rest is
         // breathing room so a nameplate above a part still clears the frame.
         const FIT_FILL = 0.86;
@@ -17054,7 +17122,9 @@ body.android-optimized .zoom-btn {
                 resetCamera();
                 return;
             }
-            const center = box.getCenter(new THREE.Vector3());
+            // Aim at the parts as they sit; the corners below still include the
+            // explode headroom, so a full explode stays in frame.
+            const center = circuitAimPoint() || box.getCenter(new THREE.Vector3());
             cameraTarget.copy(center);
 
             const el = renderer && renderer.domElement;
@@ -17093,6 +17163,17 @@ body.android-optimized .zoom-btn {
             updateCameraPosition();
 
             setStatus('⚡ View fitted to circuit');
+        }
+
+        // The zoom buttons zoom about cameraTarget. That stayed at the middle of
+        // the board while parts were added elsewhere, so + slid the circuit off
+        // screen. If the target has wandered outside the circuit, bring it back
+        // to the circuit's centre first; inside it (looking at a detail), leave it.
+        function aimZoomAtCircuit() {
+            const box = circuitFitBox();
+            if (!box) return;
+            if (box.clone().expandByScalar(1).containsPoint(cameraTarget)) return;
+            box.getCenter(cameraTarget);
         }
 
         // The showcase's opening framing, kept exactly as the guided tour was
@@ -17736,6 +17817,7 @@ Made with ? for visual learners everywhere!
                 }
                 console.info('[Builder] Recovery init succeeded — continuing addComponent');
             }
+            commitHeldGhost();
             saveState(); // Save for undo
 
             if (isDragging || selectedComponent) {
@@ -17780,6 +17862,7 @@ Made with ? for visual learners everywhere!
                     return;
                 }
             }
+            commitHeldGhost();
             saveState(); // Save for undo
 
             if (isDragging || selectedComponent) {
@@ -17940,6 +18023,7 @@ Made with ? for visual learners everywhere!
                 return;
             }
 
+            commitHeldGhost();
             exitMeasureMode({ silent: true, skipNotify: true });
             isWireMode = true;
             isRotateMode = false;
@@ -22761,6 +22845,12 @@ Made with ? for visual learners everywhere!
                 //   powers: 0.18 / 0.12 / 0.06 W  (all < ¼ W → nothing ever trips)
                 const PR = 5;                      // ample rating so the resistor never trips (it dissipates ~1.2 W)
                 const VERT = Math.PI / 2;
+                // Half-width / half-depth of the square. It was 8 x 6: the parts
+                // stay the same size, so a loop that wide framed them as specks,
+                // worst on a phone held upright. The tour's camera moves are
+                // fractions of the framing fitted to this loop, so they scale with it.
+                const SQ_X = 5.5;
+                const SQ_Z = 4;
 
                 // Simple SERIES circuit drawn as a square — the first thing a new
                 // user sees: battery (left) → resistor (top) → switch (right, CLOSED)
@@ -22768,32 +22858,32 @@ Made with ? for visual learners everywhere!
                 // path, so the SAME current flows one clean direction all the way round.
 
                 // Battery: left side, vertical (+ at top).
-                const battery = new Component('battery', new THREE.Vector3(-8, 0, 0));
+                const battery = new Component('battery', new THREE.Vector3(-SQ_X, 0, 0));
                 battery.updateProperties({ voltage: 12 });
                 if (battery.mesh) { battery.rotation = normalizeAngle(VERT); battery.mesh.rotation.y = battery.rotation; }
                 components.push(battery);
 
                 // Resistor: top side (horizontal).
-                const resistor = new Component('resistor', new THREE.Vector3(0, 0, 6));
+                const resistor = new Component('resistor', new THREE.Vector3(0, 0, SQ_Z));
                 resistor.updateProperties({ resistance: 100, powerRating: PR, maxPower: PR });
                 components.push(resistor);
 
                 // Switch: right side, vertical — CLOSED so current can flow.
-                const sw = new Component('switch', new THREE.Vector3(8, 0, 0));
+                const sw = new Component('switch', new THREE.Vector3(SQ_X, 0, 0));
                 sw.updateProperties({ isOn: true });
                 if (sw.mesh) { sw.rotation = normalizeAngle(VERT); sw.mesh.rotation.y = sw.rotation; }
                 components.push(sw);
 
                 // Light: bottom side (horizontal) — lights up because current flows.
-                const lamp = new Component('lamp', new THREE.Vector3(0, 0, -6));
+                const lamp = new Component('lamp', new THREE.Vector3(0, 0, -SQ_Z));
                 lamp.updateProperties({ resistance: 10 });
                 components.push(lamp);
 
                 // ── Corner junctions of the square ───────────────────────────
-                const jTL = new Junction(new THREE.Vector3(-8, 0,  6), { snapToGridPosition: false });
-                const jTR = new Junction(new THREE.Vector3( 8, 0,  6), { snapToGridPosition: false });
-                const jBR = new Junction(new THREE.Vector3( 8, 0, -6), { snapToGridPosition: false });
-                const jBL = new Junction(new THREE.Vector3(-8, 0, -6), { snapToGridPosition: false });
+                const jTL = new Junction(new THREE.Vector3(-SQ_X, 0,  SQ_Z), { snapToGridPosition: false });
+                const jTR = new Junction(new THREE.Vector3( SQ_X, 0,  SQ_Z), { snapToGridPosition: false });
+                const jBR = new Junction(new THREE.Vector3( SQ_X, 0, -SQ_Z), { snapToGridPosition: false });
+                const jBL = new Junction(new THREE.Vector3(-SQ_X, 0, -SQ_Z), { snapToGridPosition: false });
                 junctions.push(jTL, jTR, jBR, jBL);
 
                 // Force world matrices before computing wire endpoints (the function

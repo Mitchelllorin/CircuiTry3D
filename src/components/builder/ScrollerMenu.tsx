@@ -152,9 +152,7 @@ function FilmCard({ component, isCenter, panelOpen, onTap, disabled }: FilmCardP
       role="button"
       tabIndex={isCenter ? 0 : -1}
       aria-label={
-        isCenter
-          ? `Add ${component.label} (centered)`
-          : `Scroll to ${component.label}`
+        `Add ${component.label}`
       }
       aria-pressed={isCenter}
       aria-disabled={disabled}
@@ -344,13 +342,11 @@ export function ScrollerMenu({
       if (disabled) return;
       const idx = visibleComponents.indexOf(component);
       if (idx < 0) return;
-      if (wasCenter) {
-        // Already centered — confirm add
-        onSelect(component);
-      } else {
-        // Scroll it to center so the user can confirm
-        scrollToIndex(idx);
-      }
+      // One tap adds, wherever the card sits. The old tap-to-centre,
+      // tap-again-to-add read as a dead button: the first tap on any card
+      // off-centre did nothing anyone could see on the board.
+      if (!wasCenter) scrollToIndex(idx);
+      onSelect(component);
     },
     [disabled, visibleComponents, onSelect, scrollToIndex],
   );
@@ -537,7 +533,7 @@ export function ScrollerMenu({
       {visibleComponents.length > 0 && visibleComponents[centerIndex] && (
         <div className="film-footer">
           <span className="film-footer-hint">
-            tap center to add · scroll to browse
+            tap a part to add it · scroll to browse
           </span>
           <button
             type="button"
