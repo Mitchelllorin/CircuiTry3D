@@ -16998,37 +16998,113 @@ body.android-optimized .zoom-btn {
             setStatus('⚡ Camera view reset');
         }
 
+        // Bounds of what is actually drawn on the board, as it looks fully
+        // exploded whatever the slider says now: the meshes already carry the
+        // current lift, so add the rest. Null for an empty board.
+        // Invisible meshes are skipped: every part carries a transparent
+        // selection box (userData.isSelectionBox, opacity 0) far larger than the
+        // part, and fitting to those framed empty air.
+        const _fitMeshBox = new THREE.Box3();
+        function expandByDrawn(box, root) {
+            root.updateMatrixWorld(true);
+            root.traverse(o => {
+                if (!o.isMesh || !o.visible || !o.geometry) return;
+                if (o.userData && o.userData.isSelectionBox) return;
+                const m = o.material;
+                if (m && (m.visible === false || (m.transparent && m.opacity === 0))) return;
+                if (!o.geometry.boundingBox) o.geometry.computeBoundingBox();
+                _fitMeshBox.copy(o.geometry.boundingBox).applyMatrix4(o.matrixWorld);
+                box.union(_fitMeshBox);
+            });
+        }
+        // legacyBounds: the tour's framing was tuned against the old bounds,
+        // selection boxes and all, so it keeps measuring them.
+        function circuitFitBox(legacyBounds) {
+            if (components.length === 0 && junctions.length === 0) return null;
+            const box = new THREE.Box3();
+            const add = (obj) => {
+                if (!obj) return;
+                if (legacyBounds) box.expandByObject(obj);
+                else expandByDrawn(box, obj);
+            };
+            components.forEach(comp => add(comp.mesh));
+            junctions.forEach(junction => add(junction.mesh));
+            if (components.length) box.max.y += EXPLODE_LIFT - _explodeLiftNow;
+            return box;
+        }
+
+        // Share of the free width/height the circuit may fill; the rest is
+        // breathing room so a nameplate above a part still clears the frame.
+        const FIT_FILL = 0.86;
+        // The side rails are not in viewInsets (the host only reports the top
+        // ticker and the bottom sheet), so hold back a rail's width either side.
+        const FIT_SIDE_RAIL_PX = 76;
+
+        /**
+         * fitToScreen - frame the circuit close, inside the space the UI leaves.
+         * Solves for the distance at which every corner of the bounds lands
+         * inside the free rectangle at the CURRENT orbit angle. The old version
+         * scaled the box's longest side by 1.4, which ignores the angle: a flat
+         * board seen from above projects far smaller than its longest side, so
+         * every circuit sat small in the middle of a big empty frame.
+         */
         function fitToScreen() {
-            if (components.length === 0 && junctions.length === 0) {
+            const box = circuitFitBox();
+            if (!box) {
                 resetCamera();
                 return;
             }
-            
-            // Calculate bounding box of all objects
-            const box = new THREE.Box3();
-            components.forEach(comp => {
-                if (comp.mesh) box.expandByObject(comp.mesh);
-            });
-            junctions.forEach(junction => {
-                if (junction.mesh) box.expandByObject(junction.mesh);
-            });
-
-            // Fit what the board looks like fully exploded, whatever the slider
-            // says now: the meshes already carry the current lift, so add the rest.
-            if (components.length) box.max.y += EXPLODE_LIFT - _explodeLiftNow;
-            
             const center = box.getCenter(new THREE.Vector3());
-            const size = box.getSize(new THREE.Vector3());
-            const maxDim = Math.max(size.x, size.y, size.z);
-            
             cameraTarget.copy(center);
-            // fov 75 fits a circuit of size D at distance ~0.65*D; the old 2×
-            // (with a floor of 10) left a huge empty margin. 1.4× + floor 6 frames
-            // it close with just enough breathing room.
-            cameraDistance = Math.max(6, maxDim * 1.4);
+
+            const el = renderer && renderer.domElement;
+            const W = (el && el.clientWidth) || window.innerWidth || 1;
+            const H = (el && el.clientHeight) || window.innerHeight || 1;
+            const freeW = Math.max(W * 0.4, W - 2 * Math.min(FIT_SIDE_RAIL_PX, W * 0.2)
+                - (viewInsets.left || 0) - (viewInsets.right || 0));
+            const freeH = Math.max(H * 0.3, H - (viewInsets.top || 0) - (viewInsets.bottom || 0));
+            const tanHalf = Math.tan((camera.fov * Math.PI / 180) / 2);
+            const tanV = tanHalf * (freeH / H) * FIT_FILL;
+            const tanH = tanHalf * (W / H) * (freeW / W) * FIT_FILL;
+
+            // Camera basis from the orbit angles (same as computeAimWithInsets).
+            const back = new THREE.Vector3(
+                Math.cos(cameraAngleY) * Math.cos(cameraAngleX),
+                Math.sin(cameraAngleY),
+                Math.cos(cameraAngleY) * Math.sin(cameraAngleX)
+            ).normalize();
+            const fwd = back.clone().negate();
+            const right = new THREE.Vector3().crossVectors(fwd, worldUpVector).normalize();
+            if (right.lengthSq() === 0) right.set(1, 0, 0);
+            const up = new THREE.Vector3().crossVectors(right, fwd).normalize();
+
+            let dist = 0;
+            const p = new THREE.Vector3();
+            for (let i = 0; i < 8; i++) {
+                p.set(i & 1 ? box.max.x : box.min.x,
+                      i & 2 ? box.max.y : box.min.y,
+                      i & 4 ? box.max.z : box.min.z).sub(center);
+                const depthShift = p.dot(back);   // nearer the camera = less depth to spread over
+                dist = Math.max(dist,
+                    Math.abs(p.dot(right)) / tanH + depthShift,
+                    Math.abs(p.dot(up)) / tanV + depthShift);
+            }
+            cameraDistance = Math.min(ZOOM_MAX, Math.max(3, dist));
             updateCameraPosition();
-            
+
             setStatus('⚡ View fitted to circuit');
+        }
+
+        // The showcase's opening framing, kept exactly as the guided tour was
+        // tuned against it: every tour-focus move is a fraction of the distance
+        // this sets (window._showcaseHomeCam). Do not tighten it here.
+        function fitShowcaseForTour() {
+            const box = circuitFitBox(true);
+            if (!box) return;
+            const size = box.getSize(new THREE.Vector3());
+            cameraTarget.copy(box.getCenter(new THREE.Vector3()));
+            cameraDistance = Math.max(6, Math.max(size.x, size.y, size.z) * 1.4);
+            updateCameraPosition();
         }
 
         function toggleGrid() {
@@ -22776,7 +22852,7 @@ Made with ? for visual learners everywhere!
                 // visible AT this angle — the position from the reference screenshot.
                 cameraAngleX = 0.7;
                 cameraAngleY = 0.62;
-                fitToScreen();
+                fitShowcaseForTour();
                 cameraDistance *= 0.8;   // fill the view a touch more
                 updateCameraPosition();
                 // Nudge the circuit a little higher on screen (negative vertical pan
