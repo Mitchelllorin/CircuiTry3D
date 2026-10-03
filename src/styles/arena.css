@@ -3320,3 +3320,6 @@
   border-radius: 2px;
   box-shadow: 0 0 4px currentColor;
 }
+
+/* Hide result panel entirely while keeping metrics updated */
+.arena-result { display: none !important; }
