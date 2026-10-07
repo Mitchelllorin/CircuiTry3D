@@ -124,6 +124,7 @@
 
    Sits above the F.U.S.E. watermark, not merely above the bench bar: the mark
    starts at 72px and stands ~20px tall (two lines), so anything bottoming out
+
    below ~92px lands right on top of it. */
 /* Sits above the result strip (bottom 82px + its own height) so a failure
    report and the run controls never land on top of each other. */
@@ -3320,52 +3321,45 @@
   border-radius: 2px;
   box-shadow: 0 0 4px currentColor;
 }
-
 /* Hide result panel entirely while keeping metrics updated */
-.arena-result { display: none !important; }
-/* 1. Restrict bottom dashboard to 15% screen height */
-.bottom-dashboard,
-.fuse-dashboard,
-[class*="dashboard"] {
-  height: 15vh !important;
-  max-height: 15vh !important;
-  min-height: 80px !important;
-  overflow-y: auto !important;
-}
-
-/* 2. Hide central overlay panel blocking the workspace */
-.component-panel,
-.inspector-panel,
-[class*="inspector"],
-[class*="overlay-card"] {
+.arena-result {
   display: none !important;
 }
+
+/* Hide overlay cards/panels blocking the workspace */
+.arena-overlay__hero,
+.arena-log-panel,
+.arena-scenario {
+  display: none !important;
+}
+
 /* ============================================================
    1. CENTER NAMEPLATE: GLASS + SHRUNK + SHIFTED AWAY FROM CENTER
    ============================================================ */
-.nameplate-panel,
-div[class*="Nameplate"],
-div[class*="fuse-panel-card"],
-div[class*="fuse-panel"] > div:first-child {
+.arena-nameplate,
+.arena-fuse-card {
   /* GLASS / TRANSPARENT EFFECT */
-  background: rgba(15, 23, 42, 0.25) !important; /* Low opacity dark background */
-  backdrop-filter: blur(8px) !important;          /* Glass blur effect */
+  background: rgba(15, 23, 42, 0.25) !important;
+  backdrop-filter: blur(8px) !important;
   -webkit-backdrop-filter: blur(8px) !important;
   border: 1px solid rgba(255, 255, 255, 0.2) !important;
   box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2) !important;
 
   /* MOVE & SHRINK OUT OF THE WAY */
-  transform: scale(0.8) translate(-120%, -30%) !important; /* Shrunk by 20% and moved top-left */
+  transform: scale(0.8) translate(-120%, -30%) !important;
   transform-origin: center center !important;
   transition: transform 0.2s ease-in-out !important;
 }
 
 /* ============================================================
-   2. BOTTOM DASHBOARD: MAKE 15% SMALLER
+   2. BOTTOM DASHBOARD: RESTRICT HEIGHT & MAKE 15% SMALLER
    ============================================================ */
-.bottom-dashboard-container,
-div[class*="Dashboard"],
-div[class*="bottom-dashboard"] {
+.arena-dash {
+  height: 15vh !important;
+  max-height: 15vh !important;
+  min-height: 80px !important;
+  overflow-y: auto !important;
+
   /* Scale dashboard down to 85% */
   transform: scale(0.85) !important;
   transform-origin: bottom center !important;
