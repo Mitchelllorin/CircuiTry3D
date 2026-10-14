@@ -11,6 +11,7 @@ import {
   type BlowoutKit,
   type BlowoutTextures,
 } from "./failureFx";
+import { createInternalsReveal, failedInternal } from "./componentInternals";
 import { isMobile } from "../../utils/mobilePerformance";
 import type { Vec2 } from "../../schematic/types";
 import { STRESS_MAX } from "./stressTest";
@@ -60,6 +61,17 @@ type ArenaSceneProps = {
   panelOpen?: boolean;
   /** Solo bench mode — the in-scene control reads "TEST" instead of "BATTLE". */
   solo?: boolean;
+  /**
+   * Whether the floating metric nameplates are drawn over the parts.
+   *
+   * Defaults ON, because the full-screen page variant is a cinematic surface
+   * where the readouts ARE the content. The workspace arena passes this from
+   * the quick bar's toggle and starts it OFF: a plate hangs directly over the
+   * part it reports on, and on a bench whose part sits dead centre that is a
+   * slab of text in the middle of the workspace — the one place you are trying
+   * to watch. Everything it carried is on the console instead.
+   */
+  nameplates?: boolean;
   /**
    * The part the user has tapped, if any — same model as selecting a component
    * in the workspace. Selection is lifted out of the scene because it is not a
@@ -814,6 +826,25 @@ function createComponentGroup(
       mesh.rotation.set(shape.rotation[0], shape.rotation[1], shape.rotation[2]);
     }
 
+    // Everything the failure needs to know about this surface on the frame the
+    // part dies: how far out it sits, how long it runs, which way its own axis
+    // points, and what it is wearing. Tagged HERE because this is the only place
+    // that still knows which library shape a mesh came from — the failure code
+    // must measure a package, not guess at one from its geometry.
+    const shapeX = shape.scale?.[0] ?? 0.5;
+    const shapeY = shape.scale?.[1] ?? 1;
+    const shapeZ = shape.scale?.[2] ?? 1;
+    mesh.userData.casing = {
+      kind: shape.type,
+      // A box is built from full extents, a cylinder and a sphere from a radius.
+      radius: shape.type === "box" ? Math.max(shapeX, shapeZ) / 2 : shapeX,
+      length: shape.type === "sphere" ? shapeX * 2 : shapeY,
+      axis: new THREE.Vector3(0, 1, 0).applyEuler(mesh.rotation).toArray(),
+      finish: shape.finish ?? "plastic",
+      color: shape.color ?? "#94a3b8",
+      opacity: shape.opacity ?? 1,
+    };
+
     core.add(mesh);
   });
 
@@ -928,6 +959,18 @@ function createComponentGroup(
     targetAxis === "z"
       ? Math.max(laidBounds.max.z, -laidBounds.min.z)
       : Math.max(laidBounds.max.x, -laidBounds.min.x);
+
+  // ── The accent ring clears the part it marks ──────────────────────────────
+  // It is a floor marking around the seat, and at its authored radius it ran
+  // straight through anything reaching further than about a unit — a relay
+  // body, a can lying on the board — so the hoop appeared to pass THROUGH the
+  // component it was pointing at. Scaled to the part's own measured reach
+  // instead, and capped just inside the seat half-spacing (2.7 / 2) so two
+  // neighbours' rings can never overlap and read as one enclosure.
+  if (wantRing) {
+    const reach = group.userData.halfSpan as number;
+    outlineRing.scale.setScalar(Math.min(1.18, Math.max(1, (reach + 0.3) / 1.1)));
+  }
 
   return group;
 }
@@ -2033,17 +2076,20 @@ export function ArenaScene({
   onExitTransitionComplete,
   workspaceMode = false,
   panelOpen = false,
+  nameplates = true,
   bottomInsetPx = 0,
   selectedAgentId = null,
   onSelectAgent,
   onLongPressAgent,
-  // `solo` is still part of the props contract and callers pass it, but nothing
-  // in here reads it any more: the only thing that varied on it was the switch
-  // caption ("throw to test" vs "throw to battle"), and that caption is gone.
+  // `solo` is read for exactly one thing now: the worst-off part's swell (see
+  // isMostStressed). The switch caption it used to drive is gone.
+  solo = false,
 }: ArenaSceneProps) {
   const rootRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const healthBarsRef = useRef<Record<string, HTMLDivElement | null>>({});
+  /** The failure cut's vignette — written from the frame loop, like the plates. */
+  const isolateOverlayRef = useRef<HTMLDivElement | null>(null);
   const agentsRef = useRef<ArenaBattleAgent[]>(agents);
   const phaseRef = useRef<ArenaViewTransitionPhase>(transitionPhase);
   const activeAgentIdRef = useRef<string | null>(activeAgentId);
@@ -2182,7 +2228,66 @@ export function ArenaScene({
     setFuseExpanded(false);
   }, []);
 
+  /**
+   * What actually let go INSIDE the part that died.
+   *
+   * F.U.S.E. names the failure MODE ("Thermal overload"), which is the physics;
+   * this names the PIECE — the carbon film, the electrolyte, the die — from the
+   * same composition spec the interior model is built out of, with the
+   * temperature that piece was rated to. That is the question the card is opened
+   * to answer, and until now the answer was a hole in the casing.
+   */
+  const fuseInternal = fuseCard ? failedInternal(fuseCard.family) : null;
+
   const healthBarAgents = useMemo(() => agents, [agents]);
+
+  /**
+   * Identical parts share ONE readout plate, and the plate says how many.
+   *
+   * A bench is allowed to hold the same part twice — two of one resistor is a
+   * real experiment — and when it does, every copy drew its own plate with
+   * exactly the same three lines on it. Three relays therefore produced three
+   * identical "F4 RELAY · FAILED" cards stacked over the board, and because
+   * identical parts under identical conditions fail together, all three
+   * flipped to FAILED in the same frame: the readout read as one part failing
+   * three times, or as the failure spreading to parts that were never wired to
+   * it. Neither is true. Identical branches sit across the same two rails and
+   * see the same volts, so one plate genuinely reports all of them.
+   *
+   * The FIRST copy of each identical group keeps the plate (with a ×N badge);
+   * its twins keep their element so React keys and refs stay stable, but are
+   * hidden and left out of the stacking pass so they cannot shove the plates
+   * that are still being drawn around the screen.
+   *
+   * "Identical" means everything a branch's behaviour depends on: type, name,
+   * the two independent electrical quantities the plate reads (E and R) and the
+   * power rating that decides when it cooks.
+   */
+  const plateTwin = useMemo(() => {
+    const identity = (agent: ArenaBattleAgent) =>
+      [
+        agent.componentType,
+        agent.name,
+        agent.componentNumber,
+        agent.metrics.voltage,
+        agent.metrics.resistance,
+        agent.ratings.powerRating,
+      ].join("|");
+    const counts = new Map<string, number>();
+    for (const agent of agents) {
+      const key = identity(agent);
+      counts.set(key, (counts.get(key) ?? 0) + 1);
+    }
+    const seen = new Set<string>();
+    const twins = new Map<string, { leader: boolean; count: number }>();
+    for (const agent of agents) {
+      const key = identity(agent);
+      const leader = !seen.has(key);
+      seen.add(key);
+      twins.set(agent.id, { leader, count: counts.get(key) ?? 1 });
+    }
+    return twins;
+  }, [agents]);
   const sceneAgentSignature = useMemo(
     () => agents.map((agent) => `${agent.id}:${agent.renderType}`).join("|"),
     [agents],
@@ -2343,8 +2448,13 @@ export function ArenaScene({
       // dim and dull. Neutral (not ACES) on purpose: ACES desaturates bright
       // colour hard, and the whole point of this pass is that a red LED looks
       // RED. Neutral rolls off the highlights and leaves the hue alone.
+      // Neutral (Khronos PBR Neutral) rather than ACES, kept: it holds the hue
+      // of the W.I.R.E. colours and the failure glow, which are this app's
+      // information. The exposure comes down a little because the environment
+      // above now carries real light into the scene — without this the parts
+      // lift into a flat, evenly-lit look, which is the opposite of the goal.
       renderer.toneMapping = THREE.NeutralToneMapping;
-      renderer.toneMappingExposure = 1.18;
+      renderer.toneMappingExposure = 1.16;
 
       const isWorkspace = workspaceModeRef.current;
 
@@ -2427,7 +2537,12 @@ export function ArenaScene({
       // scene comes from the parts themselves. The blue/orange stay only as
       // low, behind-the-parts rim accents, so the dome still feels like an
       // arena instead of a photo studio.
-      const skyFill = new THREE.HemisphereLight("#e8f0ff", "#2a1c12", 1.5);
+      // Fill is the enemy of the read. Hemisphere + ambient came to ~1.95 of
+      // directionless light against a 3.4 key, which is why every body had the
+      // same value on its lit and unlit sides. Pulled down so the KEY shapes the
+      // objects: a resistor should be bright along the face that catches the
+      // lamp and fall away around its own curvature.
+      const skyFill = new THREE.HemisphereLight("#e8f0ff", "#2a1c12", 0.95);
       scene.add(skyFill);
 
       // ── Image-based lighting ──────────────────────────────────────────────
@@ -2449,7 +2564,15 @@ export function ArenaScene({
       const pmrem = new THREE.PMREMGenerator(renderer);
       const envTexture = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
       scene.environment = envTexture;
-      scene.environmentIntensity = 0.34;
+      // Raised from 0.34, but NOT all the way: an environment is also a broad,
+      // directionless light, and measureable flatness is what more of it buys.
+      // At 0.8 the parts went pale and evenly lit — the two-tone shaping that
+      // makes a cylinder read as a cylinder disappeared, so the scene got MORE
+      // cartoony while getting "brighter". What a metal needs from an
+      // environment is reflection DETAIL, not fill, so it gets enough to pick
+      // up soft gradients and a lit edge and no more; the directional contrast
+      // comes from the key rig below, and the fill lights came down to meet it.
+      scene.environmentIntensity = 0.5;
       pmrem.dispose();
 
       // ── Shadows ───────────────────────────────────────────────────────────
@@ -2464,12 +2587,12 @@ export function ArenaScene({
       renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
       // Just enough neutral lift that nothing falls to pure black.
-      const ambientLight = new THREE.AmbientLight("#ffffff", 0.45);
+      const ambientLight = new THREE.AmbientLight("#ffffff", 0.22);
       scene.add(ambientLight);
 
       // Key: warm white, high and front-left. This is what actually reveals
       // material colour, so it carries most of the exposure.
-      const keyLight = new THREE.DirectionalLight("#fff4e6", 3.4);
+      const keyLight = new THREE.DirectionalLight("#fff4e6", 4.1);
       keyLight.position.set(-6, 14, 9);
       keyLight.castShadow = true;
       // Sized to the BOARD, not to the dome. A directional shadow camera spread
@@ -2591,11 +2714,19 @@ export function ArenaScene({
           transparent: true,
           opacity: 0,
           side: THREE.DoubleSide,
-          depthTest: false,
+          depthWrite: false,
+          // Depth-TESTED, like the selection ring, and for the same reason:
+          // with depthTest off it was painted over every pixel in front of it,
+          // so the crown appeared to pass through the winner's own body. It is
+          // a mark on the board, and a mark on the board is occluded by the
+          // thing standing on it. polygonOffset keeps it from z-fighting the
+          // floor it lies 0.028 above.
+          polygonOffset: true,
+          polygonOffsetFactor: -2,
+          polygonOffsetUnits: -2,
         }),
       );
       victorRing.rotation.x = -Math.PI / 2;
-      victorRing.renderOrder = 998;
       victorRing.visible = false;
       scene.add(victorRing);
 
@@ -2695,6 +2826,20 @@ export function ArenaScene({
           if ((mesh as { isMesh?: boolean }).isMesh) {
             mesh.castShadow = true;
             mesh.receiveShadow = true;
+            // Metals take nearly ALL of their appearance from the environment,
+            // so they are the surfaces the environment has to reach. Giving
+            // them more of it than the dielectric bodies costs nothing and is
+            // what stops a tinned lead looking like grey plastic.
+            const material = mesh.material as
+              | import("three").MeshStandardMaterial
+              | undefined;
+            if (
+              material &&
+              (material as { isMeshStandardMaterial?: boolean })
+                .isMeshStandardMaterial
+            ) {
+              material.envMapIntensity = material.metalness > 0.5 ? 1.35 : 1;
+            }
           }
         });
         const heatBody = group.getObjectByName("core") ?? group;
@@ -3535,6 +3680,20 @@ export function ArenaScene({
       /** And how far above it — a low ringside angle, not the map view. */
       const CHASE_HEIGHT = 3.2;
       /**
+       * How close the camera goes when the subject is a FAILURE, not a part.
+       *
+       * Much closer than {@link CHASE_RADIUS}, and the reason is the whole
+       * point of the cut. A ramp push-in is about watching a component cook in
+       * context, so it stays wide enough to keep the bench legible. A failure
+       * is about what let go INSIDE the component — the split seam, the charred
+       * body, the cracked die — and at the ramp's distance that is a handful of
+       * pixels. The isolation already removes everything else; this is the
+       * other half of it, putting the failure itself at a size you can read.
+       */
+      const FAILURE_RADIUS = 6.0;
+      /** And a bench-side eye line on it, rather than looking down at it. */
+      const FAILURE_HEIGHT = 2.8;
+      /**
        * How long the camera stays on a part after it dies.
        *
        * Long enough for the casing to tear, the flame to take and the debris
@@ -3581,6 +3740,21 @@ export function ArenaScene({
       const chaseDir = new THREE.Vector3();
       /** The pose to hand back when the run ends. Null while not pushed in. */
       let chaseHandoff: import("three").Vector3 | null = null;
+      /**
+       * The part the failure cut is isolating THIS frame, or null.
+       *
+       * A close-up on a part is not the same thing as an isolation. On a bench
+       * of six, pushing in toward the part that just died still leaves its five
+       * neighbours in frame — the eye keeps reading them, and the one thing the
+       * run was built to show becomes a detail in a wider shot. So the failure
+       * cut does what a camera alone cannot: while it holds the corpse, every
+       * OTHER part is hidden and the board behind them is dropped into shadow.
+       *
+       * Set by the driver each frame and read by the part loop and the vignette
+       * below — cleared at the top of the driver, so every path that returns
+       * without a subject also releases the isolation.
+       */
+      let isolateId: string | null = null;
       /** Last selection the camera reacted to — see the gate in the driver. */
       let chaseSelection: string | null = selectedAgentIdRef.current;
       /** When that selection changed, so the move can time out. */
@@ -3625,6 +3799,32 @@ export function ArenaScene({
           ids.push(id);
         });
         return ids;
+      };
+
+      /**
+       * The most recent death still worth looking at, or null if none is.
+       *
+       * Only deaths from THIS run count: `failedAt` outlives the run, so
+       * without the `battleStartedAt` floor a fresh run would cut to last
+       * run's corpse. Newest wins outright — if two parts go within a second
+       * of each other the camera should be on the second one, not still
+       * admiring the first — and `withinMs` is what retires a cut once the
+       * burn has had its time.
+       */
+      const recentDeath = (time: number, withinMs: number): string | null => {
+        let newest = -Infinity;
+        let id: string | null = null;
+        failedAt.forEach((failedTime, agentId) => {
+          if (
+            failedTime > newest &&
+            failedTime >= battleStartedAt &&
+            time - failedTime < withinMs
+          ) {
+            newest = failedTime;
+            id = agentId;
+          }
+        });
+        return id;
       };
 
       /** Fisher-Yates, so every ordering is equally likely. */
@@ -3675,11 +3875,24 @@ export function ArenaScene({
        * so the caller knows to leave the idle auto-orbit alone.
        */
       const driveActionCamera = (time: number, frameDelta: number): boolean => {
+        // Released every frame: the isolation belongs to THIS frame's subject,
+        // and every early return below (the user took the camera, there is no
+        // subject) means there is nothing to isolate.
+        isolateId = null;
         if (!controls) {
           return false;
         }
         // Time-based, so the move damps identically at 60 and 120fps.
         const k = 1 - Math.exp(-frameDelta / 420);
+        /**
+         * The failure cut settles over a longer constant than a ramp push-in.
+         *
+         * The cut is the biggest move the camera makes — its target can jump to
+         * another part of the bench in one frame, and it travels further than
+         * any push-in — so the damping that glides a gentle push-in reads as a
+         * SNAP here. A slower constant turns it into something that arrives.
+         */
+        const kCut = 1 - Math.exp(-frameDelta / 820);
 
         // Tapping a part necessarily touches the canvas, which trips the "user
         // is driving, hands off" gate below — so a fresh selection would sit
@@ -3763,6 +3976,8 @@ export function ArenaScene({
         // and otherwise it stays out of the way and leaves the wide shot up,
         // which is also where you can watch every part cook at once.
         let target: string | null = null;
+        /** Set only when the subject is a part that just died — see isolateId. */
+        let failureCut: string | null = null;
 
         if (statusRef.current === "complete") {
           // The victor's shot — held, then handed back. This is the one moment
@@ -3771,23 +3986,43 @@ export function ArenaScene({
           // the front edge. Holding the close-up indefinitely meant every
           // re-run started with the user dragging the camera off the winner to
           // find the control. Let the shot land, then release.
-          target =
-            time - completedAt < VICTOR_HOLD_MS ? winnerIdRef.current : null;
-        } else if (statusRef.current === "battling") {
-          // The most recent death, while it is still worth looking at. Newest
-          // wins outright — if two parts go within a second of each other the
-          // camera should be on the second one, not still admiring the first.
-          let newest = -Infinity;
-          failedAt.forEach((failedTime, id) => {
+          const winner = winnerIdRef.current;
+          if (winner) {
+            target = time - completedAt < VICTOR_HOLD_MS ? winner : null;
+            // A winner that just DIED is not a victory lap. The bench is a
+            // destructive test, so the run usually ends BECAUSE its last part
+            // went — and that blowout is the shot the run was building to. It
+            // gets the same isolation a mid-run death does; only a survivor's
+            // crown is a moment to be watched wide.
             if (
-              failedTime > newest &&
-              failedTime >= battleStartedAt &&
-              time - failedTime < FAILURE_HOLD_MS
+              target &&
+              failedAt.has(target) &&
+              time - (failedAt.get(target) ?? 0) < FAILURE_HOLD_MS
             ) {
-              newest = failedTime;
-              target = id;
+              failureCut = target;
             }
-          });
+          } else {
+            // …but a run can finish with NOTHING to crown, and then the victor
+            // shot has no subject at all. The solo bench IS that case: one
+            // part, and surviving is the only way to win, so a bench that
+            // cooked its part ends with no winner — which sent this straight
+            // into the hand-back below on the very frame the part blew. The
+            // camera pulled back THROUGH the fire, and the one shot the run is
+            // built around played out wide.
+            //
+            // So the result gets to BE the failure. The cut keeps its own
+            // clock — started at the death rather than the finish, which on
+            // this bench are the same tick but the death is the honest thing
+            // to measure — and holds what is left of FAILURE_HOLD_MS before
+            // the bench is handed back. Failing is not the lesser ending; on a
+            // bench that tests one part to destruction it is the whole point.
+            target = recentDeath(time, FAILURE_HOLD_MS);
+            failureCut = target;
+          }
+        } else if (statusRef.current === "battling") {
+          // The most recent death, while it is still worth looking at.
+          target = recentDeath(time, FAILURE_HOLD_MS);
+          failureCut = target;
 
           // Nothing has just died, so the ramp gets a subject rather than the
           // wide shot it used to play out in. Two ways in, and which one is
@@ -3809,6 +4044,8 @@ export function ArenaScene({
               : walkTarget(time);
           }
         }
+
+        isolateId = failureCut;
 
         if (!target) {
           if (!chaseHandoff) {
@@ -3850,13 +4087,16 @@ export function ArenaScene({
           chaseDir.set(0, 0, 1);
         }
         chaseDir.normalize();
-        chaseDesired
-          .copy(chaseLook)
-          .addScaledVector(chaseDir, CHASE_RADIUS);
-        chaseDesired.y = chaseLook.y + CHASE_HEIGHT;
+        // Tightening the shot is part of the cut, not a separate deal: the
+        // radius is chosen from what the camera is looking at.
+        const closeUp = isolateId ? FAILURE_RADIUS : CHASE_RADIUS;
+        const lift = isolateId ? FAILURE_HEIGHT : CHASE_HEIGHT;
+        chaseDesired.copy(chaseLook).addScaledVector(chaseDir, closeUp);
+        chaseDesired.y = chaseLook.y + lift;
 
-        camera.position.lerp(chaseDesired, k);
-        controls.target.lerp(chaseLook, k);
+        const moveK = isolateId ? kCut : k;
+        camera.position.lerp(chaseDesired, moveK);
+        controls.target.lerp(chaseLook, moveK);
         return true;
       };
 
@@ -3969,6 +4209,18 @@ export function ArenaScene({
           controls.update();
         }
 
+        // ── The isolation vignette ──────────────────────────────────────────
+        // Everything the hidden parts used to occupy goes dark while the cut
+        // holds. Written straight into the node rather than through React: this
+        // is per-frame scene state, and the scene already drives its DOM
+        // readouts this way (the plates, the dial label). With no z-index of
+        // its own it sits above the canvas and below every readout rendered
+        // after it — so the console, the quick bar and the load figure stay
+        // legible over a shot that is otherwise one part.
+        if (isolateOverlayRef.current) {
+          isolateOverlayRef.current.style.opacity = isolateId ? "1" : "0";
+        }
+
         // Every nameplate and readout below is projected BEFORE renderer.render,
         // and Vector3.project() reads camera.matrixWorldInverse — which three only
         // rebuilds inside render(). lookAt() (called by every branch above, and by
@@ -3992,6 +4244,19 @@ export function ArenaScene({
             walkOrder = [];
             walkCursor = 0;
             rotateAt = time;
+            // ── The entry sweep yields to a run ───────────────────────────
+            // The sweep is an entry animation: it carries the camera from the
+            // panel pose to the interactive one. It also GATES the action
+            // camera — the failure cut and the push-in only run once it has
+            // finished — and at 0.06 a frame it can still be travelling
+            // seconds later.
+            //
+            // So walking to the bench and immediately throwing the switch played
+            // the whole run BEHIND that entry move: no push-in, no failure cut,
+            // nothing isolated, and nothing on screen to say why. Throwing the
+            // switch is the end of arriving — from that frame the camera belongs
+            // to the run, and to the user.
+            workspaceSweepDone = true;
           }
         }
 
@@ -4032,7 +4297,13 @@ export function ArenaScene({
               crownT < 1
                 ? Math.sin(crownT * Math.PI * 0.5) * 1.18
                 : 1 + Math.sin(time * 0.0026) * 0.035;
-            victorRing.scale.setScalar(settle);
+            // Same clearance rule the selection ring follows: a mark on the
+            // board has to fit AROUND the part, not through it. The winner's
+            // own reach sets the size, so the crown sits outside the body of
+            // whatever won instead of cutting across it.
+            const crownReach = Number(winner.group.userData.halfSpan) || 0.9;
+            const crownClear = Math.min(1.6, Math.max(0.9, crownReach + 0.08)) / 0.9;
+            victorRing.scale.setScalar(settle * crownClear);
             (victorRing.material as import("three").MeshBasicMaterial).opacity =
               crownT * 0.85;
           }
@@ -4053,7 +4324,19 @@ export function ArenaScene({
               0.03,
               picked.group.position.z,
             );
-            selectionRing.scale.setScalar(1 + Math.sin(time * 0.004) * 0.06);
+            // ── The mark has to fit around the part ────────────────────────
+            // A fixed 0.62–0.82 ring is smaller than most of the parts on
+            // this board, so on anything longer than that the inner edge ran
+            // through the bottom of the body — a hoop apparently threaded
+            // through the very component it was saying "this one". The ring
+            // scales to just outside the part's measured reach instead, capped
+            // so a very long body still gets a ring that fits the seat.
+            const reach = Number(picked.group.userData.halfSpan) || 0.62;
+            const clearance =
+              Math.min(1.6, Math.max(0.62, reach + 0.08)) / 0.62;
+            selectionRing.scale.setScalar(
+              (1 + Math.sin(time * 0.004) * 0.06) * clearance,
+            );
           }
         }
 
@@ -4404,7 +4687,21 @@ export function ArenaScene({
         ringMaterial.emissiveIntensity = 1.6 + loadT * 2.4;
 
         const highlightState = highlightRef.current;
-        if (highlightState && highlightState.token !== lastHighlightTokenRef.current) {
+        // ── A stress warning is a lead, and in a battle it is not wanted ────
+        // The bench flashes whatever its highlight points at, and the hook
+        // points it at the worst-off part as it crosses a threshold. On a solo
+        // bench that is a warning about the only part there is. In a battle it
+        // is the same leak the worst-off swell was: the part about to die, lit
+        // up before it dies. The physics is already on screen — the scorch and
+        // the glow ARE the instrumentation — so the streak of light adds no
+        // information and gives the result away. Failures still flash.
+        const suppressedLead =
+          !solo && highlightState?.kind === "stress";
+        if (
+          highlightState &&
+          !suppressedLead &&
+          highlightState.token !== lastHighlightTokenRef.current
+        ) {
           lastHighlightTokenRef.current = highlightState.token;
           let flashMs = 320;
           if (highlightState.kind === "fail") {
@@ -4456,11 +4753,26 @@ export function ArenaScene({
 
           const { group, core, materials, materialColors, materialFinish, baseColor } =
             objectEntry;
+          // Hidden while another part is being isolated by the failure cut.
+          // Written every frame rather than on change, exactly as the plates
+          // are: there is one writer, so there is nothing to fall out of sync.
+          group.visible = !isolateId || isolateId === agent.id;
           // Only the component body (core) ever moves under stress — the dais,
           // ring and the metrics nameplate stay rock-steady at the seat.
           const shaker = core ?? group;
           const isFailed = agent.phase === "failed";
-          const isMostStressed = activeAgentIdRef.current === agent.id && !isFailed;
+          /**
+           * Whether this part is currently the worst-off, and gets the swell.
+           *
+           * Deliberately NOT a ranking the camera reads (it never has — see the
+           * target selection), and deliberately off in a BATTLE. The worst-off
+           * part is the one about to die, so a bench that swells it is pointing
+           * at the next failure before it happens — which is the run's result,
+           * handed over early. On a solo bench there is no field to rank and the
+           * swell is honest, so there it stays.
+           */
+          const isMostStressed =
+            solo && activeAgentIdRef.current === agent.id && !isFailed;
           const isFlashing = (attackFlashUntil.get(agent.id) ?? 0) > time;
           const severity = agent.severity;
           const seat = circuitSeat(seatIndex, agentsRef.current.length);
@@ -4699,10 +5011,16 @@ export function ArenaScene({
             // the package as it convulses and slumps. Once it is off, it is
             // off — it obeys the bench, not the part it came from.
             if (!objectEntry.blowout) {
+              // ── The interior ── a real one for the families that have it,
+              // built first because it decides whether the kit builds its generic
+              // wound at all (see BlowoutOptions.internals). It parents itself to
+              // the body, so the inside of a part convulses with the part.
+              const internals = createInternalsReveal(THREE, agent.family, core);
               objectEntry.blowout = createBlowoutKit(
                 THREE,
                 blowoutFor(agent.family, agent.failureVisual),
                 {
+                  internals,
                   railY: CIRCUIT_RAIL_Y,
                   // Debris is made of the part it came off. materialColors[0]
                   // is the body's ORIGINAL colour — reading the live material
@@ -4888,6 +5206,14 @@ export function ArenaScene({
             return;
           }
 
+          // A twin has no plate of its own — see `plateTwin`. Hidden and left
+          // out of the layout pass, so it neither draws nor takes up room.
+          const twin = plateTwin.get(agent.id);
+          if (twin && !twin.leader) {
+            healthBar.style.opacity = "0";
+            return;
+          }
+
           // Anchor the floating metric nameplate to the part's STABLE seat, not its
           // live (jittering) group position — so the component shakes under stress
           // but its readout stays put and legible.
@@ -4900,7 +5226,13 @@ export function ArenaScene({
           const rawX = (tempVector.x * 0.5 + 0.5) * root.clientWidth;
           const rawY =
             (-tempVector.y * 0.5 + 0.5) * root.clientHeight - NAMEPLATE_LIFT_PX;
-          const isVisible = tempVector.z < 1.2 && tempVector.z > -1;
+          // A part hidden by the isolation takes its plate with it. The plate
+          // is DOM projected from a 3D anchor, so hiding the mesh alone left
+          // its readout hovering over an empty board.
+          const isVisible =
+            tempVector.z < 1.2 &&
+            tempVector.z > -1 &&
+            (!isolateId || isolateId === agent.id);
 
           // Sit the plate's BOTTOM edge on the anchor and let it grow upward,
           // instead of centring it there. Centred, the plate straddled the
@@ -5047,6 +5379,10 @@ export function ArenaScene({
   return (
     <div ref={rootRef} className="arena-scene">
       <canvas ref={canvasRef} className="arena-scene__canvas" />
+      {/* The failure cut's spotlight, inverted: a hole over the part being held
+          and darkness everywhere else. Kept inside the scene so it cannot
+          touch the perimeter UI, which is deliberately staged over it. */}
+      <div ref={isolateOverlayRef} className="arena-scene__isolate" aria-hidden />
       {/* F.U.S.E.™ mark — the engine powering the failure physics, same little
           corner watermark the main builder UI carries. */}
       <div
@@ -5184,6 +5520,16 @@ export function ArenaScene({
           {fuseCard.failureDescription ? (
             <p className="arena-fuse-card__why">{fuseCard.failureDescription}</p>
           ) : null}
+          {fuseInternal ? (
+            <p className="arena-fuse-card__inside">
+              <i>inside</i>
+              <b>{fuseInternal.name}</b>
+              <span>{fuseInternal.role}</span>
+              {fuseInternal.limitC !== null ? (
+                <em>rated {Math.round(fuseInternal.limitC)} °C</em>
+              ) : null}
+            </p>
+          ) : null}
           {/* The conditions that killed it — each against what it was rated for,
               because "187°C" alone is not a finding. */}
           <div className="arena-fuse-card__facts">
@@ -5208,8 +5554,12 @@ export function ArenaScene({
         </div>
       ) : null}
       <div className="arena-scene__healthbars">
-        {healthBarAgents.map((agent) => {
+        {nameplates &&
+          healthBarAgents.map((agent) => {
           const isFailed = agent.phase === "failed";
+          // This part's plate is the group's plate — see `plateTwin`.
+          const twin = plateTwin.get(agent.id);
+          const twinCount = twin && twin.count > 1 ? twin.count : 0;
           // ── The four numbers must obey Ohm's law ────────────────────────
           // They did not. Each was scaled independently off the part's stored
           // metrics — I by the load, E by the load, R not at all — and those
@@ -5243,7 +5593,10 @@ export function ArenaScene({
           // The focused one is the part you SELECTED, or, if you have not
           // chosen, the one under the most stress — i.e. the label you would
           // have gone looking for anyway.
-          const isFocus = agent.id === (selectedAgentId ?? activeAgentId);
+          // YOUR selection only. This used to fall back to the most-stressed
+          // part, which grew that part's plate and lifted its metrics — a
+          // nameplate-sized arrow over the component that was about to fail.
+          const isFocus = agent.id === selectedAgentId;
           // What the compact form keeps is the number that decides the
           // outcome: how much of its rated power the part is being asked to
           // take. Always against its rating, never bare.
@@ -5259,7 +5612,9 @@ export function ArenaScene({
               }}
               className={`arena-nameplate arena-nameplate--${agent.phase}${
                 isFailed ? " is-defeated" : ""
-              }${isFocus ? " arena-nameplate--focus" : " arena-nameplate--compact"}`}
+              }${isFocus ? " arena-nameplate--focus" : " arena-nameplate--compact"}${
+                twin && !twin.leader ? " arena-nameplate--twin" : ""
+              }`}
             >
               {/* Compact form's single line. Rendered always and hidden by CSS
                   in the focused state, so switching focus costs no re-render
@@ -5267,6 +5622,9 @@ export function ArenaScene({
               <div className="arena-nameplate__brief">
                 <span className="arena-nameplate__brief-name">
                   {agent.componentNumber || (agent.componentType || "part").toUpperCase()}
+                  {twinCount ? (
+                    <i className="arena-nameplate__brief-count">×{twinCount}</i>
+                  ) : null}
                 </span>
                 <span
                   className={`arena-nameplate__brief-load${
@@ -5287,6 +5645,7 @@ export function ArenaScene({
                 {agent.name && agent.name !== agent.componentNumber
                   ? `${agent.componentNumber ? " · " : ""}${agent.name}`
                   : ""}
+                {twinCount ? ` ×${twinCount}` : ""}
               </div>
               {/* W.I.R.E. metrics, live, in their own colours — the same coding
                   the rest of the app uses for voltage / current / resistance /

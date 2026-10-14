@@ -1,7 +1,7 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
 import { HashRouter } from "react-router-dom";
-import App from "./routes/App";
+import App from "./App";
 import { AuthProvider } from "./context/AuthContext";
 import { EngagementProvider } from "./context/EngagementContext";
 import { GalleryProvider } from "./context/GalleryContext";
@@ -13,6 +13,7 @@ import { initBilling, restorePurchases, restoreProPurchases, restorePremiumPurch
 import { setupAndroidSimBootstrap } from "./sim/androidBootstrap";
 // Initialize i18n before rendering so all components can use translations.
 import "./i18n";
+
 function renderFatalOverlay(payload: {
   title: string;
   message: string;
@@ -85,7 +86,7 @@ window.addEventListener("error", (event) => {
   const stack = event.error instanceof Error ? event.error.stack : undefined;
 
   // If React has already mounted (root has children), do not destroy the app — the
-  // React ErrorBoundary will catch rendering errors and show a recovery UI.  Only
+  // React ErrorBoundary will catch rendering errors and show a recovery UI. Only
   // show the full-screen fatal overlay when React has never rendered (blank screen).
   const rootEl = document.getElementById("root");
   if (rootEl && rootEl.childElementCount > 0) {
@@ -106,8 +107,8 @@ window.addEventListener("unhandledrejection", (event) => {
   const stack = reason instanceof Error ? reason.stack : undefined;
 
   // Never replace a running React app with a full-screen overlay on a promise
-  // rejection.  Unhandled rejections from Capacitor plugins, billing, i18next,
-  // or transient network calls must not kill the UI.  Log only.
+  // rejection. Unhandled rejections from Capacitor plugins, billing, i18next,
+  // or transient network calls must not kill the UI. Log only.
   console.error("[App] Unhandled promise rejection:", message, stack);
 });
 
@@ -184,7 +185,7 @@ try {
 
   // Signal the inline fallback script (index.html) that the module bundle
   // loaded and React is mounting — this removes the initial-loader via the
-  // ctapp:ready handler registered in the plain <script> block.  We also
+  // ctapp:ready handler registered in the plain <script> block. We also
   // keep a short setTimeout as a belt-and-suspenders guard.
   document.dispatchEvent(new CustomEvent('ctapp:ready'));
   setTimeout(() => {

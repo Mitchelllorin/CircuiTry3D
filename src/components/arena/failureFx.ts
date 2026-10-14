@@ -30,6 +30,8 @@
  * plume uses them — each ember needs its own size, rotation and opacity curve.
  */
 
+import type { InternalsReveal } from "./componentInternals";
+
 /**
  * How violently a family comes apart. Every field is "how much of this thing",
  * so a family that doesn't do a thing at all sets it to 0 and the kit skips
@@ -306,6 +308,21 @@ export type BlowoutOptions = {
   /** Shared across every kit — see createBlowoutTextures. */
   textures: BlowoutTextures;
   /**
+   * A MODELLED interior, when the family has one (see componentInternals.ts).
+   *
+   * When this is present the generic wound is not built at all, because the
+   * generic wound is a dark cavity, and a dark cavity in front of a real
+   * interior is exactly the black hole that hides it. The interior owns the
+   * opening instead: the same opening drive — same pop timing, same overshoot —
+   * handed to the hinges that replaced the package's shell rather than to a
+   * sphere pushed out through it.
+   *
+   * The kit owns its LIFETIME (created alongside the kit, updated with it,
+   * disposed with it) but not its parenting: the reveal attaches itself to the
+   * body, because an interior is not debris — it has to ride the part.
+   */
+  internals?: InternalsReveal | null;
+  /**
    * The part's EXISTING failure light, borrowed to carry the flame.
    *
    * A fire needs a real light or it is a sticker: what sells it is orange
@@ -454,7 +471,12 @@ export function createBlowoutKit(
   let woundCore: import("three").Sprite | null = null;
   const lips: import("three").Mesh[] = [];
 
-  if (spec.rupture > 0) {
+  // A part with a modelled interior splits its own package open; a part without
+  // one gets the generic tear. Never both: a cavity pushed out through a casing
+  // that is also being hinged apart is two failures in one part.
+  const internals = options.internals ?? null;
+
+  if (spec.rupture > 0 && !internals) {
     const cavityMaterial = new THREE.MeshStandardMaterial({
       color: new THREE.Color("#0d0806"),
       roughness: 1,
@@ -631,13 +653,17 @@ export function createBlowoutKit(
       const seconds = Math.min(dt, 64) / 1000;
 
       // ── The wound ── tears open fast, then cools and chars for good.
+      //
+      // Opens over the first part of the pop, not over its whole length: a casing
+      // gives way in an instant and then simply IS open. Easing it across the
+      // whole event would read as the part slowly inflating. Overshoot and
+      // settle, because a casing springs as it lets go.
+      const openT = Math.min(sinceFail / Math.max(popMs * 0.35, 120), 1);
+      const open = openT < 1 ? Math.sin(openT * Math.PI * 0.5) * 1.08 : 1;
+      if (internals) {
+        internals.update(dt, sinceFail, open);
+      }
       if (cavity) {
-        // Opens over the first part of the pop, not over its whole length: a
-        // casing gives way in an instant and then simply IS open. Easing it
-        // across the entire event would read as the part slowly inflating.
-        const openT = Math.min(sinceFail / Math.max(popMs * 0.35, 120), 1);
-        // Overshoot and settle — the casing springs as it lets go.
-        const open = openT < 1 ? Math.sin(openT * Math.PI * 0.5) * 1.08 : 1;
         const scale = woundRadius * open * spec.rupture;
         cavity.scale.set(scale, scale * 0.72, scale);
 
@@ -825,6 +851,7 @@ export function createBlowoutKit(
         spark.material.dispose();
       }
       woundCore?.material.dispose();
+      internals?.dispose();
       object.parent?.remove(object);
       bodyObject.parent?.remove(bodyObject);
     },

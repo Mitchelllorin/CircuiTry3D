@@ -53,16 +53,11 @@ export function ArenaRosterPicker({
 
   return (
     <section className="arena-roster">
-      {/* Says what the pick will DO, because the same reel both adds and swaps
-          and the difference is entirely down to what is selected. One dim line
-          above the thing it qualifies. */}
-      <p className="arena-roster__hint">
-        {selected
-          ? `Picking a part replaces ${selected.name}`
-          : full
-            ? "Bench full — tap a part below to swap it"
-            : `Picking a part adds it · ${agents.length}/6 on the bench`}
-      </p>
+      {/* Just the state of the bench. This used to explain the interaction
+          ("Picking a part adds it · picking a part replaces X"), which is copy
+          the reel demonstrates by doing it — and it was the longest line on the
+          sheet for the least information. */}
+      <p className="arena-roster__hint">{`${agents.length}/6 on the bench`}</p>
 
       <ScrollerMenu
         components={UNIFIED_COMPONENT_ACTIONS}

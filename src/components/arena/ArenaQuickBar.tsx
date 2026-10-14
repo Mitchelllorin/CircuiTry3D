@@ -31,6 +31,18 @@ type ArenaQuickBarProps = {
    * switch are what you do to a run once it is going.
    */
   extra?: ReactNode;
+  /**
+   * Whether the parts' own metric nameplates are drawn on the bench.
+   *
+   * A TOGGLE rather than a fixture, and it starts off. The plates are useful
+   * right up until they are in the way, and "in the way" depends entirely on
+   * where the camera and the part happen to be — so it is the user's call, not
+   * a hard-coded one. They live here rather than on the console because, like
+   * Parts and Conditions, they change what the bench DISPLAYS, not what a run
+   * does when it is going.
+   */
+  readouts: boolean;
+  onToggleReadouts: () => void;
 };
 
 /**
@@ -67,6 +79,8 @@ export function ArenaQuickBar({
   board,
   partsFooter,
   extra,
+  readouts,
+  onToggleReadouts,
 }: ArenaQuickBarProps) {
   const [sheet, setSheet] = useState<"parts" | "scenario" | "board" | null>(null);
 
@@ -197,6 +211,25 @@ export function ArenaQuickBar({
         >
           <span className="arena-quickbar__label">Results</span>
           <span className="arena-quickbar__value">Board</span>
+        </button>
+        {/* The ON/OFF has to be visible in the label itself. "Hidden" named a
+            state and "Readouts" named the thing, and between them the control
+            read as a heading for a panel rather than as a switch — the plates
+            were turned on and then could not be found to turn off again. It now
+            says what pressing it does, and the ON state is carried by the pill
+            as well as the word. */}
+        <button
+          type="button"
+          className={`arena-quickbar__btn arena-quickbar__btn--switch${readouts ? " is-open" : ""}`}
+          onClick={onToggleReadouts}
+          aria-pressed={readouts}
+          aria-label={`Metric readouts on the parts: ${readouts ? "on" : "off"}. Press to turn them ${readouts ? "off" : "on"}.`}
+          title={`Part readouts are ${readouts ? "ON" : "OFF"} — press to turn them ${readouts ? "off" : "on"}`}
+        >
+          <span className="arena-quickbar__label">Readouts</span>
+          <span className="arena-quickbar__value">
+            {readouts ? "● On" : "○ Off"}
+          </span>
         </button>
         {extra}
       </div>

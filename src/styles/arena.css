@@ -86,6 +86,47 @@
   touch-action: none;
 }
 
+/* ── The failure cut's spotlight ───────────────────────────────────────
+   A hole where the part being isolated is, and darkness everywhere else.
+
+   Deliberately NOT a filter on the canvas: a filter would dim the whole
+   stage uniformly, including the part the shot is about. This is the inverse
+   — the frame stays lit in the middle and falls away at the edges, so the
+   eye lands on one component and there is nothing else on screen to read.
+
+   No z-index on purpose. In DOM order it sits directly above the canvas and
+   below every readout, so the console, the quick bar, the watermarks and the
+   load figure all stay crisp over it. That is also the rule the arena keeps
+   everywhere else: instrument the PERIMETER, leave the workspace clear. */
+.arena-scene__isolate {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 240ms ease;
+  /* Eased back from a 42% x 36% window that was 88% opaque by 62% of the way
+     out. That did isolate the part, and then kept going: the component, its
+     leads and the seat it stands on were the only lit things in the frame and
+     the rest of the screen was very nearly black, so the one shot built around
+     WATCHING a part come apart was the hardest one to see it in.
+
+     Wider window, a gentler fall-off, and a floor that stops short of black.
+     The frame still falls away at the edges — that is what puts the eye on one
+     component — but the part now sits in some of its own context. */
+  background: radial-gradient(
+    ellipse 62% 54% at 50% 46%,
+    rgba(2, 6, 23, 0) 0%,
+    rgba(2, 6, 23, 0.16) 46%,
+    rgba(1, 3, 10, 0.52) 74%,
+    rgba(0, 0, 0, 0.78) 100%
+  );
+}
+@media (prefers-reduced-motion: reduce) {
+  .arena-scene__isolate {
+    transition: none;
+  }
+}
+
 .arena-scene__healthbars {
   position: absolute;
   inset: 0;
@@ -130,7 +171,19 @@
    report and the run controls never land on top of each other. */
 .arena-fuse-card {
   position: absolute;
-  inset-block-end: 132px;
+  /* ── Above the console, not behind it ────────────────────────────────
+     This was a hard 132px, and the console is now 146px tall — so the failure
+     card was laid out UNDER the console and painted behind it (the console is
+     fixed at z-index 1250, the card is z 6 inside the scene). It read as "no
+     failure card at all", which is the one thing the card exists to prevent:
+     it is the explanation of what just broke inside the part.
+
+     The console publishes its measured height for exactly this kind of
+     relationship (see --arena-dash-height), so the card is placed against
+     THAT rather than against a number that was true when the console was a
+     different size. The fallback keeps it sane anywhere the variable is not
+     set. */
+  inset-block-end: calc(var(--arena-dash-height, 132px) + 10px);
   inset-inline: 10px;
   margin-inline: auto;
   max-inline-size: 420px;
@@ -233,6 +286,41 @@
   font-size: 0.7rem;
   line-height: 1.4;
   color: rgba(226, 235, 247, 0.86);
+}
+/* What let go INSIDE the part, named.
+
+   F.U.S.E.'s own line above says what happened to the part as a whole
+   ("Thermal overload"); this names the piece that gave way and the temperature
+   it was rated to, from the same composition spec the interior model is built
+   from. It sits between the narrative and the measurements on purpose: the
+   narrative is why, this is what, the figures are how far past its limit. */
+.arena-fuse-card__inside {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 2px 6px;
+  margin-block: 5px 0;
+  font-size: 0.68rem;
+}
+.arena-fuse-card__inside i {
+  font-style: normal;
+  font-size: 0.5rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 153, 68, 0.85);
+}
+.arena-fuse-card__inside b {
+  font-weight: 800;
+  color: #fde68a;
+}
+.arena-fuse-card__inside span {
+  color: rgba(226, 235, 247, 0.66);
+}
+.arena-fuse-card__inside em {
+  font-style: normal;
+  font-size: 0.58rem;
+  color: rgba(226, 235, 247, 0.6);
 }
 /* The conditions at the moment it let go. Every figure carries what it is
    measured AGAINST — a bare "187°C" is not a finding. */
@@ -2237,8 +2325,18 @@
   z-index: 1250;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 9px 10px calc(env(safe-area-inset-bottom, 0px) + 9px);
+  /* Sized DOWN by ~16% across the console (measured against the browser at
+     402×526: 208px → 174px). Every value here and under it is the old one at
+     about 0.84 — the console was charging the bench a quarter of the height of
+     a phone for what is a strip of instruments, and on the surface where height
+     is fought over hardest, the scene is what should be winning.
+
+     Two things are deliberately NOT scaled. The touch targets stay at the 44px
+     app-wide floor rather than following type down to ~40, because a control
+     you cannot reliably hit is not smaller, it is broken; and the tap on a
+     48px legend was only ever padding around a word. */
+  gap: 5px;
+  padding: 6px 9px calc(env(safe-area-inset-bottom, 0px) + 6px);
   /* ── Glass, not a slab ────────────────────────────────────────────────
      This was a gradient running 0.96 -> 0.99 alpha: opaque in every way that
      matters, and the single heaviest object on the screen. It sat across the
@@ -2285,15 +2383,25 @@
 .arena-dash__displays {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 6px;
+  gap: 5px;
 }
 .arena-dash__display {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1px;
-  padding: 5px 4px 4px;
-  border-radius: 8px;
+  /* The label sits WITH the letter, and the number gets its own row under the
+     pair. Three stacked lines cost ~53px of a 208px console; dropping the
+     caption entirely got that to 25px but left four numbers labelled only by
+     their initials. This is the middle: `W POWER` over `2.40 W` is ~31px, so
+     the words are back for a third of what they used to cost.
+
+     A two-column grid rather than a flex row because the DOM order is letter,
+     value, caption — the caption has to be pulled up beside the letter without
+     reordering the markup. */
+  display: grid;
+  grid-template-columns: auto auto;
+  align-items: baseline;
+  justify-content: center;
+  column-gap: 4px;
+  padding: 4px 5px 3px;
+  border-radius: 7px;
   /* Recessed: dark glass, a lip of light on the lower edge only, and the
      shadow falling INWARD from the top — the read of an inset instrument. */
   background: linear-gradient(180deg, #05080f 0%, #080d17 100%);
@@ -2303,10 +2411,19 @@
     0 1px 0 rgba(226, 232, 240, 0.05);
 }
 .arena-dash__display-letter {
-  font-size: 0.56rem;
+  font-size: 0.47rem;
   font-weight: 800;
   letter-spacing: 0.16em;
   opacity: 0.85;
+}
+.arena-dash__display-letter {
+  grid-column: 1;
+  grid-row: 1;
+}
+.arena-dash__display-value {
+  grid-column: 1 / span 2;
+  grid-row: 2;
+  justify-self: center;
 }
 /* The digits carry a bloom in their own metric colour — lit, not printed —
    plus a tight dark shadow underneath it, because the console is glass now and
@@ -2314,7 +2431,7 @@
    an instrument; the shadow is what keeps them readable when a failure flash
    goes off underneath. */
 .arena-dash__display-value {
-  font-size: 1.02rem;
+  font-size: 0.86rem;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
   line-height: 1.1;
@@ -2323,8 +2440,10 @@
     0 1px 3px rgba(0, 0, 0, 0.95);
 }
 .arena-dash__display-caption {
-  font-size: 0.52rem;
-  letter-spacing: 0.1em;
+  grid-column: 2;
+  grid-row: 1;
+  font-size: 0.44rem;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: rgba(148, 163, 184, 0.6);
 }
@@ -2349,8 +2468,8 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  column-gap: 10px;
-  row-gap: 4px;
+  column-gap: 8px;
+  row-gap: 2px;
 }
 .arena-dash__fader {
   display: block;
@@ -2359,14 +2478,14 @@
 .arena-dash__fader-head {
   display: flex;
   align-items: baseline;
-  gap: 6px;
-  font-size: 0.56rem;
+  gap: 5px;
+  font-size: 0.44rem;
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 .arena-dash__fader-head b {
-  font-size: 0.78rem;
+  font-size: 0.64rem;
   line-height: 1.15;
   font-variant-numeric: tabular-nums;
   letter-spacing: 0;
@@ -2377,7 +2496,7 @@
 .arena-dash__fader-ref {
   margin-inline-start: auto;
   font-style: normal;
-  font-size: 0.5rem;
+  font-size: 0.43rem;
   letter-spacing: 0.05em;
   text-transform: uppercase;
   color: rgba(148, 163, 184, 0.6);
@@ -2386,7 +2505,9 @@
 .arena-dash__fader input[type="range"] {
   display: block;
   width: 100%;
-  height: 22px;
+  /* Shorter BOX, unchanged track and thumb: this is the touch target's height,
+     and the 275px-wide full-bleed travel is what actually makes it catchable. */
+  height: 16px;
   margin: 0;
   appearance: none;
   -webkit-appearance: none;
@@ -2448,9 +2569,9 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 3px;
-  padding: 6px 14px 7px;
-  border-radius: 10px;
+  gap: 2px;
+  padding: 5px 12px 6px;
+  border-radius: 9px;
   border: 1px solid rgba(148, 163, 184, 0.4);
   background: linear-gradient(180deg, #334155 0%, #1e293b 55%, #0f172a 100%);
   box-shadow:
@@ -2462,8 +2583,8 @@
 /* The lever: a machined bar that sits UP when idle and drops when live —
    the same "thrown" state the 3D toggle used to carry. */
 .arena-dash__switch-lever {
-  inline-size: 30px;
-  block-size: 14px;
+  inline-size: 27px;
+  block-size: 12px;
   border-radius: 4px;
   background: linear-gradient(180deg, #f1f5f9 0%, #94a3b8 100%);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
@@ -2478,7 +2599,7 @@
     0 0 12px rgba(239, 68, 68, 0.75);
 }
 .arena-dash__switch-label {
-  font-size: 0.56rem;
+  font-size: 0.48rem;
   font-weight: 800;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -2503,12 +2624,12 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: 8px;
   min-inline-size: 0;
 }
 .arena-dash__mode {
   display: flex;
-  gap: 16px;
+  gap: 12px;
 }
 /* Doubled up on .arena-dash deliberately. builder-ui.css carries an app-wide
    touch floor — `.builder-shell button { min-height: 44px }` — which outranks
@@ -2520,10 +2641,13 @@
   position: relative;
   margin: 0;
   padding: 0 4px;
-  /* The legend stays small to the eye; the target does not. 48px is the
-     gloved-hand floor, and 13px is the smallest text allowed on a phone. */
-  min-height: 48px;
-  min-width: 48px;
+  /* The legend stays small to the eye; the target does not. Held at the app's
+     44px touch floor rather than scaled with the type — these two words are
+     most of the console's height, and 44 is still the gloved-hand minimum the
+     rest of the app builds to (it was 48 here; 4px off the tallest row of the
+     console is 4px handed back to the bench). */
+  min-height: 44px;
+  min-width: 44px;
   border: 0;
   background: none;
   font: inherit;
@@ -2761,11 +2885,27 @@
      size alone does not do that against a bright 3D scene. */
   opacity: 0.72;
 }
+/* A twin of a part that already has a plate — see the plateTwin grouping in
+   ArenaScene. display:none rather than opacity, so a hidden plate cannot catch
+   a tap or take part in any layout, and the ×N sits on the one plate that is
+   left. */
+.arena-nameplate--twin {
+  display: none;
+}
 .arena-nameplate__brief-name {
   font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0.04em;
   color: rgba(226, 232, 240, 0.92);
+}
+/* How many identical parts this one plate speaks for. Reads as part of the
+   identifier rather than as a number in the readout. */
+.arena-nameplate__brief-count {
+  margin-left: 0.3em;
+  font-style: normal;
+  font-weight: 800;
+  font-size: 0.62rem;
+  color: var(--plate-ink-2, rgba(148, 163, 184, 0.9));
 }
 .arena-nameplate__brief-load {
   font-size: 0.66rem;

@@ -352,6 +352,26 @@ export default function ArenaView({
 
   const sessionLabel = sessionPayload?.sessionName ?? "CircuiTry3D Arena";
 
+  /**
+   * The parts' own metric nameplates — OFF to begin with.
+   *
+   * They hang directly over the component they report on, so on this bench
+   * (one part, dead centre) the default put a slab of text in the middle of the
+   * workspace, over the very thing the run is about. Everything they carried —
+   * W.I.R.E., the temperature against its limit, the part's status — is on the
+   * console, which is where the arena keeps its instruments. The quick bar can
+   * summon them back for anyone who wants to read a number off the part itself.
+   *
+   * Held in the VIEW rather than in either bench, because the bench and the
+   * battle are one instrument with a different experiment in it, and walking
+   * between them should not silently change what the display is doing.
+   */
+  const [showReadouts, setShowReadouts] = useState(false);
+  const toggleReadouts = useCallback(
+    () => setShowReadouts((on) => !on),
+    [],
+  );
+
   if (isWorkspace) {
     if (arenaMode === "bench") {
       return (
@@ -367,6 +387,9 @@ export default function ArenaView({
             onRemoveAgent={handleRemoveAgent}
             onEditAgent={setEditingAgentId}
             rosterFull={rosterSources.length >= ARENA_ROSTER_MAX}
+            nameplates={showReadouts}
+            readouts={showReadouts}
+            onToggleReadouts={toggleReadouts}
             board={<ArenaLeaderboard entries={board} onClear={handleClearBoard} />}
             onRunComplete={handleRunComplete}
           />
@@ -405,6 +428,7 @@ export default function ArenaView({
           winnerId={winnerId}
           survivorCount={survivorCount}
           workspaceMode
+          nameplates={showReadouts}
           // There is no params panel any more, so the scene is never holding
           // its locked preview pose: the camera belongs to the user and to the
           // run (push-in, failure cut, victor shot) from the moment you arrive.
@@ -482,6 +506,8 @@ export default function ArenaView({
           scenario={scenario}
           onSelectScenario={selectScenario}
           status={status}
+          readouts={showReadouts}
+          onToggleReadouts={toggleReadouts}
           // Read before a run, where the part is chosen — see ArenaBenchView.
           partsFooter={
             <ArenaFuseForecast

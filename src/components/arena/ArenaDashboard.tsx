@@ -103,7 +103,15 @@ export function ArenaDashboard({
             ["e", "voltage", "E", "supply"],
           ] as const
         ).map(([key, term, letter, caption]) => (
-          <div key={key} className={`arena-dash__display ct-term-${term}`}>
+          <div
+            key={key}
+            className={`arena-dash__display ct-term-${term}`}
+            // The caption is hidden at this size (see the stylesheet): the four
+            // W.I.R.E. letters ARE the labels, and saying "POWER" under a lit
+            // W cost a line of height on the tallest fixed thing on a phone.
+            // Kept in the DOM for the accessible name rather than deleted.
+            aria-label={caption}
+          >
             <span className="arena-dash__display-letter">{letter}</span>
             <b className="arena-dash__display-value" data-wire={key}>
               —

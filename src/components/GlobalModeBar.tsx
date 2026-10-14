@@ -52,9 +52,7 @@ export function GlobalModeBar() {
     canScrollLeft: false,
     canScrollRight: false,
   });
-  // The tab currently under the middle of the strip while it is being scrolled.
-  // Null when the strip is at rest, at which point the caption falls back to
-  // whichever mode is actually open.
+
   const [peekMode, setPeekMode] = useState<WorkspaceMode | null>(null);
   const peekTimer = useRef<number | null>(null);
 
@@ -72,18 +70,6 @@ export function GlobalModeBar() {
     setModeBarScrollState({ canScrollLeft, canScrollRight });
   }, []);
 
-  /**
-   * Name whatever tab is under the middle of the strip as it scrolls.
-   *
-   * On a phone only one label is printed (see the caption below), and tying it to
-   * the ACTIVE tab alone left a hole: scroll the strip and the one labelled tab
-   * slides off, leaving thirteen unnamed objects and no way to ask what they are.
-   * So the caption follows the scroll as well as the selection.
-   *
-   * Nearest-to-centre rather than first-visible, because a strip that fits
-   * thirteen tabs always has plenty visible; the middle is the only position that
-   * corresponds to what someone is actually looking at.
-   */
   const trackPeek = useCallback(() => {
     const container = modeBarRef.current;
     if (!container) {
@@ -100,8 +86,6 @@ export function GlobalModeBar() {
       }
     });
     setPeekMode(nearest);
-    // Hand the caption back to the open mode once the strip settles, so it ends
-    // up telling you where you ARE rather than where you last looked.
     if (peekTimer.current !== null) {
       window.clearTimeout(peekTimer.current);
     }
@@ -132,12 +116,18 @@ export function GlobalModeBar() {
   const handleModeClick = useCallback(
     (mode: WorkspaceMode) => {
       setWorkspaceMode(mode);
-      // Gallery has its own standalone page; navigate directly.
+
+      // Standalone pages with dedicated routes
       if (mode === "gallery") {
         navigate("/gallery");
         return;
       }
-      // Keep all top-nav workflows anchored to the main workspace shell.
+      if (mode === "arena") {
+        navigate("/arena");
+        return;
+      }
+
+      // Keep all workspace-bound tools anchored to the main workspace shell
       if (!isWorkspacePage) {
         navigate("/app");
       }
@@ -145,7 +135,7 @@ export function GlobalModeBar() {
     [setWorkspaceMode, navigate, isWorkspacePage],
   );
 
-  // Don't show on landing page — all hooks must be called above this guard.
+  // Don't show on landing page
   if (isLandingPage) {
     return null;
   }
@@ -165,9 +155,6 @@ export function GlobalModeBar() {
       <div
         className="workspace-mode-bar workspace-mode-bar--global"
         ref={modeBarRef}
-        // Drives the edge fade that replaced the scrollbar. Naming which edge
-        // rather than just "scrollable" matters: fading an end you are already
-        // at dims a tab that is right there and reachable.
         data-can-scroll={
           modeBarScrollState.canScrollLeft && modeBarScrollState.canScrollRight
             ? "both"
@@ -207,9 +194,6 @@ export function GlobalModeBar() {
                 aria-hidden="true"
               />
             ) : has3DIcon(tab.mode) ? (
-              // Modelled icons replace the emoji one tab at a time. The emoji
-              // stays as the fallback, so a tab looks right from the first
-              // paint and stays right if the render never lands.
               <Icon3D
                 name={tab.mode}
                 className="mode-icon mode-icon--3d"
@@ -228,8 +212,7 @@ export function GlobalModeBar() {
           </div>
         )}
 
-        {/* Settings — opens as a workspace panel (like every other section),
-            pinned to the right end. */}
+        {/* Settings */}
         <button
           type="button"
           className="mode-tab mode-tab--settings"
@@ -243,7 +226,7 @@ export function GlobalModeBar() {
           <span className="mode-label">Settings</span>
         </button>
 
-        {/* Theme toggle — pinned to the right end of the bar */}
+        {/* Theme toggle */}
         <button
           type="button"
           className="mode-tab mode-tab--theme-toggle"
@@ -256,13 +239,6 @@ export function GlobalModeBar() {
         </button>
       </div>
 
-      {/* The caption, and it deliberately lives OUTSIDE the scroller.
-          Revealing a label inside a tab widens that tab, which shifts the strip
-          underneath the thumb that is scrolling it - and a scroller whose content
-          resizes while you drag it is unusable. Out here it is one fixed slot,
-          so naming a tab costs no layout at all.
-          aria-hidden because it only ever repeats a name the focused tab already
-          carries in its aria-label; announcing it twice is noise. */}
       {captionLabel && (
         <div className="mode-bar-caption" aria-hidden="true">
           {captionLabel}

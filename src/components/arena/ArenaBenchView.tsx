@@ -33,6 +33,10 @@ type ArenaBenchViewProps = {
   onRemoveAgent: (id: string) => void;
   onEditAgent: (id: string) => void;
   rosterFull: boolean;
+  /** Whether the part's own metric nameplate is drawn — see ArenaQuickBar. */
+  nameplates: boolean;
+  readouts: boolean;
+  onToggleReadouts: () => void;
   /** The shared board element, shown in the quick bar's Results sheet. */
   board: ReactNode;
   /**
@@ -79,6 +83,9 @@ export default function ArenaBenchView({
   rosterFull,
   board,
   onRunComplete,
+  nameplates,
+  readouts,
+  onToggleReadouts,
 }: ArenaBenchViewProps) {
   // Nothing selected still has to bench SOMETHING, so it falls back to the
   // first part rather than showing an empty bench.
@@ -238,6 +245,9 @@ export default function ArenaBenchView({
         // died gets nothing, which is the whole distinction.
         winnerId={agent && agent.phase !== "failed" ? agent.id : null}
         survivorCount={agent && agent.phase !== "failed" ? 1 : 0}
+        // Off unless the quick bar says otherwise — on a bench with ONE part,
+        // the plate sits directly over it, which is the middle of the screen.
+        nameplates={nameplates}
         workspaceMode
         // No panel, so never "open": the scene only hands the camera to the
         // user (push-in, cut to a failure, orbit) once this is false.
@@ -268,6 +278,8 @@ export default function ArenaBenchView({
         scenario={scenario}
         onSelectScenario={selectScenario}
         status={status}
+        readouts={readouts}
+        onToggleReadouts={onToggleReadouts}
         // Same reading as battle mode, against this bench's own scenario —
         // which on a bench is also how you choose WHICH part is worth testing
         // before you spend a run on it.

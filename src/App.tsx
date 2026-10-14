@@ -1,50 +1,49 @@
 import { lazy, Suspense, useEffect, useLayoutEffect, useRef } from "react";
 import { Routes, Route, Link, Outlet, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import Home from "../pages/Home";
-import BrandSignature from "../components/BrandSignature";
-import GlobalModeBar from "../components/GlobalModeBar";
-import ErrorBoundary from "../components/ErrorBoundary";
-import DemoBanner from "../components/DemoBanner";
-import EngagementPromptManager from "../components/EngagementPromptManager";
-import { WorkspaceModeProvider } from "../context/WorkspaceModeContext";
-import { ThemeProvider } from "../context/ThemeContext";
-import { AppSettingsProvider } from "../context/AppSettingsContext";
-import { IS_DEMO_MODE } from "../utils/demoMode";
-import "../styles/layout.css";
+import Home from "./pages/Home";
+import BrandSignature from "./components/BrandSignature";
+import GlobalModeBar from "./components/GlobalModeBar";
+import ErrorBoundary from "./components/ErrorBoundary";
+import DemoBanner from "./components/DemoBanner";
+import EngagementPromptManager from "./components/EngagementPromptManager";
+import { WorkspaceModeProvider } from "./context/WorkspaceModeContext";
+import { ThemeProvider } from "./context/ThemeContext";
+import { AppSettingsProvider } from "./context/AppSettingsContext";
+import { IS_DEMO_MODE } from "./utils/demoMode";
+import "./styles/layout.css";
 
-// Lazy-load heavy pages so they are code-split into separate chunks.
-// This drastically reduces the initial JS bundle size — the Builder page
-// alone pulls in Three.js, the schematic engine, wire routing, etc.
-const Builder = lazy(() => import("../pages/Builder"));
-const Practice = lazy(() => import("../pages/Practice"));
-const Pricing = lazy(() => import("../pages/Pricing"));
-const Community = lazy(() => import("../pages/Community"));
-const Account = lazy(() => import("../pages/Account"));
-const Classroom = lazy(() => import("../pages/Classroom"));
-const Arcade = lazy(() => import("../pages/Arcade"));
-const PrivacyPolicy = lazy(() => import("../pages/PrivacyPolicy"));
-const DataSafety = lazy(() => import("../pages/DataSafety"));
-const AppAccess = lazy(() => import("../pages/AppAccess"));
-const PlayStoreCompliance = lazy(() => import("../pages/PlayStoreCompliance"));
-const DeleteAccount = lazy(() => import("../pages/DeleteAccount"));
-const Textbook = lazy(() => import("../pages/Textbook"));
-const Screenshots = lazy(() => import("../pages/Screenshots"));
-const Partnerships = lazy(() => import("../pages/Partnerships"));
-const Promo = lazy(() => import("../pages/Promo"));
-const Promo2 = lazy(() => import("../pages/Promo2"));
-const Promo3 = lazy(() => import("../pages/Promo3"));
-const Promo4 = lazy(() => import("../pages/Promo4"));
-const Promo5 = lazy(() => import("../pages/Promo5"));
-const Promo7 = lazy(() => import("../pages/Promo7"));
-const Promo9 = lazy(() => import("../pages/Promo9"));
-const Upgrade = lazy(() => import("../pages/Upgrade"));
-const ContactSales = lazy(() => import("../pages/ContactSales"));
-const Gallery = lazy(() => import("../pages/Gallery"));
-const EducatorPilot = lazy(() => import("../pages/EducatorPilot"));
-const OwnerAccess = lazy(() => import("../pages/OwnerAccess"));
-const TermsOfService = lazy(() => import("../pages/TermsOfService"));
-const Settings = lazy(() => import("../pages/Settings"));
+// Lazy-load pages
+const Builder = lazy(() => import("./pages/Builder"));
+const Arena = lazy(() => import("./pages/Arena"));
+const Practice = lazy(() => import("./pages/Practice"));
+const Pricing = lazy(() => import("./pages/Pricing"));
+const Community = lazy(() => import("./pages/Community"));
+const Account = lazy(() => import("./pages/Account"));
+const Classroom = lazy(() => import("./pages/Classroom"));
+const Arcade = lazy(() => import("./pages/Arcade"));
+const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
+const DataSafety = lazy(() => import("./pages/DataSafety"));
+const AppAccess = lazy(() => import("./pages/AppAccess"));
+const PlayStoreCompliance = lazy(() => import("./pages/PlayStoreCompliance"));
+const DeleteAccount = lazy(() => import("./pages/DeleteAccount"));
+const Textbook = lazy(() => import("./pages/Textbook"));
+const Screenshots = lazy(() => import("./pages/Screenshots"));
+const Partnerships = lazy(() => import("./pages/Partnerships"));
+const Promo = lazy(() => import("./pages/Promo"));
+const Promo2 = lazy(() => import("./pages/Promo2"));
+const Promo3 = lazy(() => import("./pages/Promo3"));
+const Promo4 = lazy(() => import("./pages/Promo4"));
+const Promo5 = lazy(() => import("./pages/Promo5"));
+const Promo7 = lazy(() => import("./pages/Promo7"));
+const Promo9 = lazy(() => import("./pages/Promo9"));
+const Upgrade = lazy(() => import("./pages/Upgrade"));
+const ContactSales = lazy(() => import("./pages/ContactSales"));
+const Gallery = lazy(() => import("./pages/Gallery"));
+const EducatorPilot = lazy(() => import("./pages/EducatorPilot"));
+const OwnerAccess = lazy(() => import("./pages/OwnerAccess"));
+const TermsOfService = lazy(() => import("./pages/TermsOfService"));
+const Settings = lazy(() => import("./pages/Settings"));
 
 function PageFallback() {
   const { t } = useTranslation();
@@ -56,10 +55,6 @@ function PageFallback() {
 }
 
 export default function App() {
-  // Dispatch ctapp:ready after the first render so the initial-loader in
-  // index.html is removed precisely when React has painted its first frame.
-  // The event is also dispatched earlier in main.tsx (when the module script
-  // runs) as an additional safety net.
   useEffect(() => {
     document.dispatchEvent(new CustomEvent('ctapp:ready'));
   }, []);
@@ -69,13 +64,13 @@ export default function App() {
     <AppSettingsProvider>
     <WorkspaceModeProvider>
       <ErrorBoundary>
-      {/* Fixed demo-version banner – rendered above the entire app shell */}
       <DemoBanner />
       <Suspense fallback={<PageFallback />}>
         <Routes>
           <Route element={<AppLayout />}>
             <Route path="/" element={<Home />} />
             <Route path="/app" element={<Builder />} />
+            <Route path="/arena" element={<Arena />} />
             <Route path="/practice" element={<Practice />} />
             <Route path="/pricing" element={<Pricing />} />
             <Route path="/community" element={<Community />} />
@@ -134,6 +129,7 @@ function AppLayout() {
   const { t } = useTranslation();
   const isLanding = location.pathname === "/";
   const isWorkspace = location.pathname === "/app";
+  const isArena = location.pathname === "/arena";
   const isPromo = location.pathname === "/promo";
   const isPromo2 = location.pathname === "/promo2";
   const isPromo3 = location.pathname === "/promo3";
@@ -160,19 +156,13 @@ function AppLayout() {
 
   useLayoutEffect(() => {
     const shell = shellRef.current;
-    if (!shell) {
-      return;
-    }
+    if (!shell) return;
 
     const modeBar = shell.querySelector<HTMLElement>(".workspace-mode-bar--global");
 
     const updateLayoutVars = () => {
       const modeBarHeight = modeBar?.offsetHeight ?? 0;
       shell.style.setProperty("--app-mode-bar-height", `${modeBarHeight}px`);
-      // Also publish it on <html>. Custom properties are substituted where they
-      // are DECLARED, so a :root rule that derives from this — e.g. the ticker
-      // strip's top — only sees it if it lives on :root too. Setting it on the
-      // shell alone left those rules reading the 0px placeholder.
       document.documentElement.style.setProperty(
         "--app-mode-bar-height",
         `${modeBarHeight}px`,
@@ -199,16 +189,17 @@ function AppLayout() {
       ref={shellRef}
       style={IS_DEMO_MODE ? { paddingTop: "var(--demo-banner-height, 38px)" } : undefined}
     >
-      {/* Global Mode Bar - shown on all pages except landing and promo */}
       {!isLanding && !isAnyPromo && <GlobalModeBar />}
       <main className={contentClass}>
         <Outlet />
       </main>
       {isWorkspace && <EngagementPromptManager />}
-      {/* The Tips & Facts ticker used to sit here, cycling cards over the
-          workspace on its own. Nothing narrates the workspace now. */}
-      {/* Site footer with legal links - shown on all pages except landing, workspace & promo */}
-      {!isLanding && !isWorkspace && !isAnyPromo && (
+      {/* The arena fills the viewport under the fixed mode bar, so it takes no
+          footer — layout.css calls for "full-viewport treatment — no mode bar /
+          ticker / footer". The footer only added ~45px of dead scroll below the
+          scene. It stays off the shell classes because those rules also zero
+          .app-content's padding-top, which is what clears the fixed mode bar. */}
+      {!isLanding && !isWorkspace && !isAnyPromo && !isArena && (
         <footer className="app-footer">
           <Link to="/privacy" className="app-footer-link">{t("footer.privacyPolicy")}</Link>
           <span className="app-footer-sep" aria-hidden="true">·</span>
