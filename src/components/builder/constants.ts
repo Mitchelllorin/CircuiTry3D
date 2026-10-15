@@ -61,6 +61,9 @@ export const SCHEMATIC_SYMBOLS = {
   RELAY: "ANSI_RELAY",
   VOLTAGE_REGULATOR: "ANSI_VOLTAGE_REGULATOR",
   FLUX_CAPACITOR: "ANSI_FLUX_CAPACITOR",
+  CONTINUUM_TRANSFUNCTIONER: "ANSI_CONTINUUM_TRANSFUNCTIONER",
+  WARP_DRIVE: "ANSI_WARP_DRIVE",
+  DILITHIUM_CRYSTAL: "ANSI_DILITHIUM_CRYSTAL",
 } as const;
 
 export const COMPONENT_ACTIONS: ComponentAction[] = [
@@ -181,6 +184,63 @@ export const COMPONENT_ACTIONS: ComponentAction[] = [
       symbolRef: "FC1",
       category: "power",
       educationalTags: ["flux", "time-circuits", "jigawatts", "energy-storage"],
+    },
+  },
+  // ── The rest of the shelf's easter eggs ───────────────────────────────────
+  // Same reasoning as the flux capacitor above: a component nobody recognises
+  // is a component nobody places, and each of these is a shape people have
+  // known for decades. They behave like the flux capacitor on the bench too —
+  // no failure path exists for any of them (see EASTER_EGGS in fuse.ts).
+  {
+    id: "continuum-transfunctioner",
+    icon: "─?◈?─",
+    label: "Continuum Transfunctioner",
+    action: "component",
+    builderType: "continuum-transfunctioner",
+    description:
+      "Continuum Transfunctioner - it transfunctions. The mystery of this part is exceeded only by its power.",
+    metadata: {
+      schematicSymbol: SCHEMATIC_SYMBOLS.CONTINUUM_TRANSFUNCTIONER,
+      symbolText: "─?◈?─",
+      symbolDesc: "Transfunction",
+      symbolUnit: "?",
+      symbolRef: "CT1",
+      category: "power",
+      educationalTags: ["transfunction", "continuum", "unknown"],
+    },
+  },
+  {
+    id: "warp-drive",
+    icon: "─≫◉≫─",
+    label: "Warp Drive",
+    action: "component",
+    builderType: "warp-drive",
+    description: "Warp Drive - nacelle pair and field grilles; output measured in warp factors",
+    metadata: {
+      schematicSymbol: SCHEMATIC_SYMBOLS.WARP_DRIVE,
+      symbolText: "─≫◉≫─",
+      symbolDesc: "Warp Field",
+      symbolUnit: "WF",
+      symbolRef: "WD1",
+      category: "power",
+      educationalTags: ["warp", "nacelle", "field-coil"],
+    },
+  },
+  {
+    id: "dilithium-crystal",
+    icon: "─◇◇◇─",
+    label: "Dilithium Crystal",
+    action: "component",
+    builderType: "dilithium-crystal",
+    description: "Dilithium Crystal - regulates the matter/antimatter reaction; recrystallises under load",
+    metadata: {
+      schematicSymbol: SCHEMATIC_SYMBOLS.DILITHIUM_CRYSTAL,
+      symbolText: "─◇◇◇─",
+      symbolDesc: "Dilithium",
+      symbolUnit: "Ct",
+      symbolRef: "DL1",
+      category: "power",
+      educationalTags: ["dilithium", "crystal", "lattice"],
     },
   },
   {

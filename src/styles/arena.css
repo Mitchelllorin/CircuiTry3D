@@ -134,27 +134,11 @@
 }
 
 /* F.U.S.E.™ corner watermark — matches the main builder UI's little mark. */
-.arena-fuse-watermark {
-  position: absolute;
-  bottom: 10px;
-  left: 12px;
-  z-index: 4;
-  font-size: 0.5rem;
-  font-weight: 900;
-  letter-spacing: 0.14em;
-  color: rgba(255, 153, 68, 0.55);
-  text-shadow: 0 0 8px rgba(255, 120, 20, 0.28);
-  pointer-events: none;
-  user-select: none;
-  text-transform: uppercase;
-  line-height: 1.3;
-}
-.arena-fuse-watermark__sub {
-  display: block;
-  font-size: 0.42rem;
-  letter-spacing: 0.1em;
-  opacity: 0.85;
-}
+/* The arena's own F.U.S.E.™ mark is `.fuse-watermark`, shared with the main
+   workspace — see the block further down. There used to be a second, arena-only
+   copy pinned to the bottom-left corner of the viewport, which the fixed
+   console covered completely: an invisible duplicate. It is gone, and that is
+   why there is no `.arena-fuse-watermark` rule here any more. */
 
 /* ── The F.U.S.E.™ failure readout ──────────────────────────────────────────
    Appears when a part dies, and says why. NO card, NO panel — floating text
@@ -373,49 +357,34 @@
      text — see updateLabelPosition in legacy.html for the long version. */
   will-change: transform;
   backface-visibility: hidden;
-  /* ── A chip, because a text-shadow is not a backdrop ───────────────────
-     This floated bare on the 3D for a long time, on the argument that a tight
-     text-shadow would carry it against the dark dome and a padded slate slab
-     would cover the models. The first half does not survive measurement.
+  /* ── Text only. No panel, no chip, no slab. ─────────────────────────────
+     These plates have been through three treatments: bare text with a tight
+     shadow (unreadable over lit parts and copper), then a blurred chip (read,
+     but it is a box hanging over the circuit), and now text again — which is
+     the one the bench actually wants. A nameplate is a label, not a window:
+     what it has to say is four short lines, and a 116px box behind four short
+     lines buys nothing but occlusion.
 
-     drive-106 hides the plates, reads the render underneath them and asks, of
-     every readout, what share of the ground it is standing on beats its own
-     ink at 4.5:1. Bare, at three camera angles: the E glyph lost 94% of its
-     own area, the part name 36%, most readouts 20-40%. The dome is not dark
-     where the plates are — they sit over lit parts, copper wire and failure
-     flashes, which is precisely where they have to be.
-
-     The slab was the right thing to reject and the wrong conclusion to draw.
-     A chip is tint plus BLUR, and the blur is what does the work: it destroys
-     the high-contrast detail behind the glyphs that a shadow cannot touch.
-     Same treatment as every other surface in the family, same 0.72 alpha
-     floor. Re-measured after: everything on it reads 0%, on the same frames.
-
-     It stays tight — 4px of padding, no shadow, a hairline — so it is a chip
-     hugging its text and not the slate box that was thrown out. Only the
-     focused plate carries the full stack; the rest are one line (see
-     --compact), so what is actually over the model is a 116x16 sliver. */
-  padding: 4px 6px;
-  border-radius: 8px;
-  border: 1px solid rgba(148, 197, 255, 0.16);
-  background: rgba(21, 28, 37, 0.78);
-  backdrop-filter: blur(14px) saturate(1.15);
-  -webkit-backdrop-filter: blur(14px) saturate(1.15);
+     The chip's real trick was never the tint, it was destroying the contrast
+     behind the glyphs. A HALO does the same job for text and does it without a
+     box: several dark copies of the glyph at small radii darken exactly the
+     ground the ink is standing on, an outline that follows the letters rather
+     than a rectangle around them. That is the same treatment the builder's
+     floating component labels use (legacy.html, .component-label-floating),
+     and the same one the arena's own dial readout and load readout already
+     carry — so the plates now match the labels around them instead of being
+     the only boxed thing on a screen of floating text. */
+  padding: 0;
+  border: 0;
+  background: none;
   box-shadow: none;
-  /* Kept on top of the chip, not instead of it: the plates move, and a glyph
-     edge over a blurred bright patch still reads better with it. */
   text-shadow:
-    0 1px 3px rgba(0, 0, 0, 0.92),
-    0 0 2px rgba(0, 0, 0, 0.85);
+    0 1px 2px rgba(0, 0, 0, 0.95),
+    0 0 3px rgba(0, 0, 0, 0.9),
+    0 0 8px rgba(0, 0, 0, 0.78),
+    0 0 14px rgba(0, 0, 0, 0.6);
   transition: opacity 180ms ease;
   font-variant-numeric: tabular-nums;
-}
-/* Android webviews without backdrop-filter get no blur at all, so the tint has
-   to carry the whole job alone — heavier, per the family's starter tokens. */
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .arena-nameplate {
-    background: rgba(21, 28, 37, 0.94);
-  }
 }
 /* ── F.U.S.E.™ watermark ────────────────────────────────────────────────────
    Copied from the main workspace (legacy.html #fuse-watermark) so the mark is
@@ -423,9 +392,17 @@
    own bottom-left corner rather than the viewport's. */
 .fuse-watermark {
   position: absolute;
-  inset-block-end: 72px;
   inset-inline-start: 14px;
   z-index: 100;
+  /* In the arena the console is a fixed strip across the foot of the screen and
+     it outranks everything (z-index 1250), so the mark is placed clear ABOVE it
+     using the height the console publishes for exactly this kind of
+     relationship — the same variable the failure card is positioned against.
+     The plain 72px still applies anywhere the variable is not set. */
+  /* The console is content-sized now (~70px), and `--arena-dash-height` is its
+     measured height, so the mark is placed against that with a floor for the
+     frame before the first measurement lands. */
+  inset-block-end: max(calc(var(--arena-dash-height, 76px) + 10px), 88px);
   font-size: 0.5rem;
   font-weight: 900;
   letter-spacing: 0.14em;
@@ -447,11 +424,11 @@
 }
 
 /* ── Load dial readout ──────────────────────────────────────────────────────
-   Same rule as .arena-nameplate, and it changed for the same measured reason:
-   a chip, because text on a canvas is not readable once the canvas moves. This
-   one sits over the middle of the bench where the parts light up, so it had
-   the brightest ground of anything on the screen. The reference line is what
-   makes the value mean something. */
+   Floating text, like every other readout on this stage: no box, no tint, no
+   blur. It sits over the middle of the bench where the parts light up — which
+   is exactly why it is text rather than a chip, and why it carries a full
+   halo: the ground under it is the brightest on the screen. The reference
+   line under the figure is what makes the value mean something. */
 .arena-dial-label {
   position: absolute;
   inset-block-start: 0;
@@ -460,29 +437,23 @@
   flex-direction: column;
   align-items: center;
   gap: 1px;
-  padding: 4px 8px;
+  padding: 0;
   /* Bounded so the strip wraps instead of spilling past the scene edges and
      over the corner watermark on a portrait phone. */
   max-inline-size: min(88vw, 26rem);
-  border-radius: 9px;
-  border: 1px solid rgba(148, 197, 255, 0.16);
-  background: rgba(21, 28, 37, 0.78);
-  backdrop-filter: blur(14px) saturate(1.15);
-  -webkit-backdrop-filter: blur(14px) saturate(1.15);
+  border: 0;
+  background: none;
   box-shadow: none;
   pointer-events: none;
   text-align: center;
   text-shadow:
-    0 1px 3px rgba(0, 0, 0, 0.92),
-    0 0 2px rgba(0, 0, 0, 0.85);
+    0 1px 2px rgba(0, 0, 0, 0.95),
+    0 0 3px rgba(0, 0, 0, 0.9),
+    0 0 8px rgba(0, 0, 0, 0.78),
+    0 0 14px rgba(0, 0, 0, 0.6);
   transition: opacity 180ms ease;
   font-variant-numeric: tabular-nums;
   opacity: 0;
-}
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .arena-dial-label {
-    background: rgba(21, 28, 37, 0.94);
-  }
 }
 .arena-dial-label__value {
   font-size: 1.02rem;
@@ -574,14 +545,20 @@
   filter: grayscale(0.65);
   opacity: 0.85;
 }
-.arena-nameplate--stressed {
-  border-color: rgba(251, 191, 36, 0.45);
+/* State used to be carried by the chip's border, which no longer exists — so
+   the part NAME takes the state colour instead. Better than the border ever
+   was, in fact: the border said "something on this plate changed" while the
+   name says which readout is in trouble, and on a stack of six plates that is
+   the whole question. The name is bold and the largest thing on the plate, so
+   it carries the colour without competing with the numbers. */
+.arena-nameplate--stressed .arena-nameplate__name {
+  color: var(--plate-warn);
 }
-.arena-nameplate--critical {
-  box-shadow: none;
+.arena-nameplate--critical .arena-nameplate__name {
+  color: var(--plate-crit);
 }
-.arena-nameplate--failed {
-  border-color: rgba(239, 68, 68, 0.6);
+.arena-nameplate--failed .arena-nameplate__name {
+  color: var(--plate-bad);
 }
 
 .arena-nameplate__head {
@@ -692,22 +669,22 @@
    A column always has current in the same place.
    Gap is tighter than the workspace's 10px because these plates float over the
    parts themselves and four rows at that spacing turns a label into a panel. */
-/* The dense block earns a solid inset — glass for the frame, solid for the
-   figures. Not decoration: the four W.I.R.E. glyphs are the only text on the
-   plate that is not near-white, and #4a90ff and #ff4444 are dark enough that
-   over glass laid on a bright part they still measured 17% and 29% of their
-   area under 4.5:1. On a known opaque ground they clear it outright, and the
-   family's colour coding survives intact — which was the point of colouring
-   them, so W here is the same W as on the console. */
+/* No inset, no solid ground — the four W.I.R.E. rows float like the rest of
+   the plate. The one thing the inset was really buying was contrast for the
+   colour-coded glyphs (#4a90ff, #ff4444), and that job is now done by a halo
+   around each glyph: dark copies at small radii, which is an outline that
+   follows the letter instead of a rectangle around the block. The colour
+   coding survives intact — W here is the same W as on the console — and
+   without it there is no opaque rectangle sitting on top of the part. */
 .arena-nameplate__wire {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: 2px;
   margin-block-start: 3px;
-  padding: 3px 5px;
-  border-radius: 5px;
-  background: #151c25;
+  padding: 0;
+  border-radius: 0;
+  background: none;
   font-size: 0.78rem;
   line-height: 1.35;
   font-variant-numeric: tabular-nums;
@@ -727,6 +704,13 @@
   font-size: 0.62rem;
   font-weight: 800;
   opacity: 0.95;
+  /* Tighter and heavier than the plate's own halo: these glyphs carry the
+     metric colour, and the two dark ones (blue for current, red for power)
+     need the ground behind them knocked back harder than near-white text does. */
+  text-shadow:
+    0 0 2px rgba(0, 0, 0, 1),
+    0 0 4px rgba(0, 0, 0, 0.95),
+    0 0 7px rgba(0, 0, 0, 0.85);
 }
 .arena-nameplate__wire b {
   font-size: 0.78rem;
@@ -762,7 +746,13 @@
 .arena-load-readout {
   position: absolute;
   right: 12px;
-  bottom: 10px;
+  /* Clear of the console, which is a full-width strip across the foot of the
+     screen at z-index 1250. This sat at bottom:10px, which put it entirely
+     BEHIND that strip — the load, the survivors and the champion were on
+     screen for nobody. Anchored above it the same way the F.U.S.E. mark is:
+     against the height the console publishes, with the viewport's own 20%
+     as the floor for anywhere that variable is not set. */
+  bottom: max(calc(var(--arena-dash-height, 76px) + 10px), 88px);
   z-index: 4;
   display: flex;
   align-items: baseline;
@@ -2516,7 +2506,7 @@
 }
 /* A milled slot with a machined cap riding in it. */
 .arena-dash__fader input[type="range"]::-webkit-slider-runnable-track {
-  height: 7px;
+  height: 5px !important;
   border-radius: 4px;
   background: linear-gradient(180deg, #020610 0%, #0b1220 100%);
   box-shadow:
@@ -2524,7 +2514,7 @@
     0 1px 0 rgba(226, 232, 240, 0.06);
 }
 .arena-dash__fader input[type="range"]::-moz-range-track {
-  height: 7px;
+  height: 5px !important;
   border-radius: 4px;
   background: #0b1220;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.9) inset;
@@ -2536,9 +2526,9 @@
 .arena-dash__fader input[type="range"]::-webkit-slider-thumb {
   appearance: none;
   -webkit-appearance: none;
-  width: 17px;
-  height: 21px;
-  margin-top: -7px;
+  width: 13px !important;
+  height: 16px !important;
+  margin-top: -5.5px !important;
   border-radius: 4px;
   background: linear-gradient(90deg, #f1f5f9 0%, #cbd5e1 45%, #64748b 100%);
   border: 1px solid rgba(15, 23, 42, 0.75);
@@ -2547,8 +2537,8 @@
     0 2px 5px rgba(0, 0, 0, 0.6);
 }
 .arena-dash__fader input[type="range"]::-moz-range-thumb {
-  width: 17px;
-  height: 21px;
+  width: 13px !important;
+  height: 16px !important;
   border-radius: 4px;
   background: linear-gradient(90deg, #f1f5f9 0%, #cbd5e1 45%, #64748b 100%);
   border: 1px solid rgba(15, 23, 42, 0.75);
@@ -3474,33 +3464,241 @@
 }
 
 /* ============================================================
-   1. CENTER NAMEPLATE: GLASS + SHRUNK + SHIFTED AWAY FROM CENTER
-   ============================================================ */
-.arena-nameplate,
-.arena-fuse-card {
-  /* GLASS / TRANSPARENT EFFECT */
-  background: rgba(15, 23, 42, 0.25) !important;
-  backdrop-filter: blur(8px) !important;
-  -webkit-backdrop-filter: blur(8px) !important;
-  border: 1px solid rgba(255, 255, 255, 0.2) !important;
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2) !important;
+   1. NAMEPLATES: NO TRANSFORM HERE, ON PURPOSE
+   ============================================================
+   There was a block here that gave every plate and the failure card
+   `transform: scale(0.8) translate(-120%, -30%) !important`, as a way to
+   "move & shrink them out of the way".
 
-  /* MOVE & SHRINK OUT OF THE WAY */
-  transform: scale(0.8) translate(-120%, -30%) !important;
-  transform-origin: center center !important;
-  transition: transform 0.2s ease-in-out !important;
-}
+   It was not a nudge — it was a hostile takeover of the one property that
+   attaches a plate to its part. Each plate is positioned by the frame loop,
+   which projects its part's seat to screen space and writes
+   `translate3d(<x>px, <y>px, 0)` inline. An `!important` rule beats an inline
+   style, so that inline transform was thrown away every frame and every plate
+   was instead drawn one-and-a-quarter of its own width to the LEFT of wherever
+   it sat in flow — with no top/left of its own, that is the top-left corner of
+   the scene. Which is exactly what it looked like: cards bunched at the top of
+   the screen, in the way, over the bench, not pointing at anything.
+
+   The `transition` on top of it was the second half of the problem: even when
+   the inline transform did apply, a 0.2s ease on a per-frame projection makes
+   the plates lag the camera — and it also makes every stacking correction
+   animate instead of landing.
+
+   So: no transform, no transform-origin and no transition on the plates. The
+   position is the scene's to own. The glass styling went with it — the plates
+   are designed as floating text with a shadow, precisely so they do NOT sit in
+   translucent boxes over the parts they are reporting on. */
 
 /* ============================================================
-   2. BOTTOM DASHBOARD: RESTRICT HEIGHT & MAKE 15% SMALLER
-   ============================================================ */
-.arena-dash {
-  height: 15vh !important;
-  max-height: 15vh !important;
-  min-height: 80px !important;
-  overflow-y: auto !important;
+   2. BOTTOM DASHBOARD: A FULL-WIDTH STRIP THAT FITS
+   ============================================================
+   What was here was `height: 15vh` with `overflow-y: auto` and
+   `transform: scale(0.85)`. All three were wrong in the same direction:
 
-  /* Scale dashboard down to 85% */
-  transform: scale(0.85) !important;
-  transform-origin: bottom center !important;
+     - the scale shrank the console to 85% of the width and, with
+       transform-origin at bottom centre, inset it 30px a side. It was no
+       longer the foot of the screen; it was a floating card sitting on it.
+     - `overflow-y: auto` did not make the console fit, it hid the fact that
+       it did not: 154px of instruments in a 79px box, with RESET and RUN AGAIN
+       below the fold. A console you have to scroll is a console that has
+       hidden a control from you, and this one is operated blind on a bench.
+
+   So: edge to edge, ~a fifth of the viewport, and NO scrolling — the content
+   is laid out to fit the strip instead (see the two-row rules under this).
+   A floor is kept because the strip has to hold two rows of instruments and
+   two 44px touch targets no matter how short the window is. */
+.arena-dash {
+  inset-inline: 0 !important;
+  transform: none !important;
+  /* As tall as its contents, not as tall as a slice of the viewport. A fixed
+     16vh measured 118px on a 740px screen against 66px of instruments — a
+     strip that was half empty air, which is the same complaint as a slab in a
+     quieter costume. The cap keeps it honest on a short window; the content
+     is what sets the height everywhere else. */
+  height: auto !important;
+  max-height: 22vh !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  gap: 2px !important;
+  padding: 3px 6px calc(env(safe-area-inset-bottom, 0px) + 3px) !important;
+  /* Subtler glass. The strip is instrument furniture at the foot of a 3D scene;
+     it had a 0.26–0.46 veil, a 26px blur, a 0.2 border and a 10px shadow, which
+     is a slab's worth of chrome for one row of small type. Thinner veil, a
+     lighter blur, a hairline seam and a tight shadow: the scene still reads
+     through it and the console stays legible, without announcing itself. */
+  background:
+    linear-gradient(180deg, rgba(30, 41, 59, 0.20) 0%, rgba(12, 20, 38, 0.27) 45%, rgba(2, 6, 23, 0.36) 100%) !important;
+  backdrop-filter: blur(18px) saturate(1.3) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(1.3) !important;
+  border-block-start: 1px solid rgba(168, 216, 255, 0.14) !important;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.08) inset,
+    0 -2px 8px rgba(0, 0, 0, 0.22) !important;
+}
+
+/* ── Two rows, read left to right ────────────────────────────────────────
+   The instrument strip above, the controls below: [Supply] [Series R]
+   [Solo/Battle · Reset] [Throw]. The controls were stacked in a column, which
+   is what made the console three rows deep and scrolled. Laid out in a row
+   they fit the height of the tallest of them — the switch — and nothing has to
+   be dropped to make room. */
+/* Four instruments, ONE row: [Supply] [Series R] [Solo/Battle · Reset] [Throw].
+   The grid was `minmax(0, 1fr) auto` — two columns for four children — so the
+   last two wrapped onto a second row and the console became three rows deep,
+   which is what it was scrolling to hide. */
+/* FLEX, not the grid this was. A `minmax(0, 1fr) auto` grid keeps sizing the
+   auto tracks from each item's max-content, and a bare range input carries a
+   ~129px intrinsic width that no amount of shrinking on the label overrides —
+   so one fader kept coming out 129px wide and the one beside it 42px, in a
+   row where they are supposed to be the same control twice. Flex shares the
+   leftover space by definition: two equal faders, the bench row and the switch
+   taking exactly their own width. */
+.arena-dash__controls {
+  display: flex !important;
+  align-items: stretch !important;
+  gap: 7px !important;
+}
+/* The legend wraps INSIDE its own column rather than being cut off: "Supply
+   1.00×" over "of 12.0× rated" is still the whole reading, and it costs the
+   strip no extra height because the fader column is as tall as the switch. */
+.arena-dash__fader-head {
+  flex-wrap: wrap !important;
+}
+.arena-dash__fader-ref {
+  flex-basis: 100% !important;
+  margin-inline-start: 0 !important;
+}
+.arena-dash__displays {
+  gap: 4px !important;
+}
+.arena-dash__display {
+  padding: 1px 3px !important;
+  border-radius: 5px !important;
+  border-color: rgba(148, 163, 184, 0.11) !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.6) inset !important;
+}
+.arena-dash__display-value {
+  font-size: 0.72rem !important;
+  line-height: 1 !important;
+  /* A lit digit needs less bloom than a large one to read as lit. */
+  text-shadow:
+    0 0 7px currentColor,
+    0 1px 2px rgba(0, 0, 0, 0.95) !important;
+}
+.arena-dash__display-letter {
+  font-size: 0.42rem !important;
+  letter-spacing: 0.12em !important;
+}
+/* The four W.I.R.E. letters ARE the labels at this size, and the word under a
+   lit W cost a line of a strip that now holds everything in one. Kept in the
+   DOM for the accessible name (see aria-label on the display). */
+.arena-dash__display-caption {
+  display: none !important;
+}
+/* The two legands stay on ONE line each: "Supply 1.00× of 12.0× rated" is a
+   single thought, and wrapping it costs a line of a strip this short. */
+.arena-dash__fader {
+  flex: 1 1 0 !important;
+  min-inline-size: 0 !important;
+  row-gap: 1px !important;
+}
+.arena-dash__fader-head {
+  gap: 3px !important;
+  font-size: 0.44rem !important;
+  line-height: 1.05 !important;
+  letter-spacing: 0.07em !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+}
+.arena-dash__fader-head b {
+  font-size: 0.54rem !important;
+  line-height: 1.05 !important;
+}
+.arena-dash__fader-ref {
+  font-size: 0.4rem !important;
+  line-height: 1.05 !important;
+}
+.arena-dash__fader input[type="range"] {
+  /* A range input is mostly padding: the grab target stays generous while the
+     track itself is thin, so the faders cost the strip a row of pixels each
+     instead of the ~44px they were charging. */
+  height: 14px !important;
+  /* A range input carries a ~129px intrinsic width. Without this it refuses to
+     shrink, and in a row of four instruments it did not just overflow — it
+     STARVED the column beside it, which is how one fader ended up 13px wide
+     and its neighbour 129px wide. */
+  inline-size: 100% !important;
+  min-inline-size: 0 !important;
+}
+/* The switch stays the biggest thing in the row — it is the one control you
+   throw rather than ride — but "biggest" here means 68px against a 34px
+   fader row, not the 170px it took when nothing capped it: at that width the
+   panel was sized around its largest control at the cost of the two you
+   actually ride, and the faders came out 34px each. */
+.arena-dash__switch {
+  flex: 0 0 68px !important;
+  inline-size: 68px !important;
+  max-inline-size: 68px !important;
+  min-inline-size: 0 !important;
+  gap: 3px !important;
+  padding: 0 4px !important;
+  border-radius: 5px !important;
+}
+.arena-dash__switch-lever {
+  inline-size: 20px !important;
+  height: 10px !important;
+  border-radius: 3px !important;
+}
+.arena-dash__switch-label {
+  font-size: 0.42rem !important;
+  letter-spacing: 0.1em !important;
+}
+
+/* ── Phone widths ────────────────────────────────────────────────────────
+   Below ~380px the strip still fits in one row (measured at 317px: nothing
+   clipped, nothing overflowing), but the two faders come down to a 21px throw
+   because the bench row and the switch are taking their full share first. The
+   faders are the two controls you RIDE, so on a phone they get the room: the
+   secondary legends lose a little tracking and padding and the switch comes in
+   to 58px, which is still the widest target in the row. */
+@media (max-width: 380px) {
+  .arena-dash .arena-dash__mode-btn,
+  .arena-dash .arena-dash__reset {
+    padding: 0 3px !important;
+    font-size: 0.46rem !important;
+    letter-spacing: 0.02em !important;
+  }
+  .arena-dash__bench-row {
+    gap: 3px !important;
+  }
+  .arena-dash__switch {
+    flex: 0 0 58px !important;
+    inline-size: 58px !important;
+    max-inline-size: 58px !important;
+  }
+  .arena-dash__switch-lever {
+    inline-size: 16px !important;
+  }
+}
+.arena-dash__bench-row {
+  flex: 0 0 auto !important;
+}
+.arena-dash__bench-row {
+  gap: 5px !important;
+}
+/* Silkscreen legends, so they can be small — but they are buttons, so their
+   padding is the touch target and stays. */
+.arena-dash .arena-dash__mode-btn,
+.arena-dash .arena-dash__reset {
+  padding: 0 4px !important;
+  font-size: 0.5rem !important;
+  letter-spacing: 0.04em !important;
+  /* Secondary controls, so they come down with the rest of the panel. They are
+     still 32px tall with a finger's worth of width either side of the word —
+     small, not fiddly — while the switch you throw keeps the panel's height. */
+  min-height: 32px !important;
+}
+.arena-dash__switch {
+  padding: 0 10px !important;
 }

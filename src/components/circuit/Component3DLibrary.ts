@@ -963,6 +963,122 @@ export const COMPONENT_3D_LIBRARY: Component3DGeometry[] = [
       ],
     },
   },
+
+  // ─── Flux Capacitor ───────────────────────────────────────────────────────
+  // The time-circuit core: three stainless arms converging on a glowing cell,
+  // with a machined cap on each arm and a collar where they meet.
+  //
+  // It is built rather than borrowed, because borrowing is the wrong thing for
+  // THIS part in a way it is not for any other: a flux capacitor rendered as
+  // the capacitor body it is not would be the one component on the bench that
+  // nobody would recognise, and the whole point of putting one on the roster is
+  // that it is recognised instantly.
+  //
+  // The arms sit 120° apart. A cylinder is born along +Y, so rotating one by
+  // ±2π/3 about Z swings its axis onto the two lower arms, and its position is
+  // the arm's own centre along that axis — 0.3 units out, which puts each arm's
+  // end 0.62 from the junction, where the caps sit. The cell itself is the
+  // sphere at the junction, and the arena's EMITTERS table lights it (see
+  // ArenaScene): it glows on the bench instead of lying there inert.
+  {
+    type: 'flux-capacitor',
+    label: 'Flux Capacitor',
+    description: 'Time-circuit core — three arms converging on a glowing cell',
+    geometry: {
+      shapes: [
+        { type: 'sphere', position: [0, 0, 0], scale: [0.2, 0.2, 0.2], color: '#8ff6ff', opacity: 0.9, finish: 'glass' },
+        { type: 'cylinder', position: [0, 0.3, 0], scale: [0.08, 0.32, 0.08], color: '#cbd5e1', finish: 'metal' },
+        { type: 'cylinder', position: [-0.26, -0.15, 0], rotation: [0, 0, (2 * Math.PI) / 3], scale: [0.08, 0.32, 0.08], color: '#cbd5e1', finish: 'metal' },
+        { type: 'cylinder', position: [0.26, -0.15, 0], rotation: [0, 0, -(2 * Math.PI) / 3], scale: [0.08, 0.32, 0.08], color: '#cbd5e1', finish: 'metal' },
+        { type: 'cylinder', position: [0, 0.6, 0], scale: [0.1, 0.04, 0.1], color: '#334155', finish: 'paintedMetal' },
+        { type: 'cylinder', position: [-0.52, -0.3, 0], rotation: [0, 0, (2 * Math.PI) / 3], scale: [0.1, 0.04, 0.1], color: '#334155', finish: 'paintedMetal' },
+        { type: 'cylinder', position: [0.52, -0.3, 0], rotation: [0, 0, -(2 * Math.PI) / 3], scale: [0.1, 0.04, 0.1], color: '#334155', finish: 'paintedMetal' },
+        { type: 'cylinder', position: [0, 0, 0], scale: [0.12, 0.07, 0.12], color: '#94a3b8', finish: 'metal' },
+      ],
+      leads: [
+        { position: [0, -0.62, 0], length: 0.34, radius: 0.03, color: '#C0C0C0' },
+      ],
+    },
+  },
+
+  // ─── Continuum Transfunctioner ────────────────────────────────────────────
+  // Dude, Where's My Car?. One black cube, four glowing plates, a dial, and a
+  // question mark where a value should be — which is the entire design brief
+  // for a device whose mystery is exceeded only by its power. The plates sit
+  // PROUD of the faces rather than flush, because a flush one renders as a
+  // texture and a proud one renders as a light behind glass.
+  {
+    type: 'continuum-transfunctioner',
+    label: 'Continuum Transfunctioner',
+    description: 'Black cube with four lit plates — transfunctions, apparently',
+    geometry: {
+      shapes: [
+        { type: 'box', position: [0, 0, 0], scale: [0.34, 0.34, 0.34], color: '#111318', finish: 'lacquer' },
+        { type: 'box', position: [0, 0, 0.18], scale: [0.22, 0.22, 0.02], color: '#7ef9a0', opacity: 0.92, finish: 'glass' },
+        { type: 'box', position: [0, 0, -0.18], scale: [0.22, 0.22, 0.02], color: '#7ef9a0', opacity: 0.92, finish: 'glass' },
+        { type: 'box', position: [0.18, 0, 0], scale: [0.02, 0.22, 0.22], color: '#7ef9a0', opacity: 0.92, finish: 'glass' },
+        { type: 'box', position: [-0.18, 0, 0], scale: [0.02, 0.22, 0.22], color: '#7ef9a0', opacity: 0.92, finish: 'glass' },
+        { type: 'cylinder', position: [0, 0.19, 0], scale: [0.06, 0.05, 0.06], color: '#94a3b8', finish: 'metal' },
+        { type: 'sphere', position: [0, 0.23, 0], scale: [0.03, 0.03, 0.03], color: '#7ef9a0', finish: 'glass' },
+      ],
+      leads: [
+        { position: [-0.24, 0, 0], length: 0.3, radius: 0.025, color: '#C0C0C0' },
+        { position: [0.24, 0, 0], length: 0.3, radius: 0.025, color: '#C0C0C0' },
+      ],
+    },
+  },
+
+  // ─── Warp Drive ───────────────────────────────────────────────────────────
+  // A hull between two nacelles: bussard collectors at the front (warm, taking
+  // in the hydrogen), warp field grilles along the inside of each nacelle (the
+  // blue that everyone recognises as "warp"), and the deflector on the nose.
+  // Sized against the transformer rather than against a starship — it has to
+  // sit in a branch between the rails like everything else here.
+  {
+    type: 'warp-drive',
+    label: 'Warp Drive',
+    description: 'Nacelle pair on a hull — warp field grilles lit',
+    geometry: {
+      shapes: [
+        { type: 'cylinder', position: [0, 0, 0], rotation: [0, 0, Math.PI / 2], scale: [0.1, 0.5, 0.1], color: '#b8c2cf', finish: 'metal' },
+        { type: 'sphere', position: [0.32, 0, 0], scale: [0.1, 0.1, 0.1], color: '#8ff6ff', opacity: 0.85, finish: 'glass' },
+        { type: 'cylinder', position: [0, 0.2, -0.02], rotation: [0, 0, Math.PI / 2], scale: [0.06, 0.34, 0.06], color: '#9aa6b4', finish: 'metal' },
+        { type: 'cylinder', position: [0, -0.2, -0.02], rotation: [0, 0, Math.PI / 2], scale: [0.06, 0.34, 0.06], color: '#9aa6b4', finish: 'metal' },
+        { type: 'sphere', position: [0.2, 0.2, -0.02], scale: [0.07, 0.07, 0.07], color: '#ff8a3d', opacity: 0.9, finish: 'glass' },
+        { type: 'sphere', position: [0.2, -0.2, -0.02], scale: [0.07, 0.07, 0.07], color: '#ff8a3d', opacity: 0.9, finish: 'glass' },
+        { type: 'box', position: [-0.06, 0.2, -0.02], scale: [0.26, 0.05, 0.1], color: '#8ff6ff', opacity: 0.9, finish: 'glass' },
+        { type: 'box', position: [-0.06, -0.2, -0.02], scale: [0.26, 0.05, 0.1], color: '#8ff6ff', opacity: 0.9, finish: 'glass' },
+        { type: 'cone', position: [-0.3, 0, 0], rotation: [0, 0, Math.PI / 2], scale: [0.1, 0.12, 0.1], color: '#cbd5e1', finish: 'metal' },
+      ],
+      leads: [
+        { position: [-0.36, 0, 0], length: 0.28, radius: 0.025, color: '#C0C0C0' },
+        { position: [0.38, 0, 0], length: 0.28, radius: 0.025, color: '#C0C0C0' },
+      ],
+    },
+  },
+
+  // ─── Dilithium Crystal ────────────────────────────────────────────────────
+  // A bipyramid in a machined collar — two cones tip to tip, because that IS
+  // the shape of a faceted crystal and a sphere would read as a marble. Pink
+  // glass rather than metal: the one thing everyone knows about dilithium is
+  // that it is translucent and that you can see the light through it.
+  {
+    type: 'dilithium-crystal',
+    label: 'Dilithium Crystal',
+    description: 'Faceted crystal in a machined collar',
+    geometry: {
+      shapes: [
+        { type: 'cone', position: [0, 0.16, 0], scale: [0.14, 0.34, 0.14], color: '#ff9de0', opacity: 0.72, finish: 'glass' },
+        { type: 'cone', position: [0, -0.16, 0], rotation: [Math.PI, 0, 0], scale: [0.14, 0.34, 0.14], color: '#ff9de0', opacity: 0.72, finish: 'glass' },
+        { type: 'cylinder', position: [0, -0.34, 0], scale: [0.11, 0.08, 0.11], color: '#334155', finish: 'paintedMetal' },
+        { type: 'cylinder', position: [0, 0.34, 0], scale: [0.11, 0.08, 0.11], color: '#334155', finish: 'paintedMetal' },
+        { type: 'torus', position: [0, 0, 0], scale: [0.15, 0.15, 0.15], color: '#94a3b8', finish: 'metal' },
+      ],
+      leads: [
+        { position: [0, -0.42, 0], length: 0.3, radius: 0.025, color: '#C0C0C0' },
+      ],
+    },
+  },
 ];
 
 export function getComponent3D(type: string): Component3DGeometry | undefined {

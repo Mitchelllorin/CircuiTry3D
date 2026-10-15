@@ -22,7 +22,7 @@ FUSE™ is shared across both platforms in CircuiTry3D:
 | Platform | How FUSE™ is used |
 |---|---|
 | **3D Circuit Builder** (`/app`) | Runs on every sim tick; renders failure badges + multi-layer particle effects directly on the 3D component |
-| **Component Arena** (`/arena`) | Runs stress tests and renders a full failure analysis card with the failure name, description, severity, and particle animations |
+| **Component Arena** (workspace mode of `/app`) | Runs stress tests and renders a full failure analysis card with the failure name, description, severity, and particle animations |
 
 ---
 

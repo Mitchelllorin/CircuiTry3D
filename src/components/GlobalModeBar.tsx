@@ -122,10 +122,13 @@ export function GlobalModeBar() {
         navigate("/gallery");
         return;
       }
-      if (mode === "arena") {
-        navigate("/arena");
-        return;
-      }
+      // The arena is a workspace mode of the builder, not a page of its own:
+      // Builder mounts ArenaView itself when the mode is "arena", and the
+      // /arena route it used to have is gone. It therefore falls through to the
+      // anchor below with every other workspace tool — set the mode, make sure
+      // we are on /app, and let the workspace open it. Sending it to a route of
+      // its own is what made the mode bar and the arena disagree about which
+      // surface was on screen.
 
       // Keep all workspace-bound tools anchored to the main workspace shell
       if (!isWorkspacePage) {

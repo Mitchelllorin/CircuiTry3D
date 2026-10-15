@@ -65,8 +65,8 @@ CircuiTry3D is a 3D, interactive, electric circuit builder that utilizes Ohm's l
 2. **Sandbox Attributes**: iframes use specific sandbox attributes (`allow-scripts allow-same-origin allow-popups`) for security. Maintain these when working with iframe components.
 3. **Routing**: The app uses React Router with the following routes:
    - `/` - Home/Landing page
-   - `/app` - Circuit builder application
-   - `/arena` - Component testing arena
+   - `/app` - Circuit builder application, including the component testing arena
+     (the arena is a workspace mode of this route, not a route of its own)
 4. **Build Output**: Vite builds to the `dist/` directory, which should not be committed to version control.
 
 ### When Making Changes

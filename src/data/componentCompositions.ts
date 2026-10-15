@@ -756,7 +756,12 @@ export const COMPONENT_COMPOSITIONS: ComponentComposition[] = [
   // ─── Inductor (axial / radial) ───────────────────────────────────────────
   {
     componentType: 'inductor',
-    aliases: ['coil', 'choke', 'ferrite'],
+    // 'transformer' is an alias because it IS this composition: two windings on
+    // a common core is copper on ferrite with the insulation as the limiting
+    // element, which is exactly what the inductor's composition says. Without
+    // the alias a transformer resolved to a family with no composition, so it
+    // had no interior, and its failure opened onto an empty shell.
+    aliases: ['coil', 'choke', 'ferrite', 'transformer'],
     constructionNote: 'Copper wire winding on a manganese-zinc ferrite or iron-powder core; phenolic or epoxy bobbin; axial or radial leads',
     subComponents: [
       { name: 'Copper Winding',           materialKey: 'copper',        role: 'Inductive element',           massFraction: 0.40 },

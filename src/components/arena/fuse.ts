@@ -86,6 +86,14 @@ export function resolveFamily(
   type: string,
   props?: Record<string, unknown>,
 ): string {
+  // The easter eggs are resolved HERE, ahead of the engine. The engine is the
+  // physics authority and stays the authority for everything else; these parts
+  // are not physics, and the engine has no profile for any of them — which is
+  // exactly how one ends up on a bench looking like a resistor.
+  const egg = easterEggFor(type, props);
+  if (egg) {
+    return egg.family;
+  }
   const engine = getFuse();
   if (engine) {
     try {
@@ -124,13 +132,131 @@ export function familyThermal(family: string): {
 }
 
 /**
+ * ── The parts that are not on trial ─────────────────────────────────────────
+ *
+ * The bench is built to destroy whatever is put on it, and these four are the
+ * exception: they have no failure path at all, because the joke only works if
+ * the one thing you cannot kill is the one thing that is obviously not an
+ * electronic component. Each of them answers with a number instead of a
+ * failure — and the number is the whole point of the part.
+ *
+ * Matched on the type string, the builder type, the name AND the label, because
+ * one arrives from the catalog as `flux-capacitor`, another from a saved
+ * circuit as a `builderType`, and any of them in a spec document as whatever
+ * its author happened to call it.
+ */
+const EASTER_EGGS: Array<{ match: RegExp; family: string; result: FuseResult }> = [
+  {
+    // Back to the Future. The figure is its discharge rate, and the card that
+    // names it is the one the engine would have filled in on any other part:
+    // 1.21 GW is the only number that belongs on it.
+    match: /flux/i,
+    family: "flux",
+    result: {
+      failed: false,
+      severity: 0,
+      name: "Flux Discharge — 1.21 GW",
+      visual: null,
+      description:
+        "Time-circuit core holding. No failure path is modelled for this part: " +
+        "the cell stores and releases its charge faster than the bench can heat " +
+        "it, and it is the only component here that survives an overload by " +
+        "design.",
+      family: "flux",
+    },
+  },
+  {
+    // Dude, Where's My Car?. The transfunctioner does not do anything anyone
+    // can name, so neither does its failure: the part reports that it has
+    // transfunctioned and declines to elaborate.
+    match: /transfunction/i,
+    family: "transfunctioner",
+    result: {
+      failed: false,
+      severity: 0,
+      name: "Continuum Transfunctioned",
+      visual: null,
+      description:
+        "The mystery of this part is exceeded only by its power. It has " +
+        "transfunctioned, whatever that means, and it is not going to explain " +
+        "itself — there is nothing in here for F.U.S.E. to model.",
+      family: "transfunctioner",
+    },
+  },
+  {
+    // Warp drive: it is not cooked, it is engaged.
+    match: /warp/i,
+    family: "warp",
+    result: {
+      failed: false,
+      severity: 0,
+      name: "Warp 9.9 — Dampers Holding",
+      visual: null,
+      description:
+        "Nacelle field stable. The bench cannot overload a warp core by " +
+        "dissipating watts in it — every amp you push in comes out as " +
+        "velocity, and the inertial dampers report nominal.",
+      family: "warp",
+    },
+  },
+  {
+    // Dilithium: a crystal that, when it is overdriven, grows back.
+    match: /dilithium/i,
+    family: "dilithium",
+    result: {
+      failed: false,
+      severity: 0,
+      name: "Dilithium Integrity 100%",
+      visual: null,
+      description:
+        "Crystal lattice recrystallised faster than the test could stress " +
+        "it. Overdriving dilithium does not fracture it — that is the property " +
+        "the whole material was invented for.",
+      family: "dilithium",
+    },
+  },
+];
+
+/**
+ * The easter egg among these type/property fields, if any.
+ *
+ * Returns the family AND the canned result together so the two can never drift:
+ * the family is what every other table on the bench is keyed by, and the result
+ * is what the failure card says instead of a failure.
+ */
+function easterEggFor(
+  type: string | undefined,
+  props?: Record<string, unknown>,
+): { family: string; result: FuseResult } | null {
+  const fields = [type, props?.builderType, props?.name, props?.label].filter(
+    (value): value is string => typeof value === "string",
+  );
+  for (const egg of EASTER_EGGS) {
+    if (fields.some((value) => egg.match.test(value))) {
+      return { family: egg.family, result: egg.result };
+    }
+  }
+  return null;
+}
+
+/**
  * Evaluate a component against its failure profile. Prefers the real engine and
  * falls back to a compact local model when the global is unavailable.
+ *
+ * Checked before the engine, like the family resolution: an easter egg has no
+ * failure path in F.U.S.E. at all — not "it is tough", not "it has a very high
+ * rating". On a bench built to destroy whatever you put on it, these are the
+ * parts you can drive to 4× rated alongside components that are already on fire,
+ * and they sit there glowing.
  */
 export function detectFailure(
   component: FuseComponent,
   metrics: FuseMetrics,
 ): FuseResult {
+  const egg = easterEggFor(component.type, component.properties);
+  if (egg) {
+    return egg.result;
+  }
   const engine = getFuse();
   if (engine) {
     try {
@@ -159,6 +285,38 @@ const LOCAL_DEFAULTS: Record<string, Record<string, unknown>> = {
   bjt: { ic_max: 0.6, powerRating: 0.625, thermalResistance: 200 },
   switch: { maxCurrent: 5, thermalResistance: 50 },
   relay: { coilVoltage: 12, maxCurrent: 10, maxVoltage: 250, thermalResistance: 50 },
+  // Nothing here is reachable — detectFailure never gets as far as reading
+  // these for this family. They exist so the bench's own arithmetic (load
+  // percentage, headroom, the gauge on the plate) has real numbers to work
+  // with instead of NaNs, and they are set high enough that every one of those
+  // readouts lands at ~0% of rated.
+  flux: {
+    powerRating: 1.21e9,
+    maxVoltage: 1.21e9,
+    maxCurrent: 1.21e6,
+    thermalResistance: 0.5,
+    capacitance: 1.21,
+  },
+  // Same reasoning as `flux` above: nothing here is reachable, and these exist
+  // so the plate's arithmetic lands at ~0% of rated instead of on a NaN.
+  transfunctioner: {
+    powerRating: 1.21e9,
+    maxVoltage: 1.21e9,
+    maxCurrent: 1.21e6,
+    thermalResistance: 0.5,
+  },
+  warp: {
+    powerRating: 1e12,
+    maxVoltage: 1e12,
+    maxCurrent: 1e9,
+    thermalResistance: 0.2,
+  },
+  dilithium: {
+    powerRating: 1e12,
+    maxVoltage: 1e12,
+    maxCurrent: 1e9,
+    thermalResistance: 0.3,
+  },
   generic: { powerRating: 0.25, thermalResistance: 60 },
 };
 
@@ -174,11 +332,39 @@ const LOCAL_THERMAL: Record<
   mosfet: { junctionLimitC: 175, absoluteMaxTempC: 200 },
   bjt: { junctionLimitC: 150, absoluteMaxTempC: 175 },
   relay: { junctionLimitC: 130, absoluteMaxTempC: 150 },
+  // Reported as ∞ by the plate rather than as a number — see the temperature
+  // readout in ArenaScene. A finite sentinel rather than Infinity so the
+  // percentage arithmetic above it stays real.
+  flux: { junctionLimitC: 1e9, absoluteMaxTempC: 1e9 },
+  transfunctioner: { junctionLimitC: 1e9, absoluteMaxTempC: 1e9 },
+  warp: { junctionLimitC: 1e9, absoluteMaxTempC: 1e9 },
+  dilithium: { junctionLimitC: 1e9, absoluteMaxTempC: 1e9 },
   generic: { junctionLimitC: 125, absoluteMaxTempC: 125 },
 };
 
 const LOCAL_FAMILY_KEYWORDS: Array<[RegExp, string]> = [
   [/^(res|resistor|r\d)/, "resistor"],
+  // ── Behind the bench ──────────────────────────────────────────────────────
+  // These two are checked FIRST because neither is what the roster thinks it
+  // is, and both would otherwise fall through to the generic profile:
+  //
+  //   flux      the flux capacitor does not fail. It is an easter egg and it
+  //             has no failure path (see EASTER_EGGS above, which catches it
+  //             even earlier than this table), so it needs a family of its own
+  //             rather than the generic thermal model. Kept here as well so
+  //             this table stays right on its own terms — it is the fallback
+  //             for a bench with no engine loaded, and `transfunctioner`,
+  //             `warp` and `dilithium` answer the same way: they never reach
+  //             this table either, and are named here only so the list of
+  //             families that do not behave like a resistor is complete in one
+  //             place.
+  //   transformer  two coupled windings on an iron core, which is the thing
+  //             the `inductor` family already models — copper on ferrite, with
+  //             the insulation as the critical sub-component. Left to the
+  //             generic profile it had no interior, no wound, and nothing
+  //             happened to it when the load ramp cooked everything else.
+  [/flux/, "flux"],
+  [/transformer/, "inductor"],
   [/^(cap|capacitor|c\d)/, "capacitor"],
   [/led/, "led"],
   [/(diode|rectifier|schottky|zener)/, "diode"],

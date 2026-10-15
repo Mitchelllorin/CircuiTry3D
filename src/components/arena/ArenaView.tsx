@@ -353,20 +353,25 @@ export default function ArenaView({
   const sessionLabel = sessionPayload?.sessionName ?? "CircuiTry3D Arena";
 
   /**
-   * The parts' own metric nameplates — OFF to begin with.
+   * The parts' own metric nameplates — ON to begin with.
    *
-   * They hang directly over the component they report on, so on this bench
-   * (one part, dead centre) the default put a slab of text in the middle of the
-   * workspace, over the very thing the run is about. Everything they carried —
-   * W.I.R.E., the temperature against its limit, the part's status — is on the
-   * console, which is where the arena keeps its instruments. The quick bar can
-   * summon them back for anyone who wants to read a number off the part itself.
+   * They used to start OFF, and the reason was sound at the time: the plate was
+   * a padded slab of tinted glass hanging over the one part the run was about,
+   * so the default put a window between you and your experiment. That slab is
+   * gone — a plate is now four lines of bare text with a halo, the same
+   * treatment as every other floating readout on this stage — and the pass that
+   * lays them out now guarantees two of them never share a pixel (see the
+   * stacking step in ArenaScene). With both of those true, off-by-default was
+   * hiding the instrument's own numbers for no remaining reason: a readout you
+   * have to go looking for is a readout that is not telling you anything, and
+   * the question "why have readouts I cannot read" is answered by making them
+   * readable and leaving them on.
    *
    * Held in the VIEW rather than in either bench, because the bench and the
    * battle are one instrument with a different experiment in it, and walking
    * between them should not silently change what the display is doing.
    */
-  const [showReadouts, setShowReadouts] = useState(false);
+  const [showReadouts, setShowReadouts] = useState(true);
   const toggleReadouts = useCallback(
     () => setShowReadouts((on) => !on),
     [],

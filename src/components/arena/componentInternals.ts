@@ -93,7 +93,15 @@ export type FailedInternal = {
  */
 const BUILDERS: Record<
   string,
-  { build: (three: Three, comp: ComponentComposition | null) => FamilyBuilt; align: "center" | "base" }
+  {
+    /**
+     * Null when the family's composition is missing or has no layers. The
+     * caller then keeps the generic wound, which is an honest fallback rather
+     * than a crash on a spec that was edited or imported without one.
+     */
+    build: (three: Three, comp: ComponentComposition | null) => FamilyBuilt | null;
+    align: "center" | "base";
+  }
 > = {};
 
 /** How far the package itself opens, per family. */
@@ -106,6 +114,29 @@ const PEEL: Record<string, { panels: number; angle: number }> = {
   // Epoxy cracks. It does not unfold like a flower — a few degrees of parting
   // is the whole difference between a cracked lens and a banana peel.
   led: { panels: 3, angle: 0.3 },
+  // ── The spec-driven families ──────────────────────────────────────────────
+  // How far each of these opens still comes from what the package IS, even
+  // though the inside of it is read off the composition (see
+  // buildFromSpecLayers). A metal or epoxy body splits at a seam and hinges
+  // stiffly; glass does not hinge at all; a relay's polycarbonate cover
+  // unclips and exposes the armature.
+  diode: { panels: 2, angle: 0.5 },
+  bjt: { panels: 3, angle: 0.55 },
+  mosfet: { panels: 3, angle: 0.55 },
+  battery: { panels: 2, angle: 0.6 },
+  switch: { panels: 2, angle: 1.05 },
+  fuse: { panels: 3, angle: 1.25 },
+  lamp: { panels: 3, angle: 1.0 },
+  relay: { panels: 2, angle: 0.85 },
+  inductor: { panels: 2, angle: 0.6 },
+  // Same composition as the inductor (see its aliases) — two windings instead
+  // of one, which is a difference in the spec, not in how the package opens.
+  transformer: { panels: 2, angle: 0.6 },
+  heatsink: { panels: 1, angle: 0.25 },
+  opamp: { panels: 2, angle: 0.5 },
+  voltage_regulator: { panels: 2, angle: 0.55 },
+  ic: { panels: 2, angle: 0.5 },
+  wire: { panels: 2, angle: 0.45 },
 };
 
 type FamilyBuilt = {
@@ -855,6 +886,191 @@ BUILDERS.resistor = { build: buildResistor, align: "center" };
 BUILDERS.capacitor = { build: buildCapacitor, align: "center" };
 BUILDERS.led = { build: buildLed, align: "base" };
 
+/**
+ * ── Everything else the library has a composition for ───────────────────────
+ *
+ * These three builders model a part's inside by hand, because for those parts
+ * the SHAPE of the death is the information: a resistor's film opens where it
+ * arced, an electrolytic's vent parts along its score, an LED's die cracks in
+ * two. That is worth authoring.
+ *
+ * The rest of the roster is not, and it does not need to be, because the thing
+ * an interior has to fix is the same for all of them: a blowout with no modelled
+ * inside tears a cavity in the casing and lights the inside of that cavity,
+ * which at close range is a dark faceted HOLE where the part's guts should be.
+ * A transformer that visibly does nothing, a relay that opens onto a void, a
+ * MOSFET whose package splits to reveal nothing at all — every one of those is
+ * the same defect, and every one of them is fixed by having the right parts
+ * inside.
+ *
+ * And the right parts are already written down. `componentCompositions.ts`
+ * carries `internalLayers` for every family the engine knows: the relay's iron
+ * core, coil and armature; the inductor's ferrite core and copper winding; the
+ * MOSFET's silicon die, copper lead frame and gold bond wires; the cell's
+ * manganese-dioxide cathode and zinc anode. `buildFromSpecLayers` turns those
+ * layers into meshes, so adding a family here is adding its NAME — and the
+ * dependency runs the right way: a corrected composition corrects the model of
+ * the inside of the part without touching this file.
+ *
+ * The one thing it does not do is animate. These families get no bespoke
+ * motion, and that is a decision rather than an omission: the failure they
+ * suffer is already told by the blowout kit — the flame, the arc, the shards,
+ * the smoke and the char all come from BLOWOUT_BY_FAMILY in failureFx.ts, which
+ * has covered all thirteen families since before this file existed. Inventing
+ * motion for a layer nobody specified would be the one thing a module whose
+ * whole argument is "it is driven by the spec, not by hand" cannot do.
+ *
+ * `flux` is deliberately absent: the flux capacitor is an easter egg and it does
+ * not fail (see the family keyword table in fuse.ts), so it never needs an
+ * interior to open.
+ */
+const SPEC_INTERIOR_FAMILIES = [
+  "relay",
+  "inductor",
+  "transformer",
+  "diode",
+  "bjt",
+  "mosfet",
+  "battery",
+  "switch",
+  "fuse",
+  "lamp",
+  "heatsink",
+  "opamp",
+  "voltage_regulator",
+  "ic",
+  "wire",
+];
+for (const family of SPEC_INTERIOR_FAMILIES) {
+  BUILDERS[family] = { build: buildFromSpecLayers, align: "center" };
+}
+
+/**
+ * The layers a package is made of, read out of the spec and turned into meshes.
+ *
+ * Unit primitives with the layer's own `scale` applied, so the SIZE is the
+ * spec's number and not a number chosen here. Which axis the part runs along is
+ * measured rather than declared: the compositions lay a wire along X and a relay
+ * deepest in Z, and the long axis of the assembled layers is the body axis, so
+ * the frame is turned to put that axis on +Y — the convention every interior in
+ * this module is authored in.
+ */
+function buildFromSpecLayers(
+  three: Three,
+  comp: ComponentComposition | null,
+): FamilyBuilt | null {
+  const layers = comp?.internalLayers ?? [];
+  if (!layers.length) {
+    return null;
+  }
+
+  const interior = new three.Group();
+  const disposables: { dispose: () => void }[] = [];
+
+  for (const layer of layers) {
+    // The outermost layer is the PACKAGE, and the package is already there —
+    // it is the casing that just split into panels. Modelling it a second time
+    // inside itself would draw a ghost shell inside the shell, so a layer that
+    // names itself as the enclosure is skipped. Never all of them: a part whose
+    // spec is nothing but its housing keeps its housing rather than opening
+    // onto nothing.
+    if (layers.length > 1 && PACKAGE_LAYER_LABEL.test(layer.label)) {
+      continue;
+    }
+    const geometry = specLayerGeometry(three, layer);
+    const material = standard(three, {
+      color: layer.color,
+      // Metals take almost all of their appearance from the environment, and
+      // the spec's own material library is the thing that knows which is which.
+      metalness: METAL_MATERIAL_KEYS.has(layer.materialKey) ? 0.85 : 0.06,
+      roughness: METAL_MATERIAL_KEYS.has(layer.materialKey) ? 0.34 : 0.66,
+      opacity: layer.opacity < 1 ? layer.opacity : undefined,
+    });
+    const mesh = new three.Mesh(geometry, material);
+    mesh.position.set(layer.position[0], layer.position[1], layer.position[2]);
+    if (layer.rotation) {
+      mesh.rotation.set(layer.rotation[0], layer.rotation[1], layer.rotation[2]);
+    }
+    mesh.scale.set(layer.scale[0], layer.scale[1], layer.scale[2]);
+    interior.add(mesh);
+    disposables.push(geometry, material);
+  }
+
+  if (!interior.children.length) {
+    return null;
+  }
+
+  interior.updateMatrixWorld(true);
+  const declared = new three.Box3().setFromObject(interior);
+  const size = declared.getSize(new three.Vector3());
+  if (size.x >= size.y && size.x >= size.z) {
+    interior.rotation.z = Math.PI / 2; // X onto Y
+  } else if (size.z >= size.y && size.z >= size.x) {
+    interior.rotation.x = -Math.PI / 2; // Z onto Y
+  }
+  interior.updateMatrixWorld(true);
+  const laid = new three.Box3().setFromObject(interior);
+
+  return {
+    interior,
+    // Measured from the axis outward, so an off-centre layer counts full.
+    specRadius: Math.max(
+      Math.max(Math.abs(laid.min.x), Math.abs(laid.max.x)),
+      Math.max(Math.abs(laid.min.z), Math.abs(laid.max.z)),
+      0.001,
+    ),
+    specSpan: [laid.min.y, laid.max.y],
+    animate: () => {},
+    disposables,
+  };
+}
+
+/** The layer's own primitive, unit-sized so the spec's `scale` IS the size. */
+function specLayerGeometry(
+  three: Three,
+  layer: InternalLayer,
+): import("three").BufferGeometry {
+  switch (layer.type) {
+    case "box":
+      return new three.BoxGeometry(1, 1, 1);
+    case "sphere":
+      return new three.SphereGeometry(0.5, 20, 14);
+    case "cone":
+      return new three.ConeGeometry(0.5, 1, 20);
+    case "torus":
+      return new three.TorusGeometry(0.5, 0.14, 12, 32);
+    case "cylinder":
+    default:
+      return new three.CylinderGeometry(0.5, 0.5, 1, 20);
+  }
+}
+
+/** Labels that mean "this layer IS the package". */
+const PACKAGE_LAYER_LABEL =
+  /\b(housing|package|enclosure|envelope|jacket|can|body|case|shell)\b/i;
+
+/**
+ * Material keys that are metals, so an interior does not read as painted
+ * plastic. The spec's own `materialKey` decides, rather than the layer's colour:
+ * a brass terminal is brass whatever hex the authoring pass gave it.
+ */
+const METAL_MATERIAL_KEYS = new Set([
+  "copper",
+  "gold",
+  "silver",
+  "aluminum",
+  "nickel",
+  "tin",
+  "solder_lead_tin",
+  "silver_tin_eutectic",
+  "steel",
+  "stainless_steel",
+  "brass",
+  "zinc",
+  "ag_cdo",
+  "nichrome",
+]);
+
 // ---------------------------------------------------------------------------
 // Opening the package
 // ---------------------------------------------------------------------------
@@ -1148,6 +1364,11 @@ export function createInternalsReveal(
   }
 
   const built = entry.build(three, getComponentComposition(family) ?? null);
+  if (!built) {
+    // No layers to model — an imported spec without a composition, say. The
+    // caller keeps the generic wound rather than opening onto an empty shell.
+    return null;
+  }
   const { group: panelsGroup, panels, disposables: panelDisposables } =
     buildPanels(three, casing, peel);
 

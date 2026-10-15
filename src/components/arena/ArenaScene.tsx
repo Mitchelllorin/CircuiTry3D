@@ -12,6 +12,7 @@ import {
   type BlowoutTextures,
 } from "./failureFx";
 import { createInternalsReveal, failedInternal } from "./componentInternals";
+import { failSignatureFor, type FailSmoke } from "./deathSignatures";
 import { isMobile } from "../../utils/mobilePerformance";
 import type { Vec2 } from "../../schematic/types";
 import { STRESS_MAX } from "./stressTest";
@@ -124,228 +125,6 @@ function fmtWatts(watts: number): string {
   return `${Math.round(watts * 1000)}mW`;
 }
 
-/** Duration (ms) of the violent flash-punch when a component fails. */
-const FAIL_POP_MS = 900;
-
-/**
- * How each family of component actually dies.
- *
- * F.U.S.E. already names the characteristic failure per family (see
- * STRESS_SIGNATURE_BY_FAMILY in arenaData.ts) — this is what that failure LOOKS
- * like, so a vented electrolytic never reads like a burnt-out LED.
- *
- *   motion  how the body behaves as it lets go
- *   popMs   how long the letting-go moment lasts
- *   flash   peak emissive at the moment it fails
- *   ember   residual glow once it has settled (0 = stone cold)
- *   hot     afterglow is molten orange rather than charcoal
- *   char    how far the body blackens (0 = unmarked, 1 = carbonised)
- *   smoke   the plume it gives off, if it gives off one at all
- */
-type FailMotion = "burst" | "vent" | "smoulder" | "flashOut" | "arc" | "sag";
-
-/**
- * A failure plume. Deliberately optional: an LED or a fuse produces NO smoke,
- * and that absence is as diagnostic as a resistor's black cloud — you can tell
- * a cooked resistor from a blown lamp across a workshop by the smoke alone.
- *
- *   rate      puffs per second at the peak of the event
- *   forMs     how long it keeps smoking after it fails (0 = only during the pop)
- *   rise      how fast a puff climbs (units/sec)
- *   spread    lateral drift + how much a puff swells as it disperses
- *   tint      smoke colour — resistor carbon black vs electrolyte white
- *   opacity   peak opacity of a single puff
- */
-type FailSmoke = {
-  rate: number;
-  forMs: number;
-  rise: number;
-  spread: number;
-  tint: string;
-  opacity: number;
-};
-
-type FailSignature = {
-  motion: FailMotion;
-  popMs: number;
-  flash: number;
-  ember: number;
-  hot?: boolean;
-  char?: number;
-  smoke?: FailSmoke;
-};
-
-const FAIL_SIGNATURE_BY_FAMILY: Record<string, FailSignature> = {
-  // Blackens, blisters and cracks open. Smokes, but nothing flies apart.
-  // An overloaded carbon/metal-film resistor doesn't explode — it cooks. The
-  // body carbonises almost fully and gives off a thin, dark, lazy plume that
-  // outlasts the failure itself by several seconds.
-  resistor: {
-    motion: "smoulder",
-    popMs: 1400,
-    flash: 2.2,
-    ember: 0.5,
-    char: 0.92,
-    smoke: {
-      rate: 26,
-      forMs: 6500,
-      rise: 0.75,
-      spread: 0.46,
-      // Sprites are unlit, so the tint IS the final pixel colour. Carbon smoke
-      // is dark in daylight but the arena is a dark dome — a near-black plume
-      // (this was #2b2926) is literally invisible against it. Real smoke reads
-      // PALE because it scatters the light falling on it, so this is the lit
-      // appearance of a sooty plume, not a lightened cartoon of it.
-      tint: "#b0a79d",
-      opacity: 0.72,
-    },
-  },
-  // Electrolytics bulge, split the scored top and vent hot electrolyte.
-  // Scorched around the vent rather than blackened through.
-  capacitor: {
-    motion: "vent",
-    popMs: 1100,
-    flash: 3.4,
-    ember: 0.35,
-    hot: true,
-    char: 0.5,
-    // Vented electrolyte flashes off as a WHITE cloud — the one smoke on this
-    // bench that is genuinely pale rather than pale-because-it-is-lit, and it
-    // leaves fast and straight up out of the split vent.
-    smoke: {
-      rate: 40,
-      forMs: 2600,
-      rise: 1.5,
-      spread: 0.3,
-      tint: "#e8e4dc",
-      opacity: 0.66,
-    },
-  },
-  // Junction opens: one over-bright flash, then dark. Package stays intact,
-  // but the epoxy clouds and darkens over the dead die.
-  led: { motion: "flashOut", popMs: 260, flash: 4.2, ember: 0, char: 0.38 },
-  diode: {
-    motion: "burst",
-    popMs: 420,
-    flash: 3.2,
-    ember: 0.1,
-    char: 0.62,
-    smoke: {
-      rate: 16,
-      forMs: 1800,
-      rise: 0.9,
-      spread: 0.34,
-      tint: "#a49a90",
-      opacity: 0.6,
-    },
-  },
-  // Insulation cooks off the windings — slow, heavy smoke and a sagging coil.
-  inductor: {
-    motion: "smoulder",
-    popMs: 1800,
-    flash: 1.8,
-    ember: 0.6,
-    hot: true,
-    char: 0.72,
-  },
-  // Swells and vents hot gas, then stays dangerously hot long afterwards.
-  battery: {
-    motion: "vent",
-    popMs: 2000,
-    flash: 2.6,
-    ember: 0.85,
-    hot: true,
-    char: 0.45,
-    // The heaviest, longest-lasting cloud on the bench, because a cell that
-    // lets go keeps reacting long after the bang.
-    smoke: {
-      rate: 34,
-      forMs: 9000,
-      rise: 1.1,
-      spread: 0.6,
-      tint: "#c9c2b6",
-      opacity: 0.74,
-    },
-  },
-  // Doing exactly its job: the element melts quietly, the glass darkens with
-  // vaporised metal — a blown fuse is sooted on the inside.
-  fuse: { motion: "flashOut", popMs: 340, flash: 2.8, ember: 0.05, char: 0.66 },
-  // Filament flashes white and opens; the envelope blackens where it deposited.
-  lamp: { motion: "flashOut", popMs: 300, flash: 4.5, ember: 0, char: 0.44 },
-  // Silicon lets go hard enough to split the package — magic smoke escapes.
-  // The smoke is the whole folklore of this failure, so it had better be there:
-  // a single dense jet straight out of the hole in the top of the package.
-  mosfet: {
-    motion: "burst",
-    popMs: 500,
-    flash: 3.8,
-    ember: 0.2,
-    char: 0.85,
-    smoke: {
-      rate: 30,
-      forMs: 3200,
-      rise: 1.35,
-      spread: 0.28,
-      tint: "#9c948a",
-      opacity: 0.78,
-    },
-  },
-  bjt: {
-    motion: "burst",
-    popMs: 500,
-    flash: 3.6,
-    ember: 0.2,
-    char: 0.85,
-    smoke: {
-      rate: 28,
-      forMs: 3000,
-      rise: 1.3,
-      spread: 0.28,
-      tint: "#9c948a",
-      opacity: 0.76,
-    },
-  },
-  // Contacts arc: a stuttering train of sparks, the body itself undamaged —
-  // so it must NOT blacken. Only the contacts are pitted, and you can't see them.
-  switch: { motion: "arc", popMs: 1500, flash: 3, ember: 0, char: 0.08 },
-  relay: { motion: "arc", popMs: 1200, flash: 2.4, ember: 0.15, char: 0.15 },
-  generic: {
-    motion: "smoulder",
-    popMs: FAIL_POP_MS,
-    flash: 2.4,
-    ember: 0.3,
-    char: 0.6,
-    smoke: {
-      rate: 20,
-      forMs: 4200,
-      rise: 0.85,
-      spread: 0.42,
-      tint: "#aaa298",
-      opacity: 0.68,
-    },
-  },
-};
-
-/**
- * The family decides HOW a part dies; the F.U.S.E. failure mode then modulates
- * it — something that melted stays molten and slumps, something that blew out
- * goes faster and harder than it otherwise would.
- */
-function failSignatureFor(family: string, visual: string | null): FailSignature {
-  const base = FAIL_SIGNATURE_BY_FAMILY[family] ?? FAIL_SIGNATURE_BY_FAMILY.generic;
-  if (visual === "melt") {
-    return {
-      ...base,
-      motion: base.motion === "burst" ? "sag" : base.motion,
-      ember: Math.max(base.ember, 0.7),
-      hot: true,
-    };
-  }
-  if (visual === "blowout" && base.motion === "smoulder") {
-    return { ...base, motion: "burst", popMs: Math.min(base.popMs, 600) };
-  }
-  return base;
-}
 
 type OrbitControlsInstance = {
   enabled: boolean;
@@ -689,6 +468,18 @@ const EMITTERS: Record<
 > = {
   led: { emissive: 2.1, light: 2.8 },
   lamp: { emissive: 2.4, light: 5.0, lightColor: "#ffcf8a" },
+  // The flux capacitor's cell is lit before anything is asked of it — it is a
+  // time-circuit core sitting on a bench, and the whole reason one is on the
+  // roster is that you recognise it across the room. Bluer and stronger than
+  // an LED's, and it never goes out: see the family table in fuse.ts.
+  "flux-capacitor": { emissive: 3.1, light: 4.4, lightColor: "#8ff6ff" },
+  // The other three easter eggs, lit for the same reason: each one is a shape
+  // you are meant to place from across the room. Green for the transfunctioner
+  // (its plates are its whole face), blue for the warp grilles, and a pink cast
+  // for the crystal, which is translucent — the light is what proves it.
+  "continuum-transfunctioner": { emissive: 2.6, light: 3.2, lightColor: "#7ef9a0" },
+  "warp-drive": { emissive: 2.8, light: 3.6, lightColor: "#8ff6ff" },
+  "dilithium-crystal": { emissive: 2.4, light: 3.0, lightColor: "#ff9de0" },
 };
 
 function createComponentGroup(
@@ -1235,17 +1026,18 @@ const NAMEPLATE_STACK_GAP_PX = 3;
 const NAMEPLATE_COLUMN_PAD_PX = 4;
 
 /**
- * How much overlap is simply tolerated before a plate is stepped at all.
+ * How far a plate steps when it is looking for a free slot, px.
  *
- * Deliberately non-zero. Resolving every last pixel of collision means plates
- * jumping around constantly as the bench turns — the cure reads worse than the
- * disease, because motion draws the eye far harder than a few shared pixels do.
- * A touch of overlap on a rotating scene is nothing; a stack that reshuffles
- * every frame is a distraction sitting on top of the thing you are watching.
- * So: step only when they genuinely obscure each other, and step by the least
- * that clears it.
+ * This replaced a slack constant that let plates share a few pixels before
+ * anything moved. That tolerance was written for plates with panels behind the
+ * text, where a chip could absorb an overlap and still be read; with the panels
+ * off, two lines of glyphs printed over one another ARE the failure the reader
+ * sees, so the search is exact and the only question left is how finely it
+ * feels for a gap. Two pixels: fine enough that a plate lands within a couple of
+ * pixels of the nearest free spot, coarse enough that the whole pass is a
+ * handful of comparisons per plate per frame.
  */
-const NAMEPLATE_OVERLAP_SLACK_PX = 7;
+const NAMEPLATE_STACK_STEP_PX = 2;
 
 /**
  * Height to keep clear at the bottom of the scene, px. The collapsed bench bar
@@ -5263,43 +5055,92 @@ export function ArenaScene({
           });
         });
 
-        // ── Step overlapping nameplates apart ──────────────────────────────
-        // Lowest plate on screen keeps its place and everything that collides
-        // with it climbs, so the stack grows AWAY from the board and no plate
-        // is pushed down over the parts. Only plates sharing a column move:
-        // two plates side by side are already readable and lifting them would
-        // just break the link between a readout and the part it belongs to.
+        // ── Lay the plates out so that no two share a pixel ────────────────
+        // Lowest plate on screen keeps its natural place; every plate after it
+        // takes the free slot NEAREST its own part.
+        //
+        // This used to be a single forward pass with a tolerance in it, and the
+        // tolerance was the bug the moment the panels came off these plates: a
+        // chip can absorb a few shared pixels because each chip brings its own
+        // ground, but two lines of bare glyphs printed over each other are not
+        // text any more. There is nothing to tolerate. Worse, that pass could
+        // move a plate and never re-check it against the plates it had just been
+        // moved past, so a column of three could still end up with two of them
+        // on the same pixels.
+        //
+        // So: walk outward from where each plate wants to be — UP first, because
+        // a label belongs above its part and up is the direction with room in it,
+        // then down into the band between the parts and the console — two pixels
+        // at a time, and stop at the first position that touches nothing already
+        // placed. Separation is the invariant here, not a target: the search
+        // cannot terminate on an occupied slot, so two plates cannot be laid on
+        // top of one another. Stateless like the rest of this pass — the same
+        // camera always yields the same layout, so there is nothing to oscillate.
         plateLayout.sort((a, b) => b.bottom - a.bottom);
-        for (let i = 1; i < plateLayout.length; i += 1) {
+        const lowestPlateY = root.clientHeight - 6;
+        for (let i = 0; i < plateLayout.length; i += 1) {
           const plate = plateLayout[i]!;
           if (!plate.visible) {
             continue;
           }
-          for (let j = 0; j < i; j += 1) {
-            const placed = plateLayout[j]!;
-            if (!placed.visible) {
-              continue;
+          // The HUD strip owns the top of the scene and the console owns the
+          // bottom few pixels, so the band a plate may occupy is bounded.
+          const minBottom = Math.min(
+            plateCeiling + plate.height,
+            lowestPlateY,
+          );
+          const natural = Math.min(
+            Math.max(plate.bottom, minBottom),
+            lowestPlateY,
+          );
+
+          /** True when a plate whose bottom sits at `bottom` hides one already placed. */
+          const clashes = (bottom: number): boolean => {
+            for (let j = 0; j < i; j += 1) {
+              const placed = plateLayout[j]!;
+              if (!placed.visible) {
+                continue;
+              }
+              // Side by side is already readable: plates only compete for a
+              // slot when their boxes share a column.
+              if (
+                Math.abs(plate.x - placed.x) >=
+                (plate.width + placed.width) / 2 + NAMEPLATE_COLUMN_PAD_PX
+              ) {
+                continue;
+              }
+              const clearAbove =
+                bottom <= placed.bottom - placed.height - NAMEPLATE_STACK_GAP_PX;
+              const clearBelow =
+                placed.bottom <= bottom - plate.height - NAMEPLATE_STACK_GAP_PX;
+              if (!clearAbove && !clearBelow) {
+                return true;
+              }
             }
-            const columnGap =
-              (plate.width + placed.width) / 2 + NAMEPLATE_COLUMN_PAD_PX;
-            if (Math.abs(plate.x - placed.x) >= columnGap) {
-              continue; // side by side — no collision to resolve
-            }
-            const placedTop = placed.bottom - placed.height;
-            // Measured overlap, not merely "do these touch" — see
-            // NAMEPLATE_OVERLAP_SLACK_PX. A few shared pixels while the bench
-            // turns are fine and cost nothing; plates that hop every frame to
-            // avoid them are not.
-            const shared =
-              Math.min(plate.bottom, placed.bottom) -
-              Math.max(plate.bottom - plate.height, placedTop);
-            if (shared > NAMEPLATE_OVERLAP_SLACK_PX) {
-              plate.bottom = placedTop - NAMEPLATE_STACK_GAP_PX;
+            return false;
+          };
+
+          let chosen = natural;
+          if (clashes(natural)) {
+            const span = Math.max(lowestPlateY - minBottom, 1);
+            for (
+              let step = NAMEPLATE_STACK_STEP_PX;
+              step <= span;
+              step += NAMEPLATE_STACK_STEP_PX
+            ) {
+              const up = natural - step;
+              if (up >= minBottom && !clashes(up)) {
+                chosen = up;
+                break;
+              }
+              const down = natural + step;
+              if (down <= lowestPlateY && !clashes(down)) {
+                chosen = down;
+                break;
+              }
             }
           }
-          // Never let the stack climb into the HUD: the topmost plate stops
-          // below the strip rather than mixing its numbers with it.
-          plate.bottom = Math.max(plate.bottom, plate.height + plateCeiling);
+          plate.bottom = chosen;
         }
 
         // Land every plate on a whole DEVICE pixel, with the centring folded in as
@@ -5383,22 +5224,29 @@ export function ArenaScene({
           and darkness everywhere else. Kept inside the scene so it cannot
           touch the perimeter UI, which is deliberately staged over it. */}
       <div ref={isolateOverlayRef} className="arena-scene__isolate" aria-hidden />
-      {/* F.U.S.E.™ mark — the engine powering the failure physics, same little
-          corner watermark the main builder UI carries. */}
+      {/*
+        F.U.S.E.™ corner watermark — the same mark as the main workspace's
+        bottom-left (legacy.html #fuse-watermark), same copy, same styling.
+
+        There were briefly TWO of these in the arena: this one, and a second
+        placed at the very bottom-left corner of the viewport. The console is
+        fixed across the foot of the screen at z-index 1250, so the second one
+        lived its whole life behind the dashboard — two copies of the same mark,
+        one of them invisible, which reads as a duplicated watermark that will
+        not go away. The one that SURVIVES is this one, and the stylesheet keeps
+        it clear of the console it sits above rather than under.
+      */}
       <div
-        className="arena-fuse-watermark"
+        className="fuse-watermark"
         role="img"
-        aria-label="Powered by F.U.S.E.™ — Failure Understanding Simulation Engine"
+        aria-label="Powered by FUSE™ — Failure Understanding Simulation Engine"
       >
         ⚡ F.U.S.E.™
-        <span className="arena-fuse-watermark__sub">
-          Failure Understanding Simulation Engine
-        </span>
+        <span className="fuse-watermark__sub">Failure Understanding Simulation Engine</span>
       </div>
       {/* No test console. The switch on the board IS the control now — you throw
-          it in 3D and the bench runs. A slab of UI parked in the middle of the
-          stage was covering the very thing it was controlling. What survives is
-          a single containerless readout of the load, bottom-left, out of the way. */}
+          it in 3D and the bench runs. What survives is a single containerless
+          readout of the load, bottom-left, out of the way. */}
       {workspaceMode && !panelOpen ? (
         <div className="arena-load-readout" aria-live="polite">
           <b>{stressFactor.toFixed(1)}×</b>
@@ -5414,19 +5262,6 @@ export function ArenaScene({
           </em>
         </div>
       ) : null}
-      {/*
-        F.U.S.E.™ corner watermark — the same mark as the main workspace's
-        bottom-left (legacy.html #fuse-watermark), same copy, same styling.
-        The arena is where F.U.S.E. actually does its work, so it belongs here.
-      */}
-      <div
-        className="fuse-watermark"
-        role="img"
-        aria-label="Powered by FUSE™ — Failure Understanding Simulation Engine"
-      >
-        ⚡ F.U.S.E.™
-        <span className="fuse-watermark__sub">Failure Understanding Simulation Engine</span>
-      </div>
       {/*
         The load dial's readout. Deliberately a bare floating label — the value,
         its units, and what it is a multiple OF, with no background slab. It has
@@ -5685,7 +5520,19 @@ export function ArenaScene({
                 className={`arena-nameplate__temp${overTemp ? " is-hot" : ""}`}
               >
                 {Math.round(agent.tempC)}°C
-                <i>/{Math.round(agent.ratings.junctionLimitC)}°C rated</i>
+                {/* A part with no reachable limit says so. The flux capacitor
+                    is the case that exists today: its rating is Infinity, and
+                    "Infinity°C rated" on a plate is a spreadsheet leaking into
+                    an instrument — the mark for it is ∞, which is what a real
+                    panel would print and what a reader already knows how to
+                    read. */}
+                <i>
+                  /
+                  {Number.isFinite(agent.ratings.junctionLimitC) &&
+                  agent.ratings.junctionLimitC < 1e6
+                    ? `${Math.round(agent.ratings.junctionLimitC)}°C rated`
+                    : "∞ rated"}
+                </i>
               </div>
             </div>
           );

@@ -41,6 +41,29 @@ const STRESS_SIGNATURE_BY_FAMILY: Record<string, string> = {
   bjt: "Collector Burnout",
   switch: "Contact Arcing",
   relay: "Contact Welding",
+  // ── The rest of the families the engine can resolve ────────────────────────
+  // Names taken from the engine's own mode table, not invented here: this
+  // string is what the plate calls the test, so it has to be the same failure
+  // F.U.S.E. reports when it trips. Every entry below was missing, and a
+  // missing entry fell through to `generic` — a transformer being tested
+  // against "Thermal Overload" and dying like nothing in particular.
+  transformer: "Winding Insulation Breakdown",
+  motor: "Winding Burnout",
+  thermistor: "Self-Heating Deviation",
+  zener_diode: "Zener Punch-Through",
+  opamp: "Output Stage Burnout",
+  voltage_regulator: "Thermal Shutdown / Burnout",
+  ic: "Thermal Die Failure",
+  heatsink: "Thermal Saturation",
+  crystal: "Crystal Drive Overdrive",
+  wire: "Insulation Burnthrough",
+  // The parts that are not on trial say so here, on the card, where every other
+  // family names the failure it is being run against. A card reading "Thermal
+  // Overload" over a warp core is the one thing this table must never print.
+  flux: "No Failure Path Modelled",
+  transfunctioner: "Transfunctioned (Unspecified)",
+  warp: "Warp Field Integrity",
+  dilithium: "Lattice Recrystallisation",
   generic: "Thermal Overload",
 };
 

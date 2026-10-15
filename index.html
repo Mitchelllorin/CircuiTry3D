@@ -208,7 +208,15 @@
       
       #root {
         width: 100%;
+        /* Both units, in this order — the same pairing every full-height
+           surface in layout.css already uses. 100vh is the LARGE viewport on
+           a phone: it measures the screen as if the browser's URL bar were
+           hidden, so a shell sized to it runs taller than the glass and its
+           bottom — where the arena console lives — ends up under the browser
+           chrome. 100dvh tracks the chrome, and browsers without it fall back
+           to the 100vh line above. */
         height: 100vh;
+        height: 100dvh;
         overscroll-behavior: contain;
       }
       

@@ -15,7 +15,6 @@ import "./styles/layout.css";
 
 // Lazy-load pages
 const Builder = lazy(() => import("./pages/Builder"));
-const Arena = lazy(() => import("./pages/Arena"));
 const Practice = lazy(() => import("./pages/Practice"));
 const Pricing = lazy(() => import("./pages/Pricing"));
 const Community = lazy(() => import("./pages/Community"));
@@ -70,7 +69,6 @@ export default function App() {
           <Route element={<AppLayout />}>
             <Route path="/" element={<Home />} />
             <Route path="/app" element={<Builder />} />
-            <Route path="/arena" element={<Arena />} />
             <Route path="/practice" element={<Practice />} />
             <Route path="/pricing" element={<Pricing />} />
             <Route path="/community" element={<Community />} />
@@ -129,7 +127,6 @@ function AppLayout() {
   const { t } = useTranslation();
   const isLanding = location.pathname === "/";
   const isWorkspace = location.pathname === "/app";
-  const isArena = location.pathname === "/arena";
   const isPromo = location.pathname === "/promo";
   const isPromo2 = location.pathname === "/promo2";
   const isPromo3 = location.pathname === "/promo3";
@@ -198,8 +195,15 @@ function AppLayout() {
           footer — layout.css calls for "full-viewport treatment — no mode bar /
           ticker / footer". The footer only added ~45px of dead scroll below the
           scene. It stays off the shell classes because those rules also zero
-          .app-content's padding-top, which is what clears the fixed mode bar. */}
-      {!isLanding && !isWorkspace && !isAnyPromo && !isArena && (
+          .app-content's padding-top, which is what clears the fixed mode bar.
+
+          The arena used to be reached by its own /arena route, which needed the
+          footer suppressed here as well; it is opened as a workspace mode of
+          /app now (see GlobalModeBar and Builder's openArenaWorkspace), and the
+          is-workspace branch above already covers it. ArenaView still stamps
+          .is-arena onto the shell while it is mounted, which is what stands the
+          tip strip down — that class was never the router's to set. */}
+      {!isLanding && !isWorkspace && !isAnyPromo && (
         <footer className="app-footer">
           <Link to="/privacy" className="app-footer-link">{t("footer.privacyPolicy")}</Link>
           <span className="app-footer-sep" aria-hidden="true">·</span>

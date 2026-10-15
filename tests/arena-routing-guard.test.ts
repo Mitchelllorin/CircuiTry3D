@@ -8,9 +8,15 @@ function read(path: string): string {
   return readFileSync(path, "utf8");
 }
 
+// The router lives at src/App.tsx. This guard used to read src/routes/App.tsx,
+// which does not exist — readFileSync threw on every run, so the one assertion
+// meant to catch a standalone arena route never actually inspected a file. The
+// path is the only thing that changed here; the assertions are as written.
+const APP_ROUTER = `${ROOT}/src/App.tsx`;
+
 describe("Arena routing guard", () => {
   it("does not expose a standalone /arena route in App.tsx", () => {
-    const appRoutes = read(`${ROOT}/src/routes/App.tsx`);
+    const appRoutes = read(APP_ROUTER);
     expect(appRoutes).not.toMatch(/path=["']\/arena["']/);
     expect(appRoutes).not.toContain("const Arena = lazy(() => import(\"../pages/Arena\"))");
   });

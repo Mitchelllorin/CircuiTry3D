@@ -951,6 +951,24 @@ export const BLOWOUT_BY_FAMILY: Record<string, FailBlowout> = {
     scorch: 0.9,
     rupture: 0.3,
   },
+  // A transformer is the coil's failure at twice the size: two windings
+  // cooking, and an iron core that lets go of its laminations. Same physics —
+  // it is the insulation that burns — so the shape of the event is the
+  // inductor's, scaled to the part. Without this entry a transformer fell back
+  // to `generic` and the one part on the bench with the most iron in it came
+  // apart like nothing in particular.
+  transformer: {
+    shards: 3,
+    shardSpeed: 1.8,
+    shardSize: 0.06,
+    sparks: 7,
+    sparkSpeed: 2.2,
+    flameMs: 4600,
+    flameSize: 0.38,
+    vent: "up",
+    scorch: 1.0,
+    rupture: 0.35,
+  },
   // Vents hot gas and burns for a long time afterwards. A cell that lets go is
   // the one failure on this bench that is genuinely dangerous.
   battery: {
@@ -1042,6 +1060,139 @@ export const BLOWOUT_BY_FAMILY: Record<string, FailBlowout> = {
     flameSize: 0,
     vent: "radial",
     scorch: 0.2,
+    rupture: 0,
+  },
+  // ── The rest of the engine's families ──────────────────────────────────────
+  // Every one of these was falling through to `generic`, which is why a
+  // transformer and a MOSFET used to come apart in the same shape. Same rule as
+  // everywhere else in this file: what the part is MADE of sets the shape, and
+  // the F.U.S.E. failure mode then modulates it.
+
+  // Iron laminations, copper and varnish — heavy, so it throws little and burns
+  // for a long time. A transformer does not shatter; it cooks and splits.
+  motor: {
+    shards: 2,
+    shardSpeed: 1.6,
+    shardSize: 0.07,
+    sparks: 5,
+    sparkSpeed: 2,
+    flameMs: 5200,
+    flameSize: 0.4,
+    vent: "up",
+    scorch: 1.0,
+    rupture: 0.3,
+  },
+  // A 5 mm bead. There is nothing in it to throw, so it must not.
+  thermistor: {
+    shards: 1,
+    shardSpeed: 1.4,
+    shardSize: 0.035,
+    sparks: 3,
+    sparkSpeed: 1.4,
+    flameMs: 800,
+    flameSize: 0.14,
+    vent: "radial",
+    scorch: 0.5,
+    rupture: 0.25,
+  },
+  // The same junction as a diode, avalanching the other way. Same shape.
+  zener_diode: {
+    shards: 2,
+    shardSpeed: 2.2,
+    shardSize: 0.045,
+    sparks: 6,
+    sparkSpeed: 2.6,
+    flameMs: 1200,
+    flameSize: 0.22,
+    vent: "radial",
+    scorch: 0.7,
+    rupture: 0.5,
+  },
+  // A little die in a big epoxy body: the case takes the whole event and the
+  // jet comes out of the split in the top.
+  opamp: {
+    shards: 5,
+    shardSpeed: 3.4,
+    shardSize: 0.05,
+    sparks: 10,
+    sparkSpeed: 3.6,
+    flameMs: 1800,
+    flameSize: 0.3,
+    vent: "up",
+    scorch: 0.9,
+    rupture: 0.85,
+  },
+  // Melts rather than bursts — a TO-220 that slid into thermal shutdown sags on
+  // its leads and weeps, so it throws almost nothing.
+  voltage_regulator: {
+    shards: 1,
+    shardSpeed: 1.2,
+    shardSize: 0.05,
+    sparks: 4,
+    sparkSpeed: 1.6,
+    flameMs: 2200,
+    flameSize: 0.26,
+    vent: "up",
+    scorch: 0.8,
+    rupture: 0.25,
+  },
+  // The widest cavity in any plastic package here, emptied in one go: the
+  // most violent of the three silicon families.
+  ic: {
+    shards: 6,
+    shardSpeed: 4.2,
+    shardSize: 0.05,
+    sparks: 14,
+    sparkSpeed: 5,
+    flameMs: 2000,
+    flameSize: 0.34,
+    vent: "up",
+    scorch: 1.0,
+    rupture: 1.0,
+  },
+  // A block of extruded aluminium, and the only part here with nothing that
+  // CAN burn. Saturation discolours the anodising and leaves it hot: no
+  // shrapnel, no sparks, no flame, and a scorch that is a stain rather than
+  // carbon. Anything more would be a shape borrowed from a component it is not.
+  heatsink: {
+    shards: 0,
+    shardSpeed: 0,
+    shardSize: 0,
+    sparks: 0,
+    sparkSpeed: 1,
+    flameMs: 0,
+    flameSize: 0,
+    vent: "radial",
+    scorch: 0.25,
+    rupture: 0,
+  },
+  // A sealed can that cracks. It can throw its lid, but it cannot smoke —
+  // there is no oxygen and nothing volatile inside it.
+  crystal: {
+    shards: 3,
+    shardSpeed: 2.6,
+    shardSize: 0.04,
+    sparks: 0,
+    sparkSpeed: 1.2,
+    flameMs: 0,
+    flameSize: 0,
+    vent: "radial",
+    scorch: 0.1,
+    rupture: 0.5,
+  },
+  // Nothing to rupture — the failure IS the jacket, burning along the run. So
+  // no shards at all and the fire is spread along the part rather than
+  // concentrated at a seam.
+  wire: {
+    shards: 0,
+    shardSpeed: 0,
+    shardSize: 0,
+    sparks: 8,
+    sparkSpeed: 2.4,
+    flameMs: 2600,
+    flameSize: 0.3,
+    vent: "radial",
+    scorch: 0.7,
     rupture: 0,
   },
   generic: {
