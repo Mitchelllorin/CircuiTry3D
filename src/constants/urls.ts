@@ -31,4 +31,5 @@ export const STUDIO_SITES = [
   { label: "AutoMotive3D.ca", href: "https://automotive3d.ca" },
   { label: "AnyBody3D.com", href: "https://anybody3d.com" },
   { label: "TheCell3D.com", href: "https://thecell3d.com" },
+  { label: "3DLearningFamily.com", href: "https://3dlearningfamily.com" },
 ] as const;
