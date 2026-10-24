@@ -15,6 +15,10 @@ on:
         description: 'Version name (e.g. 1.2.0). Leave blank to auto-generate as 1.0.<run_number>.'
         required: false
         default: ''
+      version_code:
+        description: 'Version code (integer, must be higher than any code Play has seen). Leave blank for <run_number> + 2.'
+        required: false
+        default: ''
 
 # Only one AAB build at a time. Now that runs are started by hand, the one being
 # cancelled is a bundle someone asked for — so a second request supersedes the
@@ -199,8 +203,13 @@ jobs:
       - name: Compute version code and name
         env:
           INPUT_VERSION_NAME: ${{ github.event.inputs.version_name }}
+          INPUT_VERSION_CODE: ${{ github.event.inputs.version_code }}
         run: |
-          VERSION_CODE=$(( GITHUB_RUN_NUMBER + 2 ))
+          if [ -n "${INPUT_VERSION_CODE}" ]; then
+            VERSION_CODE="$(echo "${INPUT_VERSION_CODE}" | tr -cd '0-9')"
+          else
+            VERSION_CODE=$(( GITHUB_RUN_NUMBER + 2 ))
+          fi
           echo "VERSION_CODE=${VERSION_CODE}" >> "$GITHUB_ENV"
           if [ -n "${INPUT_VERSION_NAME}" ]; then
             # Sanitize: allow only alphanumeric characters, dots, and hyphens
