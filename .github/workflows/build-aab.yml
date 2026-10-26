@@ -19,6 +19,12 @@ on:
         description: 'Version code (integer, must be higher than any code Play has seen). Leave blank for <run_number> + 2.'
         required: false
         default: ''
+      track:
+        description: 'Play track to upload to (needs GOOGLE_PLAY_SERVICE_ACCOUNT_JSON). production = the live app.'
+        required: false
+        default: 'production'
+        type: choice
+        options: [production, alpha, internal, beta]
 
 # Only one AAB build at a time. Now that runs are started by hand, the one being
 # cancelled is a bundle someone asked for — so a second request supersedes the
@@ -268,7 +274,7 @@ jobs:
           path: CircuiTry3D-APK/
           if-no-files-found: error
 
-      - name: Publish to Play Store internal testing
+      - name: Publish to Google Play
         if: env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON != ''
         uses: r0adkll/upload-google-play@v1
         with:
@@ -276,7 +282,7 @@ jobs:
           packageName: com.circuitry3d.app
           releaseFiles: android/app/build/outputs/bundle/release/app-release.aab
           mappingFile: android/app/build/outputs/mapping/release/mapping.txt
-          track: internal
+          track: ${{ github.event.inputs.track || 'production' }}
           status: completed
 
       - name: Build summary
@@ -285,7 +291,7 @@ jobs:
         run: |
           commit_msg="$(git log -1 --pretty=%s 2>/dev/null | tr '|`' '//' | cut -c1-80 || echo 'unknown')"
           if [ -n "${GOOGLE_PLAY_SERVICE_ACCOUNT_JSON:-}" ]; then
-            play_status="✅ Uploaded to internal testing track"
+            play_status="✅ Uploaded to the ${{ github.event.inputs.track || 'production' }} track"
           else
             play_status="⏭ Skipped — add \`GOOGLE_PLAY_SERVICE_ACCOUNT_JSON\` secret to enable auto-upload"
           fi
