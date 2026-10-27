@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import BrandSignature from "./BrandSignature";
 import {
+  EVERYTHING_FREE,
   initBilling,
   hasWebPaymentCheckout,
   isAndroidApp,
@@ -378,12 +379,34 @@ export default function PricingSection() {
       {/* ── Hero ── */}
       <div className="pricing-hero">
         <BrandSignature size="sm" decorative className="pricing-brand" />
-        <h1 id="pricing-title">Plans &amp; Pricing</h1>
+        <h1 id="pricing-title">{EVERYTHING_FREE ? "CircuiTry3D is free" : <>Plans &amp; Pricing</>}</h1>
         <p className="pricing-subtitle">
-          Choose the plan that powers your circuits. Upgrade any time.
+          {EVERYTHING_FREE
+            ? "Every component, every tool, the Arena and the practice set. No plan to pick."
+            : "Choose the plan that powers your circuits. Upgrade any time."}
         </p>
       </div>
 
+      {EVERYTHING_FREE ? (
+        <div className="pricing-section-group">
+          <div className="pricing-section-label">
+            <span className="pricing-section-kicker">Same maker</span>
+            <h2 className="pricing-section-title">The rest of the family</h2>
+            <p className="pricing-section-desc">
+              ThePrints3D traces a floor plan and frames it in 3D. AutoMotive3D builds an
+              engine, runs it on the dyno and tears it down. Same controls, same explode.
+            </p>
+            <p className="pricing-section-desc">
+              <a href="https://theprints3d.com" target="_blank" rel="noopener noreferrer">theprints3d.com</a>
+              {" · "}
+              <a href="https://automotive3d.ca" target="_blank" rel="noopener noreferrer">automotive3d.ca</a>
+              {" · "}
+              <a href="https://3dlearningfamily.com" target="_blank" rel="noopener noreferrer">3dlearningfamily.com</a>
+            </p>
+          </div>
+        </div>
+      ) : (
+        <>
       {/* ── Consumer tiers ── */}
       <div className="pricing-section-group">
         <div className="pricing-section-label">
@@ -529,6 +552,9 @@ export default function PricingSection() {
           ))}
         </div>
       </div>
+
+        </>
+      )}
 
       {/* ── Enterprise tiers ── */}
       <div className="pricing-section-group pricing-section-group--enterprise">

@@ -237,6 +237,20 @@ export function setPremiumPurchased(purchased: boolean): void {
 }
 
 /**
+ * CIRCUITRY3D IS FREE.
+ *
+ * Mitchell, 25 Oct 2026: of 1,000+ installs, one person ever bought anything.
+ * The paywall was costing installs and earning nothing, and installs are what
+ * the manufacturer placement and school licensing deals are sold on. So every
+ * component and every tool is open to everyone, and the app's one ask points
+ * at ThePrints3D and AutoMotive3D instead (EngagementPromptManager).
+ *
+ * The billing code below is left in place so this is a one-word change back.
+ * Anyone who already paid keeps what they paid for either way.
+ */
+export const EVERYTHING_FREE: boolean = true;
+
+/**
  * Returns true when the current user has pro-level access or above.
  * This covers:
  *  - the "lifetime" stored tier (founding testers / owner access)
@@ -244,6 +258,7 @@ export function setPremiumPurchased(purchased: boolean): void {
  *  - the legacy "pro_unlock" one-time purchase flag
  */
 export function userHasProAccess(): boolean {
+  if (EVERYTHING_FREE) return true;
   const tier = getStoredTier();
   return tier === "pro" || tier === "lifetime" || userHasPro();
 }
@@ -253,6 +268,7 @@ export function userHasProAccess(): boolean {
  * This covers lifetime and pro tiers in addition to the one-time premium purchase.
  */
 export function userHasPremiumAccess(): boolean {
+  if (EVERYTHING_FREE) return true;
   const tier = getStoredTier();
   return tier === "premium" || tier === "pro" || tier === "lifetime" || userHasPremium();
 }

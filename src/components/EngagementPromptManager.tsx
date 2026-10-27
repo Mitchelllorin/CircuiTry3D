@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { CONSUMER_TIERS } from "../data/hybridPricing";
 import { useEntitlements } from "../utils/entitlementManager";
 import {
+  EVERYTHING_FREE,
   getConsumerProductPrices,
   isAndroidApp,
   openAndroidStoreListing,
@@ -21,6 +22,28 @@ import {
 import "../styles/engagement-prompts.css";
 
 type ActivePrompt = EngagementPromptKind | null;
+
+/**
+ * While CircuiTry3D is free, its one ask is the rest of the family: the two
+ * siblings people can use today, each linked to its own site, never straight
+ * to a store listing.
+ */
+const SIBLINGS = [
+  {
+    name: "ThePrints3D",
+    line: "Trace a floor plan and frame it in 3D.",
+    site: "https://theprints3d.com",
+  },
+  {
+    name: "AutoMotive3D",
+    line: "Build an engine, run it on the dyno, tear it down.",
+    site: "https://automotive3d.ca",
+  },
+] as const;
+
+function openSite(url: string) {
+  window.open(url, "_blank", "noopener,noreferrer");
+}
 
 function getTierPrice(
   tier: (typeof CONSUMER_TIERS)[number],
@@ -67,7 +90,7 @@ export default function EngagementPromptManager() {
   }, [activePrompt]);
 
   useEffect(() => {
-    if (activePrompt !== "upgrade" || !isAndroidApp()) {
+    if (activePrompt !== "upgrade" || EVERYTHING_FREE || !isAndroidApp()) {
       return;
     }
 
@@ -94,7 +117,9 @@ export default function EngagementPromptManager() {
     const handleMeaningfulSuccess = () => {
       const decision = recordMeaningfulSuccess(stateRef.current, {
         now: Date.now(),
-        hasPremiumAccess: isPremiumOrAbove,
+        // Free for everyone means the upgrade slot carries the family instead,
+        // on the same rules: after a verified success, twice at most, a week apart.
+        hasPremiumAccess: EVERYTHING_FREE ? false : isPremiumOrAbove,
         isAndroid: isAndroidApp(),
       });
       saveState(decision.state);
@@ -171,7 +196,50 @@ export default function EngagementPromptManager() {
           ×
         </button>
 
-        {activePrompt === "upgrade" ? (
+        {activePrompt === "upgrade" && EVERYTHING_FREE ? (
+          <>
+            <span className="engagement-prompt__eyebrow">Same maker</span>
+            <h2 id="engagement-prompt-upgrade-title">Same controls, other trades</h2>
+            <p>
+              CircuiTry3D is free, every component and every tool. The same maker
+              builds these two, with the same 3D controls and the same explode.
+            </p>
+            <div className="engagement-prompt__plan-list" aria-label="Other apps in the family">
+              {SIBLINGS.map((app) => (
+                <article className="engagement-prompt__plan" key={app.name}>
+                  <div>
+                    <h3>{app.name}</h3>
+                  </div>
+                  <p>{app.line}</p>
+                </article>
+              ))}
+            </div>
+            <button
+              type="button"
+              className="engagement-prompt__primary"
+              onClick={() => {
+                openSite(SIBLINGS[0].site);
+                dismiss();
+              }}
+              ref={primaryActionRef}
+            >
+              See ThePrints3D
+            </button>
+            <button
+              type="button"
+              className="engagement-prompt__secondary"
+              onClick={() => {
+                openSite(SIBLINGS[1].site);
+                dismiss();
+              }}
+            >
+              See AutoMotive3D
+            </button>
+            <button type="button" className="engagement-prompt__secondary" onClick={dismiss}>
+              Back to the circuit
+            </button>
+          </>
+        ) : activePrompt === "upgrade" ? (
           <>
             <span className="engagement-prompt__eyebrow">Build further</span>
             <h2 id="engagement-prompt-upgrade-title">Keep your circuit work moving</h2>
