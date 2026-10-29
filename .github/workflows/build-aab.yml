@@ -20,9 +20,9 @@ on:
         required: false
         default: ''
       track:
-        description: 'Play track to upload to (needs GOOGLE_PLAY_SERVICE_ACCOUNT_JSON). production = the live app.'
+        description: 'Play track to upload to. internal = testers only; production = the live app.'
         required: false
-        default: 'production'
+        default: 'internal'
         type: choice
         options: [production, alpha, internal, beta]
 
@@ -274,15 +274,17 @@ jobs:
           path: CircuiTry3D-APK/
           if-no-files-found: error
 
+      # Manual runs only, and internal unless another track is picked: the first
+      # automated upload should land somewhere only testers can see it.
       - name: Publish to Google Play
-        if: env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON != ''
+        if: github.event_name == 'workflow_dispatch' && env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON != ''
         uses: r0adkll/upload-google-play@v1
         with:
           serviceAccountJsonPlainText: ${{ env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
           packageName: com.circuitry3d.app
           releaseFiles: android/app/build/outputs/bundle/release/app-release.aab
           mappingFile: android/app/build/outputs/mapping/release/mapping.txt
-          track: ${{ github.event.inputs.track || 'production' }}
+          track: ${{ github.event.inputs.track || 'internal' }}
           status: completed
 
       - name: Build summary
@@ -291,7 +293,7 @@ jobs:
         run: |
           commit_msg="$(git log -1 --pretty=%s 2>/dev/null | tr '|`' '//' | cut -c1-80 || echo 'unknown')"
           if [ -n "${GOOGLE_PLAY_SERVICE_ACCOUNT_JSON:-}" ]; then
-            play_status="✅ Uploaded to the ${{ github.event.inputs.track || 'production' }} track"
+            play_status="✅ Uploaded to the ${{ github.event.inputs.track || 'internal' }} track"
           else
             play_status="⏭ Skipped — add \`GOOGLE_PLAY_SERVICE_ACCOUNT_JSON\` secret to enable auto-upload"
           fi
