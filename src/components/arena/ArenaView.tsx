@@ -353,7 +353,7 @@ export default function ArenaView({
   const sessionLabel = sessionPayload?.sessionName ?? "CircuiTry3D Arena";
 
   /**
-   * The parts' own metric nameplates — ON to begin with.
+   * The parts' own metric nameplates — OFF to begin with.
    *
    * They used to start OFF, and the reason was sound at the time: the plate was
    * a padded slab of tinted glass hanging over the one part the run was about,
@@ -367,11 +367,17 @@ export default function ArenaView({
    * the question "why have readouts I cannot read" is answered by making them
    * readable and leaving them on.
    *
+   * That is no longer the default. A plate names its part and prints its load
+   * over the top of it, and on the surface where the parts are the experiment
+   * that name is the one thing on screen you did not ask for — "RESISTOR" over
+   * a resistor teaches nothing and covers it. The numbers it carried are all on
+   * the console, so the default is OFF and this legend turns them back on.
+   *
    * Held in the VIEW rather than in either bench, because the bench and the
    * battle are one instrument with a different experiment in it, and walking
    * between them should not silently change what the display is doing.
    */
-  const [showReadouts, setShowReadouts] = useState(true);
+  const [showReadouts, setShowReadouts] = useState(false);
   const toggleReadouts = useCallback(
     () => setShowReadouts((on) => !on),
     [],

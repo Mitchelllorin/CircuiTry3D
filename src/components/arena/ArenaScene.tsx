@@ -65,12 +65,14 @@ type ArenaSceneProps = {
   /**
    * Whether the floating metric nameplates are drawn over the parts.
    *
-   * Defaults ON, because the full-screen page variant is a cinematic surface
-   * where the readouts ARE the content. The workspace arena passes this from
-   * the quick bar's toggle and starts it OFF: a plate hangs directly over the
-   * part it reports on, and on a bench whose part sits dead centre that is a
-   * slab of text in the middle of the workspace — the one place you are trying
-   * to watch. Everything it carried is on the console instead.
+   * Defaults OFF, everywhere.
+   *
+   * A plate hangs directly over the part it reports on and NAMES it —
+   * "RESISTOR", "CAPACITOR" — with its load underneath. On a bench whose part
+   * sits dead centre that is a slab of text over the one thing you came to
+   * watch, and on a phone it is the largest thing on screen competing with the
+   * parts themselves. Everything it carried is on the console instead, and the
+   * page's readouts legend turns it back on in one tap.
    */
   nameplates?: boolean;
   /**
@@ -939,43 +941,6 @@ const ARENA_SOURCE_OHMS = 0.5;
  * — never on top of it." Centring the plate on the anchor is what buried the
  * parts under their own readouts.
  */
-/**
- * Ambient motes drifting in the air of the dome.
- *
- * The count the arena has always shipped is 240, and that is what the default
- * density of 50 produces — so the setting arrives without changing how the scene
- * looks for anyone. The scale is deliberately linear in COUNT rather than in
- * anything perceptual: this is a "how much stuff is in the air" dial, and users
- * reach for it to clear the air (0) or thicken it, not to hit a target number.
- */
-const ATMOSPHERE_MAX_MOTES = 480;
-
-function atmosphereCountFor(density: number): number {
-  const clamped = Math.max(0, Math.min(100, density));
-  return Math.round((clamped / 100) * ATMOSPHERE_MAX_MOTES);
-}
-
-/**
- * (Re)fill a geometry with `count` motes in the dome's air column. Replaces the
- * position attribute outright, so it doubles as the rebuild path for the slider.
- */
-function fillAtmosphere(
-  THREE: typeof import("three"),
-  geometry: import("three").BufferGeometry,
-  count: number,
-): void {
-  const positions = new Float32Array(Math.max(0, count) * 3);
-  for (let index = 0; index < count; index += 1) {
-    const stride = index * 3;
-    const radius = 5 + Math.random() * 11;
-    const angle = Math.random() * Math.PI * 2;
-    positions[stride] = Math.cos(angle) * radius;
-    positions[stride + 1] = 1.5 + Math.random() * 8;
-    positions[stride + 2] = Math.sin(angle) * radius;
-  }
-  geometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
-  geometry.setDrawRange(0, count);
-}
 
 /**
  * How high above the rail a plate anchors, in WORLD units.
@@ -1868,7 +1833,7 @@ export function ArenaScene({
   onExitTransitionComplete,
   workspaceMode = false,
   panelOpen = false,
-  nameplates = true,
+  nameplates = false,
   bottomInsetPx = 0,
   selectedAgentId = null,
   onSelectAgent,
@@ -1935,11 +1900,6 @@ export function ArenaScene({
   const [fuseExpanded, setFuseExpanded] = useState(false);
   const reportedFailuresRef = useRef<Set<string>>(new Set());
   const previousStatusRef = useRef<ArenaBattleStatus>(status);
-  // The drifting motes in the air of the dome. Held out here so the density
-  // slider can rebuild just this buffer — rebuilding the whole scene on a slider
-  // drag would tear down the circuit and the running test with it.
-  const atmosphereRef = useRef<import("three").Points | null>(null);
-  const threeRef = useRef<typeof import("three") | null>(null);
   // The live renderer, so the unmount-only effect below can hand its WebGL
   // context back. Deliberately NOT cleared by the main effect's cleanup: that
   // cleanup also runs on a plain sceneAgentSignature re-run, and the context
@@ -1947,7 +1907,6 @@ export function ArenaScene({
   // reuses it).
   const liveRendererRef = useRef<import("three").WebGLRenderer | null>(null);
   const { settings: appSettings } = useAppSettings();
-  const atmosphereDensity = appSettings.workspace.atmosphereDensity;
   // Whether stressed parts tremble. Reduce-motion turns it off regardless of
   // the simulation setting — a user who has asked the whole app to stop moving
   // things has already answered this question.
@@ -1960,24 +1919,6 @@ export function ArenaScene({
   useEffect(() => {
     componentShakeRef.current = componentShake;
   }, [componentShake]);
-  // Read by the scene-init effect, which must NOT list the density as a
-  // dependency — doing so would rebuild the entire dome on every slider tick.
-  const atmosphereDensityRef = useRef(atmosphereDensity);
-  useEffect(() => {
-    atmosphereDensityRef.current = atmosphereDensity;
-  }, [atmosphereDensity]);
-
-  // Rebuild just the mote buffer when the slider moves. The scene, the circuit
-  // and any running test are untouched.
-  useEffect(() => {
-    const THREE = threeRef.current;
-    const points = atmosphereRef.current;
-    if (!THREE || !points) {
-      return;
-    }
-    fillAtmosphere(THREE, points.geometry, atmosphereCountFor(atmosphereDensity));
-    points.visible = atmosphereDensity > 0;
-  }, [atmosphereDensity]);
 
   useEffect(() => {
     // A fresh run gets a clean slate, so re-running the bench explains its
@@ -2135,7 +2076,6 @@ export function ArenaScene({
     let exitCompleteFired = false;
     let renderer: import("three").WebGLRenderer | null = null;
     let controls: OrbitControlsInstance | null = null;
-    let particleTexture: import("three").CanvasTexture | null = null;
     let smokeTextureRef: import("three").CanvasTexture | null = null;
     let blowoutTexturesRef: BlowoutTextures | null = null;
     let flowSystemRef: CurrentFlowAnimationSystem | null = null;
@@ -2207,10 +2147,6 @@ export function ArenaScene({
         return;
       }
 
-      // Kept so the dust-mote slider can rebuild its buffer without re-entering
-      // this effect (and tearing down the scene) just to get at the module.
-      threeRef.current = THREE;
-
       const { OrbitControls } = controlsModule;
       const { RoomEnvironment } = roomModule;
       const root = rootRef.current;
@@ -2233,7 +2169,30 @@ export function ArenaScene({
         powerPreference: "high-performance",
       });
       liveRendererRef.current = renderer;
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, onPhone ? 1.5 : 2));
+      const basePixelRatio = Math.min(window.devicePixelRatio, onPhone ? 1.5 : 2);
+      renderer.setPixelRatio(basePixelRatio);
+      /**
+       * ── Adaptive resolution ─────────────────────────────────────────────
+       * Sharpness is chosen from the frame time this device actually manages,
+       * not from what its panel would like.
+       *
+       * A phone panel is 2–3x. Rendering the arena at that costs more than
+       * twice the pixels of 1.5x, and this is the surface where fill rate is
+       * spent on a whole board of parts rather than one object. A fixed ratio
+       * has to suit the slowest device that will ever load the page, which is
+       * why a fixed 1.5 either looks soft on a fast phone or stutters on a slow
+       * one — and it cannot know which it is looking at.
+       *
+       * So it is measured instead: while frames arrive slower than ~23 ms the
+       * buffer steps down in quarter-ratio increments toward a 1.0 floor, and
+       * once they are comfortably under 15 ms it climbs back toward the panel.
+       * A slow phone therefore settles where it can hold a frame rate instead
+       * of dropping frames at a resolution it cannot afford.
+       */
+      const minPixelRatio = Math.min(basePixelRatio, 1);
+      let appliedPixelRatio = basePixelRatio;
+      let pixelRatioFrameSum = 0;
+      let pixelRatioFrameCount = 0;
       renderer.outputColorSpace = THREE.SRGBColorSpace;
       // Without tone mapping, everything above 1.0 clips flat and everything
       // below sits crushed and grey — which is most of why the dome read as
@@ -2549,26 +2508,6 @@ export function ArenaScene({
       ring.rotation.x = Math.PI / 2;
       ring.position.y = 0.03;
       scene.add(ring);
-
-      const particleGeometry = new THREE.BufferGeometry();
-      fillAtmosphere(
-        THREE,
-        particleGeometry,
-        atmosphereCountFor(atmosphereDensityRef.current),
-      );
-      particleTexture = createCanvasTexture(THREE, "rgba(96, 165, 250, 0.95)");
-      const particleMaterial = new THREE.PointsMaterial({
-        color: "#bfdbfe",
-        size: 0.3,
-        transparent: true,
-        opacity: 0.8,
-        map: particleTexture,
-        depthWrite: false,
-        blending: THREE.AdditiveBlending,
-      });
-      const particles = new THREE.Points(particleGeometry, particleMaterial);
-      scene.add(particles);
-      atmosphereRef.current = particles;
 
       // One soft round puff, shared by every plume and tinted per family.
       const smokeTexture = createCanvasTexture(THREE, "rgba(255,255,255,0.85)");
@@ -3910,6 +3849,27 @@ export function ArenaScene({
           : 16;
         lastFrameTime = time;
 
+        // ── Adaptive resolution, averaged over 30-frame chunks ────────────
+        // See the basePixelRatio note at the renderer. Averaged rather than
+        // read per frame because one slow frame is not a slow device: a plume
+        // going off, a texture uploading, or the tab being refocused all cost
+        // a single long frame and would otherwise ratchet the sharpness down
+        // for good.
+        pixelRatioFrameSum += frameDelta;
+        pixelRatioFrameCount += 1;
+        if (pixelRatioFrameCount >= 30) {
+          const averageFrameMs = pixelRatioFrameSum / pixelRatioFrameCount;
+          pixelRatioFrameSum = 0;
+          pixelRatioFrameCount = 0;
+          if (averageFrameMs > 23 && appliedPixelRatio > minPixelRatio) {
+            appliedPixelRatio = Math.max(minPixelRatio, appliedPixelRatio - 0.25);
+            renderer.setPixelRatio(appliedPixelRatio);
+          } else if (averageFrameMs < 15 && appliedPixelRatio < basePixelRatio) {
+            appliedPixelRatio = Math.min(basePixelRatio, appliedPixelRatio + 0.25);
+            renderer.setPixelRatio(appliedPixelRatio);
+          }
+        }
+
         const phase = phaseRef.current;
         if (phase !== lastPhase) {
           lastPhase = phase;
@@ -4053,7 +4013,6 @@ export function ArenaScene({
         }
 
         ring.rotation.z += 0.0015;
-        particles.rotation.y += 0.0011;
 
         // ── The victor's moment ─────────────────────────────────────────────
         // Swells in over the second after the bench calls it, rather than
@@ -5182,7 +5141,6 @@ export function ArenaScene({
       cleanupPointer?.();
       resizeObserver?.disconnect();
       controls?.dispose();
-      particleTexture?.dispose();
       smokeTextureRef?.dispose();
       blowoutTexturesRef?.dispose();
       flowSystemRef?.dispose();

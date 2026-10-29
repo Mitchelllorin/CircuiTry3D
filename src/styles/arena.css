@@ -2325,8 +2325,8 @@
      app-wide floor rather than following type down to ~40, because a control
      you cannot reliably hit is not smaller, it is broken; and the tap on a
      48px legend was only ever padding around a word. */
-  gap: 5px;
-  padding: 6px 9px calc(env(safe-area-inset-bottom, 0px) + 6px);
+  gap: 6px;
+  padding: 7px 10px calc(env(safe-area-inset-bottom, 0px) + 7px);
   /* ── Glass, not a slab ────────────────────────────────────────────────
      This was a gradient running 0.96 -> 0.99 alpha: opaque in every way that
      matters, and the single heaviest object on the screen. It sat across the
@@ -2373,7 +2373,7 @@
 .arena-dash__displays {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 5px;
+  gap: 6px;
 }
 .arena-dash__display {
   /* The label sits WITH the letter, and the number gets its own row under the
@@ -2389,8 +2389,8 @@
   grid-template-columns: auto auto;
   align-items: baseline;
   justify-content: center;
-  column-gap: 4px;
-  padding: 4px 5px 3px;
+  column-gap: 5px;
+  padding: 5px 6px 4px;
   border-radius: 7px;
   /* Recessed: dark glass, a lip of light on the lower edge only, and the
      shadow falling INWARD from the top — the read of an inset instrument. */
@@ -2401,7 +2401,7 @@
     0 1px 0 rgba(226, 232, 240, 0.05);
 }
 .arena-dash__display-letter {
-  font-size: 0.47rem;
+  font-size: 0.53rem;
   font-weight: 800;
   letter-spacing: 0.16em;
   opacity: 0.85;
@@ -2421,7 +2421,7 @@
    an instrument; the shadow is what keeps them readable when a failure flash
    goes off underneath. */
 .arena-dash__display-value {
-  font-size: 0.86rem;
+  font-size: 0.97rem;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
   line-height: 1.1;
@@ -2432,7 +2432,7 @@
 .arena-dash__display-caption {
   grid-column: 2;
   grid-row: 1;
-  font-size: 0.44rem;
+  font-size: 0.5rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: rgba(148, 163, 184, 0.6);
@@ -2458,7 +2458,7 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  column-gap: 8px;
+  column-gap: 9px;
   row-gap: 2px;
 }
 .arena-dash__fader {
@@ -2469,13 +2469,13 @@
   display: flex;
   align-items: baseline;
   gap: 5px;
-  font-size: 0.44rem;
+  font-size: 0.5rem;
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 .arena-dash__fader-head b {
-  font-size: 0.64rem;
+  font-size: 0.72rem;
   line-height: 1.15;
   font-variant-numeric: tabular-nums;
   letter-spacing: 0;
@@ -2486,7 +2486,7 @@
 .arena-dash__fader-ref {
   margin-inline-start: auto;
   font-style: normal;
-  font-size: 0.43rem;
+  font-size: 0.49rem;
   letter-spacing: 0.05em;
   text-transform: uppercase;
   color: rgba(148, 163, 184, 0.6);
@@ -2497,7 +2497,7 @@
   width: 100%;
   /* Shorter BOX, unchanged track and thumb: this is the touch target's height,
      and the 275px-wide full-bleed travel is what actually makes it catchable. */
-  height: 16px;
+  height: 18px;
   margin: 0;
   appearance: none;
   -webkit-appearance: none;
@@ -2506,7 +2506,7 @@
 }
 /* A milled slot with a machined cap riding in it. */
 .arena-dash__fader input[type="range"]::-webkit-slider-runnable-track {
-  height: 5px !important;
+  height: 6px !important;
   border-radius: 4px;
   background: linear-gradient(180deg, #020610 0%, #0b1220 100%);
   box-shadow:
@@ -2514,7 +2514,7 @@
     0 1px 0 rgba(226, 232, 240, 0.06);
 }
 .arena-dash__fader input[type="range"]::-moz-range-track {
-  height: 5px !important;
+  height: 6px !important;
   border-radius: 4px;
   background: #0b1220;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.9) inset;
@@ -2526,9 +2526,9 @@
 .arena-dash__fader input[type="range"]::-webkit-slider-thumb {
   appearance: none;
   -webkit-appearance: none;
-  width: 13px !important;
-  height: 16px !important;
-  margin-top: -5.5px !important;
+  width: 15px !important;
+  height: 18px !important;
+  margin-top: -6px !important;
   border-radius: 4px;
   background: linear-gradient(90deg, #f1f5f9 0%, #cbd5e1 45%, #64748b 100%);
   border: 1px solid rgba(15, 23, 42, 0.75);
@@ -2537,8 +2537,8 @@
     0 2px 5px rgba(0, 0, 0, 0.6);
 }
 .arena-dash__fader input[type="range"]::-moz-range-thumb {
-  width: 13px !important;
-  height: 16px !important;
+  width: 15px !important;
+  height: 18px !important;
   border-radius: 4px;
   background: linear-gradient(90deg, #f1f5f9 0%, #cbd5e1 45%, #64748b 100%);
   border: 1px solid rgba(15, 23, 42, 0.75);
@@ -2560,7 +2560,7 @@
   flex-direction: column;
   align-items: center;
   gap: 2px;
-  padding: 5px 12px 6px;
+  padding: 6px 13px 7px;
   border-radius: 9px;
   border: 1px solid rgba(148, 163, 184, 0.4);
   background: linear-gradient(180deg, #334155 0%, #1e293b 55%, #0f172a 100%);
@@ -2573,8 +2573,8 @@
 /* The lever: a machined bar that sits UP when idle and drops when live —
    the same "thrown" state the 3D toggle used to carry. */
 .arena-dash__switch-lever {
-  inline-size: 27px;
-  block-size: 12px;
+  inline-size: 30px;
+  block-size: 14px;
   border-radius: 4px;
   background: linear-gradient(180deg, #f1f5f9 0%, #94a3b8 100%);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
@@ -2589,7 +2589,7 @@
     0 0 12px rgba(239, 68, 68, 0.75);
 }
 .arena-dash__switch-label {
-  font-size: 0.48rem;
+  font-size: 0.54rem;
   font-weight: 800;
   letter-spacing: 0.14em;
   text-transform: uppercase;
