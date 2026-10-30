@@ -1,18 +1,24 @@
 name: Build AAB
 
-# AUTOMATIC ON MAIN, with a manual override.
+# AUTOMATIC ON MAIN, straight to PRODUCTION.
 #
-# A push to main builds a signed bundle and uploads it to the Play INTERNAL
-# track, so testers get every merge without anyone remembering to run anything.
-# This was manual-only while `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` was unset, because
-# signing a bundle nobody collected was worse than not signing one. That secret
-# now exists, so the reason for the hand-crank is gone.
+# A push to main builds a signed bundle and uploads it to the Play PRODUCTION
+# track. That is the whole release process now: merge, and the live app updates.
 #
-# Production is deliberately NOT automatic. A production upload goes to real
-# users and into Play review; every commit is not a release, and a broken merge
-# would land live with nothing to stop it. Promote when you mean it:
+# It used to go to internal first, which meant a second hand-promotion step in
+# the Play Console on every single release — strictly more work than the manual
+# upload it was meant to replace. The merging itself is the decision.
 #
-#   gh workflow run build-aab.yml -f track=production -f version_name=1.1.0
+# The one thing that changed on the way: TESTS GATE THE UPLOAD. `ci.yml` runs the
+# same suite on the same push, but in a PARALLEL job it cannot hold the upload
+# back, so a red merge could reach real users. The suite now runs in this job too,
+# before the bundle is built, and a failure stops the run before anything is
+# signed or uploaded.
+#
+# Manual runs still exist, and still default to production:
+#
+#   gh workflow run build-aab.yml
+#   gh workflow run build-aab.yml -f track=internal      # testers only
 #
 # Or Actions > Build AAB > "Run workflow".
 on:
@@ -30,19 +36,19 @@ on:
         required: false
         default: ''
       track:
-        description: 'Play track to upload to. internal = testers only; production = the live app.'
+        description: 'Play track to upload to. production = the live app; internal = testers only.'
         required: false
-        default: 'internal'
+        default: 'production'
         type: choice
         options: [production, alpha, internal, beta]
 
 # One AAB build at a time, so two runs cannot upload to the same track at once
 # with competing version codes.
 #
-# Cancel behaviour differs by trigger on purpose. A push build is the one that
-# tells testers a merge landed, so a second push QUEUES behind it rather than
-# killing it — cancelling would silently leave a merge with no bundle. A manual
-# run is somebody waiting on it, so it supersedes whatever is running.
+# Cancel behaviour differs by trigger on purpose. A push build is a release, so
+# a second push QUEUES behind it rather than killing it — cancelling would
+# silently leave a merge unreleased. A manual run is somebody waiting on it, so
+# it supersedes whatever is running.
 concurrency:
   group: build-aab
   cancel-in-progress: ${{ github.event_name == 'workflow_dispatch' }}
@@ -50,11 +56,11 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    # The [skip screenshots] guard is meaningful again now that pushes trigger
-    # this: the screenshot bot commits images only, nothing to install, and
-    # shipping it to testers would spend a version code on a PNG. Manual runs
-    # are exempt — somebody asked. (`head_commit` does not exist on dispatch, so
-    # the event name is checked first.)
+    # The [skip screenshots] guard is meaningful now that pushes trigger this:
+    # the screenshot bot commits images only, nothing to install, and shipping it
+    # would spend a version code on a PNG. Manual runs are exempt — somebody
+    # asked. (`head_commit` does not exist on dispatch, so the event name is
+    # checked first.)
     if: github.event_name == 'workflow_dispatch' || !contains(github.event.head_commit.message, '[skip screenshots]')
     env:
       JAVA_VERSION: '21'
@@ -84,6 +90,14 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      # The gate. A push here publishes to PRODUCTION, so the suite runs in this
+      # job rather than trusting the parallel CI run to have finished — `ci.yml`
+      # cannot block an upload it does not gate, and a failing merge must stop
+      # before signing, not merely be reported afterwards. Same command as CI, so
+      # there is one definition of "the tests pass".
+      - name: Run tests
+        run: npm run test:coverage
 
       - name: Build web app
         run: npm run build -- --mode capacitor
@@ -290,10 +304,11 @@ jobs:
           path: CircuiTry3D-APK/
           if-no-files-found: error
 
-      # Internal unless a manual run picks another track. A push has no inputs,
+      # Production unless a manual run picks another track. A push has no inputs,
       # so `github.event.inputs.track` is empty there and falls through to
-      # 'internal' — which is the whole point: main ships to testers, and only a
-      # person who typed `track=production` sends anything to real users.
+      # 'production' — main IS the release, and the tests above are what stands
+      # between a bad merge and real users. Pass `-f track=internal` to put a
+      # build in front of testers instead.
       - name: Publish to Google Play
         if: env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON != ''
         uses: r0adkll/upload-google-play@v1
@@ -305,7 +320,7 @@ jobs:
           # `tracks` (plural), not `track`: the singular input is deprecated in
           # this action and slated for removal, and when it goes the upload would
           # have no track at all. Verified working on run 40937558306's successor.
-          tracks: ${{ github.event.inputs.track || 'internal' }}
+          tracks: ${{ github.event.inputs.track || 'production' }}
           status: completed
 
       - name: Build summary
@@ -314,7 +329,7 @@ jobs:
         run: |
           commit_msg="$(git log -1 --pretty=%s 2>/dev/null | tr '|`' '//' | cut -c1-80 || echo 'unknown')"
           if [ -n "${GOOGLE_PLAY_SERVICE_ACCOUNT_JSON:-}" ]; then
-            play_status="✅ Uploaded to the ${{ github.event.inputs.track || 'internal' }} track"
+            play_status="✅ Uploaded to the ${{ github.event.inputs.track || 'production' }} track"
           else
             play_status="⏭ Skipped — add \`GOOGLE_PLAY_SERVICE_ACCOUNT_JSON\` secret to enable auto-upload"
           fi
