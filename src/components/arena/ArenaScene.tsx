@@ -3420,10 +3420,31 @@ export function ArenaScene({
        * body, the cracked die — and at the ramp's distance that is a handful of
        * pixels. The isolation already removes everything else; this is the
        * other half of it, putting the failure itself at a size you can read.
+       *
+       * It said 6.0 against a 6.6 push-in, which is 9% — a claim of "much
+       * closer" the geometry never delivered, so the isolation had nothing
+       * framing it: the neighbours went dark and the corpse stayed the same
+       * size. At 4.2 the part fills about a third of the frame's height, which
+       * is the first distance at which a split seam is actually a shot.
        */
-      const FAILURE_RADIUS = 6.0;
+      const FAILURE_RADIUS = 4.2;
       /** And a bench-side eye line on it, rather than looking down at it. */
-      const FAILURE_HEIGHT = 2.8;
+      const FAILURE_HEIGHT = 2.4;
+      /**
+       * How fast a CHANGE OF SUBJECT lands, in ms.
+       *
+       * Any move to a different part is a cut, not a pan: one part fills the
+       * frame, then another does, and the eye should not be made to watch the
+       * camera travel between them — that is the move that reads as drifting.
+       *
+       * 300 rather than the 820 this used to be. The cut exists to show an
+       * event, and the event does not wait: a capacitor vents in about half a
+       * second. Damped over 820ms the camera needed roughly two and a half
+       * seconds to arrive, so it landed on ash and settled in while what it
+       * came for was already over. It now arrives alongside the blowout rather
+       * than after it, and there is nothing here that a slower settle improved.
+       */
+      const CUT_TAU_MS = 300;
       /**
        * How long the camera stays on a part after it dies.
        *
@@ -3488,6 +3509,12 @@ export function ArenaScene({
       let isolateId: string | null = null;
       /** Last selection the camera reacted to — see the gate in the driver. */
       let chaseSelection: string | null = selectedAgentIdRef.current;
+      /**
+       * The part the camera was on LAST frame, so a move to a different one can
+       * be told apart from a move within the same shot. Changing subject is a
+       * cut; staying on one is a glide. See CUT_TAU_MS.
+       */
+      let chaseSubject: string | null = null;
       /** When that selection changed, so the move can time out. */
       let chaseSelectionAt = 0;
       /**
@@ -3613,17 +3640,10 @@ export function ArenaScene({
         if (!controls) {
           return false;
         }
-        // Time-based, so the move damps identically at 60 and 120fps.
+        // Time-based, so the move damps identically at 30, 60 and 120fps.
         const k = 1 - Math.exp(-frameDelta / 420);
-        /**
-         * The failure cut settles over a longer constant than a ramp push-in.
-         *
-         * The cut is the biggest move the camera makes — its target can jump to
-         * another part of the bench in one frame, and it travels further than
-         * any push-in — so the damping that glides a gentle push-in reads as a
-         * SNAP here. A slower constant turns it into something that arrives.
-         */
-        const kCut = 1 - Math.exp(-frameDelta / 820);
+        // A change of subject — see CUT_TAU_MS.
+        const kCut = 1 - Math.exp(-frameDelta / CUT_TAU_MS);
 
         // Tapping a part necessarily touches the canvas, which trips the "user
         // is driving, hands off" gate below — so a fresh selection would sit
@@ -3779,6 +3799,7 @@ export function ArenaScene({
         isolateId = failureCut;
 
         if (!target) {
+          chaseSubject = null;
           if (!chaseHandoff) {
             return false;
           }
@@ -3825,7 +3846,12 @@ export function ArenaScene({
         chaseDesired.copy(chaseLook).addScaledVector(chaseDir, closeUp);
         chaseDesired.y = chaseLook.y + lift;
 
-        const moveK = isolateId ? kCut : k;
+        // A different part, or a shot that just became a close-up, is a cut and
+        // lands as one. Staying on the same part keeps the gentle glide, which
+        // is what lets a failure hold breathe without the frame creeping.
+        const changedSubject = target !== chaseSubject;
+        chaseSubject = target;
+        const moveK = changedSubject || isolateId ? kCut : k;
         camera.position.lerp(chaseDesired, moveK);
         controls.target.lerp(chaseLook, moveK);
         return true;
@@ -3884,11 +3910,22 @@ export function ArenaScene({
         const phaseElapsed = time - phaseStartTime;
 
         if (workspaceModeRef.current) {
+          // ── Damping for the workspace flow's own moves ────────────────────
+          // These were per-FRAME fractions (0.07, 0.04, 0.06), which made every
+          // cinematic run at whatever speed the device happened to render: the
+          // exit sweep took twice as long on a phone holding 30fps as on this
+          // desktop at 60, and a third as long at 120. That is why the moves read
+          // as sluggish on a slow phone while looking fine here — the animation
+          // was never timed, it was counted in frames. These constants reproduce
+          // what the old fractions did at 60fps, applied in real milliseconds.
+          const kExit = 1 - Math.exp(-frameDelta / 230);
+          const kSweep = 1 - Math.exp(-frameDelta / 265);
+          const kPreview = 1 - Math.exp(-frameDelta / 410);
           // Workspace flow — the camera is driven entirely by panel state.
           if (phase === "exiting") {
             controls.enabled = false;
             workspaceSweepDone = false;
-            camera.position.lerp(exitPosition, 0.07);
+            camera.position.lerp(exitPosition, kExit);
             camera.lookAt(cameraTarget);
             if (!exitCompleteFired && camera.position.distanceTo(exitPosition) < 0.8) {
               exitCompleteFired = true;
@@ -3906,12 +3943,12 @@ export function ArenaScene({
               previewPosition.y + Math.sin(time * 0.0003) * 0.6,
               Math.cos(swayAngle) * previewRadius,
             );
-            camera.position.lerp(previewDrift, 0.04);
+            camera.position.lerp(previewDrift, kPreview);
             camera.lookAt(cameraTarget);
           } else if (!workspaceSweepDone) {
             // Panel just collapsed: cinematic sweep into the interactive pose.
             controls.enabled = false;
-            camera.position.lerp(arenaPosition, 0.06);
+            camera.position.lerp(arenaPosition, kSweep);
             camera.lookAt(cameraTarget);
             if (camera.position.distanceTo(arenaPosition) < 0.4) {
               workspaceSweepDone = true;
