@@ -247,15 +247,89 @@ jobs:
           storeFile=keystore/${KEYSTORE_FILENAME}
           EOF
 
-      - name: Compute version code and name
+      # A run-number offset is not a version code, it is a guess that only works
+      # while the run number is the highest thing Play has ever seen. It was not:
+      # production sat at 2000 from a hand upload while this workflow was at 750,
+      # and Play rejected the first automatic release to production as a
+      # downgrade — "does not allow any existing users to upgrade to the newly
+      # added APKs". Nothing about the bundle was wrong; the number under it was.
+      #
+      # So ask Play what it holds and go one above it. The uploaded history stops
+      # mattering, a hand upload can never wedge the pipeline again, and the run
+      # number survives only as a floor for the case where the lookup cannot run.
+      - name: Resolve version code and name
+        shell: bash
         env:
           INPUT_VERSION_NAME: ${{ github.event.inputs.version_name }}
           INPUT_VERSION_CODE: ${{ github.event.inputs.version_code }}
+          SA: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
         run: |
-          if [ -n "${INPUT_VERSION_CODE}" ]; then
+          set -uo pipefail
+          PKG=com.circuitry3d.app
+
+          play_max() {
+            local api="https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${PKG}"
+            local email header claim sig jwt token edit max bundles
+            printf '%s' "${SA:-}" > /tmp/play-sa.json
+            email=$(jq -r '.client_email // empty' /tmp/play-sa.json) || return 1
+            jq -r '.private_key // empty' /tmp/play-sa.json > /tmp/play-key.pem || return 1
+            [ -n "$email" ] && [ -s /tmp/play-key.pem ] || return 1
+
+            local iat exp
+            iat=$(date +%s); exp=$(( iat + 600 ))
+            header=$(printf '%s' '{"alg":"RS256","typ":"JWT"}' | openssl base64 -A | tr '+/' '-_' | tr -d '=')
+            claim=$(printf '{"iss":"%s","scope":"https://www.googleapis.com/auth/androidpublisher","aud":"https://oauth2.googleapis.com/token","iat":%s,"exp":%s}' \
+              "$email" "$iat" "$exp" | openssl base64 -A | tr '+/' '-_' | tr -d '=')
+            sig=$(printf '%s.%s' "$header" "$claim" | openssl dgst -sha256 -sign /tmp/play-key.pem \
+              | openssl base64 -A | tr '+/' '-_' | tr -d '=')
+            jwt="${header}.${claim}.${sig}"
+
+            token=$(curl -sS -X POST https://oauth2.googleapis.com/token \
+              -d "grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${jwt}" \
+              | jq -r '.access_token // empty') || return 1
+            [ -n "$token" ] || return 1
+
+            edit=$(curl -sS -X POST -H "Authorization: Bearer ${token}" \
+              -H 'Content-Type: application/json' "${api}/edits" | jq -r '.id // empty') || return 1
+            [ -n "$edit" ] || return 1
+
+            # Every release on every track AND every bundle ever uploaded. The two
+            # endpoints disagree in practice (bundles came back empty while
+            # production held 2000), so trust whichever reports the higher number.
+            max=$(curl -sS -H "Authorization: Bearer ${token}" "${api}/edits/${edit}/tracks" \
+              | jq -r '[.tracks[]?.releases[]?.versionCodes[]? | tonumber] | max // 0')
+            bundles=$(curl -sS -H "Authorization: Bearer ${token}" "${api}/edits/${edit}/bundles" \
+              | jq -r '[.versionCodes[]? | tonumber] | max // 0')
+            if [ "${bundles:-0}" -gt "${max:-0}" ] 2>/dev/null; then max="$bundles"; fi
+
+            # Abandon the edit — this step only reads.
+            curl -sS -X DELETE -H "Authorization: Bearer ${token}" "${api}/edits/${edit}" -o /dev/null || true
+            printf '%s' "${max:-0}"
+          }
+
+          MAX_LIVE=0
+          if [ -z "${INPUT_VERSION_CODE:-}" ] && [ -n "${SA:-}" ]; then
+            if OUT="$(play_max 2>/dev/null)"; then
+              MAX_LIVE="${OUT:-0}"
+              case "$MAX_LIVE" in ''|*[!0-9]*) MAX_LIVE=0 ;; esac
+              echo "Play's highest version code: ${MAX_LIVE}"
+            else
+              echo "::warning::Could not read the live version code from Play. Falling back to the run-number floor — if Play rejects the upload as a downgrade, this is why."
+              MAX_LIVE=0
+            fi
+          fi
+          rm -f /tmp/play-sa.json /tmp/play-key.pem
+
+          if [ -n "${INPUT_VERSION_CODE:-}" ]; then
             VERSION_CODE="$(echo "${INPUT_VERSION_CODE}" | tr -cd '0-9')"
+            echo "::notice::Manual run set the version code explicitly: ${VERSION_CODE} (Play's highest is ${MAX_LIVE}, this overrides it)."
           else
-            VERSION_CODE=$(( GITHUB_RUN_NUMBER + 2 ))
+            # Above Play, and above the run number, so the code always climbs
+            # whichever of the two is currently larger.
+            FLOOR=$(( GITHUB_RUN_NUMBER + 2 ))
+            VERSION_CODE=$(( MAX_LIVE + 1 ))
+            if [ "${VERSION_CODE}" -lt "${FLOOR}" ]; then VERSION_CODE="${FLOOR}"; fi
+            echo "Version code for this build: ${VERSION_CODE}"
           fi
           echo "VERSION_CODE=${VERSION_CODE}" >> "$GITHUB_ENV"
           if [ -n "${INPUT_VERSION_NAME}" ]; then
