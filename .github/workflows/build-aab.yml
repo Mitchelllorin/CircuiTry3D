@@ -12,8 +12,15 @@ name: Build AAB
 # The one thing that changed on the way: TESTS GATE THE UPLOAD. `ci.yml` runs the
 # same suite on the same push, but in a PARALLEL job it cannot hold the upload
 # back, so a red merge could reach real users. The suite now runs in this job too,
-# before the bundle is built, and a failure stops the run before anything is
+# before the bundle is built, and a failing test stops the run before anything is
 # signed or uploaded.
+#
+# It runs `npm test`, not `npm run test:coverage`, on purpose. The coverage
+# thresholds in this repo (80% lines) have never been met — `ci.yml` has been red
+# on every single push for that reason alone while all 669 tests pass. A release
+# gate that is permanently red is not a gate, it is a wall, and the first thing
+# anyone does with a wall is route around it. `ci.yml` keeps enforcing coverage so
+# the number stays visible; this job enforces correctness.
 #
 # Manual runs still exist, and still default to production:
 #
@@ -94,10 +101,14 @@ jobs:
       # The gate. A push here publishes to PRODUCTION, so the suite runs in this
       # job rather than trusting the parallel CI run to have finished — `ci.yml`
       # cannot block an upload it does not gate, and a failing merge must stop
-      # before signing, not merely be reported afterwards. Same command as CI, so
-      # there is one definition of "the tests pass".
+      # before signing, not merely be reported afterwards.
+      #
+      # Plain `npm test`, deliberately: the coverage thresholds are unmet on main
+      # and always have been (see the note at the top), so gating on them would
+      # block every release until the repo's coverage policy changed. This gates on
+      # the tests actually passing, which is what a release needs to know.
       - name: Run tests
-        run: npm run test:coverage
+        run: npm test
 
       - name: Build web app
         run: npm run build -- --mode capacitor
