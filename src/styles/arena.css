@@ -3517,11 +3517,18 @@
      quieter costume. The cap keeps it honest on a short window; the content
      is what sets the height everywhere else. */
   height: auto !important;
-  max-height: 22vh !important;
+  max-height: 25vh !important;
   min-height: 0 !important;
   overflow: hidden !important;
-  gap: 2px !important;
-  padding: 3px 6px calc(env(safe-area-inset-bottom, 0px) + 3px) !important;
+  gap: 3px !important;
+  /* Grown ~15% from the strip's first pass (which had come down 16% from the
+     slab it replaced). The swing was too far: the four totals are the numbers
+     you read WHILE a part cooks, and at 0.72rem on a phone they were the same
+     size as the silkscreen legends around them. This is the strip getting back
+     a little of what it gave the bench — one step, measured, not the slab it
+     started as. Touch targets move with it: the Solo/Battle/Reset legends come
+     back up to 36px and the switch to 78px, both still above their old floor. */
+  padding: 4px 7px calc(env(safe-area-inset-bottom, 0px) + 4px) !important;
   /* Subtler glass. The strip is instrument furniture at the foot of a 3D scene;
      it had a 0.26–0.46 veil, a 26px blur, a 0.2 border and a 10px shadow, which
      is a slab's worth of chrome for one row of small type. Thinner veil, a
@@ -3570,16 +3577,16 @@
   margin-inline-start: 0 !important;
 }
 .arena-dash__displays {
-  gap: 4px !important;
+  gap: 5px !important;
 }
 .arena-dash__display {
-  padding: 1px 3px !important;
-  border-radius: 5px !important;
+  padding: 2px 4px !important;
+  border-radius: 6px !important;
   border-color: rgba(148, 163, 184, 0.11) !important;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.6) inset !important;
 }
 .arena-dash__display-value {
-  font-size: 0.72rem !important;
+  font-size: 0.83rem !important;
   line-height: 1 !important;
   /* A lit digit needs less bloom than a large one to read as lit. */
   text-shadow:
@@ -3587,7 +3594,7 @@
     0 1px 2px rgba(0, 0, 0, 0.95) !important;
 }
 .arena-dash__display-letter {
-  font-size: 0.42rem !important;
+  font-size: 0.48rem !important;
   letter-spacing: 0.12em !important;
 }
 /* The four W.I.R.E. letters ARE the labels at this size, and the word under a
@@ -3601,29 +3608,29 @@
 .arena-dash__fader {
   flex: 1 1 0 !important;
   min-inline-size: 0 !important;
-  row-gap: 1px !important;
+  row-gap: 2px !important;
 }
 .arena-dash__fader-head {
-  gap: 3px !important;
-  font-size: 0.44rem !important;
+  gap: 4px !important;
+  font-size: 0.51rem !important;
   line-height: 1.05 !important;
   letter-spacing: 0.07em !important;
   white-space: nowrap !important;
   overflow: hidden !important;
 }
 .arena-dash__fader-head b {
-  font-size: 0.54rem !important;
+  font-size: 0.62rem !important;
   line-height: 1.05 !important;
 }
 .arena-dash__fader-ref {
-  font-size: 0.4rem !important;
+  font-size: 0.46rem !important;
   line-height: 1.05 !important;
 }
 .arena-dash__fader input[type="range"] {
   /* A range input is mostly padding: the grab target stays generous while the
      track itself is thin, so the faders cost the strip a row of pixels each
      instead of the ~44px they were charging. */
-  height: 14px !important;
+  height: 17px !important;
   /* A range input carries a ~129px intrinsic width. Without this it refuses to
      shrink, and in a row of four instruments it did not just overflow — it
      STARVED the column beside it, which is how one fader ended up 13px wide
@@ -3637,21 +3644,21 @@
    panel was sized around its largest control at the cost of the two you
    actually ride, and the faders came out 34px each. */
 .arena-dash__switch {
-  flex: 0 0 68px !important;
-  inline-size: 68px !important;
-  max-inline-size: 68px !important;
+  flex: 0 0 78px !important;
+  inline-size: 78px !important;
+  max-inline-size: 78px !important;
   min-inline-size: 0 !important;
-  gap: 3px !important;
-  padding: 0 4px !important;
-  border-radius: 5px !important;
+  gap: 4px !important;
+  padding: 0 5px !important;
+  border-radius: 6px !important;
 }
 .arena-dash__switch-lever {
-  inline-size: 20px !important;
-  height: 10px !important;
-  border-radius: 3px !important;
+  inline-size: 23px !important;
+  height: 12px !important;
+  border-radius: 4px !important;
 }
 .arena-dash__switch-label {
-  font-size: 0.42rem !important;
+  font-size: 0.48rem !important;
   letter-spacing: 0.1em !important;
 }
 
@@ -3665,39 +3672,39 @@
 @media (max-width: 380px) {
   .arena-dash .arena-dash__mode-btn,
   .arena-dash .arena-dash__reset {
-    padding: 0 3px !important;
-    font-size: 0.46rem !important;
+    padding: 0 4px !important;
+    font-size: 0.53rem !important;
     letter-spacing: 0.02em !important;
   }
   .arena-dash__bench-row {
-    gap: 3px !important;
+    gap: 4px !important;
   }
   .arena-dash__switch {
-    flex: 0 0 58px !important;
-    inline-size: 58px !important;
-    max-inline-size: 58px !important;
+    flex: 0 0 67px !important;
+    inline-size: 67px !important;
+    max-inline-size: 67px !important;
   }
   .arena-dash__switch-lever {
-    inline-size: 16px !important;
+    inline-size: 18px !important;
   }
 }
 .arena-dash__bench-row {
   flex: 0 0 auto !important;
 }
 .arena-dash__bench-row {
-  gap: 5px !important;
+  gap: 6px !important;
 }
 /* Silkscreen legends, so they can be small — but they are buttons, so their
    padding is the touch target and stays. */
 .arena-dash .arena-dash__mode-btn,
 .arena-dash .arena-dash__reset {
-  padding: 0 4px !important;
-  font-size: 0.5rem !important;
+  padding: 0 5px !important;
+  font-size: 0.58rem !important;
   letter-spacing: 0.04em !important;
   /* Secondary controls, so they come down with the rest of the panel. They are
-     still 32px tall with a finger's worth of width either side of the word —
+     still 36px tall with a finger's worth of width either side of the word —
      small, not fiddly — while the switch you throw keeps the panel's height. */
-  min-height: 32px !important;
+  min-height: 36px !important;
 }
 .arena-dash__switch {
   padding: 0 10px !important;
