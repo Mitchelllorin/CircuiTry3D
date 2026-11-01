@@ -12,6 +12,7 @@ import {
   type BlowoutTextures,
 } from "./failureFx";
 import { createInternalsReveal, failedInternal } from "./componentInternals";
+import type { InternalsReveal } from "./componentInternals";
 import { failSignatureFor, type FailSmoke } from "./deathSignatures";
 import { isMobile } from "../../utils/mobilePerformance";
 import type { Vec2 } from "../../schematic/types";
@@ -88,6 +89,23 @@ type ArenaSceneProps = {
    * applyViewFrame.
    */
   bottomInsetPx?: number;
+  /**
+   * How many pixels at the TOP of the canvas are covered by the arena's own
+   * chrome — the Parts / Conditions / Results strip.
+   *
+   * The console inset handles the bottom of the frame; without this the model
+   * was composed into "the space above the console" and never accounted for the
+   * strip above it, so it sat high in the band it was actually free to use.
+   */
+  topInsetPx?: number;
+  /**
+   * How far the selected part's package is opened, 0 → 1.
+   *
+   * A VIEW, not a run parameter: reversible, continuous, persisting across runs
+   * and selection, and it never touches the physics. Only families with a
+   * modelled interior open — see componentInternals.ts.
+   */
+  explode?: number;
   /** Tapping a part reports it here; tapping empty board reports null. */
   onSelectAgent?: (id: string | null) => void;
   /**
@@ -96,6 +114,9 @@ type ArenaSceneProps = {
    */
   onLongPressAgent?: (id: string) => void;
 };
+
+/** Below this the cutaway counts as closed, and its reveal is disposed. */
+const EXPLODE_OPEN_MIN = 0.01;
 
 const PHASE_LABEL: Record<string, string> = {
   nominal: "OK",
@@ -1835,6 +1856,8 @@ export function ArenaScene({
   panelOpen = false,
   nameplates = false,
   bottomInsetPx = 0,
+  topInsetPx = 0,
+  explode = 0,
   selectedAgentId = null,
   onSelectAgent,
   onLongPressAgent,
@@ -1876,12 +1899,23 @@ export function ArenaScene({
   onLongPressAgentRef.current = onLongPressAgent;
   /** Read by the scene's framing pass — see bottomInsetPx. */
   const bottomInsetRef = useRef(bottomInsetPx);
+  /** And the top, which the arena's own strip occupies. */
+  const topInsetRef = useRef(topInsetPx);
+  /**
+   * The explode dial, read by the frame loop.
+   *
+   * A ref rather than a dependency: dragging the slider must not tear down and
+   * rebuild the 3D world, and the loop reads it every frame anyway.
+   */
+  const explodeRef = useRef(explode);
+  explodeRef.current = explode;
   /** Published by the scene once it is up, so a height change can re-frame it. */
   const reframeRef = useRef<(() => void) | null>(null);
   useEffect(() => {
     bottomInsetRef.current = bottomInsetPx;
+    topInsetRef.current = topInsetPx;
     reframeRef.current?.();
-  }, [bottomInsetPx]);
+  }, [bottomInsetPx, topInsetPx]);
   /** Who won — read by the closing camera move and the victor's ring. */
   const winnerIdRef = useRef<string | null>(winnerId);
   winnerIdRef.current = winnerId;
@@ -2107,6 +2141,13 @@ export function ArenaScene({
          * for parts that are doing fine.
          */
         blowout: BlowoutKit | null;
+        /**
+         * The live cutaway, when the package is open. Built on demand and
+         * disposed when the dial returns to zero — a reveal HIDES the casing it
+         * replaces, so it must not exist at rest. See the explode block in the
+         * frame loop.
+         */
+        explodeReveal: InternalsReveal | null;
         /** Invisible, generous tap target — the only thing selection raycasts. */
         pick: import("three").Mesh;
         /**
@@ -2708,6 +2749,7 @@ export function ArenaScene({
           })),
           smoke: agentPlume,
           blowout: null,
+          explodeReveal: null,
           pick: pickBox,
           // Smallest cross-section, because that is the dimension a casing
           // splits ACROSS — a resistor is long and thin, and a wound scaled to
@@ -3288,12 +3330,25 @@ export function ArenaScene({
        * the target, or the projection anywhere else.
        */
       const applyViewFrame = (width: number, height: number) => {
-        const inset = Math.max(0, Math.min(bottomInsetRef.current, height * 0.5));
+        // BOTH edges. The console sits at the foot of the frame and the strip at
+        // the head of it, and the free rectangle is what is left between them —
+        // so the virtual frame grows by both, and the window starts above the
+        // console. One inset lifted the model off the console and left it
+        // riding high by half the strip's height.
+        const bottom = Math.max(0, Math.min(bottomInsetRef.current, height * 0.5));
+        const top = Math.max(0, Math.min(topInsetRef.current, height * 0.35));
         camera.aspect = width / Math.max(height, 1);
-        if (inset < 1) {
+        if (bottom < 1 && top < 1) {
           camera.clearViewOffset();
         } else {
-          camera.setViewOffset(width, height + inset, 0, inset, width, height);
+          camera.setViewOffset(
+            width,
+            height + bottom + top,
+            0,
+            bottom,
+            width,
+            height,
+          );
         }
         camera.updateProjectionMatrix();
       };
@@ -4550,6 +4605,18 @@ export function ArenaScene({
           const shaker = core ?? group;
           const isFailed = agent.phase === "failed";
           /**
+           * How far THIS part's package is opened.
+           *
+           * Selected part only, and only while it is alive: a dead part is
+           * opened by the failure blowout, which builds its own interior and
+           * moves it on the failure clock. Two reveals on one body would fight
+           * over the same casing meshes.
+           */
+          const exploded =
+            !isFailed && selectedAgentIdRef.current === agent.id
+              ? explodeRef.current
+              : 0;
+          /**
            * Whether this part is currently the worst-off, and gets the swell.
            *
            * Deliberately NOT a ranking the camera reads (it never has — see the
@@ -4798,6 +4865,11 @@ export function ArenaScene({
             // plume: debris that has left the package must not keep following
             // the package as it convulses and slumps. Once it is off, it is
             // off — it obeys the bench, not the part it came from.
+            // A part that has just died hands the cutaway over to the blowout.
+            if (objectEntry.explodeReveal) {
+              objectEntry.explodeReveal.dispose();
+              objectEntry.explodeReveal = null;
+            }
             if (!objectEntry.blowout) {
               // ── The interior ── a real one for the families that have it,
               // built first because it decides whether the kit builds its generic
@@ -4832,6 +4904,32 @@ export function ArenaScene({
             }
             objectEntry.blowout.update(frameDelta, sinceFail);
           } else {
+            // ── The cutaway ─────────────────────────────────────────────────
+            // The package opens onto its own interior while the part is alive.
+            // Built on the first frame the dial leaves zero and disposed when it
+            // returns, because a reveal replaces the casing it opens: at rest
+            // there must be no reveal at all, or the part would look like it had
+            // been taken apart overnight.
+            //
+            // `sinceFail` is held at 0 deliberately. There is no failure here, so
+            // there is no charring and no failure clock — only an intact part
+            // being opened, which is the difference between a cutaway and a
+            // post-mortem.
+            if (objectEntry.explodeReveal && exploded <= EXPLODE_OPEN_MIN) {
+              objectEntry.explodeReveal.dispose();
+              objectEntry.explodeReveal = null;
+            }
+            if (exploded > EXPLODE_OPEN_MIN) {
+              if (!objectEntry.explodeReveal) {
+                objectEntry.explodeReveal = createInternalsReveal(
+                  THREE,
+                  agent.family,
+                  core,
+                );
+              }
+              objectEntry.explodeReveal?.update(frameDelta, 0, exploded);
+            }
+
             // ── Live stress ── shake + heat ramp with how hard the part is being
             // driven (severity, temperature, OR percent-of-rating), so even a
             // robust part that never fails visibly strains as the load climbs.
@@ -5185,6 +5283,7 @@ export function ArenaScene({
       agentObjects.forEach((entry) => {
         entry.smoke?.dispose();
         entry.blowout?.dispose();
+        entry.explodeReveal?.dispose();
         entry.flashCore.material.dispose();
         entry.flashHalo.material.dispose();
       });

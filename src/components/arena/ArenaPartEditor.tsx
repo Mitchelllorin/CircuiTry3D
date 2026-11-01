@@ -93,6 +93,26 @@ const FIELDS: EditableField[] = [
     step: 1,
     hint: "How hot it gets per watt dissipated. Higher = cooks faster.",
   },
+  {
+    key: "maxAmbientC",
+    label: "Max ambient",
+    unit: "°C",
+    group: "rating",
+    min: 30,
+    max: 200,
+    step: 1,
+    hint: "Where its derating curve reaches zero. Blank uses the family's junction limit.",
+  },
+  {
+    key: "tempCoefficientPpm",
+    label: "Temp coefficient",
+    unit: "ppm/°C",
+    group: "rating",
+    min: -6000,
+    max: 6000,
+    step: 10,
+    hint: "How far its resistance moves per °C. Copper is 3930; metal film is 100. Blank uses the family default.",
+  },
 ];
 
 type ArenaPartEditorProps = {
@@ -227,10 +247,19 @@ export function ArenaPartEditor({
 
       {/* The junction limit is NOT here on purpose: it comes from F.U.S.E.'s own
           per-family physical spec, not from the part's properties, so offering
-          a box for it would be offering a setting the engine ignores. */}
+          a box for it would be offering a setting the engine ignores.
+
+          The two temperature fields above ARE wired, and each to a different
+          question: max ambient sets where the derating curve reaches zero (the
+          console compares the live wattage against THAT rating), and the
+          coefficient sets what the part's resistance becomes at temperature.
+          Both are read by thermalModel.ts on every tick, so these are not
+          settings that display and do nothing. */}
       <p className="arena-editor__note">
         Junction limit {Math.round(agent.ratings.junctionLimitC)}°C comes from
-        F.U.S.E.'s profile for this family and is not editable here.
+        F.U.S.E.'s profile for this family and is not editable here — it is the
+        temperature the part fails at. Max ambient is the lower, publishable
+        rating: where its power rating reaches zero.
       </p>
 
       <div className="arena-editor__actions">

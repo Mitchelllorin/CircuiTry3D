@@ -3,10 +3,17 @@ import { ArenaScene } from "./ArenaScene";
 import { ArenaTestLog } from "./ArenaInstrumentation";
 import { ArenaFuseForecast } from "./ArenaFuseForecast";
 import { ArenaDashboard } from "./ArenaDashboard";
+import { ArenaExplodeRail } from "./ArenaExplodeRail";
 import { ArenaQuickBar } from "./ArenaQuickBar";
+import { hasModelledInternals } from "./componentInternals";
+import { thermalReportFor } from "./thermalModel";
 import type { ComponentAction } from "../builder/types";
 import type { BenchStressor } from "./useBenchSession";
-import { useBenchSession } from "./useBenchSession";
+import {
+  formatAxisValue,
+  stressorValueAt,
+  useBenchSession,
+} from "./useBenchSession";
 import { loadFromSupply, supplyDivider } from "./supplyLoad";
 import { overdriveCeiling } from "./stressTest";
 import type { ArenaBattleAgent } from "./types";
@@ -50,17 +57,6 @@ type ArenaBenchViewProps = {
 };
 
 /**
- * v1 ramps current only. The Voltage / Temperature / Time chips that used to
- * advertise the rest were never wired ("soon"), and went with the panel.
- */
-const STRESSOR: BenchStressor = "current";
-
-function fmtAmps(value: number | null): string {
-  if (value == null || !Number.isFinite(value)) return "—";
-  return value >= 1 ? `${value.toFixed(2)} A` : `${Math.round(value * 1000)} mA`;
-}
-
-/**
  * The solo bench: one part, ramped until it breaks.
  *
  * There is no params panel any more. It covered y208–757 of a 915px phone —
@@ -94,11 +90,23 @@ export default function ArenaBenchView({
     [roster, selectedAgentId],
   );
 
+  //
+  // Which axis this run ramps along. Every axis the session declares is wired
+  // now — current, voltage, ambient temperature and soak time — because the
+  // chips used to advertise the last three and do nothing, and a control that
+  // is offered but inert is worse than one that is not there.
+  const [stressor, setStressor] = useState<BenchStressor>("current");
+  /** How far the selected part's package is opened. A view, so it persists. */
+  const [explode, setExplode] = useState(0);
+  /** The strip's bottom edge — the top of the scene's free space. */
+  const [topInset, setTopInset] = useState(0);
+
   const {
     agent,
     agents,
     status,
     stressFactor,
+    elapsedMs,
     progress,
     scenario,
     envelope,
@@ -107,7 +115,7 @@ export default function ArenaBenchView({
     resetTest,
     selectScenario,
     setLoad,
-  } = useBenchSession({ component, stressor: STRESSOR });
+  } = useBenchSession({ component, stressor });
 
   // The supply, mirroring battle mode: the controls are DOM, so their values
   // are React state and the load maths comes from the one shared module.
@@ -137,6 +145,26 @@ export default function ArenaBenchView({
   const running = status === "battling";
   const complete = status === "complete";
 
+  /** A number on this run's axis, with its unit. */
+  const axis = useCallback(
+    (value: number | null) =>
+      value == null || !Number.isFinite(value)
+        ? "—"
+        : formatAxisValue(value, stressor),
+    [stressor],
+  );
+
+  // A temperature or soak run holds the load at rated while its own ramp
+  // climbs, so the wattage the console reports must come from the factor the
+  // physics is actually driving at — not from the clock.
+  const powerFactor =
+    stressor === "current" || stressor === "voltage" ? stressFactor : 1;
+  const thermal = useMemo(
+    () => thermalReportFor(agent, scenario, powerFactor),
+    [agent, scenario, powerFactor],
+  );
+  const canExplode = component ? hasModelledInternals(component.family) : false;
+
   // File this run once, on the transition INTO "complete" — same guard as
   // battle mode, and for the same reason: watching the value rather than the
   // transition re-files the identical result on every later render.
@@ -159,10 +187,12 @@ export default function ArenaBenchView({
       safe: pct(envelope.safeMax ?? envelope.degradeAt),
       fail: pct(envelope.failAt),
       now: pct(
-        agent ? agent.metrics.current * stressFactor : null,
+        agent
+          ? stressorValueAt(agent, stressFactor, stressor, scenario, elapsedMs)
+          : null,
       ),
     };
-  }, [envelope, agent, stressFactor]);
+  }, [envelope, agent, stressFactor, stressor, scenario, elapsedMs]);
 
   // ── The envelope the user discovered ──
   const envelopeReadout =
@@ -172,13 +202,13 @@ export default function ArenaBenchView({
           <span className="arena-bench-envelope__k arena-bench-envelope__k--safe">
             Safe to
           </span>
-          <strong>{fmtAmps(envelope.safeMax)}</strong>
+          <strong>{axis(envelope.safeMax)}</strong>
         </div>
         <div className="arena-bench-envelope__row">
           <span className="arena-bench-envelope__k arena-bench-envelope__k--degrade">
             Leaves safe zone
           </span>
-          <strong>{fmtAmps(envelope.degradeAt)}</strong>
+          <strong>{axis(envelope.degradeAt)}</strong>
         </div>
         <div className="arena-bench-envelope__row">
           <span className="arena-bench-envelope__k arena-bench-envelope__k--fail">
@@ -186,8 +216,8 @@ export default function ArenaBenchView({
           </span>
           <strong>
             {envelope.survived
-              ? `≥ ${fmtAmps(envelope.rampMax)}`
-              : `${fmtAmps(envelope.failAt)}${
+              ? `≥ ${axis(envelope.rampMax)}`
+              : `${axis(envelope.failAt)}${
                   envelope.failureName ? ` · ${envelope.failureName}` : ""
                 }`}
           </strong>
@@ -216,7 +246,7 @@ export default function ArenaBenchView({
               />
             ) : null}
             <span className="arena-bench-soa__axis">
-              0 — {fmtAmps(envelope.rampMax)}
+              0 — {axis(envelope.rampMax)}
             </span>
           </div>
         ) : null}
@@ -261,6 +291,8 @@ export default function ArenaBenchView({
         onLongPressAgent={onEditAgent}
         solo
         bottomInsetPx={dashHeight}
+        topInsetPx={topInset}
+        explode={explode}
         onExitTransitionComplete={() => undefined}
       />
 
@@ -277,6 +309,9 @@ export default function ArenaBenchView({
         rosterFull={rosterFull}
         scenario={scenario}
         onSelectScenario={selectScenario}
+        stressor={stressor}
+        onSelectStressor={setStressor}
+        onInsetChange={setTopInset}
         status={status}
         readouts={readouts}
         onToggleReadouts={onToggleReadouts}
@@ -303,6 +338,10 @@ export default function ArenaBenchView({
 
       {/* The console: fixed at the bottom — the live-run controls, and which
           bench you are at. */}
+      {/* Explode, on the right edge where every app in the family keeps it. */}
+      {canExplode ? (
+        <ArenaExplodeRail value={explode} onChange={setExplode} />
+      ) : null}
       <ArenaDashboard
         status={status}
         voltsMultiple={liveVolts}
@@ -317,6 +356,7 @@ export default function ArenaBenchView({
           if (next === "battle") onSwitchToBattle();
         }}
         onReset={resetTest}
+        thermal={thermal}
       />
     </div>
   );

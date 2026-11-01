@@ -1389,7 +1389,9 @@
 .arena-view--workspace .workspace-mode-panel,
 .arena-view--workspace .arena-dash,
 .arena-view--workspace .arena-editor,
-.arena-view--workspace .arena-result {
+.arena-view--workspace .arena-result,
+.arena-view--workspace .arena-thermal,
+.arena-view--workspace .arena-explode {
   pointer-events: auto;
 }
 
@@ -3517,7 +3519,11 @@
      quieter costume. The cap keeps it honest on a short window; the content
      is what sets the height everywhere else. */
   height: auto !important;
-  max-height: 25vh !important;
+  /* 30vh, raised from 25 when the margin strip joined the console. On a phone
+     on its side the viewport is ~360px tall, so 25vh was 90px against a console
+     that now needs ~96 — and `overflow: hidden` would have clipped the switch,
+     which is the one control on the surface you cannot do without. */
+  max-height: 30vh !important;
   min-height: 0 !important;
   overflow: hidden !important;
   gap: 3px !important;
@@ -3708,4 +3714,376 @@
 }
 .arena-dash__switch {
   padding: 0 10px !important;
+}
+
+/* ============================================================
+   3. THE MEASUREMENTS: MARGIN, DERATING, EXPLODE, RAMP AXIS
+   ============================================================ */
+
+/* ── The selected part's margin ───────────────────────────────────────────
+   One row between the circuit totals and the controls. The four W.I.R.E.
+   displays are the CIRCUIT's numbers; this is the PART's, and it is the only
+   readout on the console that answers "how close is it".
+
+   It is compared against the DERATED rating, not the nameplate one — on a
+   55 °C bench "130 % of rated" understates the problem, because the part is at
+   170 % of what it is actually allowed there. See thermalModel.ts.
+
+   State is carried by SHAPE as well as colour: a warning grows a leading glyph
+   and the bar underneath changes, so the reading survives sunlight and colour
+   blindness alike. The bar is the fastest read on the console — a glance tells
+   you which way the run is going without parsing a number. */
+.arena-dash__margin {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 7px;
+  inline-size: 100%;
+  margin: 0;
+  padding: 3px 6px 5px;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 6px;
+  background: linear-gradient(180deg, #05080f 0%, #080d17 100%);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.6) inset;
+  color: #cbd5e1;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+.arena-dash__margin-name {
+  overflow: hidden;
+  font-size: 0.52rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: rgba(226, 232, 240, 0.9);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+}
+.arena-dash__margin-metric {
+  font-size: 0.5rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: rgba(148, 163, 184, 0.72);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+}
+.arena-dash__margin-metric b {
+  font-size: 0.68rem;
+  font-weight: 800;
+  /* A number driven by a ramp must not jitter its own width as it climbs. */
+  font-variant-numeric: tabular-nums;
+  color: #e2e8f0;
+}
+.arena-dash__margin-bar {
+  position: absolute;
+  inset-inline: 0;
+  inset-block-end: 0;
+  block-size: 2px;
+  overflow: hidden;
+  border-radius: 0 0 6px 6px;
+  background: rgba(148, 163, 184, 0.14);
+}
+.arena-dash__margin-bar i {
+  display: block;
+  block-size: 100%;
+  background: #3fbf6e;
+  /* Transform-free on purpose: this is a width on a 2px bar, not a layout
+     animation anyone can see walk out from under a thumb. */
+  transition: width 160ms linear;
+}
+.arena-dash__margin[data-state="warn"] {
+  border-color: rgba(224, 160, 58, 0.42);
+}
+.arena-dash__margin[data-state="warn"] .arena-dash__margin-name::before {
+  content: "▲ ";
+  color: #e0a03a;
+}
+.arena-dash__margin[data-state="warn"] .arena-dash__margin-bar i {
+  background: #e0a03a;
+}
+.arena-dash__margin[data-state="over"] {
+  border-color: rgba(229, 100, 63, 0.5);
+}
+.arena-dash__margin[data-state="over"] .arena-dash__margin-name::before {
+  content: "■ ";
+  color: #e5643f;
+}
+.arena-dash__margin[data-state="over"] .arena-dash__margin-bar i {
+  background: #e5643f;
+}
+.arena-dash__margin[data-state="over"] .arena-dash__margin-metric b {
+  color: #fca5a5;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .arena-dash__margin-bar i {
+    transition: none;
+  }
+}
+
+/* ── The formula sheet ────────────────────────────────────────────────────
+   TRANSIENT: the user opened it, and it leaves on Escape, on its own close
+   button, or on a tap anywhere else. So it is allowed to be solid — and it is,
+   at 0.88 with a blur, because three equations with live numbers in them have
+   to be legible over a scene that changes colour as it rotates.
+
+   It sits ABOVE the console rather than over it: the strip that opened it has
+   to stay visible, or the sheet has no visible source. */
+.arena-thermal {
+  position: fixed;
+  /* Above the console's 1250, not the sheet tier's 20.
+
+     Measured, not assumed: the arena's 3D scene layer sits above the sheet at
+     20, and Playwright's hit test put the CANVAS on top of the close button —
+     the sheet drew but its button could not be tapped. The scene is the floor
+     of this surface but it is layered above the low HUD tiers, so a surface the
+     user opens has to clear it. 1260 is above both, and the sheet never overlaps
+     the console (its bottom is pinned ten pixels above it), so nothing is
+     gained or lost by the ordering. */
+  z-index: 1260;
+  inset-inline: 8px;
+  inset-block-end: calc(var(--arena-dash-height, 96px) + 10px);
+  /* Bounded by the space BETWEEN the console and the quick bar, measured: at
+     360×640 a 62vh sheet reached y113, thirty-six pixels over the strip that
+     summons it. A sheet may cover the model — the user opened it — but it must
+     not cover the control it came from. The floor keeps it usable on a short
+     landscape window, where it simply scrolls. */
+  max-block-size: min(
+    62vh,
+    max(180px, calc(100vh - var(--arena-dash-height, 96px) - 176px))
+  );
+  overflow-y: auto;
+  padding: 12px 13px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(168, 216, 255, 0.18);
+  background: rgba(12, 20, 38, 0.88);
+  backdrop-filter: blur(18px) saturate(1.2);
+  -webkit-backdrop-filter: blur(18px) saturate(1.2);
+  box-shadow: 0 -6px 22px rgba(0, 0, 0, 0.4);
+  color: #e2e8f0;
+}
+@supports not (backdrop-filter: blur(1px)) {
+  .arena-thermal {
+    background: rgba(12, 20, 38, 0.97);
+  }
+}
+.arena-thermal__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+.arena-thermal__eyebrow {
+  margin: 0;
+  font-size: 0.55rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #7b8ca1;
+}
+.arena-thermal__name {
+  margin: 2px 0 0;
+  font-size: 0.95rem;
+  line-height: 1.2;
+}
+.arena-thermal__close {
+  min-inline-size: 48px;
+  min-block-size: 48px;
+  margin: -10px -10px 0 0;
+  border: 0;
+  background: none;
+  color: #aebccd;
+  font-size: 1rem;
+  cursor: pointer;
+}
+.arena-thermal__verdict {
+  margin: 6px 0 10px;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+.arena-thermal__verdict--ok {
+  color: #86efac;
+}
+.arena-thermal__verdict--warn {
+  color: #fcd34d;
+}
+.arena-thermal__verdict--over {
+  color: #fca5a5;
+}
+/* Dense text earns a solid inset: the glass is the frame, the paragraph is not. */
+.arena-thermal__block {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-block-end: 8px;
+  padding: 9px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  background: rgba(2, 6, 23, 0.62);
+}
+.arena-thermal__title {
+  margin: 0;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #9fd8ff;
+}
+.arena-thermal__eq {
+  margin: 0;
+  font-size: 0.72rem;
+  line-height: 1.45;
+  font-variant-numeric: tabular-nums;
+  color: #cbd5e1;
+  overflow-wrap: anywhere;
+}
+.arena-thermal__eq b {
+  color: #e2e8f0;
+}
+.arena-thermal__note {
+  margin: 0;
+  font-size: 0.72rem;
+  line-height: 1.4;
+  color: #94a3b8;
+}
+.arena-thermal__note b {
+  color: #e2e8f0;
+}
+.arena-thermal__advice {
+  margin: 0;
+  padding: 9px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(229, 100, 63, 0.4);
+  background: rgba(69, 16, 9, 0.55);
+  color: #fecaca;
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
+/* ── Explode, on the right edge ───────────────────────────────────────────
+   The family's signature control, in the family's place for it. Not in the
+   console, because it changes the VIEW and not the run — and it must never
+   fight orbit or pinch, so it hugs the edge in its own 48px column.
+
+   Rotated rather than `writing-mode: vertical`, which is what broke the
+   console's first faders: a pseudo-element inherits the writing mode, so a
+   "7px" track ended up 7px along the axis you were supposed to drag and every
+   touch slammed to an end stop. A rotated horizontal input keeps every size on
+   the axis it was written for. */
+.arena-explode {
+  position: fixed;
+  z-index: 10;
+  inset-inline-end: calc(env(safe-area-inset-right, 0px) + 5px);
+  inset-block-start: 44%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 7px 3px 6px;
+  border-radius: 11px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  background: rgba(6, 12, 22, 0.5);
+  backdrop-filter: blur(10px) saturate(1.15);
+  -webkit-backdrop-filter: blur(10px) saturate(1.15);
+}
+@supports not (backdrop-filter: blur(1px)) {
+  .arena-explode {
+    background: rgba(6, 12, 22, 0.92);
+  }
+}
+.arena-explode__label {
+  font-size: 0.42rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(174, 188, 205, 0.8);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+}
+.arena-explode__track {
+  position: relative;
+  inline-size: 42px;
+  block-size: 150px;
+}
+.arena-explode__track input[type="range"] {
+  position: absolute;
+  inset-block-start: 50%;
+  inset-inline-start: 50%;
+  inline-size: 150px;
+  block-size: 42px;
+  margin: 0;
+  transform: translate(-50%, -50%) rotate(-90deg);
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+.arena-explode__track input[type="range"]::-webkit-slider-runnable-track {
+  block-size: 5px;
+  border-radius: 3px;
+  background: linear-gradient(180deg, #020610 0%, #0b1220 100%);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.9) inset;
+}
+.arena-explode__track input[type="range"]::-moz-range-track {
+  block-size: 5px;
+  border-radius: 3px;
+  background: #0b1220;
+}
+.arena-explode__track input[type="range"]::-webkit-slider-thumb {
+  appearance: none;
+  -webkit-appearance: none;
+  inline-size: 14px;
+  block-size: 22px;
+  margin-block-start: -8px;
+  border-radius: 4px;
+  border: 1px solid rgba(15, 23, 42, 0.75);
+  background: linear-gradient(90deg, #f1f5f9 0%, #cbd5e1 45%, #64748b 100%);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.6);
+}
+.arena-explode__track input[type="range"]::-moz-range-thumb {
+  inline-size: 14px;
+  block-size: 22px;
+  border-radius: 4px;
+  border: 1px solid rgba(15, 23, 42, 0.75);
+  background: #cbd5e1;
+}
+.arena-explode__value {
+  font-size: 0.5rem;
+  font-variant-numeric: tabular-nums;
+  color: #e2e8f0;
+}
+
+/* Landscape, where the free band is short.
+
+   Measured at 640×360: the strip ends at y104 and the console starts at y252,
+   and a 192px rail centred at 44% ran from y62 to y254 — over the Readouts
+   button at the top AND into the console at the bottom. A 48px-wide control
+   sitting on two other controls is not a spacing problem, it is three things
+   fighting for one area. Shorter track, centred in the band that is actually
+   free. */
+@media (orientation: landscape) and (max-height: 430px) {
+  .arena-explode {
+    inset-block-start: 49%;
+    gap: 3px;
+    padding: 5px 3px 4px;
+  }
+  .arena-explode__track {
+    block-size: 84px;
+  }
+  .arena-explode__track input[type="range"] {
+    inline-size: 84px;
+  }
+}
+
+/* ── Ramp axis ────────────────────────────────────────────────────────────
+   Sits under the environment picker in the Conditions sheet: same chips, same
+   behaviour, one decision deeper. */
+.arena-stressor {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-block-start: 12px;
 }

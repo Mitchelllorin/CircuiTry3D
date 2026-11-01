@@ -135,9 +135,18 @@ export function evaluateStress(
   stressFactor: number,
   thermalFraction: number,
   scenario: ArenaScenario = DEFAULT_SCENARIO,
+  /**
+   * Ambient to evaluate at, °C, when the run is ramping the temperature itself.
+   *
+   * The scenario's own ambient is the normal case and stays the default, so
+   * battle mode's physics is untouched. A temperature ramp is a different
+   * experiment: the load is held at rated and the ROOM gets hotter, which means
+   * the soak temperature is an input that moves rather than a constant.
+   */
+  ambientOverrideC?: number,
 ): StressOutcome {
   const { metrics, ratings } = agent;
-  const ambientC = scenario.ambientC;
+  const ambientC = ambientOverrideC ?? scenario.ambientC;
 
   // Drive the operating point up the ramp. Voltage and current scale linearly;
   // power follows V·I, so it scales with the square of the load.

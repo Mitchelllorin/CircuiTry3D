@@ -88,6 +88,23 @@ const STRESSOR_UNIT: Record<BenchStressor, string> = {
   time: "s",
 };
 
+/** How each axis is named in a sentence, for the log. */
+export const STRESSOR_LABEL: Record<BenchStressor, string> = {
+  current: "current",
+  voltage: "voltage",
+  temperature: "ambient temperature",
+  time: "soak time",
+};
+
+/**
+ * Ambient rise the temperature ramp adds by the time it reaches the rated peak.
+ *
+ * 150 °C across the rated ramp, so a 25 °C bench ramps to 175 °C at the peak
+ * and keeps going into overdrive — past every junction limit the bench holds,
+ * which is what makes it a fair test rather than a demonstration of nothing.
+ */
+export const TEMPERATURE_RAMP_SPAN_C = 150;
+
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
@@ -96,21 +113,37 @@ function capLog(entries: ArenaBattleLogEntry[]): ArenaBattleLogEntry[] {
   return entries.slice(-22);
 }
 
-function formatValue(value: number, stressor: BenchStressor): string {
+/** One value on an axis, formatted with its unit. Always a unit: no bare numbers. */
+export function formatAxisValue(value: number, stressor: BenchStressor): string {
   if (!Number.isFinite(value)) return "—";
-  if (stressor === "current") {
-    return value >= 1 ? `${value.toFixed(2)} A` : `${Math.round(value * 1000)} mA`;
+  switch (stressor) {
+    case "voltage":
+      return `${value.toFixed(2)} ${STRESSOR_UNIT.voltage}`;
+    case "temperature":
+      // Whole degrees: a junction limit is not meaningful to a tenth of one.
+      return `${value.toFixed(0)} ${STRESSOR_UNIT.temperature}`;
+    case "time":
+      return `${value.toFixed(1)} ${STRESSOR_UNIT.time}`;
+    case "current":
+    default:
+      return value >= 1
+        ? `${value.toFixed(2)} ${STRESSOR_UNIT.current}`
+        : `${Math.round(value * 1000)} mA`;
   }
-  return `${value.toFixed(2)} ${STRESSOR_UNIT[stressor]}`;
 }
 
 /** The part's nominal operating point on the chosen axis (the ramp's 1× value). */
-function nominalFor(agent: ArenaBattleAgent, stressor: BenchStressor): number {
+function nominalFor(
+  agent: ArenaBattleAgent,
+  stressor: BenchStressor,
+  scenario: ArenaScenario,
+): number {
   switch (stressor) {
     case "voltage":
       return agent.metrics.voltage;
     case "temperature":
-      return AMBIENT_C;
+      // The part starts the run soaked at the bench's ambient, not at 25 °C.
+      return scenario.ambientC;
     case "time":
       return 0;
     case "current":
@@ -119,21 +152,67 @@ function nominalFor(agent: ArenaBattleAgent, stressor: BenchStressor): number {
   }
 }
 
-/** Map the current ramp multiple to a value on the chosen stressor axis. */
-function stressorValueAt(
+/**
+ * Ambient at a point on the ramp, °C.
+ *
+ * Linear between the scenario's soak temperature and +150 °C at the rated peak,
+ * then on past it with the ramp — the same shape the load ramp has, because it
+ * is the same experiment with a different knob.
+ */
+export function ambientAt(
+  stressFactor: number,
+  scenario: ArenaScenario,
+): number {
+  const span = Math.max(scenario.stressMax - 1, 1e-6);
+  return (
+    scenario.ambientC +
+    Math.max(0, stressFactor - 1) * (TEMPERATURE_RAMP_SPAN_C / span)
+  );
+}
+
+/**
+ * A value on the chosen axis, at a point in the run.
+ *
+ * The one place the axis vocabulary lives. The scene, the envelope and the
+ * safe-operating-area marker all read this, so the axis a result is drawn on is
+ * the axis the run was actually driven along.
+ */
+export function stressorValueAt(
   agent: ArenaBattleAgent,
   stressFactor: number,
   stressor: BenchStressor,
+  scenario: ArenaScenario,
+  elapsedMs: number,
 ): number {
-  // v1: only `current` is wired. Voltage scales identically; temperature/time
-  // need their own ramp shapes and are handled when those stressors are wired.
   switch (stressor) {
     case "voltage":
       return agent.metrics.voltage * stressFactor;
+    case "temperature":
+      return ambientAt(stressFactor, scenario);
+    case "time":
+      return Math.max(0, elapsedMs) / 1000;
     case "current":
     default:
       return agent.metrics.current * stressFactor;
   }
+}
+
+/** The far end of the axis — what the ramp reaches at the overdrive ceiling. */
+function axisCeilingFor(
+  agent: ArenaBattleAgent,
+  scenario: ArenaScenario,
+  stressor: BenchStressor,
+): number {
+  if (stressor === "time") {
+    return scenario.rampMs / 1000;
+  }
+  return stressorValueAt(
+    agent,
+    overdriveCeiling(scenario),
+    stressor,
+    scenario,
+    0,
+  );
 }
 
 /** Reset a part's live telemetry to a cool, intact starting state. */
@@ -181,7 +260,7 @@ function createInitialState(
           round: 1,
           message: `Bench ready — ${
             agent.componentNumber ?? agent.name
-          } on the ${scenario.icon} ${scenario.name} bench. Ramping ${stressor} to find where it leaves its safe zone and fails.`,
+          } on the ${scenario.icon} ${scenario.name} bench. Ramping ${STRESSOR_LABEL[stressor]} to find where it leaves its safe zone and fails.`,
         },
       ]
     : [];
@@ -207,14 +286,32 @@ function step(prev: BenchState): BenchState {
 
   const { scenario, stressor } = prev;
   const elapsedMs = prev.elapsedMs + TICK_MS;
-  const stressFactor = stressFactorAt(elapsedMs, scenario);
+  // A soak holds the rated load and lets heat build on the part's own thermal
+  // constant; every other axis climbs the ramp.
+  const isSoak = stressor === "time";
+  const stressFactor = isSoak ? 1 : stressFactorAt(elapsedMs, scenario);
   const thermalFraction = thermalFractionAt(elapsedMs);
   const dtSeconds = TICK_MS / 1000;
   const agent = prev.agent;
 
+  // What the drive actually does. A temperature ramp raises the ROOM and holds
+  // the load at rated — the part fails because its junction limit got closer,
+  // not because it was overdriven, and conflating the two would report the
+  // wrong cause on a bench whose job is to report the cause.
+  const driveFactor =
+    stressor === "current" || stressor === "voltage" ? stressFactor : 1;
+  const ambientOverride =
+    stressor === "temperature" ? ambientAt(stressFactor, scenario) : undefined;
+
   // The SAME physics battle mode runs — the real F.U.S.E. failure model.
-  const out = evaluateStress(agent, stressFactor, thermalFraction, scenario);
-  const value = stressorValueAt(agent, stressFactor, stressor);
+  const out = evaluateStress(
+    agent,
+    driveFactor,
+    thermalFraction,
+    scenario,
+    ambientOverride,
+  );
+  const value = stressorValueAt(agent, stressFactor, stressor, scenario, elapsedMs);
   const prevPhase = agent.phase;
 
   const updated: ArenaBattleAgent = {
@@ -231,7 +328,7 @@ function step(prev: BenchState): BenchState {
     peakTempC: Math.max(agent.peakTempC, out.tempC),
     peakLoadPercent: Math.max(agent.peakLoadPercent, out.loadPercent),
     energyJ: agent.energyJ + out.powerW * dtSeconds,
-    survivedLoad: Math.max(agent.survivedLoad, stressFactor),
+    survivedLoad: Math.max(agent.survivedLoad, driveFactor),
   };
 
   const samples = [
@@ -250,13 +347,13 @@ function step(prev: BenchState): BenchState {
     : {
         stressor,
         unit: STRESSOR_UNIT[stressor],
-        nominal: nominalFor(agent, stressor),
+        nominal: nominalFor(agent, stressor, scenario),
         safeMax: null,
         degradeAt: null,
         failAt: null,
         failTempC: null,
         failureName: null,
-        rampMax: stressorValueAt(agent, scenario.stressMax, stressor),
+        rampMax: axisCeilingFor(agent, scenario, stressor),
         survived: false,
       };
 
@@ -279,7 +376,7 @@ function step(prev: BenchState): BenchState {
       kind: "warning",
       round: stressFactor,
       actorId: agent.id,
-      message: `⚠ Left safe zone at ${formatValue(value, stressor)} — ${Math.round(
+      message: `⚠ Left safe zone at ${formatAxisValue(value, stressor)} — ${Math.round(
         out.loadPercent,
       )}% of rating, ${Math.round(out.tempC)}°C.`,
     });
@@ -300,7 +397,7 @@ function step(prev: BenchState): BenchState {
       kind: "failure",
       round: stressFactor,
       actorId: agent.id,
-      message: `💥 FAILED at ${formatValue(value, stressor)} — ${
+      message: `💥 FAILED at ${formatAxisValue(value, stressor)} — ${
         out.failureName ?? "destroyed"
       } · ${Math.round(out.tempC)}°C · ${Math.round(out.loadPercent)}% of rating.`,
     });
@@ -308,21 +405,27 @@ function step(prev: BenchState): BenchState {
     // Survived this tick — keep ramping past the rated peak into overdrive until
     // the part fails. Only conclude as a PASS if it rides all the way to the
     // overdrive ceiling (genuinely indestructible on this bench).
-    const hitCeiling = stressFactor >= overdriveCeiling(scenario) - 1e-6;
+    const hitCeiling = isSoak
+      ? elapsedMs >= scenario.rampMs
+      : stressFactor >= overdriveCeiling(scenario) - 1e-6;
     if (hitCeiling) {
       envelope.survived = true;
       envelope.failAt = null;
       status = "complete";
+      // What it did depends on what was being ramped: a soak is a duration, a
+      // load ramp is a multiple. One sentence, but it has to be the right one.
+      const rode = isSoak
+        ? `soaked at rated load for ${formatAxisValue(value, stressor)}`
+        : `rode past ${formatAxisValue(value, stressor)} (${stressFactor.toFixed(
+            1,
+          )}× rated)`;
       newLogs.push({
         id: `bench-survived-${elapsedMs}`,
         kind: "verdict",
         round: stressFactor,
-        message: `🏁 Indestructible on this bench — rode past ${formatValue(
-          value,
-          stressor,
-        )} (${stressFactor.toFixed(
-          1,
-        )}× rated) without failing, peaking ${Math.round(updated.peakTempC)}°C.`,
+        message: `🏁 Indestructible on this bench — ${rode} without failing, peaking ${Math.round(
+          updated.peakTempC,
+        )}°C.`,
       });
     }
   }
@@ -383,7 +486,9 @@ export function useBenchSession({
             id: `bench-start-${Date.now()}`,
             kind: "system",
             round: 1,
-            message: `▶ Ramping ${previous.stressor} — pushing ${
+            message: `▶ Ramping ${
+              STRESSOR_LABEL[previous.stressor]
+            } — pushing ${
               previous.agent.componentNumber ?? previous.agent.name
             } until it leaves its safe zone…`,
           },
@@ -395,6 +500,13 @@ export function useBenchSession({
   /** The load dial — scrubs the ramp, same as the battle bench. */
   const setLoad = useCallback((factor: number) => {
     setState((previous) => {
+      // The dial scrubs a LOAD ramp. A soak holds rated load and a temperature
+      // ramp holds it while the room heats, so there is nothing here for the
+      // handle to scrub — dragging it would silently change the load those
+      // experiments are defined as holding steady.
+      if (previous.stressor !== "current" && previous.stressor !== "voltage") {
+        return previous;
+      }
       const elapsedMs = elapsedMsForStressFactor(factor, previous.scenario);
       const stressFactor = stressFactorAt(elapsedMs, previous.scenario);
       if (Math.abs(stressFactor - previous.stressFactor) < 1e-4) {
@@ -421,11 +533,15 @@ export function useBenchSession({
     });
   }, []);
 
-  // Fill toward the overdrive ceiling so the gauge tracks the full ramp-to-fail.
-  const progress = Math.min(
-    (state.stressFactor - 1) / (overdriveCeiling(state.scenario) - 1),
-    1,
-  );
+  // Fill toward the overdrive ceiling so the gauge tracks the full ramp-to-fail;
+  // a soak's extent is its clock, not its load.
+  const progress =
+    state.stressor === "time"
+      ? Math.min(state.elapsedMs / Math.max(state.scenario.rampMs, 1), 1)
+      : Math.min(
+          (state.stressFactor - 1) / (overdriveCeiling(state.scenario) - 1),
+          1,
+        );
 
   const agents = useMemo(
     () => (state.agent ? [state.agent] : []),

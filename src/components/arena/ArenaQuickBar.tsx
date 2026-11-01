@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { ArenaScenarioSelect } from "./ArenaInstrumentation";
 import { ArenaRosterPicker } from "./ArenaRosterPicker";
 import type { ArenaScenario } from "./scenarios";
+import type { BenchStressor } from "./useBenchSession";
 import type { ComponentAction } from "../builder/types";
 import type { ArenaBattleAgent, ArenaBattleStatus } from "./types";
 
@@ -15,6 +16,23 @@ type ArenaQuickBarProps = {
   rosterFull: boolean;
   scenario: ArenaScenario;
   onSelectScenario: (id: string) => void;
+  /**
+   * Which axis the solo bench ramps along, and how to change it.
+   *
+   * Omitted by battle mode, which has no such choice: a field of parts ramps
+   * on load together, and that is the whole format.
+   */
+  stressor?: BenchStressor;
+  onSelectStressor?: (stressor: BenchStressor) => void;
+  /**
+   * Where the strip's bottom edge lands, in viewport pixels.
+   *
+   * The scene composes the circuit into the space BETWEEN the chrome at the top
+   * and the console at the bottom, and this is the top of that space. Measured
+   * here because this component is the thing that knows where it sits — it
+   * already positions itself from the nav.
+   */
+  onInsetChange?: (px: number) => void;
   status: ArenaBattleStatus;
   /** Rendered inside the third sheet — see the Results button. */
   board: ReactNode;
@@ -65,6 +83,21 @@ type ArenaQuickBarProps = {
  * beneath it, and those sheets mount the same `ArenaRosterPicker` and
  * `ArenaScenarioSelect` the panel uses — one component picker in the app.
  */
+const AXIS_OPTIONS: { id: BenchStressor; label: string }[] = [
+  { id: "current", label: "Current" },
+  { id: "voltage", label: "Voltage" },
+  { id: "temperature", label: "Temperature" },
+  { id: "time", label: "Duration" },
+];
+
+/** What each axis actually does, in one sentence. */
+const AXIS_TAGLINE: Record<BenchStressor, string> = {
+  current: "Holds the rail at rated volts and drives the current up. Wattage climbs with the square of it.",
+  voltage: "Raises the rail above nominal — same experiment from the other side of Ohm's law.",
+  temperature: "Holds rated load and raises the ambient until the junction limit is crossed. This is the run that shows what derating costs.",
+  time: "Holds rated load and soaks. Nothing is overdriven; the part simply gets to its own steady temperature and lives there.",
+};
+
 export function ArenaQuickBar({
   agents,
   selectedAgentId,
@@ -75,6 +108,9 @@ export function ArenaQuickBar({
   rosterFull,
   scenario,
   onSelectScenario,
+  stressor,
+  onSelectStressor,
+  onInsetChange,
   status,
   board,
   partsFooter,
@@ -99,6 +135,10 @@ export function ArenaQuickBar({
    * than a constant that describes what the nav used to be.
    */
   const rootRef = useRef<HTMLDivElement | null>(null);
+  // Held in a ref so the placement effect keeps its empty dependency list: it
+  // must run once and own the positioning, not re-run on every parent render.
+  const onInsetChangeRef = useRef(onInsetChange);
+  onInsetChangeRef.current = onInsetChange;
   useEffect(() => {
     const element = rootRef.current;
     if (!element) return;
@@ -109,6 +149,11 @@ export function ArenaQuickBar({
       // 6px of air. Enough to read as two separate things, not enough to
       // read as a gap.
       element.style.insetBlockStart = `${nav.getBoundingClientRect().bottom + 6}px`;
+      // And publish where the strip ENDS: that is the top of the free space the
+      // circuit has to compose into. Measured after the move above, so a strip
+      // that just wrapped to two rows reports its new edge rather than the old
+      // one.
+      onInsetChangeRef.current?.(Math.round(element.getBoundingClientRect().bottom));
     };
     place();
 
@@ -260,6 +305,38 @@ export function ArenaQuickBar({
             }}
             disabled={running}
           />
+          {/* Which axis the run ramps along, beside the conditions it runs in.
+              They are the same kind of decision — what the next run IS — and
+              the chips are the same control as the environment picker's, so
+              there is nothing new to learn to use them. */}
+          {stressor && onSelectStressor ? (
+            <div className="arena-stressor">
+              <span className="arena-scenario__eyebrow">Ramp axis</span>
+              <p className="arena-scenario__tagline">{AXIS_TAGLINE[stressor]}</p>
+              <div
+                className="arena-scenario__chips"
+                role="radiogroup"
+                aria-label="Ramp axis"
+              >
+                {AXIS_OPTIONS.map((option) => {
+                  const active = option.id === stressor;
+                  return (
+                    <button
+                      key={option.id}
+                      type="button"
+                      role="radio"
+                      aria-checked={active}
+                      className={`arena-scenario__chip${active ? " is-active" : ""}`}
+                      disabled={running}
+                      onClick={() => onSelectStressor(option.id)}
+                    >
+                      <span className="arena-scenario__name">{option.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ) : null}
         </div>
       ) : null}
 

@@ -1,5 +1,7 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { SERIES_OHMS_MAX, seriesOhmsFor, seriesTFor } from "./supplyLoad";
+import { ArenaThermalSheet } from "./ArenaThermalSheet";
+import type { ThermalReport } from "./thermalModel";
 import type { ArenaBattleStatus } from "./types";
 
 type ArenaDashboardProps = {
@@ -18,6 +20,15 @@ type ArenaDashboardProps = {
   onSwitchMode: (mode: "bench" | "battle") => void;
   /** Put the bench back to untested: clears failures, scorch and the result. */
   onReset: () => void;
+  /**
+   * The selected part's margin against its DERATED rating, or null when nothing
+   * is selected.
+   *
+   * Computed by the view and handed down rather than derived here, because the
+   * figure depends on the load factor the run is actually driving at — which
+   * the console is not the owner of.
+   */
+  thermal?: ThermalReport | null;
   /**
    * Reports how tall the console currently is, so the scene can compose the
    * circuit into the space left above it. Measured rather than assumed: the
@@ -68,8 +79,14 @@ export function ArenaDashboard({
   onSwitchMode,
   onReset,
   onHeightChange,
+  thermal = null,
 }: ArenaDashboardProps) {
   const rootRef = useRef<HTMLElement | null>(null);
+  /** The formula sheet is transient: the user opens it, and it leaves. */
+  const [thermalOpen, setThermalOpen] = useState(false);
+  useEffect(() => {
+    if (!thermal) setThermalOpen(false);
+  }, [thermal]);
   // A ResizeObserver rather than a one-off measure: the console is the floor
   // the scene composes against, and it still changes height (an orientation
   // change, a value growing a digit).
@@ -87,6 +104,7 @@ export function ArenaDashboard({
   const seriesT = seriesTFor(seriesOhms);
 
   return (
+    <>
     <section ref={rootRef} className="arena-dash" aria-label="Bench dashboard">
       {/* ── Displays ──────────────────────────────────────────────────
           The four circuit totals, in their W.I.R.E. colours. These are the
@@ -120,6 +138,51 @@ export function ArenaDashboard({
           </div>
         ))}
       </div>
+
+      {/* ── The selected part's margin ─────────────────────────────────
+          WHAT THE FOUR TOTALS ABOVE CANNOT SAY.
+
+          The displays are the CIRCUIT's numbers, and they are the right
+          numbers to watch a run with — but none of them answers "how close is
+          this part to letting go", which is the question the whole bench
+          exists to answer. That reading lived only on the part's floating
+          nameplate: off by default, and when on, sitting over the part it
+          describes. The console is always there and already the instrument, so
+          the margin belongs here.
+
+          Compared against the DERATED rating, not the nameplate one — see
+          thermalModel. "130% of rated" on a 55 °C bench understates the
+          problem; the part is at 170% of what it is actually allowed.
+
+          One row, and tapping it opens the arithmetic. Shape as well as
+          colour: the state word changes and the bar fills, so this is still
+          readable in sunlight and for a colour-blind user. */}
+      {thermal ? (
+        <button
+          type="button"
+          className="arena-dash__margin"
+          data-state={thermal.state}
+          onClick={() => setThermalOpen((open) => !open)}
+          aria-expanded={thermalOpen}
+          aria-label={`Thermal margin for ${thermal.name}: ${thermal.utilisationPct.toFixed(
+            0,
+          )}% of its derated rating, ${Math.round(thermal.tempC)} of ${
+            thermal.limitC
+          } degrees. Show the working.`}
+        >
+          <span className="arena-dash__margin-name">{thermal.name}</span>
+          <span className="arena-dash__margin-metric">
+            <b>{Math.min(thermal.utilisationPct, 999).toFixed(0)}%</b>
+            {thermal.saturated ? "+ " : " "}of derated
+          </span>
+          <span className="arena-dash__margin-metric">
+            <b>{Math.round(thermal.tempC)}</b>/{Math.round(thermal.limitC)}°C
+          </span>
+          <span className="arena-dash__margin-bar" aria-hidden>
+            <i style={{ width: `${Math.min(thermal.utilisationPct, 100)}%` }} />
+          </span>
+        </button>
+      ) : null}
 
       {/* ── Controls ──────────────────────────────────────────────────
           Faders are real range inputs. A native range gets keyboard control,
@@ -234,6 +297,24 @@ export function ArenaDashboard({
           </span>
         </button>
       </div>
+
     </section>
+
+      {/* OUTSIDE the console, and it has to be.
+
+          The console is glass: `backdrop-filter` makes it the CONTAINING BLOCK
+          for fixed-position descendants, and `overflow: hidden` then CLIPS
+          them. A sheet rendered inside it was positioned from the console's box
+          and cut off above its top edge — measured at 360×640, its close button
+          landed behind the canvas and could not be tapped at all. It looked
+          right in the DOM and was unreachable on the screen.
+
+          A sibling escapes both, which is the whole fix. It also keeps the
+          width measurement honest: `inset-inline` here is the viewport, not the
+          console's content box. */}
+      {thermalOpen && thermal ? (
+        <ArenaThermalSheet report={thermal} onClose={() => setThermalOpen(false)} />
+      ) : null}
+    </>
   );
 }

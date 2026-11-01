@@ -7,8 +7,11 @@ import { ArenaTestLog } from "./ArenaInstrumentation";
 import { ArenaLeaderboard } from "./ArenaLeaderboard";
 import { ArenaPartEditor } from "./ArenaPartEditor";
 import { ArenaDashboard } from "./ArenaDashboard";
+import { ArenaExplodeRail } from "./ArenaExplodeRail";
 import { ArenaQuickBar } from "./ArenaQuickBar";
 import { ArenaScene } from "./ArenaScene";
+import { hasModelledInternals } from "./componentInternals";
+import { thermalReportFor } from "./thermalModel";
 import {
   ARENA_ROSTER_MAX,
   arenaSourceFromLibrary,
@@ -18,7 +21,7 @@ import {
 import { entriesFromRun, mergeEntries, type LeaderboardEntry } from "./leaderboardModel";
 import { overdriveCeiling } from "./stressTest";
 import { loadFromSupply, supplyDivider } from "./supplyLoad";
-import { loadArenaSessionPayload } from "./arenaStorage";
+import { loadArenaBoard, loadArenaSessionPayload, saveArenaBoard } from "./arenaStorage";
 import type { ComponentAction } from "../builder/types";
 import type {
   ArenaSourceComponent,
@@ -150,11 +153,23 @@ export default function ArenaView({
   // bench exists for is BETWEEN runs — change a part's rating, run it again,
   // see the two side by side. Kept in memory here; when save/load lands this
   // is the shape that gets persisted.
-  const [board, setBoard] = useState<LeaderboardEntry[]>([]);
-  const runCountRef = useRef(0);
+  //
+  // PERSISTED. The board used to be in memory only, so walking back to the
+  // builder — or Android reclaiming the tab — threw away every comparison the
+  // bench had built. Comparing one part across ratings IS what a solo bench is
+  // for, so losing that on the way out lost the experiment.
+  const [savedBoard] = useState(() => loadArenaBoard());
+  const [board, setBoard] = useState<LeaderboardEntry[]>(savedBoard.entries);
+  const runCountRef = useRef(savedBoard.runs);
   // Recorded on the transition INTO "complete" rather than while complete, or
   // every re-render of a finished bench would file the same run again.
   const lastRecordedStatus = useRef<string>("ready");
+
+  // Written on every change, including the clear below. The board is at most a
+  // few dozen small records, so there is nothing to debounce.
+  useEffect(() => {
+    saveArenaBoard({ entries: board, runs: runCountRef.current });
+  }, [board]);
 
   /** Which part's editor is open, if any. */
   const [editingAgentId, setEditingAgentId] = useState<string | null>(null);
@@ -276,6 +291,10 @@ export default function ArenaView({
   // How much of the canvas the console covers, measured live, so the circuit
   // composes into the space actually left for it.
   const [dashHeight, setDashHeight] = useState(0);
+  /** The strip's bottom edge — the top of the scene's free space. */
+  const [topInset, setTopInset] = useState(0);
+  /** How far the selected part's package is opened. A view, so it persists. */
+  const [explode, setExplode] = useState(0);
 
   // Mark the shell while the arena is up, so app-level furniture can stand down.
   // The tips ticker is the reason: in workspace it is z-index 1310 pinned 56px
@@ -310,6 +329,10 @@ export default function ArenaView({
   const handleClearBoard = useCallback(() => {
     setBoard([]);
     runCountRef.current = 0;
+    // Written directly as well as through the effect: clearing an already-empty
+    // board would not change state, so the effect would not run and the old
+    // entries would come back on the next launch.
+    saveArenaBoard({ entries: [], runs: 0 });
   }, []);
 
   /** Shared by both modes, so one board holds every run on this bench. */
@@ -349,6 +372,26 @@ export default function ArenaView({
     () => agents.filter((agent) => agent.phase !== "failed").length,
     [agents],
   );
+
+  /**
+   * The selected part's margin against its DERATED rating.
+   *
+   * Reads the LIVE agent so the numbers move with the run, and the load factor
+   * the physics is using: at 2.4× the rail a part dissipates 5.8× its rated
+   * wattage, which is the figure that decides whether it survives.
+   */
+  const thermalAgent = useMemo(
+    () => agents.find((agent) => agent.id === selectedAgentId) ?? null,
+    [agents, selectedAgentId],
+  );
+  const thermal = useMemo(
+    () => thermalReportFor(thermalAgent, scenario, stressFactor),
+    [thermalAgent, scenario, stressFactor],
+  );
+  /** Only families with a modelled interior get the dial — see ArenaExplodeRail. */
+  const canExplode = thermalAgent
+    ? hasModelledInternals(thermalAgent.family)
+    : false;
 
   const sessionLabel = sessionPayload?.sessionName ?? "CircuiTry3D Arena";
 
@@ -448,6 +491,8 @@ export default function ArenaView({
           onSelectAgent={setSelectedAgentId}
           onLongPressAgent={setEditingAgentId}
           bottomInsetPx={dashHeight}
+          topInsetPx={topInset}
+          explode={explode}
           onExitTransitionComplete={handleExitComplete}
         />
         {editingAgent ? (
@@ -516,6 +561,7 @@ export default function ArenaView({
           rosterFull={rosterSources.length >= ARENA_ROSTER_MAX}
           scenario={scenario}
           onSelectScenario={selectScenario}
+          onInsetChange={setTopInset}
           status={status}
           readouts={showReadouts}
           onToggleReadouts={toggleReadouts}
@@ -550,6 +596,11 @@ export default function ArenaView({
           }
         />
 
+        {/* Explode, on the right edge where every app in the family keeps it. */}
+        {canExplode ? (
+          <ArenaExplodeRail value={explode} onChange={setExplode} />
+        ) : null}
+
         {/* The console. Fixed at the bottom, and now only what you operate a
             LIVE run with: the circuit totals, the two faders, the switch. */}
         <ArenaDashboard
@@ -566,6 +617,7 @@ export default function ArenaView({
             if (next === "bench") setArenaMode("bench");
           }}
           onReset={resetTest}
+          thermal={thermal}
         />
         {/* The params panel that sat here is gone — see ArenaBenchView for why,
             and where each thing it carried went. */}
