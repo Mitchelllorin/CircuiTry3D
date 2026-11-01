@@ -105,6 +105,7 @@ import "../styles/scroller-menu.css";
 import { ScrollerMenu } from "../components/builder/ScrollerMenu";
 import { ExplodeControl } from "../components/builder/ExplodeControl";
 import { HelpSheet } from "../components/builder/HelpSheet";
+import { FamilyDrawer, FamilyGlyph } from "../components/family/FamilyDrawer";
 import { AnalysisSheet } from "../components/builder/AnalysisSheet";
 import { formatEngineering } from "../utils/electrical";
 import CurrentFlowAnimation from '../components/CurrentFlowAnimation';
@@ -1149,6 +1150,8 @@ export default function Builder() {
     resetWorkspaceSkin,
   } = useWorkspaceBackground();
   const [isSettingsPanelOpen, setSettingsPanelOpen] = useState(false);
+  const [isFamilyOpen, setFamilyOpen] = useState(false);
+  const closeFamily = useCallback(() => setFamilyOpen(false), []);
 
   const {
     isHelpOpen,
@@ -3436,6 +3439,18 @@ export default function Builder() {
               <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
             </svg>
           </button>
+          {/* The 3D Learning Family — beside the gear, the same small button in
+              every family app. Opens the family drawer. */}
+          <button
+            type="button"
+            className={`circuit-zoom-btn${isFamilyOpen ? " circuit-zoom-btn--active" : ""}`}
+            onClick={() => setFamilyOpen((open) => !open)}
+            aria-label="3D Family"
+            aria-expanded={isFamilyOpen}
+            title="3D Family"
+          >
+            <FamilyGlyph />
+          </button>
           {/* Explode — foot of the right edge, the same place ThePrints3D keeps
               it, and the nearest spot in this column to the thumb. */}
           <ExplodeControl
@@ -3495,6 +3510,8 @@ export default function Builder() {
         section={helpView === "shortcuts" || helpView === "about" ? helpView : "overview"}
         onClose={() => setHelpOpen(false)}
       />
+
+      <FamilyDrawer isOpen={isFamilyOpen} onClose={closeFamily} />
 
       {isSettingsPanelOpen && (
         <CompactSettingsPanel

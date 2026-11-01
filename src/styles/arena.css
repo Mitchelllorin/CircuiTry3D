@@ -3570,7 +3570,7 @@
 .arena-dash__controls {
   display: flex !important;
   align-items: stretch !important;
-  gap: 7px !important;
+  gap: 8px !important;
 }
 /* The legend wraps INSIDE its own column rather than being cut off: "Supply
    1.00×" over "of 12.0× rated" is still the whole reading, and it costs the
