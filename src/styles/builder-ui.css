@@ -5339,23 +5339,12 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
   background: rgba(168, 216, 255, 0.08);
 }
 
-.help-sheet__family {
-  list-style: none;
-  padding-left: 0 !important;
-}
-
-.help-sheet__family li {
-  display: flex;
-  flex-direction: column;
-}
-
-.help-sheet__family a,
-.help-sheet__family-name {
-  font-weight: 700;
-}
-
-.help-sheet__family-line {
-  color: #b7c7da;
+/* The family drawer (components/family/FamilyDrawer.css) is shared byte for
+   byte with the sibling apps and sits at z 20 there. This app's layers run on
+   a bigger scale, so it takes the sheet layer here, with Help and Analysis. */
+body .fd-catch,
+body .fd-drawer {
+  z-index: var(--z-modal-bg);
 }
 
 .legend-item {
