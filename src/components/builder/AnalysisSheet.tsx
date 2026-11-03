@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { InsightsFilmReel } from "./InsightsFilmReel";
+import type { InsightsMetric } from "./InsightsFilmReel";
 
 type WireProfileSummary = {
   gaugeLabel: string;
@@ -10,7 +11,7 @@ type WireProfileSummary = {
 interface AnalysisSheetProps {
   isOpen: boolean;
   onClose: () => void;
-  metrics: Array<{ id: string; letter: string; label: string; value: string }>;
+  metrics: InsightsMetric[];
   wireProfile: WireProfileSummary;
 }
 

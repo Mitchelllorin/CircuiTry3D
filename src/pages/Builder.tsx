@@ -24,6 +24,8 @@ import { EnvironmentalPanel } from "../components/builder/panels/EnvironmentalPa
 import {
   type EnvironmentalScenario,
   getDefaultScenario,
+  getMetricStatus,
+  workingTemperatureC,
 } from "../data/environmentalScenarios";
 import ArenaView from "../components/arena/ArenaView";
 import { CircuitSaveModal } from "../components/builder/modals/CircuitSaveModal";
@@ -107,6 +109,7 @@ import { ExplodeControl } from "../components/builder/ExplodeControl";
 import { HelpSheet } from "../components/builder/HelpSheet";
 import { FamilyDrawer, FamilyGlyph } from "../components/family/FamilyDrawer";
 import { AnalysisSheet } from "../components/builder/AnalysisSheet";
+import type { InsightsMetric } from "../components/builder/InsightsFilmReel";
 import { formatEngineering } from "../utils/electrical";
 import CurrentFlowAnimation from '../components/CurrentFlowAnimation';
 
@@ -2603,7 +2606,28 @@ export default function Builder() {
     [circuitBaseMetrics, circuitState],
   );
 
-  const wireMetrics = useMemo(() => {
+  // The environment's working temperature, alongside the circuit's figures.
+  //
+  // Temperature was the one metric the workspace never showed: it existed in
+  // the Conditions panel (as Thermal Rise) and in the Arena's bench console, and
+  // nowhere the user could see it while just building. It belongs in the same
+  // readout as W.I.R.E. because it is the condition those four numbers are being
+  // read AT — the same part at the same watts is a different problem at 90 °C.
+  const environmentTemp = useMemo(() => {
+    const tempC = workingTemperatureC(activeEnvironment);
+    const status = getMetricStatus(tempC, "thermal");
+    return {
+      tempC,
+      ambientC: activeEnvironment.conditions.temperature ?? 25,
+      state: (status === "critical"
+        ? "over"
+        : status === "warning"
+          ? "warn"
+          : "ok") as "ok" | "warn" | "over",
+    };
+  }, [activeEnvironment]);
+
+  const wireMetrics = useMemo<InsightsMetric[]>(() => {
     const volts = liveWireMetricsSnapshot.voltage;
     const amps = liveWireMetricsSnapshot.current;
     const watts = liveWireMetricsSnapshot.power;
@@ -2640,8 +2664,20 @@ export default function Builder() {
         label: "Voltage",
         value: `${Number.isFinite(volts) ? volts.toFixed(1) : "0.0"} V`,
       },
+      {
+        id: "temperature",
+        letter: "T",
+        label: "Temperature",
+        // One decimal, and it is the SAME figure the Conditions panel calls
+        // Thermal Rise — ambient times the scenario's thermal factor. The sub
+        // line carries the ambient behind it, so 82.5 °C on a 50 °C day cannot
+        // be misread as the room being 82 °C.
+        value: `${environmentTemp.tempC.toFixed(1)}°C`,
+        sub: `${environmentTemp.ambientC}°C ambient`,
+        state: environmentTemp.state,
+      },
     ];
-  }, [activeWireProfile, liveWireMetricsSnapshot]);
+  }, [activeWireProfile, liveWireMetricsSnapshot, environmentTemp]);
 
   // While the current-flow payoff demo is playing (sequence running OR banner
   // showing) the preset circuit must be view-only: a transparent guard sits over
@@ -3231,9 +3267,10 @@ export default function Builder() {
               type="button"
               key={`ticker-wire-fixed-${metric.id}`}
               className={`ticker-wire-metric ticker-wire-metric--${metric.id}`}
+              data-state={metric.state ?? "ok"}
               onClick={() => setAnalysisOpen(true)}
-              title={`${metric.label}: ${metric.value} — tap for the working`}
-              aria-label={`${metric.label}: ${metric.value}. Open the numbers.`}
+              title={`${metric.label}: ${metric.value}${metric.sub ? ` (${metric.sub})` : ""} — tap for the working`}
+              aria-label={`${metric.label}: ${metric.value}${metric.sub ? `, ${metric.sub}` : ""}. Open the numbers.`}
             >
               <span className="ticker-wire-letter" aria-hidden="true">
                 {metric.letter}

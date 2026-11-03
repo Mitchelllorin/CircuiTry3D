@@ -20,6 +20,15 @@
   --wire-i: #ffd633;
   --wire-r: #00cc66;
   --wire-e: #ff4444;
+  /*
+   * Temperature is not a W.I.R.E. quantity, so it does not borrow one of their
+   * colours. Its own warm tint marks it as the thermal reading. The two state
+   * colours are the pair used wherever a live figure is being run against a
+   * rating: warn BEFORE the limit, over at it.
+   */
+  --wire-t: #ffab5e;
+  --metric-warn: #ffb020;
+  --metric-over: #ff5a4a;
   --brand-blue-dim: rgba(168, 216, 255, 0.18);
   --brand-blue-glow: rgba(168, 216, 255, 0.42);
   --brand-orange-dim: rgba(255, 153, 102, 0.18);

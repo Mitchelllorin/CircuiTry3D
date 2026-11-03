@@ -589,6 +589,17 @@
   font-family: "DM Sans", "Inter", system-ui, sans-serif;
 }
 
+/* A value running against its limit says so in colour, before the limit rather
+   than after it. The card also carries the state as data-state, so anything
+   reading the DOM (the accessible name, a probe) sees it too. */
+.insights-card[data-state="warn"] .insights-card-value {
+  color: var(--metric-warn, #ffb020);
+}
+
+.insights-card[data-state="over"] .insights-card-value {
+  color: var(--metric-over, #ff5a4a);
+}
+
 .insights-card-label {
   font-size: 8px;
   font-weight: 600;

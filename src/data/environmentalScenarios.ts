@@ -215,6 +215,17 @@ export function getScenarioById(id: string): EnvironmentalScenario | undefined {
 }
 
 /**
+ * The working temperature a scenario puts the circuit at, °C.
+ *
+ * Ambient times the scenario's own thermal factor — the same figure the
+ * Conditions panel calls Thermal Rise. It lives here rather than in either
+ * caller so the workspace readout and the panel cannot drift apart.
+ */
+export function workingTemperatureC(scenario: EnvironmentalScenario): number {
+  return (scenario.conditions.temperature ?? 25) * (scenario.modifiers.temperature ?? 1);
+}
+
+/**
  * Get the default (standard) scenario
  */
 export function getDefaultScenario(): EnvironmentalScenario {
@@ -246,7 +257,7 @@ export function applyScenarioModifiers(
   const resistance = (baseMetrics.resistance ?? 0) * (modifiers.resistance ?? 1);
   const voltage = (baseMetrics.voltage ?? 0) * (modifiers.voltage ?? 1);
   const efficiency = (modifiers.efficiency ?? 1) * 100;
-  const thermalRise = (scenario.conditions.temperature ?? 25) * (modifiers.temperature ?? 1);
+  const thermalRise = workingTemperatureC(scenario);
 
   return {
     watts,

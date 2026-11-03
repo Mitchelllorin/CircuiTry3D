@@ -21,6 +21,14 @@ export type InsightsMetric = {
   letter: string;
   label: string;
   value: string;
+  /** A second line under the value — the reference the value is read against. */
+  sub?: string;
+  /**
+   * How the figure stands against its limit. "warn" is approaching, "over" is
+   * at or past it — the card colours the value, so the reading carries its own
+   * state instead of needing someone to know the threshold.
+   */
+  state?: "ok" | "warn" | "over";
   /** Optional accent CSS color — used for the metric letter */
   accent?: string;
 };
@@ -79,8 +87,8 @@ export function InsightsFilmReel({ metrics, wireProfile }: InsightsFilmReelProps
   const reelRef = useRef<HTMLDivElement>(null);
   const scrollRafRef = useRef<number | null>(null);
 
-  // Build the flat list of frames: 4 metrics + 1 wire profile card
-  const frames = [
+  // Build the flat list of frames: the circuit metrics + 1 wire profile card
+  const frames: Array<InsightsMetric & { isProfile?: boolean; isActive?: boolean }> = [
     ...metrics,
     {
       id: "wire-profile",
@@ -90,7 +98,7 @@ export function InsightsFilmReel({ metrics, wireProfile }: InsightsFilmReelProps
       sub: wireProfile.resistancePer,
       isProfile: true,
       isActive: wireProfile.isActive,
-    } as InsightsMetric & { sub?: string; isProfile?: boolean; isActive?: boolean },
+    },
   ];
 
   const scrollToIndex = useCallback((idx: number, smooth = true) => {
@@ -161,7 +169,7 @@ export function InsightsFilmReel({ metrics, wireProfile }: InsightsFilmReelProps
         onScroll={handleScroll}
       >
         {frames.map((frame, idx) => {
-          const f = frame as typeof frame & { sub?: string; isProfile?: boolean; isActive?: boolean };
+          const f = frame;
           const isCenter = idx === centerIndex;
 
           return (
@@ -169,6 +177,7 @@ export function InsightsFilmReel({ metrics, wireProfile }: InsightsFilmReelProps
               key={f.id}
               role="option"
               aria-selected={isCenter}
+              data-state={f.state ?? "ok"}
               className={`insights-card${isCenter ? " insights-card--center" : ""}${f.isProfile && f.isActive ? " insights-card--profile-active" : ""}`}
               onClick={() => scrollToIndex(idx)}
               tabIndex={isCenter ? 0 : -1}

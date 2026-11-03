@@ -4134,6 +4134,24 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
   color: var(--wire-e);
 }
 
+/* T — temperature. Its own tint, because it is not a W.I.R.E. quantity and
+   borrowing one of their colours would say it was. */
+.ticker-wire-metric--temperature .ticker-wire-letter,
+.ticker-wire-metric--temperature .ticker-wire-value {
+  color: var(--wire-t);
+}
+
+/* State overrides the id colour, so these come last: the figure changes colour
+   as it approaches the limit, which is the warning. Shape carries it too — the
+   card's state is read out on the numbers sheet. */
+.ticker-wire-metric[data-state="warn"] .ticker-wire-value {
+  color: var(--metric-warn);
+}
+
+.ticker-wire-metric[data-state="over"] .ticker-wire-value {
+  color: var(--metric-over);
+}
+
 .ticker-wrapper {
   width: 100%;
   height: 100%;
@@ -4212,6 +4230,53 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
 
   .ticker-separator {
     font-size: 12px;
+  }
+}
+
+/* Five readouts share this strip now (W I R E + T), and at 360px the fifth was
+   the one that got clipped: measured at 407px of content in a 360px band with a
+   live circuit. Tighten the gaps — never the type, 13px is the floor on a phone
+   — and let the strip scroll rather than clip. The buttons are the door to the
+   numbers sheet, so the last one has to be reachable whatever the numbers are.
+
+   The strip must shrink to the band for its own overflow to scroll: `flex: 0 1
+   auto` with `max-width: 100%`, and the marquee beside it gives up its basis
+   (`flex: 1 1 0`) so the two cannot fight over the same pixels. */
+@media (max-width: 480px) {
+  .ticker-wire-fixed {
+    flex: 0 1 auto;
+    min-width: 0;
+    max-width: 100%;
+    gap: 6px;
+    padding: 0 8px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x proximity;
+    touch-action: pan-x;
+    /* The band itself is pointer-events: none so it cannot eat canvas drags;
+       the readout takes them back, because it scrolls and it is tappable. */
+    pointer-events: auto;
+  }
+
+  .ticker-wire-fixed::-webkit-scrollbar {
+    display: none;
+  }
+
+  .ticker-wrapper {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .ticker-wire-metric {
+    gap: 4px;
+    padding: 0 3px;
+    scroll-snap-align: start;
+  }
+
+  .ticker-wire-letter {
+    letter-spacing: 0.1em;
   }
 }
 
