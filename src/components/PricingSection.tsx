@@ -393,7 +393,7 @@ export default function PricingSection() {
             <span className="pricing-section-kicker">Same maker</span>
             <h2 className="pricing-section-title">The rest of the family</h2>
             <p className="pricing-section-desc">
-              ThePrints3D traces a floor plan and frames it in 3D. AutoMotive3D builds an
+              ThePrints3D takes 2D CAD to a 3D model. AutoMotive3D builds an
               engine, runs it on the dyno and tears it down. Same controls, same explode.
             </p>
             <p className="pricing-section-desc">
