@@ -388,17 +388,28 @@ body.builder-body::before {
   transform: scale(0.94);
 }
 
-/* Active is shown ON the mark, not behind it: the icon lights up and throws a
-   glow of its own. A filled pill would put a container straight back. */
+/* Active is shown ON the mark, not behind it: a filled pill would put a
+   container straight back. */
 .mode-tab[data-active="true"] {
   color: var(--builder-cyan);
 }
 
+/* No halo. This was a 7px cyan bloom around the active mark, on the theory that
+   lighting the icon is a cheaper "active" than filling a box behind it — and it
+   is, but not this way. At 30px the bloom is wider than the icon's own bevel, so
+   it stopped describing the shape and started dribbling a phosphor afterglow
+   into the dark bar around it; on the modelled icons, which already carry a cyan
+   rim light from the studio, it doubled that rim into a halo.
+
+   Active still reads without it, and reads more sharply: the mark is already at
+   1.06, already brand-coloured, and now also brighter, so the difference is IN
+   the icon rather than in a fog beside it. What stays is the tight dark shadow
+   every nav icon wears, which is separation, not decoration. */
 .mode-tab[data-active="true"] .mode-icon,
 .mode-tab[data-active="true"] .mode-icon--3d {
   filter:
-    drop-shadow(0 0 7px rgba(120, 224, 255, 0.85))
-    drop-shadow(0 1px 2px rgba(0, 0, 0, 0.9));
+    drop-shadow(0 1px 2px rgba(0, 0, 0, 0.9))
+    brightness(1.16);
   transform: scale(1.06);
 }
 
@@ -434,10 +445,13 @@ body.builder-body::before {
   vertical-align: middle;
 }
 
+/* Same rule as the 3D marks: no coloured aura. Wire Guide is an artwork file, so
+   a 4px glow sat noticeably further off its edge than the modelled icons' and
+   was the most visible halo in the row. */
 .mode-icon--wire-guide {
   width: 20px;
   height: 20px;
-  filter: drop-shadow(0 0 4px rgba(168, 216, 255, 0.35));
+  filter: none;
 }
 
 .mode-label {
@@ -5339,23 +5353,12 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
   background: rgba(168, 216, 255, 0.08);
 }
 
-.help-sheet__family {
-  list-style: none;
-  padding-left: 0 !important;
-}
-
-.help-sheet__family li {
-  display: flex;
-  flex-direction: column;
-}
-
-.help-sheet__family a,
-.help-sheet__family-name {
-  font-weight: 700;
-}
-
-.help-sheet__family-line {
-  color: #b7c7da;
+/* The family drawer (components/family/FamilyDrawer.css) is shared byte for
+   byte with the sibling apps and sits at z 20 there. This app's layers run on
+   a bigger scale, so it takes the sheet layer here, with Help and Analysis. */
+body .fd-catch,
+body .fd-drawer {
+  z-index: var(--z-modal-bg);
 }
 
 .legend-item {
@@ -6218,8 +6221,18 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
   transform: translateX(calc(-1 * var(--builder-menu-left-width)));
 }
 
+/* Open, the library sits ON the perimeter — flush with the left edge, the way
+   the Controls drawer sits flush with the right one.
+
+   It used to open BESIDE the build rail: `translateX(rail-right + 8px)`, so the
+   panel started ~120px in from the edge and the rail's column stayed visible
+   beside it. That guarded the Clear / Wire / Run buttons, but it cost the thing
+   the drawer is for — a side panel that begins a rail's width into the canvas
+   reads as a floating card over the workspace rather than as the workspace's
+   edge, and it took a third of a phone's width with it. The two drawers are a
+   mirrored pair; only one of them was on its edge. Both are now. */
 .builder-shell .builder-menu-stage-left.open {
-  transform: translateX(calc(var(--builder-rail-right, 112px) + 8px));
+  transform: translateX(0);
 }
 
 .builder-shell .builder-menu-stage-left .builder-menu-left {

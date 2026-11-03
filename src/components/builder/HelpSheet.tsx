@@ -26,21 +26,6 @@ interface HelpSheetProps {
  * tap outside the card. So it is solid, not glass.
  */
 
-type SiblingApp = { name: string; line: string; href?: string; current?: boolean };
-
-// The family, in the one order used everywhere. Linked to each app's own site,
-// never a store listing. Apps without a site yet are listed, not linked.
-const FAMILY: SiblingApp[] = [
-  { name: "CircuiTry3D", line: "Circuits in 3D, and what happens when they fail.", current: true },
-  { name: "ThePrints3D", line: "Drawing sets turned into a 3D building, layer by layer.", href: "https://theprints3d.com" },
-  { name: "AutoMotive3D", line: "An engine you can take apart.", href: "https://automotive3d.ca" },
-  { name: "AnyBody3D", line: "The human body, in 3D.", href: "https://anybody3d.com" },
-  { name: "TheCell3D", line: "A cell you can take apart.", href: "https://thecell3d.com" },
-  { name: "ThePyramids3D", line: "The pyramids, taken apart course by course." },
-  { name: "AnyPlanet3D", line: "A planet you can take apart, core to sky." },
-  { name: "LearnIT3D", line: "Trade courses — Electrical Foundations, HVAC Apprentice Prep." },
-];
-
 const SHORTCUTS: Array<[string, string]> = [
   ["W", "Wire mode on / off"],
   ["T", "Rotate mode on / off"],
@@ -183,22 +168,6 @@ export function HelpSheet({ isOpen, section, onClose }: HelpSheetProps) {
               Online at <a href="https://circuitry3d.app" target="_blank" rel="noopener noreferrer">circuitry3d.app</a>.
               Questions or problems: <a href="mailto:info@circuitry3d.app">info@circuitry3d.app</a>.
             </p>
-            <h4>More from the 3D family</h4>
-            <ul className="help-sheet__family">
-              {FAMILY.map((app) => (
-                <li key={app.name}>
-                  {app.href && !app.current ? (
-                    <a href={app.href} target="_blank" rel="noopener noreferrer">{app.name}</a>
-                  ) : (
-                    <span className="help-sheet__family-name">{app.name}</span>
-                  )}
-                  <span className="help-sheet__family-line">
-                    {app.line}
-                    {app.current ? " You're here." : !app.href ? " Coming." : ""}
-                  </span>
-                </li>
-              ))}
-            </ul>
           </section>
         </div>
       </div>
