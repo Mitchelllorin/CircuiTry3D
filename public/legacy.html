@@ -4304,6 +4304,22 @@ body.android-optimized .zoom-btn {
                                     );
                                 }
                                 break;
+                            case 'set-environment': {
+                                // The environment is the app's, not this iframe's: React owns
+                                // the scenario and pushes its temperature in here. Every plate
+                                // re-renders, because the reading changes for parts whose
+                                // W.I.R.E. numbers did not move at all.
+                                const ambientC = typeof data.ambientC === 'number' && isFinite(data.ambientC) ? data.ambientC : 25;
+                                const workingC = typeof data.workingC === 'number' && isFinite(data.workingC) ? data.workingC : ambientC;
+                                WORKSPACE_ENVIRONMENT.ambientC = ambientC;
+                                WORKSPACE_ENVIRONMENT.workingC = workingC;
+                                components.forEach(component => {
+                                    if (component && typeof component.updateLabels === 'function') {
+                                        component.updateLabels();
+                                    }
+                                });
+                                break;
+                            }
                             case 'apply-scene-settings':
                                 // Live scene appearance from the app Settings page:
                                 // background, grid and current-flow speed.
@@ -5259,8 +5275,22 @@ body.android-optimized .zoom-btn {
             W: '#4488ff', // Power (Watts) - Blue
             I: '#ffd633', // Current (Amps) - Yellow
             R: '#44ff88', // Resistance (Ohms) - Green
-            E: '#ff4444'  // Voltage (Volts) - Red
+            E: '#ff4444', // Voltage (Volts) - Red
+            // Temperature. Its own tint, because it is not a W.I.R.E. quantity and
+            // borrowing one of their colours would say it was.
+            T: '#ffab5e'
         };
+
+        // The workspace's temperature, pushed in from React: the environment
+        // scenario lives in the app, not in this iframe. The nameplates read it to
+        // say what condition a part is being read at — the React readout strip
+        // shows the same working figure, so the two say one number, not two.
+        const WORKSPACE_ENVIRONMENT = { ambientC: 25, workingC: 25 };
+        // The plate goes to warning colour BEFORE the limit, not at it: 60 °C is
+        // where a part is already doing itself harm, 90 °C is the event. Same
+        // thresholds the workspace's Conditions panel uses.
+        const TEMP_WARN_C = 60;
+        const TEMP_OVER_C = 90;
 
         const DEFAULT_WIRE_SEGMENT_RESISTANCE = 0.01;
         const FLOW_CONSTANTS = {
@@ -6734,6 +6764,30 @@ body.android-optimized .zoom-btn {
                 if (isFinite(metrics.voltageDrop)) {
                     parts.push(
                         `<span style="color: ${WIRE_COLORS.E};">E ${formatVoltage(metrics.voltageDrop, { allowZero: true })}</span>`
+                    );
+                }
+
+                // T — the part's own temperature: the working temperature for the
+                // current environment, plus this part's self-heating, P × θ. θ is the
+                // same thermal resistance the failure engine uses, so the plate and
+                // the FUSE card are talking about the same part. The base is carried
+                // after it, so a plate cannot be read as the room being that hot.
+                {
+                    const theta = typeof this.properties?.thermalResistance === 'number'
+                        ? Math.max(this.properties.thermalResistance, 0)
+                        : 60;
+                    const selfHeat = isFinite(metrics.power) ? Math.max(metrics.power, 0) * theta : 0;
+                    const partTempC = WORKSPACE_ENVIRONMENT.workingC + selfHeat;
+                    const tempColor = partTempC >= TEMP_OVER_C
+                        ? '#ff5a4a'
+                        : partTempC >= TEMP_WARN_C
+                            ? '#ffb020'
+                            : WIRE_COLORS.T;
+                    parts.push(
+                        `<span style="color: ${tempColor};">T ${partTempC.toFixed(1)}°C</span>` +
+                        (selfHeat >= 0.1
+                            ? `<span style="color: rgba(190, 210, 240, 0.75); font-weight: 500;"> ${WORKSPACE_ENVIRONMENT.workingC.toFixed(1)}°C base</span>`
+                            : '')
                     );
                 }
 

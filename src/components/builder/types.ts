@@ -43,6 +43,7 @@ export type BuilderInvokeAction =
   | "cinematic-clear-waypoints"
   | "set-grid-style"
   | "apply-scene-settings"
+  | "set-environment"
   | "set-view-insets"
   | "set-explode"
   | "set-ui-busy"

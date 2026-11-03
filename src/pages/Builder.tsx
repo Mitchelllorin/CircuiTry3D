@@ -2679,6 +2679,20 @@ export default function Builder() {
     ];
   }, [activeWireProfile, liveWireMetricsSnapshot, environmentTemp]);
 
+  // The workspace's temperature belongs to the app, not the iframe — the
+  // environment scenario lives here. The canvas nameplates need it to say what
+  // condition a part is being read at, so it goes across the same bridge as the
+  // scene settings, from the same helper the strip uses.
+  useEffect(() => {
+    if (!isFrameReady) {
+      return;
+    }
+    triggerBuilderAction("set-environment", {
+      ambientC: environmentTemp.ambientC,
+      workingC: environmentTemp.tempC,
+    });
+  }, [isFrameReady, triggerBuilderAction, environmentTemp]);
+
   // While the current-flow payoff demo is playing (sequence running OR banner
   // showing) the preset circuit must be view-only: a transparent guard sits over
   // the workspace so an accidental tap can't grab and drag a component. It clears
