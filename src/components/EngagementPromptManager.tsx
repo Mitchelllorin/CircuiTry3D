@@ -31,7 +31,7 @@ type ActivePrompt = EngagementPromptKind | null;
 const SIBLINGS = [
   {
     name: "ThePrints3D",
-    line: "Trace a floor plan and frame it in 3D.",
+    line: "2D CAD to 3D model.",
     site: "https://theprints3d.com",
   },
   {
