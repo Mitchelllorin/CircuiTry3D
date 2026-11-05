@@ -3,9 +3,7 @@ import { ArenaScene } from "./ArenaScene";
 import { ArenaTestLog } from "./ArenaInstrumentation";
 import { ArenaFuseForecast } from "./ArenaFuseForecast";
 import { ArenaDashboard } from "./ArenaDashboard";
-import { ArenaExplodeRail } from "./ArenaExplodeRail";
 import { ArenaQuickBar } from "./ArenaQuickBar";
-import { hasModelledInternals } from "./componentInternals";
 import { thermalReportFor } from "./thermalModel";
 import type { ComponentAction } from "../builder/types";
 import type { BenchStressor } from "./useBenchSession";
@@ -96,8 +94,6 @@ export default function ArenaBenchView({
   // chips used to advertise the last three and do nothing, and a control that
   // is offered but inert is worse than one that is not there.
   const [stressor, setStressor] = useState<BenchStressor>("current");
-  /** How far the selected part's package is opened. A view, so it persists. */
-  const [explode, setExplode] = useState(0);
   /** The strip's bottom edge — the top of the scene's free space. */
   const [topInset, setTopInset] = useState(0);
 
@@ -163,7 +159,6 @@ export default function ArenaBenchView({
     () => thermalReportFor(agent, scenario, powerFactor),
     [agent, scenario, powerFactor],
   );
-  const canExplode = component ? hasModelledInternals(component.family) : false;
 
   // File this run once, on the transition INTO "complete" — same guard as
   // battle mode, and for the same reason: watching the value rather than the
@@ -292,7 +287,6 @@ export default function ArenaBenchView({
         solo
         bottomInsetPx={dashHeight}
         topInsetPx={topInset}
-        explode={explode}
         onExitTransitionComplete={() => undefined}
       />
 
@@ -338,10 +332,6 @@ export default function ArenaBenchView({
 
       {/* The console: fixed at the bottom — the live-run controls, and which
           bench you are at. */}
-      {/* Explode, on the right edge where every app in the family keeps it. */}
-      {canExplode ? (
-        <ArenaExplodeRail value={explode} onChange={setExplode} />
-      ) : null}
       <ArenaDashboard
         status={status}
         voltsMultiple={liveVolts}
