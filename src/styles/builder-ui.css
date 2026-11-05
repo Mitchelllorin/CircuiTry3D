@@ -4375,40 +4375,25 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
   height: 100vh;
   height: 100svh;
   height: 100dvh;
-  background:
-    radial-gradient(circle at 30% 20%, rgba(0, 255, 136, 0.08), transparent 55%),
-    radial-gradient(
-      circle at 75% 65%,
-      rgba(255, 153, 100, 0.06),
-      transparent 60%
-    ),
-    linear-gradient(
-      135deg,
-      var(--builder-navy),
-      var(--builder-navy-alt) 45%,
-      var(--builder-navy-deep)
-    );
+  /* One flat gradient. Two faint radial washes used to sit on this layer — a
+     green one near the top left and a warm one right of centre — and against a
+     board whose own grid fades out before the edges they read as two large
+     smudged patches, not as lighting. */
+  background: linear-gradient(
+    135deg,
+    var(--builder-navy),
+    var(--builder-navy-alt) 45%,
+    var(--builder-navy-deep)
+  );
   z-index: var(--z-dropdown);
   touch-action: none;
   overflow: hidden;
   isolation: isolate;
 }
 
-/* Circuit-glow vignette — darkens the canvas edges to focus the eye
-   on the circuit being built in the centre */
-.builder-workspace::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 3;
-  pointer-events: none;
-  background: radial-gradient(
-    ellipse at 50% 50%,
-    transparent 38%,
-    rgba(9, 9, 30, 0.52) 72%,
-    rgba(7, 7, 22, 0.78) 100%
-  );
-}
+/* The edge vignette that used to sit here darkened the four corners of the
+   canvas by up to 78%, so anything near an edge lost contrast and looked out of
+   focus. The board is uniform to its edges now. */
 
 .builder-iframe {
   width: 100%;
