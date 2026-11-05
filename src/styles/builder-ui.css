@@ -6396,3 +6396,18 @@ body .fd-drawer {
   color: #7fe9ff;
 }
 
+
+/* ── Right zoom rail ────────────────────────────────────────────────────────
+   Each control was a 34px plate with a 1px outline, so the rail read as a
+   column of buttons rather than tools on the board. The outline is gone; the
+   translucent fill stays so the icons still hold against a bright circuit.
+   The rail also sat 36px off the bottom, crowding the bottom edge and the
+   F.U.S.E. readout — it starts higher now so the whole column clears them. */
+.circuit-zoom-btn {
+  border: none;
+  box-shadow: none;
+}
+
+.circuit-zoom-controls {
+  bottom: 120px;
+}
