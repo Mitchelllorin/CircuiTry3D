@@ -44,6 +44,10 @@
   /* Toggle tabs - slimmer for minimal footprint */
   --builder-menu-toggle-width: 40px;
   --builder-menu-toggle-height: 72px;
+  /* The two SIDE tabs are taller than the bottom one: the word runs down them.
+     The build rail reads it to know where the left tab ends, so keep the two
+     rules below in step with this one value. */
+  --builder-menu-toggle-side-height: 148px;
   /* The BOTTOM tab is horizontal, so its clip/height allowance is its own thing —
      the ~32px tab body plus headroom so its top border + upward glow render
      instead of being chopped by the stage's overflow:hidden. Constant across
@@ -1280,11 +1284,14 @@ body.builder-body::before {
      short landscape screen, and off the top of a phone when the tier opened. */
   top: calc(
     var(--builder-ticker-top, 72px) + var(--builder-ticker-height, 48px) + 8px +
-      var(--builder-safe-area-top, 0px)
+      var(--builder-safe-area-top, 0px) +
+      var(--builder-menu-toggle-side-height, 148px) + 8px
   );
-  /* Clear of the LIBRARY tab, which owns the same edge at mid-height — the
-     mirror of what the view column does around the Controls tab. */
-  left: calc(var(--builder-menu-toggle-width) + 6px + var(--builder-safe-area-left, 0px));
+  /* Hard against the edge. It used to stand a tab's width + 6px out in the
+     canvas to clear the LIBRARY tab at mid-height; the tab now sits in the band
+     above this one, so there is nothing left to clear and the rail can hug the
+     edge it belongs to. */
+  left: var(--builder-safe-area-left, 0px);
   right: auto;
   transform: none;
   z-index: var(--z-builder-floats);
@@ -2683,7 +2690,7 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
   flex-shrink: 0;
   width: var(--builder-menu-toggle-width);
   min-width: var(--builder-menu-toggle-width);
-  height: 148px;
+  height: var(--builder-menu-toggle-side-height);
   min-height: 0;
   padding: 10px 3px;
   margin: auto 0; /* vertically center within the stage */
@@ -6303,4 +6310,19 @@ body .fd-drawer {
 .builder-shell .builder-menu-stage-left .builder-menu-left {
   height: var(--lib-h);
   max-height: var(--lib-h);
+}
+
+/* The LIBRARY tab keeps to the TOP of the left edge. It used to sit dropped
+   below mid-height, which meant the build rail had to stand off the edge far
+   enough to clear it. Up here it owns the band above the rail, and the rail
+   below it can sit hard against the edge. */
+.builder-shell .builder-menu-stage-left .builder-menu-toggle-left {
+  align-self: flex-start;
+  margin: 0;
+  transform: none;
+}
+
+/* A press must not restore the dropped transform it no longer has. */
+.builder-shell .builder-menu-stage-left .builder-menu-toggle-left:active {
+  transform: scale(0.94);
 }
