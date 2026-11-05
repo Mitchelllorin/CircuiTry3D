@@ -1720,6 +1720,192 @@ function buildSeriesCircuit(): THREE.Object3D {
   return g;
 }
 
+/**
+ * A cog outline: eight deep teeth, and a bore through the middle.
+ *
+ * The teeth are cut deep (root 0.62 against tip 0.9) because depth is the only
+ * thing that survives the downscale - a fine-toothed gear is a serrated coin at
+ * 26px. The bore is not decoration either: it is the hole the background reads
+ * through, the same trick that keeps the Build loop from turning to mush, and
+ * without it a round icon in a row of round icons is just a dot.
+ */
+function cogShape(teeth: number, rootR: number, tipR: number): THREE.Shape {
+  const s = new THREE.Shape();
+  const step = (Math.PI * 2) / teeth;
+  const at = (r: number, a: number): [number, number] => [Math.cos(a) * r, Math.sin(a) * r];
+  const pts: [number, number][] = [];
+  for (let i = 0; i < teeth; i++) {
+    const a = i * step;
+    // Root run, then up the flank, across the tip, and back down: four points a
+    // tooth, which is the fewest that still reads as a tooth rather than a lump.
+    pts.push(at(rootR, a));
+    pts.push(at(rootR, a + step * 0.3));
+    pts.push(at(tipR, a + step * 0.38));
+    pts.push(at(tipR, a + step * 0.62));
+    pts.push(at(rootR, a + step * 0.7));
+  }
+  pts.forEach(([x, y], i) => (i === 0 ? s.moveTo(x, y) : s.lineTo(x, y)));
+  s.closePath();
+
+  const bore = new THREE.Path();
+  bore.absarc(0, 0, 0.26, 0, Math.PI * 2, false);
+  s.holes.push(bore);
+  return s;
+}
+
+/**
+ * SETTINGS - a cog.
+ *
+ * Half-metal rather than the house chrome, for the reason already recorded
+ * against the key: a cog is one broad flat face, and a near-mirror flat face
+ * shows exactly one patch of the studio, which on this bar was a dark one. At
+ * 0.6 metalness the alloy keeps its own pale blue and roughness 0.22 still puts
+ * a hard specular roll down the tooth flanks - which is where the depth reads.
+ * The extrusion is thick (0.2) so the teeth show side walls, not just an
+ * outline: a thin cog at this size is a cog-shaped sticker.
+ */
+function buildGear(): THREE.Object3D {
+  const g = new THREE.Group();
+  const alloy = new THREE.MeshStandardMaterial({
+    color: 0x9dc3e8,
+    metalness: 0.6,
+    roughness: 0.22,
+    envMapIntensity: 1.5,
+    emissive: 0x1d3a5c,
+    emissiveIntensity: 0.3,
+  });
+  g.add(new THREE.Mesh(extrude(cogShape(8, 0.62, 0.9), 0.2), alloy));
+  // Enough tilt to see the tooth walls and the bore all the way through, and no
+  // more - a cog rolled onto its corner is a diamond with notches.
+  g.rotation.set(0.3, -0.46, 0.1);
+  return g;
+}
+
+/**
+ * LIGHT - the sun. One half of the theme toggle.
+ *
+ * A sphere for the body, not a disc. Nothing else at that end of the bar is
+ * round, and a sphere is the only shape in the set that sweeps the whole studio
+ * from blown highlight to termininator in one surface, so it reads as an object
+ * before it reads as a sun.
+ *
+ * Eight rays, tapered outward. The taper is doing the work: at 26px an untapered
+ * ray is a tick mark, and eight tick marks around a ball are a dashed ring. The
+ * pair with the moon is deliberate - the toggle has to be legible as two states
+ * at a glance, so one is the one warm object in the bar and the other the one
+ * pale one.
+ */
+function buildSun(): THREE.Object3D {
+  const g = new THREE.Group();
+  const fire = gloss(0xffc247, 0xc25a00, 0.42);
+  g.add(new THREE.Mesh(new THREE.SphereGeometry(0.42, 28, 20), fire));
+
+  const RAYS = 8;
+  for (let i = 0; i < RAYS; i++) {
+    const a = (i / RAYS) * Math.PI * 2;
+    // Cylinders build up +Y, so the same rotation that lays one along the ray
+    // also points its narrow end outward.
+    const ray = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.075, 0.34, 10, 1), fire);
+    ray.position.set(Math.cos(a) * 0.72, Math.sin(a) * 0.72, 0);
+    ray.rotation.z = a - Math.PI / 2;
+    g.add(ray);
+  }
+
+  g.rotation.set(0.3, -0.34, 0.06);
+  return g;
+}
+
+/**
+ * A lune: the outer circle minus an equal circle offset from it.
+ *
+ * Not a disc with a bite drawn on it - the concave edge is real boundary, which
+ * is what lets the rim light run down it and tell the eye the crescent is thick.
+ * Equal radii keep the two arcs meeting in actual points; the arithmetic for the
+ * intersections and for which arc of the offset circle lies inside the disc is
+ * done here rather than traced by eye, so the shape cannot drift with the
+ * numbers.
+ */
+function crescentShape(R: number, offsetX: number, offsetY: number): THREE.Shape {
+  const d = Math.hypot(offsetX, offsetY);
+  const ux = offsetX / d;
+  const uy = offsetY / d;
+  const TAU = Math.PI * 2;
+
+  // Equal radii put the chord between the intersections at the midpoint.
+  const a = d / 2;
+  const h = Math.sqrt(R * R - a * a);
+  const i1 = new THREE.Vector2(ux * a - uy * h, uy * a + ux * h);
+  const i2 = new THREE.Vector2(ux * a + uy * h, uy * a - ux * h);
+
+  const norm = (x: number) => (x < 0 ? x + TAU : x);
+  let t1 = norm(Math.atan2(i1.y, i1.x));
+  let t2 = norm(Math.atan2(i2.y, i2.x));
+  // The crescent is what the offset circle LEAVES, so it keeps the major arc.
+  if (t2 - t1 < Math.PI) {
+    const swap = t1;
+    t1 = t2;
+    t2 = swap + TAU;
+  }
+
+  const pts: THREE.Vector2[] = [];
+  const OUTER = 64;
+  for (let i = 0; i <= OUTER; i++) {
+    const t = t1 + ((t2 - t1) * i) / OUTER;
+    pts.push(new THREE.Vector2(Math.cos(t) * R, Math.sin(t) * R));
+  }
+
+  // The part of the offset circle that falls inside the outer one: centred on
+  // the direction back toward the disc, half-width acos(d / 2R).
+  const beta = Math.atan2(-uy, -ux);
+  const half = Math.acos(d / (2 * R));
+  const inner: THREE.Vector2[] = [];
+  const INNER = 32;
+  for (let i = 0; i <= INNER; i++) {
+    const t = beta - half + (2 * half * i) / INNER;
+    inner.push(new THREE.Vector2(Math.cos(t) * R + offsetX, Math.sin(t) * R + offsetY));
+  }
+  // Walk it back from where the outer arc finished.
+  if (
+    inner[0].distanceTo(pts[pts.length - 1]) >
+    inner[inner.length - 1].distanceTo(pts[pts.length - 1])
+  ) {
+    inner.reverse();
+  }
+  pts.push(...inner.slice(1, -1));
+
+  const s = new THREE.Shape();
+  pts.forEach((p, i) => (i === 0 ? s.moveTo(p.x, p.y) : s.lineTo(p.x, p.y)));
+  s.closePath();
+  return s;
+}
+
+/**
+ * DARK - the crescent moon. The other half of the theme toggle.
+ *
+ * Fat on purpose: the offset is 0.52 of a 0.85 radius. A thin crescent is a
+ * comma once it is 26px wide; this one keeps enough body to shade, and the
+ * points at either tip still say "crescent" rather than "disc".
+ *
+ * Pale silver rather than white. White chrome mirrors the studio, and the moon
+ * would come out the same blue-grey as the bar it sits on - which is exactly how
+ * the key and the Build loop were lost on the first pass.
+ */
+function buildMoon(): THREE.Object3D {
+  const g = new THREE.Group();
+  const silver = new THREE.MeshStandardMaterial({
+    color: 0xdfe9f7,
+    metalness: 0.45,
+    roughness: 0.26,
+    envMapIntensity: 1.5,
+    emissive: 0x35597f,
+    emissiveIntensity: 0.34,
+  });
+  g.add(new THREE.Mesh(extrude(crescentShape(0.85, 0.5, 0.12), 0.16), silver));
+  // Turned so the bite faces up-right against the bar and the lower tip hangs.
+  g.rotation.set(0.2, -0.3, -0.34);
+  return g;
+}
+
 export type Icon3DName =
   | "build"
   | "practice"
@@ -1733,7 +1919,10 @@ export type Icon3DName =
   | "classroom"
   | "community"
   | "gallery"
-  | "account";
+  | "account"
+  | "settings"
+  | "sun"
+  | "moon";
 
 export const ICON_MODELS: Record<Icon3DName, () => THREE.Object3D> = {
   build: buildSeriesCircuit,
@@ -1750,6 +1939,12 @@ export const ICON_MODELS: Record<Icon3DName, () => THREE.Object3D> = {
   community: buildNodeCluster,
   gallery: buildClapperboard,
   account: buildKey,
+
+  // The two controls at the far end of the bar: the gear, and the theme toggle,
+  // which swaps between its two halves.
+  settings: buildGear,
+  sun: buildSun,
+  moon: buildMoon,
 };
 
 export const ICON_NAMES = Object.keys(ICON_MODELS) as Icon3DName[];

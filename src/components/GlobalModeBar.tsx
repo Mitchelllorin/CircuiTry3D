@@ -225,7 +225,11 @@ export function GlobalModeBar() {
           aria-label="Settings"
           title="App settings — logo, graphics, workspace, accessibility"
         >
-          <span className="mode-icon" aria-hidden="true">⚙️</span>
+          <Icon3D
+            name="settings"
+            className="mode-icon mode-icon--3d"
+            fallback={<span className="mode-icon" aria-hidden="true">⚙️</span>}
+          />
           <span className="mode-label">Settings</span>
         </button>
 
@@ -237,7 +241,15 @@ export function GlobalModeBar() {
           aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
           title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
         >
-          <span className="mode-icon" aria-hidden="true">{theme === "dark" ? "☀️" : "🌙"}</span>
+          <Icon3D
+            name={theme === "dark" ? "sun" : "moon"}
+            className="mode-icon mode-icon--3d"
+            fallback={
+              <span className="mode-icon" aria-hidden="true">
+                {theme === "dark" ? "☀️" : "🌙"}
+              </span>
+            }
+          />
           <span className="mode-label">{theme === "dark" ? "Light" : "Dark"}</span>
         </button>
       </div>
