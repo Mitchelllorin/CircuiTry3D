@@ -6553,6 +6553,30 @@ body.android-optimized .zoom-btn {
                 }
             }
 
+            // The part's own temperature, shown on the plate whether or not the
+            // full runtime readout is switched on. T is how the part is coping with
+            // the current, so it is not a detail to hide behind a label toggle.
+            getPartTemperatureMarkup() {
+                const metrics = this.runtimeMetrics;
+                const theta = typeof this.properties?.thermalResistance === 'number'
+                    ? Math.max(this.properties.thermalResistance, 0)
+                    : 60;
+                const power = metrics && isFinite(metrics.power) ? Math.max(metrics.power, 0) : 0;
+                const selfHeat = power * theta;
+                const partTempC = WORKSPACE_ENVIRONMENT.workingC + selfHeat;
+                const tempColor = partTempC >= TEMP_OVER_C
+                    ? '#ff5a4a'
+                    : partTempC >= TEMP_WARN_C
+                        ? '#ffb020'
+                        : WIRE_COLORS.T;
+                return `<div style="color: ${tempColor}; font-size: ${isMobile ? '12px' : '10px'}; font-weight: 600; margin-top: 2px;">`
+                    + `T ${partTempC.toFixed(1)}°C`
+                    + (selfHeat >= 0.1
+                        ? `<span style="color: rgba(190, 210, 240, 0.75); font-weight: 500;"> ${WORKSPACE_ENVIRONMENT.workingC.toFixed(1)}°C base</span>`
+                        : '')
+                    + `</div>`;
+            }
+
             renderNameplateMarkup() {
                 const identifier = this.getComponentIdentifier();
                 const { text, color } = this.getValueTextAndColor();
@@ -6560,11 +6584,17 @@ body.android-optimized .zoom-btn {
                 const showValueText = labelVisibilityLevel >= 2;
                 const showRuntimeMetrics = labelVisibilityLevel >= 3;
                 const runtimeMarkup = showRuntimeMetrics ? this.getRuntimeMetricMarkup() : '';
+                // Below level 3 the runtime block is off, but the temperature still
+                // has to be on the plate.
+                const temperatureMarkup = showRuntimeMetrics || !showValueText
+                    ? ''
+                    : this.getPartTemperatureMarkup();
                 const failureBadge = this.getFailureBadgeMarkup ? this.getFailureBadgeMarkup() : '';
 
                 return `
                     ${showIdentifier ? `<div style="color: white; font-size: ${isMobile ? '14px' : '12px'};">${identifier}</div>` : ''}
                     ${showValueText ? `<div style="color: ${color}; font-size: ${isMobile ? '13px' : '11px'}; font-weight: bold;">${text}</div>` : ''}
+                    ${temperatureMarkup}
                     ${runtimeMarkup}
                     ${showIdentifier ? failureBadge : ''}
                 `;
@@ -17623,6 +17653,16 @@ body.android-optimized .zoom-btn {
             }
             
             notifyParentModeState();
+
+            // A layout mode is an instruction, not a caption. Cycling used to
+            // repaint the label only, so picking Square left the board exactly
+            // where it was and nothing ever squared up. Free is the mode that
+            // promises to leave parts where they are; square and linear both mean
+            // "arrange", so choosing them has to do it.
+            if (components.length > 0 && (layoutMode === 'square' || layoutMode === 'linear')) {
+                arrangeByLayoutMode();
+                return;
+            }
 
             setStatus(`⚡  Layout mode: ${layoutMode.toUpperCase()} - ${getLayoutModeDescription(layoutMode)}`);
         }

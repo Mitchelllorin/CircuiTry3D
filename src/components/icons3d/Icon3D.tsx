@@ -49,7 +49,9 @@ function makeRenderer() {
   }
   if ("toneMapping" in renderer && compat["ACESFilmicToneMapping"]) {
     (renderer as unknown as Record<string, unknown>).toneMapping = compat["ACESFilmicToneMapping"];
-    (renderer as unknown as Record<string, number>).toneMappingExposure = 1.05;
+    // Just under 1: at 1.05 the bitmaps left the renderer already crushed to
+    // white at the highlight, so every icon wore a pale rim once scaled down.
+    (renderer as unknown as Record<string, number>).toneMappingExposure = 0.95;
   }
   renderer.setSize(ICON_PX, ICON_PX, false);
   renderer.setPixelRatio(1);
@@ -116,7 +118,7 @@ function makeEnvironment(renderer: THREE.WebGLRenderer): THREE.Texture {
   panel(10, 6, 0xffffff, 7.0, [0, 6.2, 0.8], [Math.PI / 2, 0, 0]);      // softbox, overhead
   panel(13, 13, 0xcfe4ff, 1.5, [0, 0, 6.6], [0, 0, 0]);                 // broad fill, camera side
   panel(3.4, 9, 0xe8f4ff, 4.2, [-6.2, 1.6, 1.6], [0, Math.PI / 2, 0]);  // key, left
-  panel(2.6, 9, 0x5ad8ff, 3.6, [6.2, 0.6, -1.4], [0, -Math.PI / 2, 0]); // rim, right-rear
+  panel(2.6, 9, 0x5ad8ff, 2.1, [6.2, 0.6, -1.4], [0, -Math.PI / 2, 0]); // rim, right-rear
   panel(10, 5, 0xffb277, 0.85, [0, -6.2, 0], [-Math.PI / 2, 0, 0]);     // bounce, below
 
   const pmrem = new THREE.PMREMGenerator(renderer);
@@ -130,7 +132,7 @@ function lightScene(scene: THREE.Scene, env: THREE.Texture) {
   // Full strength now. The old 0.75 was compensating for a room that was making
   // everything grey; with a studio, dimming it only throws away the contrast the
   // studio exists to provide.
-  scene.environmentIntensity = 1.35;
+  scene.environmentIntensity = 1.05;
 
   // Direct lights still earn their place: at roughness 0.19 they add a tight
   // specular glint on the bevel edges that the (prefiltered, therefore soft)
@@ -139,7 +141,9 @@ function lightScene(scene: THREE.Scene, env: THREE.Texture) {
   key.position.set(2.6, 3.6, 3.0);
   scene.add(key);
 
-  const rim = new THREE.DirectionalLight(0x5ad8ff, 1.8);
+  // Was 1.8 of saturated cyan, which read as a halo around every mark rather
+  // than as a lit far edge. Enough to draw the silhouette, not to glow.
+  const rim = new THREE.DirectionalLight(0x5ad8ff, 1.1);
   rim.position.set(-2.8, -1.6, -1.4);
   scene.add(rim);
 }

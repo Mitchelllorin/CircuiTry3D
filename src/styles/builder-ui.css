@@ -365,13 +365,13 @@ body.builder-body::before {
      the least screen it can while staying a comfortable thumb target, and the
      tap area is the padding plus the type, not the box drawn around it. */
   /* Padding only where a thumb needs it, and none of it drawing a shape. */
-  padding: 3px 5px;
+  padding: 3px 6px;
   background: none;
   border: none;
   border-radius: 0;
-  color: var(--builder-muted-soft);
-  font-size: 12px;
-  font-weight: 600;
+  color: rgba(214, 232, 255, 0.92);
+  font-size: 13px;
+  font-weight: 700;
   /* Carries the label against whatever the 3D is doing behind the glass. */
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
   cursor: pointer;
@@ -426,8 +426,8 @@ body.builder-body::before {
    same strip of screen holds one two-thirds larger, and a drop-shadow does the
    separating that the box used to. */
 .mode-icon--3d {
-  width: 30px;
-  height: 30px;
+  width: 34px;
+  height: 34px;
   object-fit: contain;
   display: block;
   flex: 0 0 auto;
@@ -436,7 +436,7 @@ body.builder-body::before {
 }
 
 .mode-icon {
-  font-size: 25px;
+  font-size: 28px;
   line-height: 1;
   filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.85));
   transition: filter 0.2s ease, transform 0.15s ease;
@@ -1402,8 +1402,9 @@ body.builder-body::before {
 .unified-action-bar .edge-action-btn:hover:not(:disabled) {
   transform: scale(1.08);
   color: var(--builder-cyan, #a8d8ff);
-  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.95))
-    drop-shadow(0 0 9px rgba(168, 216, 255, 0.75));
+  /* Separation, not a halo: the coloured 9px bloom read as phosphor spill
+     around every glyph in the rail. Brightness carries the hover instead. */
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.95)) brightness(1.2);
 }
 
 .unified-action-bar .edge-action-btn:active:not(:disabled) {
@@ -1479,7 +1480,9 @@ body.builder-body::before {
    and deflating a purple box. */
 .unified-action-bar .edge-action-btn--ai {
   color: #e9d5ff;
-  animation: aiMarkGlow 2.8s ease-in-out infinite;
+  /* The breathing glow put a visible aura around the mark at all times; the
+     colour alone already separates AI from the rest of the rail. */
+  animation: none;
 }
 
 .unified-action-bar .edge-action-btn--ai.edge-action-btn--active {
@@ -4172,7 +4175,11 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
   align-items: center;
   gap: 16px;
   white-space: nowrap;
-  animation: ticker-scroll 45s linear infinite;
+  /* Static, not a marquee. The loop restarted mid-sentence, so the strip opened
+     on a chopped word ("ROFILE: DEFAULT MODEL") and the separators slid past
+     under the numbers. The copy is a status line, not a feed: it starts at its
+     first item and stays put. */
+  animation: none;
   padding: 0 20px;
   height: 100%;
   font-size: 11px;
@@ -4219,7 +4226,7 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
   .ticker-content {
     font-size: 10px;
     gap: 12px;
-    animation: ticker-scroll 40s linear infinite;
+    animation: none;
   }
 }
 
@@ -4232,7 +4239,7 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
   .ticker-content {
     font-size: 9px;
     gap: 10px;
-    animation: ticker-scroll 35s linear infinite;
+    animation: none;
   }
 
   .ticker-separator {
@@ -6350,4 +6357,21 @@ body .fd-drawer {
 /* A press must not restore the dropped transform it no longer has. */
 .builder-shell .builder-menu-stage-left .builder-menu-toggle-left:active {
   transform: scale(0.94);
+}
+
+/* ── Containerless side rails ────────────────────────────────────────────────
+   The library and controls rails carried their own glass slab: a fill, a blur
+   and a drop shadow behind the buttons. The buttons ARE the rail; the slab only
+   added an edge over the 3D. Cards and tiles keep their own surfaces. */
+.builder-menu.builder-menu-left,
+.builder-menu.builder-menu-right {
+  /* The rail's old idle glow was an animation, which repaints a box-shadow
+     regardless of the rule below it — stop the animation with the slab. */
+  animation: none;
+  background: none;
+  border: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: none;
+  border-radius: 0;
 }
