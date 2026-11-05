@@ -3710,6 +3710,12 @@
         // writes the mesh back to position (drag, arrange, load) cannot knock a
         // part down to the board mid-explode.
         const EXPLODE_LIFT = 3.0;   // world units at 100% — about one part-length clear
+        // Explode it all: the parts lift (above), then each part comes apart —
+        // covers and lenses rise furthest, the body fans outward — and the wiring
+        // lifts with the parts instead of lying flat underneath them.
+        const EXPLODE_CHILD_SPREAD = 1.1;   // × the part's own footprint
+        const EXPLODE_CHILD_RISE = 1.4;     // × the part's own height, at the top
+        const EXPLODE_WIRE_LIFT = 0.42;     // × the parts' lift
         let _explodeTarget = 0;     // 0..1, from the host slider
         let _explodeCurrent = 0;    // eased toward the target each frame
         let _explodeLiftNow = 0;    // world units applied to every part right now
@@ -9734,12 +9740,100 @@ body.android-optimized .zoom-btn {
         // The flat wire is routed at y = 0 (createRightAngledWirePath projects both
         // ends onto the board), so a lifted terminal needs a lead straight down to it.
         function _placeRiser(lead, top, show) {
-            const len = top.y;
+            // Measured from the wire run's own height, because that run lifts with the
+            // parts now — a riser from a lifted wire to a lifted terminal is short.
+            const floorY = lead.parent ? lead.parent.position.y : 0;
+            const len = top.y - floorY;
             if (!show || len < 0.05) { lead.visible = false; return; }
             lead.visible = true;
             lead.position.set(top.x, len / 2, top.z);
             lead.scale.set(1, len, 1);
         }
+
+        // ── Per-part explode ("explode it all") ───────────────────────────────
+        // The slider used to move whole parts only: every part stayed a closed
+        // assembly and wires stayed flat on the grid, so 100% read as "the parts
+        // are hovering". Now the part opens as well — its own meshes fan out from
+        // its centre and the meshes above its mid-line (cover, lens, cap) rise
+        // furthest — and the wiring lifts with it. Base positions are captured
+        // once, so assembling puts every mesh back exactly where it was.
+
+        function _explodeFootprint(component) {
+            const box = new THREE.Box3();
+            let measured = false;
+            component.mesh.children.forEach(child => {
+                if (!child || !child.isMesh || !child.geometry) return;
+                if (child.userData && child.userData.isSelectionBox) return;
+                box.expandByObject(child);
+                measured = true;
+            });
+            if (!measured) return { spread: 0.35, height: 0.5 };
+            const size = new THREE.Vector3();
+            box.getSize(size);
+            // Measured over the PART only. The invisible selection box is three to
+            // four units wide whatever the part is, and sizing the fan-out from it
+            // would throw a 0.3-unit resistor body across the board.
+            return {
+                spread: Math.max(0.12, Math.min(size.x, size.z) * 0.5),
+                height: Math.max(0.12, size.y)
+            };
+        }
+
+        function _ensurePartExplode(component) {
+            if (!component.mesh) return null;
+            if (component._partExplode && component._partExplode.group === component.mesh) {
+                return component._partExplode;
+            }
+            const parts = [];
+            component.mesh.children.forEach((child, index) => {
+                if (!child || !child.isMesh || !child.geometry) return;
+                if (child.userData && child.userData.isSelectionBox) return;
+                parts.push({
+                    child: child,
+                    base: child.position.clone(),
+                    index: index,
+                    above: child.position.y > 0
+                });
+            });
+            const footprint = _explodeFootprint(component);
+            component._partExplode = {
+                group: component.mesh,
+                parts: parts,
+                spread: footprint.spread,
+                height: footprint.height
+            };
+            return component._partExplode;
+        }
+
+        function _applyPartExplode(component, t) {
+            const data = _ensurePartExplode(component);
+            if (!data || !data.parts.length || t <= 0) return;
+            const count = data.parts.length;
+            data.parts.forEach(entry => {
+                const base = entry.base;
+                let dx = base.x;
+                let dz = base.z;
+                const len = Math.hypot(dx, dz);
+                if (len < 1e-3) {
+                    const angle = (entry.index / count) * Math.PI * 2;
+                    dx = Math.cos(angle);
+                    dz = Math.sin(angle);
+                } else {
+                    dx /= len;
+                    dz /= len;
+                }
+                const out = data.spread * EXPLODE_CHILD_SPREAD * t;
+                const rise = data.height * EXPLODE_CHILD_RISE * (entry.above ? 1 : 0.28) * t;
+                entry.child.position.set(base.x + dx * out, base.y + rise, base.z + dz * out);
+            });
+        }
+
+        function _restorePartExplode(component) {
+            const data = component && component._partExplode;
+            if (!data) return;
+            data.parts.forEach(entry => entry.child.position.copy(entry.base));
+        }
+
 
         function updateExplode(now) {
             const dt = _explodePrevTime ? Math.min(now - _explodePrevTime, 100) / 1000 : 0;
@@ -9753,9 +9847,11 @@ body.android-optimized .zoom-btn {
                     _explodeLiftNow = 0;
                     components.forEach(c => {
                         if (c.mesh && !workspaceFailMotion.has(c.id)) c.mesh.position.y = c.position.y;
+                        _restorePartExplode(c);
                     });
                     wires.forEach(w => {
                         if (w._risers) { w._risers.start.visible = false; w._risers.end.visible = false; }
+                        if (w.wireGroup) w.wireGroup.position.y = 0;
                     });
                 }
                 return;
@@ -9773,14 +9869,18 @@ body.android-optimized .zoom-btn {
             _explodeLiftNow = EXPLODE_LIFT * t * t * (3 - 2 * t); // smoothstep
             _explodeApplied = true;
 
+            const eased = t * t * (3 - 2 * t);
             components.forEach(c => {
                 if (!c.mesh || workspaceFailMotion.has(c.id)) return;
                 c.mesh.position.y = c.position.y + _explodeLiftNow;
+                _applyPartExplode(c, eased);
                 c.mesh.updateMatrixWorld(true);
             });
 
             const show = _explodeLiftNow > 0.01;
+            const wireLift = _explodeLiftNow * EXPLODE_WIRE_LIFT;
             wires.forEach(w => {
+                if (w.wireGroup) w.wireGroup.position.y = wireLift;
                 const r = _ensureWireRisers(w);
                 if (!r) return;
                 _placeRiser(r.start, w.getStartPosition(), show);
