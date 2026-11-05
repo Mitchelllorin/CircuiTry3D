@@ -1018,9 +1018,7 @@ html[data-theme="light"] .mode-tab[data-active="true"] .mode-icon--3d {
 @media (max-width: 640px) {
   html[data-theme="light"] .mode-bar-caption {
     color: var(--brand-blue);
-    text-shadow:
-      0 1px 3px rgba(255, 255, 255, 0.95),
-      0 0 10px rgba(255, 255, 255, 0.8);
+    text-shadow: none;
   }
 }
 
@@ -1061,7 +1059,9 @@ html[data-theme="light"] .app-shell.is-workspace .mode-tab {
 
 html[data-theme="light"] .app-shell.is-workspace .mode-tab:hover,
 html[data-theme="light"] .app-shell.is-workspace .mode-tab[data-active="true"] {
-  color: var(--builder-cyan);
+  /* Light cyan, not var(--builder-cyan): that alias resolves to brand blue,
+     which is the dedicated button colour for white pages and disappears here. */
+  color: #7fe9ff;
 }
 
 html[data-theme="light"] .app-shell.is-workspace .mode-icon,
@@ -1074,4 +1074,9 @@ html[data-theme="light"] .app-shell.is-workspace .mode-tab[data-active="true"] .
   filter:
     drop-shadow(0 1px 2px rgba(0, 0, 0, 0.85))
     brightness(1.14);
+}
+
+/* The phone caption is the same ink as the labels above it, and just as flat. */
+html[data-theme="light"] .app-shell.is-workspace .mode-bar-caption {
+  color: rgba(214, 232, 255, 0.92);
 }

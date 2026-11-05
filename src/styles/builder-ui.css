@@ -372,8 +372,8 @@ body.builder-body::before {
   color: rgba(214, 232, 255, 0.92);
   font-size: 13px;
   font-weight: 700;
-  /* Carries the label against whatever the 3D is doing behind the glass. */
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+  /* Ink, not light: the printed names carry no shadow at all. */
+  text-shadow: none;
   cursor: pointer;
   transition:
     background 0.22s cubic-bezier(0.34, 1.56, 0.64, 1),
@@ -537,9 +537,7 @@ body.builder-body::before {
        The shadow is what carries it over a moving 3D scene. */
     background: none;
     border: none;
-    text-shadow:
-      0 1px 3px rgba(2, 6, 16, 0.95),
-      0 0 10px rgba(2, 6, 16, 0.75);
+    text-shadow: none;
   }
 }
 
@@ -6386,3 +6384,15 @@ body .fd-drawer {
   box-shadow: none;
   border-radius: 0;
 }
+
+/* ── Active / hover ink over the workspace ────────────────────────────────
+   --builder-cyan is an alias of --brand-blue, so the tab that lights up under
+   the cursor was painted the same deep blue a button gets on a WHITE page. Over
+   the workspace's navy canvas that is nearly invisible — and it is the one label
+   in the row that changes exactly when the eye is on it. Over the workspace the
+   live tab takes a light cyan; pale pages keep brand blue. */
+.app-shell.is-workspace .mode-tab:hover,
+.app-shell.is-workspace .mode-tab[data-active="true"] {
+  color: #7fe9ff;
+}
+
