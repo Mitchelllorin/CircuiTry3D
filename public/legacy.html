@@ -3763,6 +3763,18 @@
         // the camera — yanked that part across the board instead. Set on pointer-down,
         // cleared on pointer-up.
         let dragArmed = false;
+        // True when the press landed on the part that was ALREADY selected. The
+        // press itself has to select (a drag must still work), so it is the
+        // RELEASE that turns a second tap into a deselect. Without this the only
+        // way out of a selection was a tap on empty space — and with hit boxes far
+        // larger than the parts, a dense board has almost none.
+        let pressStartedOnSelected = false;
+        // Two empty taps in the same place mean "put the view back". It is the
+        // recovery a touch user has when the workspace has been panned away: no
+        // F key, and the fit button sits in a corner.
+        const DOUBLE_TAP_MS = 320;
+        const DOUBLE_TAP_SLOP_PX = 28;
+        let lastEmptyTap = { at: 0, x: 0, y: 0 };
         // Where the finger grabbed the part, relative to the part's centre. Applied
         // while dragging so the part keeps its grab point under the finger instead of
         // teleporting its centre there on the first move.
@@ -10497,6 +10509,42 @@ body.android-optimized .zoom-btn {
         const __ct3dIdle = { blocked: false, reason: 'none', msSinceInput: 0, drifting: false, walking: false };
         window.__ct3dIdle = __ct3dIdle;
 
+        // Read-only look at what the pointer gestures did: what is selected, and
+        // where the camera is aiming. The status line these gestures report to is
+        // not in the embedded builder's DOM, so without this there is no way to
+        // assert selection or pan behaviour from a test.
+        window.__ct3dPointerState = function () {
+            return {
+                selected: selectedComponent ? (selectedComponent.type || 'junction') : null,
+                active: activeComponent ? (activeComponent.type || 'junction') : null,
+                dragging: isDragging,
+                components: components.length,
+                junctions: junctions.length,
+                parts: components.map((comp) => comp && comp.position
+                    ? { type: comp.type, x: comp.position.x, z: comp.position.z }
+                    : null),
+                locked: isEditLocked(),
+                pos: selectedComponent && selectedComponent.position
+                    ? { x: selectedComponent.position.x, y: selectedComponent.position.y, z: selectedComponent.position.z }
+                    : null,
+                target: { x: cameraTarget.x, y: cameraTarget.y, z: cameraTarget.z },
+                distance: cameraDistance,
+            };
+        };
+
+        // Read-only probe for verification: which part sits under a screen point, and
+        // does it resolve to the part that is selected right now?
+        window.__ct3dHitTest = function (clientX, clientY) {
+            const hit = preciseHitEntityAt(clientX, clientY);
+            const name = (entity) => entity ? `${entity.type || 'junction'}:${entity.id ?? ''}` : null;
+            return {
+                hit: name(hit),
+                selected: name(selectedComponent),
+                same: Boolean(hit) && hit === selectedComponent,
+                meshSame: Boolean(hit && selectedComponent && hit.mesh && hit.mesh === selectedComponent.mesh),
+            };
+        };
+
         // Nobody is waiting 45 s to look at the easter egg. Winds the idle clock back
         // so the crew clocks out on the next frame. Any real input still cancels it,
         // so this cannot leave the workspace stuck in a walk.
@@ -10991,6 +11039,13 @@ body.android-optimized .zoom-btn {
         // near origin. Programmatic camera moves (fit-to-screen, tour) set
         // cameraTarget directly and intentionally bypass this.
         const PAN_TARGET_MARGIN = 12; // world units of slack beyond the outermost part
+        // How far the aim point may wander from the circuit. It shrinks with the
+        // zoom: a 12-unit leash is the far side of the galaxy at 0.5 units out,
+        // and it is what let a two-finger drag park the board off-screen.
+        function panTargetMargin() {
+            return Math.max(1.5, Math.min(8, cameraDistance * 0.6));
+        }
+
         function clampPanTarget() {
             let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
             const consider = (p) => {
@@ -11006,8 +11061,12 @@ body.android-optimized .zoom-btn {
                 // Empty workspace — hold the target near origin.
                 minX = maxX = minZ = maxZ = 0;
             }
-            cameraTarget.x = Math.max(minX - PAN_TARGET_MARGIN, Math.min(maxX + PAN_TARGET_MARGIN, cameraTarget.x));
-            cameraTarget.z = Math.max(minZ - PAN_TARGET_MARGIN, Math.min(maxZ + PAN_TARGET_MARGIN, cameraTarget.z));
+            const margin = panTargetMargin();
+            // And never past the drawn grid: parts at the rim used to grant a
+            // +12-unit leash beyond the edge, which is enough to lose the board.
+            const gridHalf = (isMobile ? 20 : 40) / 2;
+            cameraTarget.x = Math.max(Math.max(-gridHalf, minX - margin), Math.min(Math.min(gridHalf, maxX + margin), cameraTarget.x));
+            cameraTarget.z = Math.max(Math.max(-gridHalf, minZ - margin), Math.min(Math.min(gridHalf, maxZ + margin), cameraTarget.z));
         }
 
         function applyCameraPan(deltaX, deltaY, multiplier = 1) {
@@ -11024,16 +11083,22 @@ body.android-optimized .zoom-btn {
 
             cameraUpVec.crossVectors(cameraRightVec, cameraDirectionVec).normalize();
 
-            const panFactor = cameraDistance * PAN_SENSITIVITY_BASE * multiplier;
+            // World units per screen pixel at the aim point. Panning used to move
+            // at an arbitrary 0.0046 per px — several fingers' worth of travel per
+            // finger — so a short two-finger swipe threw the board out of frame.
+            // Now the board travels with the finger.
+            const canvasH = (renderer && renderer.domElement && renderer.domElement.clientHeight)
+                || window.innerHeight || 1;
+            const panFactor = ((2 * cameraDistance * Math.tan((camera.fov * Math.PI) / 360)) / canvasH) * multiplier;
             cameraTarget.addScaledVector(cameraRightVec, -deltaX * panFactor);
             cameraTarget.addScaledVector(cameraUpVec, deltaY * panFactor);
 
-            // Keep camera target near ground plane to avoid drifting above/below grid
-            if (cameraTarget.y > 50) {
-                cameraTarget.y = 50;
-            } else if (cameraTarget.y < -50) {
-                cameraTarget.y = -50;
-            }
+            // The aim point belongs ON the board. cameraUpVec tilts with the orbit,
+            // so panning used to lift the target up to 50 units into the air — from
+            // there the grid sits under the horizon with nothing around it, which
+            // is the "skewed off into nowhere" view. Vertical panning still slides
+            // the view across the ground; it just can no longer lift the aim off it.
+            cameraTarget.y = 0;
 
             // Keep the target within reach of the circuit so it can't fly off-screen.
             clampPanTarget();
@@ -11487,10 +11552,11 @@ body.android-optimized .zoom-btn {
             canvas.addEventListener('pointerup', handlePenUp);
             canvas.addEventListener('pointercancel', handlePenUp);
             
-            // Keyboard shortcuts (mainly for desktop)
-            if (!isMobile) {
-                document.addEventListener('keydown', handleKeyDown);
-            }
+            // Keyboard shortcuts. These used to be skipped whenever `isMobile` was
+            // true, and `isMobile` counts maxTouchPoints — so a touchscreen laptop
+            // silently lost every shortcut, Escape included. A device with no
+            // keyboard simply never fires the event, so there is nothing to guard.
+            document.addEventListener('keydown', handleKeyDown);
             
             // Close submenus when clicking outside
             document.addEventListener('click', (e) => {
@@ -11542,6 +11608,15 @@ body.android-optimized .zoom-btn {
 
             if (componentContextMenu?.dataset?.visible === 'true' && e.key === 'Escape') {
                 hideComponentContextMenu();
+                return;
+            }
+
+            // Escape is the keyboard's way out of a selection. It used to do nothing
+            // outside the edit popup, which left the ring on screen with no key to
+            // dismiss it.
+            if (e.key === 'Escape' && (selectedComponent || activeComponent)) {
+                e.preventDefault();
+                clearSelection('escape');
                 return;
             }
 
@@ -11728,17 +11803,19 @@ body.android-optimized .zoom-btn {
 
                 // Check for component hit but don't block rotation setup
                 // This allows camera rotation to start if the user moves before long-press completes
+                const wasSelectedBeforePress = selectedComponent;
                 const hitComponent = checkComponentHit(touch.clientX, touch.clientY);
                 // Remember an empty-space press so a plain tap (no rotate) can dismiss
                 // the selector ring on release.
                 pointerDownOnEmpty = !hitComponent && !isPlacing && !isDragging;
                 // Arm a move-drag only when this press landed on the part it would
                 // move. An empty-space drag is a camera orbit, never a part grab.
-                dragArmed = Boolean(lastHitEntity) && lastHitEntity === selectedComponent;
+                dragArmed = !isDragging && dragGrabEntityAt(touch.clientX, touch.clientY) === selectedComponent;
+                pressStartedOnSelected = Boolean(lastHitEntity) && lastHitEntity === wasSelectedBeforePress;
 
-                // Enable rotation for empty space touches
-                // For component touches, rotation will be enabled in touchmove if not dragging
-                if (!hitComponent) {
+                // Orbit unless a part was really grabbed. A press that only reached
+                // the oversized hit box used to orbit nothing at all.
+                if (!dragArmed) {
                     isRotating = true;
                 }
 
@@ -11763,6 +11840,8 @@ body.android-optimized .zoom-btn {
                 );
 
                 isPanning = true;
+                pressStartedOnSelected = false;
+                pointerDownOnEmpty = false;
             } else if (e.touches.length > 2) {
                 // Three or more fingers - cancel all gestures to avoid confusion
                 cancelLongPress();
@@ -11798,7 +11877,7 @@ body.android-optimized .zoom-btn {
                     // first few px of every component grab, so picking up a part felt
                     // like the whole workspace spun. Rotation for genuine empty-space
                     // touches is already armed in handleTouchStart.
-                    const canDragSelection = selectedComponent && !isWireMode && !isMeasureMode;
+                    const canDragSelection = dragArmed && selectedComponent && !isWireMode && !isMeasureMode;
                     if (!isRotating && !isDragging && !canDragSelection) {
                         isRotating = true;
                     }
@@ -11910,10 +11989,18 @@ body.android-optimized .zoom-btn {
                 isPanning = true;
 
             } else {
-                // All fingers lifted. A plain tap on empty space dismisses the selector
-                // ring — check BEFORE we zero out longPressStartPos (the tap origin).
+                // All fingers lifted. A second tap on the part that was already
+                // selected lets it go; otherwise a plain tap on empty space still
+                // dismisses the ring — check BEFORE longPressStartPos is zeroed.
                 const lifted = e.changedTouches && e.changedTouches[0];
-                if (lifted) {
+                // A swipe that began on the selected part was an orbit, not a tap.
+                const touchTravel = (lifted && longPressStartPos)
+                    ? Math.hypot(lifted.clientX - longPressStartPos.x, lifted.clientY - longPressStartPos.y)
+                    : Infinity;
+                if (pressStartedOnSelected && touchTravel <= 8) {
+                    pressStartedOnSelected = false;
+                    clearSelection('tap');
+                } else if (lifted) {
                     maybeDismissRingOnEmptyTap(lifted.clientX, lifted.clientY);
                 } else {
                     pointerDownOnEmpty = false;
@@ -11955,6 +12042,9 @@ body.android-optimized .zoom-btn {
                     cancelLongPress();
                 }
 
+                // What was selected before this press — after it, a click on that
+                // same part has selected itself again and cannot be told apart.
+                const wasSelectedBeforePress = selectedComponent;
                 // Check if clicking on a component first
                 const hitComponent = checkComponentHit(e.clientX, e.clientY);
                 // Remember an empty-space press so a plain tap (no rotate) can dismiss
@@ -11964,10 +12054,17 @@ body.android-optimized .zoom-btn {
                 // move. Also keeps a plain mouse MOVE (no button down) from grabbing
                 // the selected part — mousemove fires on hover, and maybeStartDrag
                 // used to engage on it.
-                dragArmed = Boolean(lastHitEntity) && lastHitEntity === selectedComponent;
+                // A MOVE arms only on the part's own geometry, never on its far
+                // larger hit box: pressing near a part must be able to orbit or pan
+                // the workspace instead of dragging that part.
+                dragArmed = !isDragging && dragGrabEntityAt(e.clientX, e.clientY) === selectedComponent;
+                // A press on the part that is already selected is a deselect
+                // candidate — but only on release, so it can still become a drag.
+                pressStartedOnSelected = Boolean(lastHitEntity) && lastHitEntity === wasSelectedBeforePress;
 
-                // If no component hit and not dragging, enable camera rotation
-                if (!hitComponent && !isDragging) {
+                // If nothing was grabbed, this press orbits the camera — including a
+                // press that only reached the hit box, which used to do nothing.
+                if (!dragArmed && !isDragging) {
                     isRotating = true;
                     lastTouchPos = { x: e.clientX, y: e.clientY };
                 }
@@ -11975,10 +12072,14 @@ body.android-optimized .zoom-btn {
                 // Middle-click pan
                 e.preventDefault();
                 isPanning = true;
+                dragArmed = false;
+                pressStartedOnSelected = false;
                 lastTouchPos = { x: e.clientX, y: e.clientY };
             } else if (e.button === 2) {
                 // Right-click pan (standard 3D-viewport convention: right-drag pans the scene)
                 isPanning = true;
+                dragArmed = false;
+                pressStartedOnSelected = false;
                 lastTouchPos = { x: e.clientX, y: e.clientY };
             }
         }
@@ -12020,8 +12121,19 @@ body.android-optimized .zoom-btn {
             isPanning = false;
             cancelLongPress();
             dragArmed = false; // a new press has to re-arm on the part it lands on
+            const tappedSelected = pressStartedOnSelected;
+            pressStartedOnSelected = false;
+            // Only a real tap releases the part. A press that travelled was a drag
+            // (or an orbit) and must never drop the selection.
+            const pressTravel = longPressStartPos
+                ? Math.hypot(e.clientX - longPressStartPos.x, e.clientY - longPressStartPos.y)
+                : Infinity;
             if (isDragging) {
                 handleRelease();
+            } else if (tappedSelected && pressTravel <= 8) {
+                // Second click on the part that was already selected: let it go.
+                // A drag never reaches here — handleRelease owns that case.
+                clearSelection('tap');
             } else {
                 maybeDismissRingOnEmptyTap(e.clientX, e.clientY);
             }
@@ -12356,15 +12468,44 @@ body.android-optimized .zoom-btn {
         // the selector ring is dismissed. Called from pointer-up; the DOWN must have
         // been on empty space, the gesture must have barely moved, and we must not be
         // mid-drag/placement or in wire/measure mode (where empty taps mean something).
+        // The one way out of a selection, for every kind of input: the second tap
+        // on a part, Escape, an empty tap, and the host's surfaces all end here.
+        // Before this the only route was an empty tap, so a part whose oversized
+        // hit box covered the finger could not be released at all.
+        function clearSelection(reason = '') {
+            if (isDragging) return; // a live drag owns the part until it is released
+            const had = Boolean(selectedComponent || activeComponent);
+            selectedComponent = null;
+            activeComponent = null;
+            dragArmed = false;
+            pointerDownOnEmpty = false;
+            pressStartedOnSelected = false;
+            if (selectedComponents && typeof selectedComponents.clear === 'function') {
+                selectedComponents.clear();
+            }
+            if (selectionRing) selectionRing.visible = false;
+            if (reason === 'tap' && had) setStatus('⚡  Selection cleared');
+        }
+
         function maybeDismissRingOnEmptyTap(clientX, clientY) {
             const wasEmpty = pointerDownOnEmpty;
             pointerDownOnEmpty = false;
             if (!wasEmpty || isDragging || isPlacing || isWireMode || isMeasureMode) return;
             const dx = Math.abs(clientX - longPressStartPos.x);
             const dy = Math.abs(clientY - longPressStartPos.y);
-            if (dx > 8 || dy > 8) return; // moved too far — that was a camera rotate
-            selectedComponent = null;
-            activeComponent = null; // updateSelectionRing hides the ring next frame
+            if (dx > 12 || dy > 12) return; // moved too far — that was a camera gesture
+
+            // A second empty tap in the same spot puts the view back.
+            const now = performance.now();
+            const nearSpot = Math.abs(clientX - lastEmptyTap.x) <= DOUBLE_TAP_SLOP_PX &&
+                             Math.abs(clientY - lastEmptyTap.y) <= DOUBLE_TAP_SLOP_PX;
+            if (now - lastEmptyTap.at <= DOUBLE_TAP_MS && nearSpot) {
+                lastEmptyTap = { at: 0, x: 0, y: 0 };
+                fitToScreen();
+                return;
+            }
+            lastEmptyTap = { at: now, x: clientX, y: clientY };
+            clearSelection('tap');
         }
 
         // Keep the selector ring glued to the controlled component each frame. If that
@@ -14832,6 +14973,57 @@ body.android-optimized .zoom-btn {
             currentEditComponent = null;
         }
 
+        // The part under the pointer, measured against the parts themselves and
+        // not their hit boxes. Those boxes are deliberately far bigger than the
+        // model, so arming a MOVE from one meant a press that merely passed near a
+        // part dragged it — which is exactly the gesture used to pan the workspace.
+        // Selecting still uses the generous boxes; moving does not.
+        function preciseHitEntityAt(clientX, clientY) {
+            const rect = renderer.domElement.getBoundingClientRect();
+            const rectWidth = rect.width || window.innerWidth || 1;
+            const rectHeight = rect.height || window.innerHeight || 1;
+            mouse.x = ((clientX - rect.left) / rectWidth) * 2 - 1;
+            mouse.y = -((clientY - rect.top) / rectHeight) * 2 + 1;
+            raycaster.setFromCamera(mouse, camera);
+
+            const roots = [];
+            components.forEach(comp => { if (comp && comp.mesh) roots.push(comp.mesh); });
+            if (roots.length === 0) return null;
+
+            const hits = raycaster.intersectObjects(roots, true);
+            for (const hit of hits) {
+                if (hit.object?.userData?.isSelectionBox) continue;
+                let owner = hit.object;
+                while (owner && !owner.userData?.component && !owner.userData?.junction) {
+                    owner = owner.parent;
+                }
+                if (!owner) continue;
+                const entity = owner.userData.component || owner.userData.junction;
+                if (entity) return entity;
+            }
+            return null;
+        }
+
+        // A part's real geometry is small — a resistor is a few pixels tall at
+        // normal zoom — so requiring a dead-on geometry hit made parts feel
+        // un-grabbable. Accept a press this close to the part as a grab, while
+        // still refusing the oversized selection box that made empty-space pans
+        // yank parts around.
+        const DRAG_GRAB_HALO_PX = 18;
+        function dragGrabEntityAt(clientX, clientY) {
+            const direct = preciseHitEntityAt(clientX, clientY);
+            if (direct) return direct;
+            for (let i = 0; i < 8; i++) {
+                const angle = (Math.PI * 2 * i) / 8;
+                const hit = preciseHitEntityAt(
+                    clientX + Math.cos(angle) * DRAG_GRAB_HALO_PX,
+                    clientY + Math.sin(angle) * DRAG_GRAB_HALO_PX
+                );
+                if (hit) return hit;
+            }
+            return null;
+        }
+
         function checkComponentHit(clientX, clientY) {
             // If we're in the middle of a long press, don't handle regular clicks
             if (isLongPressing) {
@@ -15382,6 +15574,7 @@ body.android-optimized .zoom-btn {
             if (!selectedComponent || isDragging || isWireMode || isMeasureMode) {
                 return;
             }
+            if (isPanning) return; // a middle/right-drag pan must never move a part
 
             // The press must have landed on this part. Otherwise this is a camera
             // gesture on empty space (or a bare mouse hover) and moving the part is
