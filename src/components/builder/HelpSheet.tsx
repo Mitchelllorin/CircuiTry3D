@@ -32,7 +32,7 @@ const SHORTCUTS: Array<[string, string]> = [
   ["J", "Add a junction"],
   ["B · R · L · S", "Add a battery · resistor · LED · switch"],
   ["Delete", "Remove the selected part"],
-  ["Esc", "Leave the current tool"],
+  ["Esc", "Let go of the selected part, or leave the current tool"],
   ["F", "Fit the circuit to the screen"],
   ["H", "Reset the view"],
   ["G", "Grid on / off"],
@@ -45,8 +45,24 @@ const SHORTCUTS: Array<[string, string]> = [
   ["Ctrl+N", "New circuit"],
 ];
 
+const HELP_SECTIONS = [
+  { id: "help-build", label: "Build" },
+  { id: "help-fix", label: "Change or undo" },
+  { id: "help-move", label: "Select & move" },
+  { id: "help-read", label: "W.I.R.E." },
+  { id: "help-look", label: "Look around" },
+  { id: "help-shortcuts", label: "Keyboard" },
+  { id: "help-about", label: "About" },
+];
+
 export function HelpSheet({ isOpen, section, onClose }: HelpSheetProps) {
   const bodyRef = useRef<HTMLDivElement | null>(null);
+
+  const jumpTo = (id: string) => {
+    bodyRef.current
+      ?.querySelector<HTMLElement>(`#${id}`)
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
 
   // Land on the section that was asked for, every time it opens.
   useEffect(() => {
@@ -81,6 +97,18 @@ export function HelpSheet({ isOpen, section, onClose }: HelpSheetProps) {
           <p className="help-sheet__lead">
             Want the walkthrough again? <strong>Learn → Take the Tour</strong>.
           </p>
+
+          <nav className="help-sheet__jump" aria-label="Help sections">
+            {HELP_SECTIONS.map(({ id, label }) => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => jumpTo(id)}
+              >
+                {label}
+              </button>
+            ))}
+          </nav>
 
           <section className="help-sheet__section" id="help-build">
             <h3>Build a circuit</h3>
@@ -131,10 +159,33 @@ export function HelpSheet({ isOpen, section, onClose }: HelpSheetProps) {
             <p>The <strong>Wire Guide</strong> tab walks through the W.I.R.E. method in full.</p>
           </section>
 
+          <section className="help-sheet__section" id="help-move">
+            <h3>Select and move</h3>
+            <ul>
+              <li>
+                <strong>Tap a part</strong> to select it. Tap the same part again to let go — or
+                press <kbd>Esc</kbd>.
+              </li>
+              <li>
+                <strong>Drag the part itself</strong> to move it. Its wires follow, and only the
+                part you grabbed moves: the view stays where it is.
+              </li>
+              <li>
+                <strong>Drag empty space</strong> to orbit the board. On a mouse, pan with the{" "}
+                <strong>middle or right button</strong>; on touch, drag with <strong>two fingers</strong>.
+              </li>
+              <li>
+                The board is held to its grid, so a pan can't carry it off into space. If you do
+                lose it, <strong>double-tap empty space</strong> — or press <strong>⊡</strong> on the
+                right edge — to bring it back.
+              </li>
+            </ul>
+          </section>
+
           <section className="help-sheet__section" id="help-look">
             <h3>Look around</h3>
             <ul>
-              <li>Drag to orbit. Pinch to zoom. Drag with two fingers to pan.</li>
+              <li>Pinch to zoom in and out.</li>
               <li><strong>⊡</strong> on the right edge fits the circuit to the screen.</li>
               <li>
                 <strong>Explode</strong> — the button at the bottom of the right edge. Slide it up
