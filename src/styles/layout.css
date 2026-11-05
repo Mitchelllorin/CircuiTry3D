@@ -1047,3 +1047,31 @@ html[data-theme="light"] .tips-ticker {
 .app-shell.is-arena .tips-ticker {
   display: none;
 }
+
+/* ── Nav ink over the workspace, in light mode ─────────────────────────────
+   The mode bar floats on the builder's canvas, and that canvas is dark in BOTH
+   themes. The light-mode rules above were written for pale pages: they put slate
+   #334155 text and a WHITE drop-shadow on a navy board, which is why the labels
+   and glyphs read as fuzzy grey smudges rather than ink. Over the workspace the
+   nav keeps dark-theme ink and the same tight black separation shadow the dark
+   theme uses; everywhere else the pale-page rules still apply. */
+html[data-theme="light"] .app-shell.is-workspace .mode-tab {
+  color: rgba(214, 232, 255, 0.92);
+}
+
+html[data-theme="light"] .app-shell.is-workspace .mode-tab:hover,
+html[data-theme="light"] .app-shell.is-workspace .mode-tab[data-active="true"] {
+  color: var(--builder-cyan);
+}
+
+html[data-theme="light"] .app-shell.is-workspace .mode-icon,
+html[data-theme="light"] .app-shell.is-workspace .mode-icon--3d {
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.85));
+}
+
+html[data-theme="light"] .app-shell.is-workspace .mode-tab[data-active="true"] .mode-icon,
+html[data-theme="light"] .app-shell.is-workspace .mode-tab[data-active="true"] .mode-icon--3d {
+  filter:
+    drop-shadow(0 1px 2px rgba(0, 0, 0, 0.85))
+    brightness(1.14);
+}

@@ -4,17 +4,11 @@ import { useWorkspaceMode } from "../context/WorkspaceModeContext";
 import { useTheme } from "../context/ThemeContext";
 import type { WorkspaceMode } from "./builder/types";
 import "../styles/builder-ui.css";
-import wireResourceLogo from "../assets/wire-resource-logo.svg";
 import { Logo3D } from "./builder/branding/Logo3D";
-import { Icon3D } from "./icons3d/Icon3D";
-import { ICON_MODELS, type Icon3DName } from "./icons3d/iconModels";
-
-const has3DIcon = (mode: string): mode is Icon3DName =>
-  Object.prototype.hasOwnProperty.call(ICON_MODELS, mode);
+import { NavGlyph } from "./navGlyphs";
 
 type TabConfig = {
   mode: WorkspaceMode;
-  icon: string;
   label: string;
   title: string;
 };
@@ -24,22 +18,24 @@ type ModeBarScrollState = {
   canScrollRight: boolean;
 };
 
-/* All navigation tabs rendered directly in the scrollable bar */
+/* All navigation tabs rendered directly in the scrollable bar.
+   Every tab is a drawn glyph plus its printed name: one visual language for the
+   whole row, so nothing in it is the odd coloured blob. */
 const NAV_TABS: TabConfig[] = [
-  { mode: "build",        icon: "🔧", label: "Build",       title: "Component builder and circuit designer" },
-  { mode: "practice",     icon: "📝", label: "Practice",    title: "Guided worksheets and W.I.R.E. problems" },
-  { mode: "troubleshoot", icon: "🩺", label: "Troubleshoot",title: "Fix broken circuits and restore current flow" },
-  { mode: "arena",        icon: "⚡", label: "Arena",       title: "Component testing and advanced simulation" },
-  { mode: "learn",        icon: "🎓", label: "Learn",       title: "Take the guided tour" },
-  { mode: "help",         icon: "📚", label: "Help",        title: "W.I.R.E. guide, shortcuts, and reference" },
-  { mode: "wire-guide",   icon: "",   label: "Wire Guide",  title: "Wire guide, formulas, and gauge recommendations" },
-  { mode: "textbook",     icon: "📖", label: "Textbook",    title: "Year 1 & Year 2 Electrical Studies Textbook" },
-  { mode: "pricing",      icon: "💳", label: "Pricing",     title: "Pricing" },
-  { mode: "arcade",       icon: "🎯", label: "Arcade",      title: "Circuit Arcade" },
-  { mode: "classroom",    icon: "🏫", label: "Classroom",   title: "Classroom" },
-  { mode: "community",    icon: "🌐", label: "Community",   title: "Community" },
-  { mode: "gallery",      icon: "🎬", label: "Gallery",     title: "Cinematic gallery — your captured shots and fly-throughs" },
-  { mode: "account",      icon: "👤", label: "Account",     title: "Account" },
+  { mode: "build",        label: "Build",       title: "Component builder and circuit designer" },
+  { mode: "practice",     label: "Practice",    title: "Guided worksheets and W.I.R.E. problems" },
+  { mode: "troubleshoot", label: "Troubleshoot",title: "Fix broken circuits and restore current flow" },
+  { mode: "arena",        label: "Arena",       title: "Component testing and advanced simulation" },
+  { mode: "learn",        label: "Learn",       title: "Take the guided tour" },
+  { mode: "help",         label: "Help",        title: "W.I.R.E. guide, shortcuts, and reference" },
+  { mode: "wire-guide",   label: "Wire Guide",  title: "Wire guide, formulas, and gauge recommendations" },
+  { mode: "textbook",     label: "Textbook",    title: "Year 1 & Year 2 Electrical Studies Textbook" },
+  { mode: "pricing",      label: "Pricing",     title: "Pricing" },
+  { mode: "arcade",       label: "Arcade",      title: "Circuit Arcade" },
+  { mode: "classroom",    label: "Classroom",   title: "Classroom" },
+  { mode: "community",    label: "Community",   title: "Community" },
+  { mode: "gallery",      label: "Gallery",     title: "Cinematic gallery — your captured shots and fly-throughs" },
+  { mode: "account",      label: "Account",     title: "Account" },
 ];
 
 export function GlobalModeBar() {
@@ -189,22 +185,7 @@ export function GlobalModeBar() {
             aria-label={`${tab.label} mode`}
             title={tab.title}
           >
-            {tab.mode === "wire-guide" ? (
-              <img
-                src={wireResourceLogo}
-                alt=""
-                className="mode-icon mode-icon--svg mode-icon--wire-guide"
-                aria-hidden="true"
-              />
-            ) : has3DIcon(tab.mode) ? (
-              <Icon3D
-                name={tab.mode}
-                className="mode-icon mode-icon--3d"
-                fallback={<span className="mode-icon" aria-hidden="true">{tab.icon}</span>}
-              />
-            ) : (
-              <span className="mode-icon" aria-hidden="true">{tab.icon}</span>
-            )}
+            <NavGlyph name={tab.mode} className="mode-icon mode-icon--glyph" />
             <span className="mode-label">{tab.label}</span>
           </button>
         ))}
@@ -225,11 +206,7 @@ export function GlobalModeBar() {
           aria-label="Settings"
           title="App settings — logo, graphics, workspace, accessibility"
         >
-          <Icon3D
-            name="settings"
-            className="mode-icon mode-icon--3d"
-            fallback={<span className="mode-icon" aria-hidden="true">⚙️</span>}
-          />
+          <NavGlyph name="settings" className="mode-icon mode-icon--glyph" />
           <span className="mode-label">Settings</span>
         </button>
 
@@ -241,14 +218,9 @@ export function GlobalModeBar() {
           aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
           title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
         >
-          <Icon3D
+          <NavGlyph
             name={theme === "dark" ? "sun" : "moon"}
-            className="mode-icon mode-icon--3d"
-            fallback={
-              <span className="mode-icon" aria-hidden="true">
-                {theme === "dark" ? "☀️" : "🌙"}
-              </span>
-            }
+            className="mode-icon mode-icon--glyph"
           />
           <span className="mode-label">{theme === "dark" ? "Light" : "Dark"}</span>
         </button>

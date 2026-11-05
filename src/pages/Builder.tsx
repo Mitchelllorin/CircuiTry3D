@@ -3293,75 +3293,7 @@ export default function Builder() {
             </button>
           ))}
         </div>
-        <div className="ticker-wrapper">
-          <div className="ticker-content">
-            <span className="ticker-item">
-              {isFrameReady
-                ? "Workspace ready: tap and drag to build"
-                : "Loading workspace..."}
-            </span>
-            <span className="ticker-separator">•</span>
-            <span className="ticker-item">
-              Wire: {wireRoutingLabel}
-            </span>
-            <span className="ticker-separator">•</span>
-            <span className="ticker-item ticker-item-wire-profile">
-              Wire Profile:{" "}
-              {activeWireProfile
-                ? `${activeWireProfile.gaugeLabel} (${activeWireSegmentResistance.toFixed(4)} Ω/m)`
-                : "Default model"}
-            </span>
-            <span className="ticker-separator">•</span>
-            <span className="ticker-item">
-              Flow: {currentFlowLabel}
-            </span>
-            <span className="ticker-separator">•</span>
-            <span className="ticker-item">
-              Layout: {layoutModeLabel}
-            </span>
-            <span className="ticker-separator">•</span>
-            <span className="ticker-item">
-              {modeState.showGrid ? "Grid visible" : "Grid hidden"}
-            </span>
-            <span className="ticker-separator">•</span>
-            <span className="ticker-item">
-              {labelVisibilityDescription}
-            </span>
-            <span className="ticker-separator">•</span>
-            <span className="ticker-item">
-              {isFrameReady
-                ? "Workspace ready: tap and drag to build"
-                : "Loading workspace..."}
-            </span>
-            <span className="ticker-separator">•</span>
-            <span className="ticker-item">
-              Wire: {wireRoutingLabel}
-            </span>
-            <span className="ticker-separator">•</span>
-            <span className="ticker-item ticker-item-wire-profile">
-              Wire Profile:{" "}
-              {activeWireProfile
-                ? `${activeWireProfile.gaugeLabel} (${activeWireSegmentResistance.toFixed(4)} Ω/m)`
-                : "Default model"}
-            </span>
-            <span className="ticker-separator">•</span>
-            <span className="ticker-item">
-              Flow: {currentFlowLabel}
-            </span>
-            <span className="ticker-separator">•</span>
-            <span className="ticker-item">
-              Layout: {layoutModeLabel}
-            </span>
-            <span className="ticker-separator">•</span>
-            <span className="ticker-item">
-              {modeState.showGrid ? "Grid visible" : "Grid hidden"}
-            </span>
-            <span className="ticker-separator">•</span>
-            <span className="ticker-item">
-              {labelVisibilityDescription}
-            </span>
-          </div>
-        </div>
+
       </div>
 
       <div className="builder-workspace" aria-busy={!isFrameReady}>
