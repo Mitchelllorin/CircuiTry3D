@@ -46,6 +46,7 @@ export type BuilderInvokeAction =
   | "set-environment"
   | "set-view-insets"
   | "set-explode"
+  | "set-part-thermals"
   | "set-ui-busy"
   | "load-payoff"
   | "run-payoff-flow";
@@ -99,6 +100,25 @@ export type LegacyCircuitState = {
    * this is the only way to tell "holding it" from "placed it".
    */
   isPlacing?: boolean;
+  /**
+   * Per-component thermal inputs from the board — dissipation, the part's own
+   * θ and temperature coefficient, and how long it has been carrying current.
+   * The physics lives in `src/utils/thermal.ts`; the board only supplies the
+   * measurements, because it is the side that has the solved branch currents.
+   * Absent on snapshots taken before the first analysis.
+   */
+  thermal?: Array<{
+    id: string;
+    label?: string;
+    type?: string;
+    powerW: number;
+    thetaCPerW?: number | null;
+    alphaPerC?: number | null;
+    referenceResistanceOhm?: number | null;
+    currentA?: number | null;
+    thermalTimeConstantS?: number | null;
+    secondsEnergised?: number | null;
+  }>;
   counts: {
     components: number;
     wires: number;

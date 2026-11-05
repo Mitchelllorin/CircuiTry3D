@@ -4065,7 +4065,12 @@ body.android-optimized .zoom-btn {
                     // up as a held ghost, so counts alone can't tell "holding it" from
                     // "dropped on the grid". Stamp the live placement flag on every
                     // snapshot so the parent can distinguish the two.
-                    const payload = Object.assign({}, snapshot, { isPlacing: isPlacing });
+                    const payload = Object.assign({}, snapshot, {
+                        isPlacing: isPlacing,
+                        // Per-part thermal inputs for the app's model. Added here so
+                        // every snapshot path carries it, including the early ones.
+                        thermal: buildThermalInputs()
+                    });
                     window.parent.postMessage({ type: 'legacy:circuit-state', payload }, '*');
                 } catch (error) {
                     console.warn('Builder bridge: unable to share circuit state', error);
@@ -4325,6 +4330,24 @@ body.android-optimized .zoom-btn {
                                 const workingC = typeof data.workingC === 'number' && isFinite(data.workingC) ? data.workingC : ambientC;
                                 WORKSPACE_ENVIRONMENT.ambientC = ambientC;
                                 WORKSPACE_ENVIRONMENT.workingC = workingC;
+                                components.forEach(component => {
+                                    if (component && typeof component.updateLabels === 'function') {
+                                        component.updateLabels();
+                                    }
+                                });
+                                break;
+                            }
+                            case 'set-part-thermals': {
+                                // The app has already run the thermal model. Store what
+                                // it solved and re-render every plate: the reading can
+                                // change for a part whose W.I.R.E. numbers did not.
+                                PART_THERMALS.clear();
+                                const thermalRows = Array.isArray(data.rows) ? data.rows : [];
+                                thermalRows.forEach(row => {
+                                    if (row && typeof row.id === 'string' && isFinite(row.junctionC)) {
+                                        PART_THERMALS.set(row.id, row);
+                                    }
+                                });
                                 components.forEach(component => {
                                     if (component && typeof component.updateLabels === 'function') {
                                         component.updateLabels();
@@ -5298,6 +5321,57 @@ body.android-optimized .zoom-btn {
         // say what condition a part is being read at — the React readout strip
         // shows the same working figure, so the two say one number, not two.
         const WORKSPACE_ENVIRONMENT = { ambientC: 25, workingC: 25 };
+
+        // ── Per-component thermals, computed by the app ──────────────────────
+        // The physics lives in src/utils/thermal.ts, where it is tested: junction
+        // temperature from dissipation, the part's own theta, its temperature
+        // coefficient, a heatsink path if there is one, and how long current has
+        // been flowing. This file only supplies the measurements and paints the
+        // result, so a plate and the readout cannot drift into two answers.
+        // The local P x theta further down is the fallback for the frame or two
+        // before the first push arrives.
+        const PART_THERMALS = new Map();
+
+        // The measurements the thermal model needs, one row per part. Nothing
+        // here is physics: the solved current and resistance come from
+        // runtimeMetrics, the part supplies its own thermal properties.
+        function buildThermalInputs() {
+            const elapsedS = fuseOnsetStartTime > 0 ? (performance.now() - fuseOnsetStartTime) / 1000 : 0;
+            const rows = [];
+            components.forEach(component => {
+                if (!component || !component.id) return;
+                const props = component.properties || {};
+                const metrics = component.runtimeMetrics || null;
+                const isSource = component.type === 'battery' || component.type === 'ac_source';
+                const internalR = typeof props.internalResistance === 'number'
+                    ? Math.max(props.internalResistance, 0)
+                    : 0;
+                // A source's DELIVERED power is not heat. What warms a battery is
+                // its own I2R in the internal resistance - which is why a 12 V pack
+                // pushing 109 mA belongs at ambient, not at 103 °C. Treating V x I
+                // as dissipation made the source the hottest part on every board.
+                const delivered = metrics && isFinite(metrics.power) ? Math.max(metrics.power, 0) : 0;
+                const current = metrics && isFinite(metrics.current) ? Math.abs(metrics.current) : 0;
+                const power = isSource ? current * current * internalR : delivered;
+                rows.push({
+                    id: component.id,
+                    label: typeof component.getComponentIdentifier === 'function'
+                        ? component.getComponentIdentifier()
+                        : component.id,
+                    type: component.type || 'generic',
+                    powerW: power,
+                    thetaCPerW: typeof props.thermalResistance === 'number' ? props.thermalResistance : null,
+                    alphaPerC: typeof props.temperatureCoefficient === 'number' ? props.temperatureCoefficient : null,
+                    referenceResistanceOhm: isSource
+                        ? (internalR > 0 ? internalR : null)
+                        : (metrics && isFinite(metrics.resistance) ? metrics.resistance : null),
+                    currentA: metrics && isFinite(metrics.current) ? Math.abs(metrics.current) : null,
+                    thermalTimeConstantS: typeof props.thermalTimeConstant === 'number' ? props.thermalTimeConstant : null,
+                    secondsEnergised: power > 0 ? elapsedS : 0
+                });
+            });
+            return rows;
+        }
         // The plate goes to warning colour BEFORE the limit, not at it: 60 °C is
         // where a part is already doing itself harm, 90 °C is the event. Same
         // thresholds the workspace's Conditions panel uses.
@@ -6563,7 +6637,18 @@ body.android-optimized .zoom-btn {
                     : 60;
                 const power = metrics && isFinite(metrics.power) ? Math.max(metrics.power, 0) : 0;
                 const selfHeat = power * theta;
-                const partTempC = WORKSPACE_ENVIRONMENT.workingC + selfHeat;
+                // What the app's thermal model solved for this part, if it has
+                // reported yet: junction temperature, rise and effective theta.
+                const pushedThermal = PART_THERMALS.get(this.id) || null;
+                const riseC = pushedThermal && isFinite(pushedThermal.riseC)
+                    ? Math.max(pushedThermal.riseC, 0)
+                    : selfHeat;
+                const shownTheta = pushedThermal && isFinite(pushedThermal.thetaCPerW)
+                    ? pushedThermal.thetaCPerW
+                    : theta;
+                const partTempC = pushedThermal && isFinite(pushedThermal.junctionC)
+                    ? pushedThermal.junctionC
+                    : WORKSPACE_ENVIRONMENT.workingC + selfHeat;
                 const tempColor = partTempC >= TEMP_OVER_C
                     ? '#ff5a4a'
                     : partTempC >= TEMP_WARN_C
@@ -6571,8 +6656,8 @@ body.android-optimized .zoom-btn {
                         : WIRE_COLORS.T;
                 return `<div style="color: ${tempColor}; font-size: ${isMobile ? '12px' : '10px'}; font-weight: 600; margin-top: 2px;">`
                     + `T ${partTempC.toFixed(1)}°C`
-                    + (selfHeat >= 0.1
-                        ? `<span style="color: rgba(190, 210, 240, 0.75); font-weight: 500;"> ${WORKSPACE_ENVIRONMENT.workingC.toFixed(1)}°C base</span>`
+                    + (riseC >= 0.1
+                        ? `<span style="color: rgba(190, 210, 240, 0.75); font-weight: 500;"> ${riseC.toFixed(1)} K · ${shownTheta.toFixed(0)} °C/W</span>`
                         : '')
                     + `</div>`;
             }
@@ -6819,7 +6904,18 @@ body.android-optimized .zoom-btn {
                         ? Math.max(this.properties.thermalResistance, 0)
                         : 60;
                     const selfHeat = isFinite(metrics.power) ? Math.max(metrics.power, 0) * theta : 0;
-                    const partTempC = WORKSPACE_ENVIRONMENT.workingC + selfHeat;
+                    // Same treatment as the plate above: the app's solved values
+                    // when they exist, the bare P x theta only as a fallback.
+                    const pushedThermal = PART_THERMALS.get(this.id) || null;
+                    const riseC = pushedThermal && isFinite(pushedThermal.riseC)
+                        ? Math.max(pushedThermal.riseC, 0)
+                        : selfHeat;
+                    const shownTheta = pushedThermal && isFinite(pushedThermal.thetaCPerW)
+                        ? pushedThermal.thetaCPerW
+                        : theta;
+                    const partTempC = pushedThermal && isFinite(pushedThermal.junctionC)
+                    ? pushedThermal.junctionC
+                    : WORKSPACE_ENVIRONMENT.workingC + selfHeat;
                     const tempColor = partTempC >= TEMP_OVER_C
                         ? '#ff5a4a'
                         : partTempC >= TEMP_WARN_C
@@ -6827,8 +6923,8 @@ body.android-optimized .zoom-btn {
                             : WIRE_COLORS.T;
                     parts.push(
                         `<span style="color: ${tempColor};">T ${partTempC.toFixed(1)}°C</span>` +
-                        (selfHeat >= 0.1
-                            ? `<span style="color: rgba(190, 210, 240, 0.75); font-weight: 500;"> ${WORKSPACE_ENVIRONMENT.workingC.toFixed(1)}°C base</span>`
+                        (riseC >= 0.1
+                            ? `<span style="color: rgba(190, 210, 240, 0.75); font-weight: 500;"> ${riseC.toFixed(1)} K · ${shownTheta.toFixed(0)} °C/W</span>`
                             : '')
                     );
                 }

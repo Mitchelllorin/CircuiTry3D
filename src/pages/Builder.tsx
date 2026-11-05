@@ -111,6 +111,8 @@ import { FamilyDrawer, FamilyGlyph } from "../components/family/FamilyDrawer";
 import { AnalysisSheet } from "../components/builder/AnalysisSheet";
 import type { InsightsMetric } from "../components/builder/InsightsFilmReel";
 import { formatEngineering } from "../utils/electrical";
+import { familyThermal } from "../components/arena/fuse";
+import { computeComponentThermal, summariseCircuitThermal } from "../utils/thermal";
 import CurrentFlowAnimation from '../components/CurrentFlowAnimation';
 
 type WorkspacePanelMode =
@@ -2627,6 +2629,37 @@ export default function Builder() {
     };
   }, [activeEnvironment]);
 
+  // Per-component thermal results. The board sends what it measures (power,
+  // current, resistance, and how long current has flowed); the physics is here,
+  // in one tested place, and the numbers go back to the canvas so a plate and
+  // this readout can never be two different answers.
+  const componentThermals = useMemo(() => {
+    const rows = circuitState?.thermal ?? [];
+    return rows.map((row) =>
+      computeComponentThermal({
+        id: row.id,
+        label: row.label,
+        type: row.type,
+        powerW: row.powerW,
+        thetaCPerW: row.thetaCPerW ?? undefined,
+        ambientC: environmentTemp.ambientC,
+        limitC: familyThermal(row.type || "generic").junctionLimitC,
+        alphaPerC: row.alphaPerC ?? undefined,
+        referenceResistanceOhm: row.referenceResistanceOhm ?? undefined,
+        currentA: row.currentA ?? undefined,
+        thermalTimeConstantS: row.thermalTimeConstantS ?? undefined,
+        secondsEnergised: row.secondsEnergised ?? undefined,
+      }),
+    );
+  }, [circuitState, environmentTemp.ambientC]);
+
+  // The circuit's thermal state: total dissipation, the effective theta the
+  // whole board presents (power-weighted), and the part closest to its limit.
+  const circuitThermal = useMemo(
+    () => summariseCircuitThermal(componentThermals, environmentTemp.ambientC),
+    [componentThermals, environmentTemp.ambientC],
+  );
+
   const wireMetrics = useMemo<InsightsMetric[]>(() => {
     const volts = liveWireMetricsSnapshot.voltage;
     const amps = liveWireMetricsSnapshot.current;
@@ -2668,17 +2701,33 @@ export default function Builder() {
         id: "temperature",
         letter: "T",
         label: "Temperature",
-        // One decimal, and it is the SAME figure the Conditions panel calls
-        // Thermal Rise — ambient times the scenario's thermal factor. The sub
-        // line carries the ambient behind it, so 82.5 °C on a 50 °C day cannot
-        // be misread as the room being 82 °C.
-        value: `${environmentTemp.tempC.toFixed(1)}°C`,
-        sub: `${environmentTemp.ambientC}°C ambient`,
-        state: environmentTemp.state,
+        // The hottest junction on the board, not the room. A part's temperature
+        // is ambient + P x theta, so the figure that matters is whichever part is
+        // closest to its own limit; the sub line names it, carries its rise and
+        // the theta the circuit presents, so 103.5 °C cannot be read as the
+        // ambient being 103.5 °C.
+
+
+
+        value: `${circuitThermal.maxJunctionC.toFixed(1)}°C`,
+        // The sub line is the circuit's working, not only the part's: which part
+        // is hottest, its rise, the theta the board presents, total dissipation,
+        // and how many parts are past (or near) their own limit.
+        sub:
+          circuitThermal.hottest && circuitThermal.hottest.riseC >= 0.05
+            ? `${circuitThermal.hottest.label} +${circuitThermal.hottest.riseC.toFixed(1)} K · θ ${circuitThermal.hottest.thetaCPerW.toFixed(0)} °C/W · Σ ${circuitThermal.totalPowerW.toFixed(2)} W` +
+              (circuitThermal.overCount
+                ? ` · ${circuitThermal.overCount} over limit`
+                : circuitThermal.warnCount
+                  ? ` · ${circuitThermal.warnCount} near limit`
+                  : "")
+            : `${environmentTemp.ambientC.toFixed(1)}°C ambient · no dissipation`,
+        state: circuitThermal.status,
       },
     ];
-  }, [activeWireProfile, liveWireMetricsSnapshot, environmentTemp]);
+  }, [activeWireProfile, liveWireMetricsSnapshot, environmentTemp, circuitThermal]);
 
+  
   // The workspace's temperature belongs to the app, not the iframe — the
   // environment scenario lives here. The canvas nameplates need it to say what
   // condition a part is being read at, so it goes across the same bridge as the
@@ -2692,6 +2741,26 @@ export default function Builder() {
       workingC: environmentTemp.tempC,
     });
   }, [isFrameReady, triggerBuilderAction, environmentTemp]);
+
+  // Push the solved per-component temperatures back to the canvas, so every
+  // plate shows the number this readout is built from.
+  useEffect(() => {
+    if (!isFrameReady) {
+      return;
+    }
+    triggerBuilderAction("set-part-thermals", {
+      rows: componentThermals.map((row) => ({
+        id: row.id,
+        junctionC: row.junctionC,
+        riseC: row.riseC,
+        thetaCPerW: row.thetaCPerW,
+        limitC: row.limitC,
+        headroomC: row.headroomC,
+        utilisation: row.utilisation,
+        status: row.status,
+      })),
+    });
+  }, [isFrameReady, triggerBuilderAction, componentThermals]);
 
   // While the current-flow payoff demo is playing (sequence running OR banner
   // showing) the preset circuit must be view-only: a transparent guard sits over
