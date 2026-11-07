@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Littelfuse 0218.250MXP — part brief — CircuiTry3D</title>
+<style>
+  @page { size: A4; margin: 13mm; }
+  :root {
+    --blue: #2563EB;
+    --orange: #F97316;
+    --green: #1FA65A;
+    --ink: #111827;
+    --ink-2: #4B5563;
+    --rule: #D8DEE7;
+    --tint: #F5F7FA;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0 auto;
+    max-width: 186mm;
+    padding: 8mm 6mm 10mm;
+    background: #fff;
+    color: var(--ink);
+    font: 14px/1.5 "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .masthead { border-block-end: 2px solid var(--ink); padding-block-end: 8px; }
+  .kicker {
+    margin: 0 0 2px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--ink-2);
+  }
+  .wordmark {
+    margin: 0;
+    font-size: 26px;
+    font-weight: 800;
+    letter-spacing: -.02em;
+    line-height: 1;
+  }
+  .wordmark .w1 { color: var(--blue); }
+  .wordmark .w2 { color: var(--orange); font-style: italic; }
+  .wordmark .w3 { color: var(--green); }
+  h1 {
+    margin: 14px 0 4px;
+    font-size: 23px;
+    line-height: 1.2;
+    letter-spacing: -.01em;
+  }
+  .lede { margin: 0 0 16px; font-size: 14px; color: var(--ink-2); max-width: 62ch; }
+  h2 {
+    margin: 20px 0 8px;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--ink-2);
+  }
+  table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+  th, td { text-align: left; padding: 6px 8px; border-block-end: 1px solid var(--rule); vertical-align: top; }
+  th { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2); }
+  td.num { font-weight: 700; white-space: nowrap; }
+  tr.total td { border-block-end: 2px solid var(--ink); }
+  .note { font-size: 12px; color: var(--ink-2); margin: 6px 0 0; }
+  .ours { background: var(--tint); }
+  .ours td { border-block-end-color: #E7EBF1; }
+  .ours td:first-child { inline-size: 34%; }
+  .question {
+    margin-top: 20px;
+    border-inline-start: 4px solid var(--orange);
+    background: var(--tint);
+    padding: 12px 14px;
+  }
+  .question h2 { margin-top: 0; color: var(--orange); }
+  .question ol { margin: 0; padding-inline-start: 18px; }
+  .question li { margin-block: 6px; }
+  .contact {
+    margin-top: 22px;
+    padding-block-start: 10px;
+    border-block-start: 1px solid var(--rule);
+    font-size: 12px;
+    color: var(--ink-2);
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .contact b { color: var(--ink); }
+  @media print { body { padding: 0; } }
+</style>
+</head>
+<body>
+  <header class="masthead">
+    <p class="kicker">Part brief · Littelfuse · 6 November 2026</p>
+    <p class="wordmark"><span class="w1">Circui</span><span class="w2">Try</span><span class="w3">3D</span></p>
+  </header>
+
+  <h1>0218.250MXP, driven 3.6× past its rating</h1>
+  <p class="lede">
+    A 5 × 20 mm time-lag cartridge fuse, modelled from the 218 series datasheet and run in a
+    3D circuit simulator used by electrical apprentices and their instructors. The element
+    opened. This page is what the model used, what the bench measured, what the app guessed,
+    and the one figure I cannot supply without you.
+  </p>
+
+  <h2>Your figures, as carried</h2>
+  <table>
+    <thead>
+      <tr><th>Rating</th><th>Value</th><th>Where it came from</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Rated current</td><td class="num">250&nbsp;mA</td><td>218 series datasheet, 0218.250</td></tr>
+      <tr><td>Rated voltage</td><td class="num">250&nbsp;VAC</td><td>218 series datasheet</td></tr>
+      <tr><td>Interrupting rating</td><td class="num">35&nbsp;A</td><td>218 series datasheet, low-breaking-capacity glass</td></tr>
+      <tr><td>Nominal melting I²t</td><td class="num">0.5405&nbsp;A²s</td><td>218 series datasheet</td></tr>
+      <tr><td>Nominal cold resistance</td><td class="num">1.0495&nbsp;Ω</td><td>218 series datasheet</td></tr>
+      <tr><td>Temperature range</td><td class="num">−55 to +125&nbsp;°C</td><td>218 series datasheet</td></tr>
+    </tbody>
+  </table>
+  <p class="note">
+    Held in the catalog against your product page for 0218.250. If any figure above disagrees
+    with the sheet you hold, the sheet wins.
+  </p>
+
+  <h2>What the bench did</h2>
+  <table>
+    <thead>
+      <tr><th>Condition</th><th>Measured</th><th>Against the rating</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>9&nbsp;V source, 10&nbsp;Ω load</td><td class="num">0.893&nbsp;A</td><td class="num">3.6× rated</td></tr>
+      <tr><td>Element</td><td>opened and stayed open</td><td>nameplate reads FAILED</td></tr>
+      <tr class="total"><td>0.250&nbsp;A, at rating</td><td class="num">no event</td><td>severity 0</td></tr>
+    </tbody>
+  </table>
+  <p class="note">
+    The run is repeatable: <code>node tools/probe/drive-107-littelfuse-break.mjs</code>,
+    13 of 13 checks, no console errors. Both sides of the rating are asserted, because a model
+    that blows a fuse at its own rating is worse than no model at all.
+  </p>
+
+  <h2>What is ours, not yours</h2>
+  <table class="ours">
+    <tbody>
+      <tr>
+        <td><b>Time to open</b></td>
+        <td>Your I²t predicts 0.5405 / 0.893² = 0.678&nbsp;s at this overload. That is arithmetic
+          on your figure, not a measurement — the model has no time axis for the melt.</td>
+      </tr>
+      <tr>
+        <td><b>The whole time-current curve</b></td>
+        <td>Not modelled. The engine opens the element on a current threshold, so an inrush a
+          real 218 would ride through will trip this one. This is the model's largest
+          inaccuracy and it is stated as such wherever the part appears.</td>
+      </tr>
+      <tr>
+        <td><b>I²t as let-through energy</b></td>
+        <td>Your 0.5405&nbsp;A²s is carried and reported, but not integrated to produce a trip
+          time. The figure is yours; the use of it is ours.</td>
+      </tr>
+      <tr>
+        <td><b>Interrupting behaviour</b></td>
+        <td>The 35&nbsp;A rating is carried as a rating. Arc quenching and the glass-body
+          rupture are not simulated.</td>
+      </tr>
+      <tr>
+        <td><b>Failure name and severity</b></td>
+        <td>"Fuse Element Melts", severity 3 of 3. F.U.S.E.'s judgement, marked in the record as
+          the model's, never as a published characteristic.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <section class="question">
+    <h2>The question</h2>
+    <ol>
+      <li><b>What should the model do at 3.6×?</b> A 218 is time-lag. If the answer is "it clears
+        in about this long, and here is the curve", the model can hold it and the bench becomes
+        worth something to a person sizing a fuse rather than only to a student watching one
+        die.</li>
+      <li><b>Which parts would you rather we carried?</b> The 218 is one part in one family. A
+        part you already consider misapplied is a more useful subject than one I chose.</li>
+    </ol>
+    <p class="note" style="margin-bottom:0">
+      Both are answerable in a reply. A correction goes into the model and is credited on the
+      part's card.
+    </p>
+  </section>
+
+  <h2>Also carried</h2>
+  <p style="margin-top:0">
+    1812L110/16DR (resettable PPTC) and SMF5.0A (TVS diode). Both are carried as reference
+    parts and marked reference-only in the model — the engine does not represent PPTC trip and
+    reset, or transient clamping. Listed here so the answer to "what else of ours do you have"
+    is a true one.
+  </p>
+
+  <div class="contact">
+    <span><b>Mitchell Lorin</b> · CircuiTry3D · info@circuitry3d.app</span>
+    <span>circuitry3d.app · figures cited above are the maker's; model output is labelled</span>
+  </div>
+</body>
+</html>

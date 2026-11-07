@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Vishay CRCW e3 — part brief — CircuiTry3D</title>
+<style>
+  @page { size: A4; margin: 13mm; }
+  :root {
+    --blue: #2563EB;
+    --orange: #F97316;
+    --green: #1FA65A;
+    --ink: #111827;
+    --ink-2: #4B5563;
+    --rule: #D8DEE7;
+    --tint: #F5F7FA;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0 auto;
+    max-width: 186mm;
+    padding: 8mm 6mm 10mm;
+    background: #fff;
+    color: var(--ink);
+    font: 14px/1.5 "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .masthead { border-block-end: 2px solid var(--ink); padding-block-end: 8px; }
+  .kicker {
+    margin: 0 0 2px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--ink-2);
+  }
+  .wordmark {
+    margin: 0;
+    font-size: 26px;
+    font-weight: 800;
+    letter-spacing: -.02em;
+    line-height: 1;
+  }
+  .wordmark .w1 { color: var(--blue); }
+  .wordmark .w2 { color: var(--orange); font-style: italic; }
+  .wordmark .w3 { color: var(--green); }
+  h1 {
+    margin: 14px 0 4px;
+    font-size: 23px;
+    line-height: 1.2;
+    letter-spacing: -.01em;
+  }
+  .lede { margin: 0 0 16px; font-size: 14px; color: var(--ink-2); max-width: 62ch; }
+  h2 {
+    margin: 20px 0 8px;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--ink-2);
+  }
+  table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+  th, td { text-align: left; padding: 6px 8px; border-block-end: 1px solid var(--rule); vertical-align: top; }
+  th { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2); }
+  td.num { font-weight: 700; white-space: nowrap; }
+  tr.total td { border-block-end: 2px solid var(--ink); }
+  .note { font-size: 12px; color: var(--ink-2); margin: 6px 0 0; }
+  .ours { background: var(--tint); }
+  .ours td { border-block-end-color: #E7EBF1; }
+  .question {
+    margin-top: 20px;
+    border-inline-start: 4px solid var(--orange);
+    background: var(--tint);
+    padding: 12px 14px;
+  }
+  .question h2 { margin-top: 0; color: var(--orange); }
+  .question ol { margin: 0; padding-inline-start: 18px; }
+  .question li { margin-block: 6px; }
+  .contact {
+    margin-top: 22px;
+    padding-block-start: 10px;
+    border-block-start: 1px solid var(--rule);
+    font-size: 12px;
+    color: var(--ink-2);
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .contact b { color: var(--ink); }
+  @media print { body { padding: 0; } }
+</style>
+</head>
+<body>
+  <header class="masthead">
+    <p class="kicker">Part brief · Vishay · 6 November 2026</p>
+    <p class="wordmark"><span class="w1">Circui</span><span class="w2">Try</span><span class="w3">3D</span></p>
+  </header>
+
+  <h1>CRCW e3, on a bench where a student watches it fail</h1>
+  <p class="lede">
+    Four values of your thick-film chip resistor are modelled from the series sheet and
+    driven past their rating in a 3D circuit simulator used by electrical apprentices and
+    their instructors. This page is the model, the figures it came from, and the one part of
+    it I cannot check without you.
+  </p>
+
+  <h2>Your figures, as carried</h2>
+  <table>
+    <thead>
+      <tr><th>Value</th><th>Package</th><th>Rated power</th><th>Tolerance</th><th>Max temperature</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>100&nbsp;Ω</td><td>0402</td><td class="num">0.063&nbsp;W</td><td>±1%</td><td class="num">155&nbsp;°C</td></tr>
+      <tr><td>330&nbsp;Ω</td><td>0603</td><td class="num">0.10&nbsp;W</td><td>±1%</td><td class="num">155&nbsp;°C</td></tr>
+      <tr><td>1&nbsp;kΩ</td><td>0603</td><td class="num">0.10&nbsp;W</td><td>±1%</td><td class="num">155&nbsp;°C</td></tr>
+      <tr class="total"><td>10&nbsp;kΩ</td><td>0603</td><td class="num">0.10&nbsp;W</td><td>±1%</td><td class="num">155&nbsp;°C</td></tr>
+    </tbody>
+  </table>
+  <p class="note">
+    Sourced from the CRCW e3 series sheet. If any figure above disagrees with the sheet you
+    hold, the sheet wins and the model gets corrected.
+  </p>
+
+  <h2>What the bench does with them</h2>
+  <p>
+    The part is placed on a board with a supply and a load, and the load is ramped until
+    something gives. The console prints the rating and the derated rating side by side, at
+    the ambient the bench is actually at, because above ambient the part cannot do what the
+    headline number says:
+  </p>
+  <table>
+    <thead>
+      <tr><th>Ambient</th><th>Fraction of rating left</th><th>0603 at 0.10&nbsp;W</th><th>0402 at 0.063&nbsp;W</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>25&nbsp;°C</td><td class="num">100%</td><td class="num">0.100&nbsp;W</td><td class="num">0.063&nbsp;W</td></tr>
+      <tr><td>70&nbsp;°C</td><td class="num">100%</td><td class="num">0.100&nbsp;W</td><td class="num">0.063&nbsp;W</td></tr>
+      <tr><td>112.5&nbsp;°C</td><td class="num">50%</td><td class="num">0.050&nbsp;W</td><td class="num">0.0315&nbsp;W</td></tr>
+      <tr class="total"><td>155&nbsp;°C</td><td class="num">0%</td><td class="num">0&nbsp;W</td><td class="num">0&nbsp;W</td></tr>
+    </tbody>
+  </table>
+  <p class="note">
+    Linear derating from a 70&nbsp;°C knee to zero at 155&nbsp;°C. Rated load at 25&nbsp;°C
+    is the bench's starting condition.
+  </p>
+
+  <h2>What is ours, not yours</h2>
+  <table class="ours">
+    <tbody>
+      <tr>
+        <td><b>The 70&nbsp;°C knee</b></td>
+        <td>This is my reading of your curve, not a figure quoted from it. It replaced a 25&nbsp;°C
+          default that was telling students their resistor had less margin than your sheet gives it.</td>
+      </tr>
+      <tr>
+        <td><b>Thermal resistance</b></td>
+        <td>200&nbsp;°C/W (0603) and 300&nbsp;°C/W (0402) are the app's model constants. They are not
+          your published figures and are not presented as such.</td>
+      </tr>
+      <tr>
+        <td><b>Failure names and severity</b></td>
+        <td>"Thermal runaway", "open element" and the 0–3 severity are F.U.S.E.'s judgements. The
+          record marks them as the model's, never as yours.</td>
+      </tr>
+      <tr>
+        <td><b>Temperature coefficient</b></td>
+        <td>Carried as a family default unless a part declares its own. If the e3 series has a
+          published figure worth using, it belongs in the model as yours.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <section class="question">
+    <h2>The question</h2>
+    <ol>
+      <li><b>Confirm the curve.</b> Is it full rating to 70&nbsp;°C and linear to zero at
+        155&nbsp;°C for the e3 series, or does it depart from linear near the top?</li>
+      <li><b>Which parts would you rather we carried?</b> The resistor is the first thing every
+        student builds, so it is the one that gets used most — but a part you would like future
+        engineers to meet is a better use of the space than one I picked.</li>
+    </ol>
+    <p class="note" style="margin-bottom:0">
+      Both are answerable in a reply. A correction goes into the model and is credited on the
+      part's card.
+    </p>
+  </section>
+
+  <h2>Also carried</h2>
+  <p style="margin-top:0">
+    TLHR5400 (LED) · 1N5819 (Schottky) · Si2302 (MOSFET) · IHLP2020 (inductor) ·
+    NTCLE100 (thermistor). Any of them can be the subject of the next brief. Nothing is
+    listed here that the catalog does not actually carry.
+  </p>
+
+  <div class="contact">
+    <span><b>Mitchell Lorin</b> · CircuiTry3D · info@circuitry3d.app</span>
+    <span>circuitry3d.app · figures cited above are the maker's; model output is labelled</span>
+  </div>
+</body>
+</html>
