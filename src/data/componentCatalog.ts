@@ -1474,18 +1474,38 @@ export const CATALOG_COMPONENTS: CatalogComponent[] = [
     manufacturer: "Vishay",
     partNumber: "SiSS52DN",
     name: "SiSS52DN N-channel MOSFET",
-    spec: "N-channel power MOSFET · 30V",
+    spec: "N-channel power MOSFET · 30V · 47.1A free air (162A on a heatsink) · 1.2mΩ max · PowerPAK 1212-8S",
     type: "mosfet",
-    properties: { vds_max: 30 },
+    // Free-air ratings from the datasheet (TA = 25 °C): the part on the bench with
+    // no heatsink. The case-mounted figures (162 A, 57 W, RthJC 2.2 °C/W) are the
+    // headline numbers on the datasheet, but they assume a heatsink the Arena
+    // bench does not have.
+    properties: {
+      vds_max: 30,
+      vgs_max: 16,
+      vth: 2.2,
+      rds_on: 0.0012,
+      id_max: 47.1,
+      powerRating: 4.8,
+      thermalResistance: 26,
+      qg: 43.2,
+      maxTempC: 150,
+    },
     source: {
       publisher: "Vishay",
       url: "https://www.vishay.com/docs/79977/siss52dn.pdf",
     },
     simulation: {
       status: "modeled",
-      detail: "Modeled as a generic N-channel MOSFET with its sourced voltage class; the current model does not use this part's RDS(on), transfer, or thermal curves.",
+      detail: "Modeled on the datasheet's absolute maximum ratings at TA = 25 °C (free air, no heatsink): 47.1 A, 4.8 W, RthJA 26 °C/W, TJ 150 °C. Educational model; transfer and switching curves are not simulated.",
     },
-    ratedThresholds: { maxVoltageV: 30 },
+    ratedThresholds: {
+      maxVoltageV: 30,
+      maxCurrentA: 47.1,
+      maxPowerW: 4.8,
+      maxTempC: 150,
+      thermalResistanceCA: 26,
+    },
   },
 
   // ── Logic / ICs ───────────────────────────────────────────────────────────
