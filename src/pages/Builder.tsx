@@ -2643,7 +2643,10 @@ export default function Builder() {
         powerW: row.powerW,
         thetaCPerW: row.thetaCPerW ?? undefined,
         ambientC: environmentTemp.ambientC,
-        limitC: familyThermal(row.type || "generic").junctionLimitC,
+        limitC: familyThermal(
+          row.type || "generic",
+          typeof row.maxTempC === "number" ? { maxTempC: row.maxTempC } : undefined,
+        ).junctionLimitC,
         alphaPerC: row.alphaPerC ?? undefined,
         referenceResistanceOhm: row.referenceResistanceOhm ?? undefined,
         currentA: row.currentA ?? undefined,

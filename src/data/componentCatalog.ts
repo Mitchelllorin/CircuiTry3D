@@ -1642,8 +1642,29 @@ const scale = (value: number | undefined, factor: number) =>
  * answer for LEDs (the workspace models one by `resistance`, and the catalog
  * carries no equivalent) and op-amps (the workspace wants open-loop gain; the
  * catalog carries gain-bandwidth product). Both already behaved this way.
+ *
+ * Every part also carries its datasheet temperature limit as `maxTempC` when the
+ * catalog has one (`ratedThresholds.maxTempC`, else `properties.maxTempC`). The
+ * Builder's thermal readout and F.U.S.E. use it in place of the family limit;
+ * the workspace merges it over its defaults, so an LED still gets its default
+ * resistance.
  */
 export function toWorkspaceProperties(part: CatalogComponent): Record<string, number> {
+  return {
+    ...familyWorkspaceProperties(part),
+    ...defined({ maxTempC: datasheetMaxTempC(part) }),
+  };
+}
+
+/** The part's datasheet temperature limit (°C), if the catalog has one. */
+function datasheetMaxTempC(part: CatalogComponent): number | undefined {
+  const fromThresholds = part.ratedThresholds?.maxTempC;
+  if (typeof fromThresholds === "number") return fromThresholds;
+  const fromProps = (part.properties as Record<string, unknown>).maxTempC;
+  return typeof fromProps === "number" ? fromProps : undefined;
+}
+
+function familyWorkspaceProperties(part: CatalogComponent): Record<string, number> {
   const p = part.properties;
   switch (part.type) {
     case "battery":

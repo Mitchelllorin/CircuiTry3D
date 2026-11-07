@@ -117,6 +117,8 @@ export type LegacyCircuitState = {
     referenceResistanceOhm?: number | null;
     currentA?: number | null;
     thermalTimeConstantS?: number | null;
+    /** The part's own datasheet temperature limit (°C); absent → family limit. */
+    maxTempC?: number | null;
     secondsEnergised?: number | null;
   }>;
   counts: {
