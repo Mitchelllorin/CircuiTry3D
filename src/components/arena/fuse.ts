@@ -115,20 +115,35 @@ export function familyDefaults(family: string): Record<string, unknown> {
   return { ...(LOCAL_DEFAULTS[family] ?? LOCAL_DEFAULTS.generic) };
 }
 
-/** Per-family thermal limits (°C) used for the temperature gauge headroom. */
-export function familyThermal(family: string): {
+/**
+ * Thermal limits (°C) used for the overtemp check and the temperature gauge
+ * headroom. The family sets the default; a part that carries its own datasheet
+ * `maxTempC` (TJ max) overrides the junction limit, and the gauge's absolute
+ * ceiling keeps the family's margin above it.
+ */
+export function familyThermal(
+  family: string,
+  properties?: Record<string, unknown>,
+): {
   junctionLimitC: number;
   absoluteMaxTempC: number;
 } {
   const engine = getFuse();
   const spec = engine?.COMPONENT_PHYSICAL_SPECS?.[family];
-  if (spec && typeof spec.junctionLimitC === "number") {
-    return {
-      junctionLimitC: spec.junctionLimitC,
-      absoluteMaxTempC: spec.absoluteMaxTempC ?? spec.junctionLimitC + 20,
-    };
+  const base =
+    spec && typeof spec.junctionLimitC === "number"
+      ? {
+          junctionLimitC: spec.junctionLimitC,
+          absoluteMaxTempC: spec.absoluteMaxTempC ?? spec.junctionLimitC + 20,
+        }
+      : (LOCAL_THERMAL[family] ?? LOCAL_THERMAL.generic);
+
+  const partLimit = properties?.maxTempC;
+  if (typeof partLimit === "number" && Number.isFinite(partLimit) && partLimit > 0) {
+    const margin = Math.max(base.absoluteMaxTempC - base.junctionLimitC, 0);
+    return { junctionLimitC: partLimit, absoluteMaxTempC: partLimit + margin };
   }
-  return LOCAL_THERMAL[family] ?? LOCAL_THERMAL.generic;
+  return { ...base };
 }
 
 /**
@@ -446,7 +461,7 @@ function localDetectFailure(
   }
 
   // Overtemp (everything)
-  const limitC = familyThermal(family).junctionLimitC;
+  const limitC = familyThermal(family, props).junctionLimitC;
   const tempC = (metrics.ambientTemperature ?? 25) + metrics.thermalRise;
   if (tempC > limitC) {
     const sev = Math.min((tempC - (limitC - 25)) / 30, 3);
