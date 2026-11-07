@@ -48,7 +48,9 @@ const OLD_LIBRARY: Record<string, { builderType: string; props: Record<string, n
   "osram-lb-d47b-blue": { builderType: "led", props: { resistance: 10 } },
 
   "on-semi-1n4148": { builderType: "diode", props: { forwardVoltage: 0.72 } },
-  "on-semi-1n4007": { builderType: "diode", props: { forwardVoltage: 0.7 } },
+  // The old list carried the textbook 0.7 V; the entry now spawns at the
+  // datasheet's 1.1 V maximum forward drop at 1 A, so this pins that change.
+  "on-semi-1n4007": { builderType: "diode", props: { forwardVoltage: 1.1 } },
   "vishay-1n5819": { builderType: "diode", props: { forwardVoltage: 0.34 } },
 
   // hfe → gain
@@ -89,10 +91,24 @@ const OLD_LIBRARY: Record<string, { builderType: string; props: Record<string, n
 
   "vishay-ntcle100-10k": { builderType: "thermistor", props: { resistance: 10000 } },
 
-  // ratedCurrentA → current
-  "littelfuse-251001": { builderType: "fuse", props: { current: 1 } },
-  "littelfuse-250500": { builderType: "fuse", props: { current: 0.5 } },
-  "schurter-ato-5a": { builderType: "fuse", props: { current: 5 } },
+  // ratedCurrentA → current, and now also → ratedCurrentA + meltingI2t.
+  // The old list sent `current` alone, which the workspace renders on the mesh
+  // and the nameplate but which FUSE never reads: it looks for `ratedCurrentA`
+  // and defaulted to 1 A, so every branded fuse in the library held on to 1.1 A
+  // regardless of its datasheet rating and then blew as though it were a 1 A
+  // part. The 250 mA 218-series is the case that made that visible.
+  "littelfuse-251001": {
+    builderType: "fuse",
+    props: { current: 1, ratedCurrentA: 1, meltingI2t: 1 },
+  },
+  "littelfuse-250500": {
+    builderType: "fuse",
+    props: { current: 0.5, ratedCurrentA: 0.5, meltingI2t: 0.25 },
+  },
+  "schurter-ato-5a": {
+    builderType: "fuse",
+    props: { current: 5, ratedCurrentA: 5, meltingI2t: 25 },
+  },
 };
 
 const byId = new Map(CATALOG_COMPONENTS.map((p) => [p.id, p]));
@@ -111,8 +127,10 @@ describe("branded catalog → Builder library derivation", () => {
       expect(builderTypeFor(part!)).toBe(expected.builderType);
 
       // An empty derivation means "use the workspace defaults", which is only
-      // correct if those defaults are what the old list was sending.
-      const derived = toWorkspaceProperties(part!);
+      // correct if those defaults are what the old list was sending. The
+      // datasheet temperature limit is new on top of the old set and is pinned
+      // separately below.
+      const { maxTempC: _limit, ...derived } = toWorkspaceProperties(part!);
       const effective =
         Object.keys(derived).length > 0
           ? derived
@@ -121,6 +139,24 @@ describe("branded catalog → Builder library derivation", () => {
       expect(effective).toEqual(expected.props);
     });
   }
+
+  it("every branded part spawns with its datasheet temperature limit", () => {
+    for (const part of CATALOG_COMPONENTS) {
+      if (!builderTypeFor(part)) continue;
+      const datasheet =
+        part.ratedThresholds?.maxTempC ??
+        (part.properties as Record<string, unknown>).maxTempC;
+      expect(toWorkspaceProperties(part).maxTempC, part.id).toBe(
+        typeof datasheet === "number" ? datasheet : undefined,
+      );
+    }
+  });
+
+  it("the SiSS52DN brings its 150 °C TJ max, not the MOSFET family's 175 °C", () => {
+    const part = CATALOG_COMPONENTS.find((p) => p.partNumber === "SiSS52DN");
+    expect(part).toBeDefined();
+    expect(toWorkspaceProperties(part!).maxTempC).toBe(150);
+  });
 
   it("ICs are excluded from the Builder library — the workspace cannot draw them", () => {
     const ics = CATALOG_COMPONENTS.filter((p) => p.type === "ic");

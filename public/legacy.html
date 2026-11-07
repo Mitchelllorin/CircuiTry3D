@@ -5373,6 +5373,9 @@ body.android-optimized .zoom-btn {
                         : (metrics && isFinite(metrics.resistance) ? metrics.resistance : null),
                     currentA: metrics && isFinite(metrics.current) ? Math.abs(metrics.current) : null,
                     thermalTimeConstantS: typeof props.thermalTimeConstant === 'number' ? props.thermalTimeConstant : null,
+                    // The part's datasheet temperature limit, when it has one
+                    // (branded parts from the catalog). Absent: the family limit.
+                    maxTempC: typeof props.maxTempC === 'number' ? props.maxTempC : null,
                     secondsEnergised: power > 0 ? elapsedS : 0
                 });
             });

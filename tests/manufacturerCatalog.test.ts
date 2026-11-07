@@ -39,7 +39,9 @@ const VISHAY_PRODUCT_URLS = {
   "1N4148W-E3-08": "https://www.vishay.com/docs/86356/1n4148w.pdf",
   "SS14-E3/61T": "https://www.vishay.com/doc/?88746",
   "SMAJ5.0A-E3/61": "https://www.vishay.com/docs/88390/smaj50a.pdf",
-  CRCW060310K0FKEA: "https://www.vishay.com/docs/28773/crcwce3.pdf",
+  // Document 20035 is the D/CRCW e3 sheet the 0603 figures come from; 28773 was
+  // the commodity-resistor sheet the entry used to point at.
+  CRCW060310K0FKEA: "https://www.vishay.com/docs/20035/dcrcwe3.pdf",
   VJ0603Y104KXXAT: "https://www.vishay.com/en/product/45199/",
   IHLP2525CZER100M01: "https://www.vishay.com/docs/34335/ihlp-2525cz-5a.pdf",
   SiSS52DN: "https://www.vishay.com/docs/79977/siss52dn.pdf",
