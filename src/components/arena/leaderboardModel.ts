@@ -70,33 +70,52 @@ export function keyFor(agent: ArenaBattleAgent): string {
   ].join("|");
 }
 
+/**
+ * One part's three result figures, derived from a finished agent.
+ *
+ * Extracted from `entriesFromRun` because the run history reports the same
+ * numbers, and two copies of this arithmetic is how a part ends up "held to
+ * 3.4×" on the board and "held to 3.2×" in the run it came from. Both surfaces
+ * call this.
+ */
+export function partResult(agent: ArenaBattleAgent): {
+  survived: boolean;
+  heldToLoad: number;
+  peakW: number;
+  ratedW: number;
+  peakTempC: number;
+  limitC: number;
+} {
+  const survived = agent.phase !== "failed";
+  return {
+    survived,
+    // A survivor held to the highest load the ramp reached; a casualty held
+    // to the load that killed it. Both answer the same question.
+    heldToLoad: survived
+      ? Math.max(agent.survivedLoad, 1)
+      : (agent.failedAtLoad ?? agent.survivedLoad),
+    peakW: (agent.peakLoadPercent / 100) * agent.ratings.powerRating,
+    ratedW: agent.ratings.powerRating,
+    peakTempC: agent.peakTempC,
+    limitC: agent.ratings.junctionLimitC,
+  };
+}
+
 /** Turn a finished run's agents into leaderboard entries. */
 export function entriesFromRun(
   agents: ArenaBattleAgent[],
   scenarioName: string,
   runIndex: number,
 ): LeaderboardEntry[] {
-  return agents.map((agent) => {
-    const survived = agent.phase !== "failed";
-    return {
-      key: keyFor(agent),
-      name: agent.name,
-      family: agent.family,
-      survived,
-      // A survivor held to the highest load the ramp reached; a casualty held
-      // to the load that killed it. Both answer the same question.
-      heldToLoad: survived
-        ? Math.max(agent.survivedLoad, 1)
-        : (agent.failedAtLoad ?? agent.survivedLoad),
-      peakW: (agent.peakLoadPercent / 100) * agent.ratings.powerRating,
-      ratedW: agent.ratings.powerRating,
-      peakTempC: agent.peakTempC,
-      limitC: agent.ratings.junctionLimitC,
-      scenarioName,
-      runIndex,
-      partQuery: partQueryForAgent(agent),
-    };
-  });
+  return agents.map((agent) => ({
+    key: keyFor(agent),
+    name: agent.name,
+    family: agent.family,
+    ...partResult(agent),
+    scenarioName,
+    runIndex,
+    partQuery: partQueryForAgent(agent),
+  }));
 }
 
 /**

@@ -55,15 +55,20 @@
 
 .scroller-tab {
   flex-shrink: 0;
-  height: 26px;
-  padding: 0 8px;
-  border-radius: 13px;
+  /* 32px tall, and 40 on touch: the old 26px pill was below every finger
+     guideline there is, and this row is the only way to narrow the reel. */
+  height: 32px;
+  min-width: 40px;
+  padding: 0 11px;
+  border-radius: 16px;
   /* Unified glass standard (was hard-coded rgba, so it ignored both the shared
      look and the "see-through menus" solid toggle). */
   border: var(--glass-border);
   background: var(--glass-bg-chrome);
-  color: var(--builder-muted-soft);
-  font-size: 10px;
+  /* Muted was too dim to read on the glass; this clears 4.5:1 against the
+     panel and still reads as secondary next to the selected pill. */
+  color: rgba(198, 219, 238, 0.92);
+  font-size: 12px;
   font-weight: 600;
   font-family: "DM Sans", "Inter", system-ui, sans-serif;
   line-height: 1;
@@ -84,8 +89,11 @@
   color: var(--builder-cyan);
 }
 
+/* A visible ring, not a border tint: on a translucent row a 1px border change
+   is not a focus indicator. */
 .scroller-tab:focus-visible {
-  outline: none;
+  outline: 2px solid rgba(168, 216, 255, 0.95);
+  outline-offset: 2px;
   border-color: rgba(168, 216, 255, 0.8);
 }
 
@@ -103,15 +111,15 @@
 .scroller-search-input {
   flex: 1 1 auto;
   min-width: 0;
-  height: 28px;
-  padding: 0 8px;
+  height: 36px;
+  padding: 0 10px;
   border-radius: 8px;
   /* Unified glass standard — the search textbox now shares the control shade
      and responds to the solid toggle like every other surface. */
   border: var(--glass-border);
   background: var(--glass-bg-chrome);
   color: var(--builder-text);
-  font-size: 11px;
+  font-size: 13px;
   font-family: "DM Sans", "Inter", system-ui, sans-serif;
   outline: none;
   transition: border-color 0.15s ease;
@@ -184,9 +192,10 @@
   user-select: none;
   -webkit-user-select: none;
 
-  /* Non-center cards are de-emphasized */
-  opacity: 0.42;
-  transform: scale(0.88);
+  /* De-emphasized, but still readable: at 0.42 the two frames either side were
+     name-shaped smudges, which defeats the point of showing them at all. */
+  opacity: 0.68;
+  transform: scale(0.9);
   transition:
     opacity 0.22s ease,
     transform 0.22s var(--scroller-spring),
@@ -194,7 +203,9 @@
 }
 
 .film-card:focus-visible {
-  outline: none;
+  outline: 2px solid rgba(168, 216, 255, 0.95);
+  outline-offset: -4px;
+  border-radius: 10px;
 }
 
 /* Disabled state */
@@ -271,11 +282,11 @@
   flex-shrink: 0;
   width: 100%;
   text-align: center;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 700;
   font-family: "DM Sans", "Inter", system-ui, sans-serif;
   color: var(--builder-text);
-  line-height: 1.2;
+  line-height: 1.25;
   margin-top: 4px;
   overflow: hidden;
   display: -webkit-box;
@@ -286,7 +297,24 @@
 
 /* Non-center label is dimmer */
 .film-card:not(.film-card--center) .film-card-label {
-  color: var(--builder-muted-soft);
+  color: rgba(215, 232, 246, 0.9);
+}
+
+/* Maker line — a branded part is meaningless without who made it. */
+.film-card-mfr {
+  flex-shrink: 0;
+  width: 100%;
+  text-align: center;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  font-family: "DM Sans", "Inter", system-ui, sans-serif;
+  color: rgba(168, 216, 255, 0.8);
+  line-height: 1.2;
+  margin-top: 1px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* ---------------------------------------------------------------------------
@@ -361,7 +389,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 10px;
+  font-size: 12px;
   color: var(--builder-muted-soft);
   font-style: italic;
   text-align: center;
@@ -381,19 +409,17 @@
 }
 
 .film-footer-hint {
-  font-size: 8px;
-  color: var(--builder-muted-soft);
-  opacity: 0.7;
-  font-style: italic;
-  line-height: 1.3;
+  font-size: 11px;
+  color: rgba(205, 224, 240, 0.9);
+  line-height: 1.35;
   flex: 1 1 auto;
   min-width: 0;
 }
 
 .film-footer-star {
   flex-shrink: 0;
-  width: 24px;
-  height: 24px;
+  width: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -410,7 +436,11 @@
 
 .film-footer-star:hover { color: rgba(255, 208, 56, 0.85); background: rgba(255, 208, 56, 0.1); }
 .film-footer-star--active { color: rgb(255, 208, 56); }
-.film-footer-star:focus-visible { outline: none; background: rgba(168, 216, 255, 0.12); }
+.film-footer-star:focus-visible {
+  outline: 2px solid rgba(168, 216, 255, 0.95);
+  outline-offset: 2px;
+  background: rgba(168, 216, 255, 0.12);
+}
 
 /* ---------------------------------------------------------------------------
    Demo-mode upsell footer link
@@ -418,7 +448,7 @@
 .scroller-demo-lock {
   flex-shrink: 0;
   display: block;
-  font-size: 9px;
+  font-size: 11px;
   color: rgba(168, 216, 255, 0.55);
   text-align: center;
   padding: 5px 4px;
@@ -450,26 +480,36 @@
 /* ---------------------------------------------------------------------------
    Touch / coarse-pointer — wider hit targets and bigger text
    --------------------------------------------------------------------------- */
+/*
+ * Touch targets are 44px here, not 48: the reel shows three frames and each is
+ * already 128 tall, so the limit is width, not height. The footer row is the
+ * one control that can grow freely.
+ */
 @media (pointer: coarse) {
   .scroller-tab {
-    height: 32px;
-    padding: 0 10px;
-    font-size: 11px;
+    height: 40px;
+    min-width: 48px;
+    padding: 0 14px;
+    font-size: 13px;
   }
 
-  .film-card-label { font-size: 11px; }
-  .scroller-search-input { height: 32px; font-size: 12px; }
-  .film-footer-star { width: 32px; height: 32px; }
+  .film-card-label { font-size: 13px; }
+  .film-card-mfr { font-size: 11px; }
+  .film-footer-hint { font-size: 12px; }
+  .scroller-search-input { height: 40px; font-size: 13px; }
+  .film-footer-star { width: 44px; height: 44px; }
 }
 
 /* ---------------------------------------------------------------------------
    Portrait phone (≤ 480 px) — compact tabs
    --------------------------------------------------------------------------- */
+/* Portrait phone: the strip scrolls, so it keeps its 12px type rather than
+   shrinking to 9px and becoming the smallest text in the app. */
 @media (max-width: 480px) {
   .scroller-tab {
-    font-size: 9px;
-    height: 24px;
-    padding: 0 6px;
+    font-size: 12px;
+    height: 32px;
+    padding: 0 10px;
   }
 }
 

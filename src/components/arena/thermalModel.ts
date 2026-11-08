@@ -103,16 +103,44 @@ export function deratingCeilingFor(
   return agent.ratings.junctionLimitC;
 }
 
+/**
+ * The temperature the part STAYS at full rating up to.
+ *
+ * This used to be 25 °C for everything, because 25 °C is where a datasheet
+ * quotes its rating. It is not where the curve leaves it. A CRCW chip resistor
+ * holds its 0.10 W to 70 °C and derates from there; derating it from 25 °C tells
+ * a student the part is at 60% at an ambient where the sheet says 100%, which is
+ * the bench being wrong about the maker's own document.
+ *
+ * A part declares its knee as `deratingKneeC` (from the series sheet); nothing
+ * declared means the 25 °C convention, which stays the default because it is
+ * the conservative reading and most parts here have no curve on file.
+ */
+export function deratingKneeFor(
+  agent: Pick<ArenaBattleAgent, "ratings" | "properties">,
+  ceilingC: number,
+): number {
+  const ceiling = Math.max(ceilingC, REFERENCE_C + 1);
+  const declared = agent.properties.deratingKneeC;
+  if (typeof declared === "number" && Number.isFinite(declared)) {
+    // A knee above the ceiling would mean "full rating past zero rating";
+    // clamped so a mistyped value cannot invent margin.
+    return clamp(declared, REFERENCE_C, ceiling);
+  }
+  return Math.min(REFERENCE_C, ceiling);
+}
+
 /** Rated dissipation, corrected to the ambient the bench is actually at. */
 export function deratedPowerW(
   ratedW: number,
   ambientC: number,
   limitC: number,
+  kneeC: number = REFERENCE_C,
 ): number {
   if (!Number.isFinite(ratedW)) {
     return Number.POSITIVE_INFINITY;
   }
-  return ratedW * deratingFraction(ambientC, limitC);
+  return ratedW * deratingFraction(ambientC, limitC, kneeC);
 }
 
 /**
@@ -174,6 +202,8 @@ export type ThermalReport = {
   limitC: number;
   /** Where the derating curve reaches zero — see deratingCeilingFor. */
   deratingCeilingC: number;
+  /** Where the curve leaves full rating — 25 °C unless the part declares a knee. */
+  deratingKneeC: number;
   /** Whether that ceiling is the declared max ambient or the junction limit. */
   deratingBasis: "ambient" | "junction";
   /** limitC − tempC. Negative means it is already past its limit. */
@@ -213,7 +243,8 @@ export function thermalReportFor(
   const limitC = agent.ratings.junctionLimitC;
   const ambientC = scenario.ambientC;
   const deratingCeilingC = deratingCeilingFor(agent);
-  const deratedW = deratedPowerW(ratedW, ambientC, deratingCeilingC);
+  const deratingKneeC = deratingKneeFor(agent, deratingCeilingC);
+  const deratedW = deratedPowerW(ratedW, ambientC, deratingCeilingC, deratingKneeC);
   const actualW = agent.metrics.power * powerFactor * powerFactor;
   const rawUtilisation =
     deratedW > 0
@@ -250,6 +281,7 @@ export function thermalReportFor(
     tempC,
     limitC,
     deratingCeilingC,
+    deratingKneeC,
     deratingBasis:
       deratingCeilingC < limitC ? "ambient" : "junction",
     marginC,

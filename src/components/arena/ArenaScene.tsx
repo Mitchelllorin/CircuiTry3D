@@ -2986,6 +2986,13 @@ export function ArenaScene({
       };
 
       const handlePointerDown = (event: PointerEvent) => {
+        // A second finger is a pinch, not a press. Without this the first
+        // finger's long-press timer kept running under a two-finger orbit, so
+        // spinning the board over a part could open its editor mid-gesture.
+        if (!event.isPrimary) {
+          clearLongPress();
+          return;
+        }
         pressX = event.clientX;
         pressY = event.clientY;
         pressAt = performance.now();
@@ -3065,6 +3072,19 @@ export function ArenaScene({
           controls.enabled = true;
         }
       };
+      /**
+       * A cancelled pointer is not a release, and the old wiring only cancelled
+       * the FADER drag on it. The long-press timer stayed armed, so half a
+       * second later the part editor opened with no finger on the glass — the
+       * bench appearing to open its own editor. Nothing may outlive the pointer
+       * that started it: the browser takes the gesture for a scroll, the phone
+       * rings, the view unmounts, and the press is over either way.
+       */
+      const handlePointerCancel = () => {
+        clearLongPress();
+        longPressFired = false;
+        endDialDrag();
+      };
       const handlePointerUp = (event: PointerEvent) => {
         const wasFaderDrag = draggingFader !== null;
         clearLongPress();
@@ -3125,16 +3145,16 @@ export function ArenaScene({
       // scrolling out from under a thumb that is turning the knob.
       canvas.addEventListener("pointermove", handlePointerMove, { passive: false });
       canvas.addEventListener("pointerup", handlePointerUp);
-      // Releasing outside the canvas must still end the drag, or the camera
-      // stays locked out.
-      window.addEventListener("pointercancel", endDialDrag);
+      // Releasing or cancelling outside the canvas must still end the drag, or
+      // the camera stays locked out and a pending edit fires late.
+      window.addEventListener("pointercancel", handlePointerCancel);
       window.addEventListener("pointerup", endDialDrag);
       cleanupPointer = () => {
         clearLongPress();
         canvas.removeEventListener("pointerdown", handlePointerDown);
         canvas.removeEventListener("pointermove", handlePointerMove);
         canvas.removeEventListener("pointerup", handlePointerUp);
-        window.removeEventListener("pointercancel", endDialDrag);
+        window.removeEventListener("pointercancel", handlePointerCancel);
         window.removeEventListener("pointerup", endDialDrag);
       };
 
@@ -4481,7 +4501,7 @@ export function ArenaScene({
             // is flowing, that is why the thing is glowing — and every bolt is
             // just brightness competing with the scorch, the swelling and the
             // incandescence, which ARE the information.
-            let flow = 0.72 * (1 - closeT * 0.88);
+            let flow = 0.684 * (1 - closeT * 0.88);
 
             // ── No artificial duck at the moment of failure ────────────────
             // There was one here, board-wide, and it had to go: the lightning
@@ -5569,6 +5589,20 @@ export function ArenaScene({
                 </span>
                 <span className="arena-nameplate__status">{PHASE_LABEL[agent.phase]}</span>
               </div>
+              {/* Whose part this is, above the designator. A bench that prints
+                  "F1 · 0.25A" and nothing else is a screenshot of an anonymous
+                  component; the maker and the MPN are what make the same
+                  screenshot mean something to the person who makes it. Only
+                  rendered when the part actually came from the branded
+                  catalog — no invented brand on a generic resistor. */}
+              {agent.manufacturer || agent.partNumber ? (
+                <div className="arena-nameplate__maker">
+                  {agent.manufacturer ?? ""}
+                  {agent.partNumber
+                    ? `${agent.manufacturer ? " " : ""}${agent.partNumber}`
+                    : ""}
+                </div>
+              ) : null}
               <div className="arena-nameplate__ident">
                 {agent.componentNumber ?? ""}
                 {agent.name && agent.name !== agent.componentNumber

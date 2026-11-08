@@ -13,10 +13,8 @@ import {
 } from "../../lib/fuseRecord";
 import { ArenaPartEditor } from "./ArenaPartEditor";
 import { ArenaDashboard } from "./ArenaDashboard";
-import { ArenaExplodeRail } from "./ArenaExplodeRail";
 import { ArenaQuickBar } from "./ArenaQuickBar";
 import { ArenaScene } from "./ArenaScene";
-import { hasModelledInternals } from "./componentInternals";
 import { thermalReportFor } from "./thermalModel";
 import {
   ARENA_ROSTER_MAX,
@@ -412,8 +410,6 @@ export default function ArenaView({
   const [dashHeight, setDashHeight] = useState(0);
   /** The strip's bottom edge — the top of the scene's free space. */
   const [topInset, setTopInset] = useState(0);
-  /** How far the selected part's package is opened. A view, so it persists. */
-  const [explode, setExplode] = useState(0);
 
   // Mark the shell while the arena is up, so app-level furniture can stand down.
   // The tips ticker is the reason: in workspace it is z-index 1310 pinned 56px
@@ -517,10 +513,6 @@ export default function ArenaView({
     () => thermalReportFor(thermalAgent, scenario, stressFactor),
     [thermalAgent, scenario, stressFactor],
   );
-  /** Only families with a modelled interior get the dial — see ArenaExplodeRail. */
-  const canExplode = thermalAgent
-    ? hasModelledInternals(thermalAgent.family)
-    : false;
 
   const sessionLabel = sessionPayload?.sessionName ?? "CircuiTry3D Arena";
 
@@ -629,7 +621,6 @@ export default function ArenaView({
           onLongPressAgent={setEditingAgentId}
           bottomInsetPx={dashHeight}
           topInsetPx={topInset}
-          explode={explode}
           onExitTransitionComplete={handleExitComplete}
         />
         {editingAgent ? (
@@ -740,11 +731,6 @@ export default function ArenaView({
             </button>
           }
         />
-
-        {/* Explode, on the right edge where every app in the family keeps it. */}
-        {canExplode ? (
-          <ArenaExplodeRail value={explode} onChange={setExplode} />
-        ) : null}
 
         {/* The console. Fixed at the bottom, and now only what you operate a
             LIVE run with: the circuit totals, the two faders, the switch. */}

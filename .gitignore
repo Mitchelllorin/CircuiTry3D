@@ -59,3 +59,8 @@ memory/
 
 # Local probe/screenshot scratch scripts
 /_*.mjs
+
+# stray `tsc -p .` output that shadows vite.config.ts — never commit
+*.tsbuildinfo
+/vite.config.js
+/vite.config.d.ts

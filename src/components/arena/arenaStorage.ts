@@ -1,4 +1,5 @@
 import type { LeaderboardEntry } from "./leaderboardModel";
+import { RUN_HISTORY_MAX, type ArenaRunPart, type ArenaRunRecord } from "./runHistory";
 import type { ArenaSessionPayload } from "./types";
 
 const LEGACY_IMPORT_STORAGE_KEY = "circuiTry3d.arena.import";
@@ -200,14 +201,94 @@ export function saveArenaBoard(state: ArenaBoardState): void {
   }
 }
 
+/**
+ * Finished runs, newest first.
+ *
+ * A separate key from the board because the two have different lifetimes and
+ * different shapes: the board is a MAP (one best row per contender, rewritten
+ * every run), the history is a LOG (one record per run, appended). Clearing
+ * the board to start a fresh comparison must not erase the runs that taught
+ * you what you know.
+ */
+const RUN_HISTORY_KEY = "circuitry:arena-runs:v1";
+
+function isRunPart(value: unknown): value is ArenaRunPart {
+  if (!value || typeof value !== "object") return false;
+  const part = value as Partial<ArenaRunPart>;
+  return (
+    typeof part.name === "string" &&
+    typeof part.family === "string" &&
+    typeof part.survived === "boolean" &&
+    isFiniteNumber(part.heldToLoad) &&
+    isFiniteNumber(part.peakW) &&
+    isFiniteNumber(part.ratedW) &&
+    isFiniteNumber(part.peakTempC) &&
+    isFiniteNumber(part.limitC)
+  );
+}
+
+function isRunRecord(value: unknown): value is ArenaRunRecord {
+  if (!value || typeof value !== "object") return false;
+  const run = value as Partial<ArenaRunRecord>;
+  return (
+    typeof run.id === "string" &&
+    isFiniteNumber(run.runIndex) &&
+    isFiniteNumber(run.at) &&
+    (run.mode === "bench" || run.mode === "battle") &&
+    typeof run.scenarioName === "string" &&
+    Array.isArray(run.parts) &&
+    run.parts.every(isRunPart)
+  );
+}
+
+export function loadArenaRunHistory(): ArenaRunRecord[] {
+  if (typeof window === "undefined") {
+    return [];
+  }
+  try {
+    const parsed = parseJson<unknown>(window.localStorage.getItem(RUN_HISTORY_KEY));
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+    return parsed.filter(isRunRecord).slice(0, RUN_HISTORY_MAX);
+  } catch {
+    return [];
+  }
+}
+
+export function saveArenaRunHistory(runs: ArenaRunRecord[]): void {
+  if (typeof window === "undefined") {
+    return;
+  }
+  try {
+    window.localStorage.setItem(
+      RUN_HISTORY_KEY,
+      JSON.stringify(runs.slice(0, RUN_HISTORY_MAX)),
+    );
+  } catch {
+    // Same rule as the board: a full quota must not take the bench down. The
+    // run that could not be filed is still on screen.
+  }
+}
+
 export function saveArenaSessionPayload(payload: ArenaSessionPayload): void {
   if (typeof window === "undefined") {
     return;
   }
 
   try {
+    // The reader resolves `last` to a session id and then fetches
+    // `circuitry:arena-session:<id>`. This used to write the envelope straight
+    // into `last`, so the id it looked up was a JSON blob, the fetch returned
+    // null, and every saved session was quietly unreadable — the bench came
+    // back on its fallback parts and looked like the export had been ignored.
+    const sessionId = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
     const envelope: ArenaSessionEnvelope = { payload };
-    window.localStorage.setItem(LAST_SESSION_KEY, JSON.stringify(envelope));
+    window.localStorage.setItem(
+      `${SESSION_STORAGE_PREFIX}${sessionId}`,
+      JSON.stringify(envelope),
+    );
+    window.localStorage.setItem(LAST_SESSION_KEY, sessionId);
   } catch {
     // localStorage may be unavailable in some contexts
   }

@@ -171,8 +171,8 @@ export function getFlowSpectrumColors(amps: number): { core: number; glow: numbe
  */
 export const FLOW_MODE_APPEARANCE = {
   // NOTE: size here is the *base radius* in scene units (scaled in update()).
-  electron: { opacity: 0.72, size: 0.13, glowOpacity: 0.28 },       // Softer, slightly larger
-  conventional: { opacity: 0.95, size: 0.16, glowOpacity: 0.42 }    // Brighter, larger
+  electron: { opacity: 0.684, size: 0.13, glowOpacity: 0.266 },       // Softer, slightly larger
+  conventional: { opacity: 0.9025, size: 0.16, glowOpacity: 0.399 }    // Brighter, larger
 } as const;
 
 /**
@@ -271,7 +271,7 @@ export const CURRENT_FLOW_PHYSICS = {
    * Base number of particles per unit path length at 1A
    * Higher current = more charge carriers = more visible particles
    */
-  PARTICLES_PER_UNIT_LENGTH_PER_AMP: 0.8,
+  PARTICLES_PER_UNIT_LENGTH_PER_AMP: 0.84,
 
   /**
    * Minimum particles regardless of current (ensures visibility)

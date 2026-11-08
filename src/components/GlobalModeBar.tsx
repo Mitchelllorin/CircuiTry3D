@@ -18,6 +18,22 @@ type ModeBarScrollState = {
   canScrollRight: boolean;
 };
 
+/**
+ * The tab the strip is currently showing in the middle of the screen, and its
+ * centre in CSS px.
+ *
+ * The caption used to be fixed dead-centre in the viewport and name whatever
+ * mode was ACTIVE, so on a phone it floated over empty strip three tabs away
+ * from the icon it was describing. Reading the centre tab instead makes the
+ * caption and the highlight describe the same thing, and the label can never
+ * drift from its mark because both come from the same rect.
+ */
+type ModeBarPeek = {
+  key: string;
+  label: string;
+  x: number;
+};
+
 /* All navigation tabs rendered directly in the scrollable bar.
    Every tab is a drawn glyph plus its printed name: one visual language for the
    whole row, so nothing in it is the odd coloured blob. */
@@ -49,8 +65,7 @@ export function GlobalModeBar() {
     canScrollRight: false,
   });
 
-  const [peekMode, setPeekMode] = useState<WorkspaceMode | null>(null);
-  const peekTimer = useRef<number | null>(null);
+  const [peek, setPeek] = useState<ModeBarPeek | null>(null);
 
   const isWorkspacePage = location.pathname === "/app";
   const isLandingPage = location.pathname === "/";
@@ -66,26 +81,39 @@ export function GlobalModeBar() {
     setModeBarScrollState({ canScrollLeft, canScrollRight });
   }, []);
 
-  const trackPeek = useCallback(() => {
+  /**
+   * Name the tab nearest the middle of the strip, and where that tab's centre
+   * sits on screen. Every labelled tab carries `data-nav-key` — including
+   * Settings and the theme toggle, which have no workspace mode of their own —
+   * so the last two destinations get a caption like everything else.
+   */
+  const readPeek = useCallback(() => {
     const container = modeBarRef.current;
     if (!container) {
       return;
     }
-    const middle = container.scrollLeft + container.clientWidth / 2;
-    let nearest: WorkspaceMode | null = null;
-    let nearestGap = Infinity;
-    container.querySelectorAll<HTMLElement>("[data-mode]").forEach((el) => {
-      const gap = Math.abs(el.offsetLeft + el.offsetWidth / 2 - middle);
-      if (gap < nearestGap) {
-        nearestGap = gap;
-        nearest = (el.dataset.mode as WorkspaceMode) ?? null;
+    const containerRect = container.getBoundingClientRect();
+    const middle = containerRect.left + containerRect.width / 2;
+    let best: ModeBarPeek | null = null;
+    let bestGap = Infinity;
+    const tabs = Array.from(container.querySelectorAll<HTMLElement>("[data-nav-key]"));
+    for (const tab of tabs) {
+      const rect = tab.getBoundingClientRect();
+      const gap = Math.abs(rect.left + rect.width / 2 - middle);
+      if (gap >= bestGap) {
+        continue;
       }
-    });
-    setPeekMode(nearest);
-    if (peekTimer.current !== null) {
-      window.clearTimeout(peekTimer.current);
+      bestGap = gap;
+      best = {
+        key: tab.dataset.navKey ?? "",
+        label:
+          tab.querySelector(".mode-label")?.textContent?.trim() ||
+          tab.getAttribute("aria-label") ||
+          "",
+        x: rect.left + rect.width / 2,
+      };
     }
-    peekTimer.current = window.setTimeout(() => setPeekMode(null), 1400);
+    setPeek(best);
   }, []);
 
   useEffect(() => {
@@ -95,19 +123,25 @@ export function GlobalModeBar() {
     }
     const onScroll = () => {
       checkModeBarScroll();
-      trackPeek();
+      readPeek();
+    };
+    const onResize = () => {
+      checkModeBarScroll();
+      readPeek();
     };
     checkModeBarScroll();
+    readPeek();
+    // The first frame can measure before webfonts settle the tab widths; one
+    // re-read after layout is cheap and stops the caption sitting off-centre.
+    const raf = window.requestAnimationFrame(readPeek);
     container.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", checkModeBarScroll, { passive: true });
+    window.addEventListener("resize", onResize, { passive: true });
     return () => {
+      window.cancelAnimationFrame(raf);
       container.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", checkModeBarScroll);
-      if (peekTimer.current !== null) {
-        window.clearTimeout(peekTimer.current);
-      }
+      window.removeEventListener("resize", onResize);
     };
-  }, [checkModeBarScroll, trackPeek]);
+  }, [checkModeBarScroll, readPeek]);
 
   const handleModeClick = useCallback(
     (mode: WorkspaceMode) => {
@@ -138,11 +172,6 @@ export function GlobalModeBar() {
   if (isLandingPage) {
     return null;
   }
-
-  const captionMode = peekMode ?? workspaceMode;
-  const captionLabel =
-    NAV_TABS.find((tab) => tab.mode === captionMode)?.label ??
-    (captionMode === "settings" ? "Settings" : null);
 
   return (
     <>
@@ -180,7 +209,9 @@ export function GlobalModeBar() {
             type="button"
             className="mode-tab"
             data-mode={tab.mode}
+            data-nav-key={tab.mode}
             data-active={workspaceMode === tab.mode ? "true" : undefined}
+            data-peek={peek?.key === tab.mode ? "true" : undefined}
             onClick={() => handleModeClick(tab.mode)}
             aria-label={`${tab.label} mode`}
             title={tab.title}
@@ -201,7 +232,9 @@ export function GlobalModeBar() {
           type="button"
           className="mode-tab mode-tab--settings"
           data-mode="settings"
+          data-nav-key="settings"
           data-active={workspaceMode === "settings" ? "true" : undefined}
+          data-peek={peek?.key === "settings" ? "true" : undefined}
           onClick={() => handleModeClick("settings")}
           aria-label="Settings"
           title="App settings — logo, graphics, workspace, accessibility"
@@ -214,6 +247,8 @@ export function GlobalModeBar() {
         <button
           type="button"
           className="mode-tab mode-tab--theme-toggle"
+          data-nav-key="theme"
+          data-peek={peek?.key === "theme" ? "true" : undefined}
           onClick={toggleTheme}
           aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
           title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
@@ -226,9 +261,15 @@ export function GlobalModeBar() {
         </button>
       </div>
 
-      {captionLabel && (
-        <div className="mode-bar-caption" aria-hidden="true">
-          {captionLabel}
+      {/* The caption rides the tab it names, clamped inside the viewport so a
+          label near either end still reads in full. */}
+      {peek && peek.label && (
+        <div
+          className="mode-bar-caption"
+          aria-hidden="true"
+          style={{ left: `clamp(52px, ${Math.round(peek.x)}px, calc(100vw - 52px))` }}
+        >
+          {peek.label}
         </div>
       )}
     </>

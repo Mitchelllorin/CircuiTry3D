@@ -99,13 +99,13 @@ export function ArenaThermalSheet({
       <section className="arena-thermal__block">
         <h4 className="arena-thermal__title">Derating</h4>
         <p className="arena-thermal__eq">
-          P<sub>Ta</sub> = P<sub>25 °C</sub> × (T<sub>max</sub> − T<sub>a</sub>) / (T
-          <sub>max</sub> − 25 °C)
+          P<sub>Ta</sub> = P<sub>rated</sub> × (T<sub>max</sub> − T<sub>a</sub>) / (T
+          <sub>max</sub> − T<sub>knee</sub>)
         </p>
         <p className="arena-thermal__eq">
           {fmtW(report.ratedW)} × ({fmtC(report.deratingCeilingC)} −{" "}
-          {fmtC(report.ambientC)}) / ({fmtC(report.deratingCeilingC)} − 25 °C) ={" "}
-          <b>{fmtW(report.deratedW)}</b>
+          {fmtC(report.ambientC)}) / ({fmtC(report.deratingCeilingC)} −{" "}
+          {fmtC(report.deratingKneeC)}) = <b>{fmtW(report.deratedW)}</b>
         </p>
         <p className="arena-thermal__note">
           T<sub>max</sub> is {fmtC(report.deratingCeilingC)} —{" "}
@@ -114,7 +114,10 @@ export function ArenaThermalSheet({
             : `the ${report.family} family's junction limit, because this part declares no maximum ambient.`}
         </p>
         <p className="arena-thermal__note">
-          The nameplate rating only holds at 25 °C. Here the part is allowed{" "}
+          {report.deratingKneeC > 25
+            ? "The knee is the maker's own: this part holds its nameplate rating to "
+            : "The nameplate rating only holds at "}
+          {fmtC(report.deratingKneeC)}. Here it is allowed{" "}
           {fmtW(report.deratedW)} of its {fmtW(report.ratedW)} —{" "}
           {headroom > 0
             ? `${Math.round((1 - report.deratedW / Math.max(report.ratedW, 1e-9)) * 100)}% of it is gone before the run starts.`

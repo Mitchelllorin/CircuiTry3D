@@ -18,7 +18,10 @@ export type ArenaSourceComponent = {
   type?: string;
   manufacturer?: string | null;
   componentNumber?: string;
-  partNumber?: string;
+  /** Null when a part arrived without one — a generic library card, or a saved
+   *  session built before the catalog carried identity. Widened from `string`
+   *  because the library-card source has no MPN to give and says so. */
+  partNumber?: string | null;
   properties?: Record<string, unknown>;
 };
 
@@ -95,6 +98,16 @@ export type ArenaBattleAgent = {
   properties: Record<string, unknown>;
   ratings: ArenaComponentRatings;
   componentNumber?: string | null;
+  /**
+   * The maker's own part number, when the part came from the branded catalog.
+   *
+   * Separate from `componentNumber`, which is the reference designator the
+   * circuit gives it (F1, R3). Both appear on the plate because they answer
+   * different questions: "which one is this on my board" and "whose part is
+   * this". Without the MPN a screenshot of a test cannot be traced back to a
+   * datasheet by the person who makes it.
+   */
+  partNumber?: string | null;
 
   // ── live telemetry, updated every test tick ──
   /** Structural integrity 100 → 0 (0 = failed). Replaces the old HP bar. */

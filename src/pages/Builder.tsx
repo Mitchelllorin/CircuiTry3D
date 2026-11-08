@@ -1270,7 +1270,18 @@ export default function Builder() {
   // it survives rotation, selection, panels opening and the frame reloading. It
   // only goes back to zero when the user takes it there.
   const [explodeAmount, setExplodeAmount] = useState(0);
-  const [isExplodeOpen, setExplodeOpen] = useState(false);
+  // ON A DESKTOP THE SLIDER IS PART OF THE WORKSPACE, not something to find.
+  // It used to start shut everywhere, so exploding meant noticing a bomb glyph
+  // at the foot of the zoom column and guessing what it did. There is room for
+  // the slider itself on a wide screen, so it starts open there and the button
+  // collapses it; at 360×640 the edge has six controls and the rail's tab on it,
+  // so the phone keeps the one-button, tap-to-open version. A canvas tap closes
+  // it either way — the same rule as before.
+  const [isExplodeOpen, setExplodeOpen] = useState(() =>
+    typeof window !== "undefined" &&
+    typeof window.matchMedia === "function" &&
+    window.matchMedia("(min-width: 900px)").matches,
+  );
   // The W.I.R.E. readout is the control now; this is what it opens.
   const [isAnalysisOpen, setAnalysisOpen] = useState(false);
   const [isCinematicOpen, setIsCinematicOpen] = useState(false);

@@ -28,6 +28,14 @@ import { IS_DEMO_MODE, DEMO_COMPONENT_IDS } from "../../utils/demoMode";
 const CARD_H = 116;
 /** Larger card height for touch / coarse-pointer devices (≥ 44 px thumb targets). */
 const CARD_H_COARSE = 128;
+/**
+ * Card heights for a host sheet with less vertical room than the
+ * workspace's own picker (the arena's quick-bar sheet). Same reel, same
+ * three-card window, just shorter frames, so the whole reel fits the sheet
+ * instead of being clipped by it.
+ */
+const CARD_H_COMPACT = 88;
+const CARD_H_COARSE_COMPACT = 92;
 
 /**
  * Number of cards visible inside the reel viewport at one time.
@@ -98,19 +106,27 @@ type CategoryFilter = ComponentCategory | "all" | "favorites";
 interface CategoryTab {
   id: CategoryFilter;
   label: string;
-  shortLabel: string;
 }
 
+/**
+ * Categories are WORDS now, not glyphs.
+ *
+ * They used to render `⚡ ─||─ 🔬 ⚙ ▣ 🌡 ●`, which is a puzzle rather than a
+ * filter: `─||─` for passive, `▣` for integrated, and a bulb glyph for
+ * semiconductors that reads as a light. Half of them were emoji and half were
+ * punctuation, so the row did not even look like one row of the same control.
+ * The strip already scrolls horizontally, so the full word costs nothing.
+ */
 const CATEGORY_TABS: CategoryTab[] = [
-  { id: "all",               label: "All",    shortLabel: "All"  },
-  { id: "favorites",         label: "Pinned", shortLabel: "★"    },
-  { id: "power",             label: "Power",  shortLabel: "⚡"   },
-  { id: "passive",           label: "Passive", shortLabel: "─||─" },
-  { id: "semiconductor",     label: "Semi",   shortLabel: "🔬"   },
-  { id: "electromechanical", label: "Mech",   shortLabel: "⚙"   },
-  { id: "integrated",        label: "IC",     shortLabel: "▣"    },
-  { id: "sensor",            label: "Sensor", shortLabel: "🌡"   },
-  { id: "connector",         label: "Node",   shortLabel: "●"    },
+  { id: "all", label: "All" },
+  { id: "favorites", label: "Pinned" },
+  { id: "power", label: "Power" },
+  { id: "passive", label: "Passive" },
+  { id: "semiconductor", label: "Semi" },
+  { id: "electromechanical", label: "Mech" },
+  { id: "integrated", label: "IC" },
+  { id: "sensor", label: "Sensor" },
+  { id: "connector", label: "Node" },
 ];
 
 // ---------------------------------------------------------------------------
@@ -151,10 +167,15 @@ function FilmCard({ component, isCenter, panelOpen, onTap, disabled }: FilmCardP
     <div
       role="button"
       tabIndex={isCenter ? 0 : -1}
+      /* A branded part is known by its maker and its part number, not by the
+         bare MPN the label shows — "BC847B" means nothing without "Nexperia".
+         No aria-pressed: adding a part is not a toggle, and announcing it as
+         one told screen readers the card was already on. */
       aria-label={
-        `Add ${component.label}`
+        component.metadata?.realWorld
+          ? `Add ${component.metadata.realWorld.manufacturer} ${component.metadata.realWorld.partNumber}`
+          : `Add ${component.label}`
       }
-      aria-pressed={isCenter}
       aria-disabled={disabled}
       className={`film-card${isCenter ? " film-card--center" : ""}`}
       onClick={() => onTap(component, isCenter)}
@@ -172,7 +193,7 @@ function FilmCard({ component, isCenter, panelOpen, onTap, disabled }: FilmCardP
             ? "tutorial-add-resistor"
             : undefined
       }
-      title={isCenter ? (component.description || component.label) : component.label}
+      title={component.description || component.label}
     >
       {/* 3D thumbnail — fills most of the card */}
       <div className="film-card-thumb" aria-hidden="true">
@@ -187,8 +208,13 @@ function FilmCard({ component, isCenter, panelOpen, onTap, disabled }: FilmCardP
         )}
       </div>
 
-      {/* Component name */}
+      {/* Component name, then the maker underneath for a branded part */}
       <div className="film-card-label">{component.label}</div>
+      {component.metadata?.realWorld ? (
+        <div className="film-card-mfr">
+          {component.metadata.realWorld.manufacturer}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -206,6 +232,8 @@ export type ScrollerMenuProps = {
   disabled: boolean;
   /** Whether the parent panel is currently open — enables thumbnail loading and resets state. */
   isOpen: boolean;
+  /** Smaller cards, for a host with less vertical room than the workspace. */
+  compact?: boolean;
 };
 
 // ---------------------------------------------------------------------------
@@ -217,10 +245,13 @@ export function ScrollerMenu({
   onSelect,
   disabled,
   isOpen,
+  compact = false,
 }: ScrollerMenuProps) {
   const isCoarse = useIsCoarsePointer();
   // Use the larger card height on touch devices so thumbnails are easy to tap.
-  const cardH = isCoarse ? CARD_H_COARSE : CARD_H;
+  const cardH = isCoarse
+    ? (compact ? CARD_H_COARSE_COMPACT : CARD_H_COARSE)
+    : (compact ? CARD_H_COMPACT : CARD_H);
 
   const [activeCategory, setActiveCategory] = useState<CategoryFilter>("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -417,8 +448,12 @@ export function ScrollerMenu({
 
   return (
     <div className="scroller-menu" aria-label="Component film reel">
-      {/* ── Category filter tab strip ───────────────────────────────── */}
-      <div className="scroller-tabs" role="tablist" aria-label="Filter by category">
+      {/* ── Category filter tab strip ─────────────────────────────────
+          These are plain filter buttons, not ARIA tabs: there is no tabpanel
+          on the other end of them, and role="tab" without one leaves a screen
+          reader promising a pane that never appears. aria-pressed says what
+          the control actually is — on or off. */}
+      <div className="scroller-tabs" role="group" aria-label="Filter by category">
         {CATEGORY_TABS.filter(
           (t) =>
             t.id !== "favorites" ||
@@ -428,8 +463,7 @@ export function ScrollerMenu({
           <button
             key={tab.id}
             type="button"
-            role="tab"
-            aria-selected={activeCategory === tab.id}
+            aria-pressed={activeCategory === tab.id}
             className={`scroller-tab${activeCategory === tab.id ? " scroller-tab--active" : ""}`}
             onClick={() => {
               setActiveCategory(tab.id);
@@ -440,7 +474,7 @@ export function ScrollerMenu({
             }}
             title={tab.label}
           >
-            {tab.shortLabel}
+            {tab.label}
           </button>
         ))}
 
@@ -478,7 +512,10 @@ export function ScrollerMenu({
       <div
         className="film-reel-wrapper"
         style={reelStyle}
-        role="listbox"
+        /* Not role="listbox": its children are buttons, and a listbox whose
+           children are buttons is an invalid tree — some screen readers drop
+           the whole reel rather than announce it. It is a group of buttons. */
+        role="group"
         aria-label={
           visibleComponents[centerIndex]
             ? `Selected: ${visibleComponents[centerIndex].label}`

@@ -367,7 +367,11 @@ const LOCAL_FAMILY_KEYWORDS: Array<[RegExp, string]> = [
   [/transformer/, "inductor"],
   [/^(cap|capacitor|c\d)/, "capacitor"],
   [/led/, "led"],
-  [/(diode|rectifier|schottky|zener)/, "diode"],
+  // Zener BEFORE the generic diode rule: a zener that runs away punches
+  // through its junction and has its own death in both tables, and the old
+  // order meant "zener-diode" matched /diode/ first and could never reach it.
+  [/zener/, "zener_diode"],
+  [/(diode|rectifier|schottky)/, "diode"],
   [/(inductor|coil|choke)/, "inductor"],
   [/(battery|cell|source)/, "battery"],
   [/fuse/, "fuse"],
@@ -376,6 +380,29 @@ const LOCAL_FAMILY_KEYWORDS: Array<[RegExp, string]> = [
   [/(bjt|transistor|npn|pnp|2n|bc)/, "bjt"],
   [/switch/, "switch"],
   [/relay/, "relay"],
+  // ── Reached by the picker, unreachable by keyword ─────────────────────────
+  // Every family below already had a blowout, a death signature and a stress
+  // signature — the tables were complete and it did not matter, because no
+  // card's builderType matched a keyword and all of them fell through to
+  // `generic`. So a motor, an op-amp, a thermistor, a crystal, a Darlington
+  // pair, a potentiometer, a speaker and a regulator all died like an
+  // anonymous blob, which is the exact regression `deathSignatures.test.ts` was
+  // written for and could not see, because it checks the tables against the
+  // engine's family list rather than against what the picker hands the bench.
+  // `catalogFailureCoverage.test.ts` is what looks.
+  [/thermistor/, "thermistor"],
+  [/(crystal|xtal|resonator)/, "crystal"],
+  // A Darlington is two NPN transistors in one package. Not a new family.
+  [/darlington/, "bjt"],
+  // A resistive track with a wiper on it. It burns like the track it is, which
+  // is the resistor death, so it does not need a family of its own.
+  [/(potentiometer|trimmer)/, "resistor"],
+  [/motor/, "motor"],
+  // A voice coil on a former. Its failure is the winding insulation cooking
+  // off, which is the inductor's death at speaker size.
+  [/(speaker|buzzer)/, "inductor"],
+  [/(opamp|op-amp)/, "opamp"],
+  [/(voltage[-_ ]?regulator|lm\d|regulator)/, "voltage_regulator"],
 ];
 
 function localResolveFamily(

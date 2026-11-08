@@ -67,6 +67,7 @@ export function ArenaRosterPicker({
         // "open" from its own point of view — which is what tells it to build
         // its 3D thumbnails.
         isOpen
+        compact
       />
 
       <ArenaCatalogReference />

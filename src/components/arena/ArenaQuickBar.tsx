@@ -221,6 +221,19 @@ export function ArenaQuickBar({
           the whole thing hangs from the top of the arena and a sheet opens
           downward from what you tapped. */}
       <div className="arena-quickbar__bar">
+        {/* The leaderboard leads the strip. It was third, behind Parts and
+            Conditions, on a strip that scrolls — so on a 360px phone the one
+            thing an arena is for was off the right-hand edge, and the board read
+            as missing. It is also the one sheet that stays live during a run. */}
+        <button
+          type="button"
+          className={`arena-quickbar__btn${openSheet === "board" ? " is-open" : ""}`}
+          onClick={() => setSheet(sheet === "board" ? null : "board")}
+          aria-expanded={openSheet === "board"}
+        >
+          <span className="arena-quickbar__label">Leaderboard</span>
+          <span className="arena-quickbar__value">🏆 results</span>
+        </button>
         <button
           type="button"
           className={`arena-quickbar__btn${openSheet === "parts" ? " is-open" : ""}`}
@@ -245,18 +258,6 @@ export function ArenaQuickBar({
             {scenario.icon} {scenario.name}
           </span>
         </button>
-        {/* Results stays enabled DURING a run, unlike the other two: reading
-            what happened last time is not a change to the bench, and it is
-            exactly what you want while the next run is going. */}
-        <button
-          type="button"
-          className={`arena-quickbar__btn${openSheet === "board" ? " is-open" : ""}`}
-          onClick={() => setSheet(sheet === "board" ? null : "board")}
-          aria-expanded={openSheet === "board"}
-        >
-          <span className="arena-quickbar__label">Results</span>
-          <span className="arena-quickbar__value">Board</span>
-        </button>
         {/* The ON/OFF has to be visible in the label itself. "Hidden" named a
             state and "Readouts" named the thing, and between them the control
             read as a heading for a panel rather than as a switch — the plates
@@ -280,7 +281,7 @@ export function ArenaQuickBar({
       </div>
 
       {openSheet === "parts" ? (
-        <div className="arena-quickbar__sheet">
+        <div className="arena-quickbar__sheet arena-quickbar__sheet--parts">
           <ArenaRosterPicker
             agents={agents}
             selectedAgentId={selectedAgentId}
@@ -341,7 +342,7 @@ export function ArenaQuickBar({
       ) : null}
 
       {openSheet === "board" ? (
-        <div className="arena-quickbar__sheet">{board}</div>
+        <div className="arena-quickbar__sheet arena-quickbar__sheet--board">{board}</div>
       ) : null}
     </div>
   );

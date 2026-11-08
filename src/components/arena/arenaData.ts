@@ -289,6 +289,12 @@ export function arenaSourceFromLibrary(
     name: action.label,
     type: action.builderType ?? catalogEntry?.type ?? "resistor",
     manufacturer: catalogEntry?.manufacturer ?? null,
+    // The id above is deliberately suffixed for uniqueness, which means
+    // `findCatalogComponent(id)` no longer matches it downstream. The identity
+    // has to be carried HERE, where the card is still in hand, or the part
+    // reaches the bench anonymous and the plate can only print the reference
+    // designator.
+    partNumber: catalogEntry?.partNumber ?? null,
     properties: { ...(catalogEntry?.properties ?? {}), ...(action.initialProperties ?? {}) },
   };
 }
@@ -358,8 +364,15 @@ export function buildArenaAgents(
       thermalResistanceCA: readNumeric(component.properties, ["thermalResistance"]) ?? undefined,
     };
 
+    // Three sources, in order of authority: the catalog entry (when the id
+    // still matches), what the source component was built with, then whatever
+    // its properties carry. `component.manufacturer` is the one that matters
+    // for a library card, because its id is suffixed and never matches.
     const manufacturer =
       catalogEntry?.manufacturer ??
+      (typeof component.manufacturer === "string" && component.manufacturer.trim()
+        ? component.manufacturer.trim()
+        : null) ??
       (typeof component.properties?.["manufacturer"] === "string"
         ? component.properties["manufacturer"]
         : null);
@@ -380,6 +393,7 @@ export function buildArenaAgents(
       ratings,
       componentNumber:
         component.componentNumber?.trim() || component.partNumber?.trim() || null,
+      partNumber: component.partNumber?.trim() || catalogEntry?.partNumber?.trim() || null,
 
       // fresh telemetry — a part starts the bench cool and intact
       integrity: 100,

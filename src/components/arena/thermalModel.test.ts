@@ -3,6 +3,7 @@ import {
   REFERENCE_C,
   deratedPowerW,
   deratingFraction,
+  deratingKneeFor,
   resistanceAt,
   selfHeatingRiseC,
   tempCoefficientPpm,
@@ -73,6 +74,32 @@ describe("derating", () => {
 
   it("treats a missing temperature span as no derating", () => {
     expect(deratingFraction(90, 25)).toBe(1);
+  });
+
+  it("derates from a declared knee rather than from 25 °C", () => {
+    // 112.5 °C is halfway between a 70 °C knee and a 155 °C ceiling.
+    expect(deratingFraction(112.5, 155, 70)).toBeCloseTo(0.5, 6);
+    expect(deratedPowerW(0.25, 112.5, 155, 70)).toBeCloseTo(0.125, 6);
+    // Below the knee the part is still fully rated, which is the whole point of
+    // recording the knee: 55 °C on a 70 °C knee is not 77% of the part.
+    expect(deratingFraction(55, 155, 70)).toBe(1);
+  });
+
+  it("holds full rating below a declared knee on a hot bench", () => {
+    const bench = ARENA_SCENARIOS.find((s) => s.id === "desert")!; // 55 °C ambient
+    const part = agent({ properties: { deratingKneeC: 70 } });
+    const report = thermalReportFor(part, bench, 1)!;
+    expect(report.deratingKneeC).toBe(70);
+    expect(report.deratedW).toBeCloseTo(0.25, 6);
+    // The same part without a knee, for contrast: it is derated at 55 °C.
+    expect(thermalReportFor(agent(), bench, 1)!.deratedW).toBeLessThan(0.25);
+  });
+
+  it("clamps a declared knee to the ceiling", () => {
+    const part = agent({ properties: { deratingKneeC: 400 } });
+    expect(deratingKneeFor(part, 155)).toBe(155);
+    // And a knee BELOW the reference is clamped up to it, not below zero span.
+    expect(deratingKneeFor(agent({ properties: { deratingKneeC: 5 } }), 155)).toBe(REFERENCE_C);
   });
 });
 

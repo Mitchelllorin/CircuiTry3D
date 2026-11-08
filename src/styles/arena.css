@@ -648,6 +648,24 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+/* Whose part this is — maker, then the maker's own part number.
+
+   Only rendered for a part that came from the branded catalog, so a generic
+   resistor still reads as a resistor. Carded and spaced like the designator
+   under it, but one step quieter: the designator is how you find the part on
+   the board, this is how the part's maker recognises it. */
+.arena-nameplate__maker {
+  margin-block-start: 0;
+  font-size: 0.5rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(226, 232, 240, 0.78);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-variant-numeric: tabular-nums;
+}
 .arena-nameplate__metrics .is-hot,
 .arena-nameplate__metrics .is-hot b {
   color: var(--plate-bad);
@@ -1390,8 +1408,7 @@
 .arena-view--workspace .arena-dash,
 .arena-view--workspace .arena-editor,
 .arena-view--workspace .arena-result,
-.arena-view--workspace .arena-thermal,
-.arena-view--workspace .arena-explode {
+.arena-view--workspace .arena-thermal {
   pointer-events: auto;
 }
 
@@ -2808,6 +2825,379 @@
   color: #fdba74;
 }
 
+/* ── Board tabs + run history ───────────────────────────────────────────
+   The board keeps the best showing per contender; the history keeps every
+   run. Same panel, two tabs, because the claim and the evidence for it
+   should not be on opposite sides of the screen.
+
+   Tab targets are a full 48px tall even though the label is small type —
+   these sit in a sheet a thumb is already inside, and a 24px tab strip in
+   the middle of one is the easiest miss on the surface. */
+.arena-board__tabs {
+  display: flex;
+  align-items: stretch;
+  gap: 4px;
+  min-inline-size: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.arena-board__tabs::-webkit-scrollbar {
+  display: none;
+}
+.arena-board__tab {
+  flex: 0 0 auto;
+  min-block-size: 48px;
+  padding: 0 10px;
+  border: 0;
+  border-block-end: 2px solid transparent;
+  background: transparent;
+  color: rgba(148, 163, 184, 0.75);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.arena-board__tab[aria-selected="true"] {
+  color: #e2e8f0;
+  border-block-end-color: rgba(96, 165, 250, 0.9);
+}
+.arena-board__tab:focus-visible,
+.arena-runs__summary:focus-visible {
+  outline: 2px solid #60a5fa;
+  outline-offset: 2px;
+}
+.arena-board__panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-inline-size: 0;
+}
+.arena-runs {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.arena-runs__item {
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.45);
+  overflow: hidden;
+}
+.arena-runs__summary {
+  display: grid;
+  grid-template-columns: 2.4rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  inline-size: 100%;
+  min-block-size: 48px;
+  padding: 6px 8px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+.arena-runs__index {
+  font-size: 0.82rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: rgba(148, 163, 184, 0.9);
+  text-align: center;
+}
+.arena-runs__title {
+  display: flex;
+  flex-direction: column;
+  min-inline-size: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: rgba(226, 232, 240, 0.95);
+}
+.arena-runs__meta {
+  font-style: normal;
+  font-size: 0.62rem;
+  color: rgba(148, 163, 184, 0.75);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.arena-runs__winner {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  max-inline-size: 9rem;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: rgba(226, 232, 240, 0.9);
+  text-align: end;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.arena-runs__winner em {
+  font-style: normal;
+  font-size: 0.6rem;
+  font-variant-numeric: tabular-nums;
+  color: rgba(148, 163, 184, 0.8);
+}
+.arena-runs__detail {
+  list-style: none;
+  margin: 0;
+  padding: 0 8px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border-block-start: 1px solid rgba(148, 163, 184, 0.12);
+  padding-block-start: 6px;
+}
+.arena-runs__part {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 8px;
+  align-items: baseline;
+  font-size: 0.7rem;
+  color: rgba(203, 213, 225, 0.9);
+}
+.arena-runs__part b {
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.arena-runs__part em {
+  font-style: normal;
+  font-variant-numeric: tabular-nums;
+  color: rgba(148, 163, 184, 0.85);
+}
+.arena-runs__part.is-failed b {
+  color: #fca5a5;
+}
+
+/* ── The family record ─────────────────────────────────────────────────
+   The third tab: every verdict this device has kept, from every app in the
+   line. Same row rhythm as the runs list, because it is read the same way —
+   a line to scan, then one to open.
+
+   The level chip carries its WORD, not only a colour. Colour alone fails in
+   sunlight, fails for a colour-blind reader, and fails the one thing this
+   list is for: telling a stressed part from a failed one at a glance. */
+.arena-family {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-inline-size: 0;
+}
+.arena-family__counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.arena-family__count {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  padding: 3px 8px;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 999px;
+  font-size: 0.64rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(203, 213, 225, 0.9);
+}
+.arena-family__count b {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.76rem;
+}
+.arena-family__count--failed {
+  border-color: rgba(248, 113, 113, 0.55);
+  color: #fca5a5;
+}
+.arena-family__count--critical {
+  border-color: rgba(251, 146, 60, 0.5);
+  color: #fdba74;
+}
+.arena-family__count--warning {
+  border-color: rgba(250, 204, 21, 0.45);
+  color: #fde68a;
+}
+.arena-family__count--stressed {
+  border-color: rgba(96, 165, 250, 0.4);
+  color: #bfdbfe;
+}
+.arena-family__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.arena-family__btn {
+  min-block-size: 48px;
+  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  border-radius: 10px;
+  background: rgba(30, 41, 59, 0.7);
+  color: #e2e8f0;
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+}
+.arena-family__btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.arena-family__btn--quiet {
+  margin-inline-start: auto;
+  border-color: rgba(248, 113, 113, 0.35);
+  color: #fca5a5;
+}
+.arena-family__btn:focus-visible,
+.arena-family__row:focus-visible {
+  outline: 2px solid #60a5fa;
+  outline-offset: 2px;
+}
+/* Off-screen, not display:none — a hidden input still has to be clickable. */
+.arena-family__file {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+.arena-family__note {
+  margin: 0;
+  font-size: 0.68rem;
+  color: rgba(148, 163, 184, 0.85);
+}
+.arena-family__note.is-error {
+  color: #fca5a5;
+}
+.arena-family__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.arena-family__item {
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.45);
+  overflow: hidden;
+}
+.arena-family__row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  inline-size: 100%;
+  min-block-size: 48px;
+  padding: 6px 8px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+.arena-family__level {
+  padding: 3px 7px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 6px;
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(203, 213, 225, 0.9);
+}
+.arena-family__level--safe {
+  border-style: solid;
+  border-color: rgba(74, 222, 128, 0.45);
+  color: #86efac;
+}
+.arena-family__level--stressed {
+  border-style: dashed;
+  border-color: rgba(96, 165, 250, 0.5);
+  color: #bfdbfe;
+}
+.arena-family__level--warning {
+  border-style: dashed;
+  border-color: rgba(250, 204, 21, 0.55);
+  color: #fde68a;
+}
+.arena-family__level--critical {
+  border-style: double;
+  border-width: 3px;
+  border-color: rgba(251, 146, 60, 0.6);
+  color: #fdba74;
+}
+.arena-family__level--failed {
+  border-style: solid;
+  border-width: 2px;
+  border-color: rgba(248, 113, 113, 0.75);
+  background: rgba(248, 113, 113, 0.14);
+  color: #fecaca;
+}
+.arena-family__main {
+  display: flex;
+  flex-direction: column;
+  min-inline-size: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: rgba(226, 232, 240, 0.95);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.arena-family__meta {
+  font-style: normal;
+  font-size: 0.62rem;
+  color: rgba(148, 163, 184, 0.75);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.arena-family__when {
+  font-size: 0.6rem;
+  font-variant-numeric: tabular-nums;
+  color: rgba(148, 163, 184, 0.8);
+  white-space: nowrap;
+}
+.arena-family__detail {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px 8px 8px;
+  border-block-start: 1px solid rgba(148, 163, 184, 0.12);
+}
+.arena-family__metrics {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 0.68rem;
+  font-variant-numeric: tabular-nums;
+  color: rgba(203, 213, 225, 0.9);
+}
+.arena-family__metrics b {
+  font-weight: 700;
+  color: rgba(226, 232, 240, 0.95);
+}
+.arena-family__line {
+  margin: 0;
+  font-size: 0.66rem;
+  color: rgba(148, 163, 184, 0.85);
+}
+
 /* ── Dashboard tile readouts ───────────────────────────────────────────
    The four circuit totals, pinned over the lit tiles they belong to.
 
@@ -2865,6 +3255,7 @@
 /* Everything the full plate shows is suppressed in the compact form — this
    is what actually reclaims the space. */
 .arena-nameplate--compact .arena-nameplate__head,
+.arena-nameplate--compact .arena-nameplate__maker,
 .arena-nameplate--compact .arena-nameplate__ident,
 .arena-nameplate--compact .arena-nameplate__wire,
 .arena-nameplate--compact .arena-nameplate__temp,
@@ -3963,121 +4354,6 @@
   line-height: 1.4;
 }
 
-/* ── Explode, on the right edge ───────────────────────────────────────────
-   The family's signature control, in the family's place for it. Not in the
-   console, because it changes the VIEW and not the run — and it must never
-   fight orbit or pinch, so it hugs the edge in its own 48px column.
-
-   Rotated rather than `writing-mode: vertical`, which is what broke the
-   console's first faders: a pseudo-element inherits the writing mode, so a
-   "7px" track ended up 7px along the axis you were supposed to drag and every
-   touch slammed to an end stop. A rotated horizontal input keeps every size on
-   the axis it was written for. */
-.arena-explode {
-  position: fixed;
-  z-index: 10;
-  inset-inline-end: calc(env(safe-area-inset-right, 0px) + 5px);
-  inset-block-start: 44%;
-  transform: translateY(-50%);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  padding: 7px 3px 6px;
-  border-radius: 11px;
-  border: 1px solid rgba(148, 163, 184, 0.18);
-  background: rgba(6, 12, 22, 0.5);
-  backdrop-filter: blur(10px) saturate(1.15);
-  -webkit-backdrop-filter: blur(10px) saturate(1.15);
-}
-@supports not (backdrop-filter: blur(1px)) {
-  .arena-explode {
-    background: rgba(6, 12, 22, 0.92);
-  }
-}
-.arena-explode__label {
-  font-size: 0.42rem;
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: rgba(174, 188, 205, 0.8);
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
-}
-.arena-explode__track {
-  position: relative;
-  inline-size: 42px;
-  block-size: 150px;
-}
-.arena-explode__track input[type="range"] {
-  position: absolute;
-  inset-block-start: 50%;
-  inset-inline-start: 50%;
-  inline-size: 150px;
-  block-size: 42px;
-  margin: 0;
-  transform: translate(-50%, -50%) rotate(-90deg);
-  appearance: none;
-  -webkit-appearance: none;
-  background: transparent;
-  cursor: pointer;
-}
-.arena-explode__track input[type="range"]::-webkit-slider-runnable-track {
-  block-size: 5px;
-  border-radius: 3px;
-  background: linear-gradient(180deg, #020610 0%, #0b1220 100%);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.9) inset;
-}
-.arena-explode__track input[type="range"]::-moz-range-track {
-  block-size: 5px;
-  border-radius: 3px;
-  background: #0b1220;
-}
-.arena-explode__track input[type="range"]::-webkit-slider-thumb {
-  appearance: none;
-  -webkit-appearance: none;
-  inline-size: 14px;
-  block-size: 22px;
-  margin-block-start: -8px;
-  border-radius: 4px;
-  border: 1px solid rgba(15, 23, 42, 0.75);
-  background: linear-gradient(90deg, #f1f5f9 0%, #cbd5e1 45%, #64748b 100%);
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.6);
-}
-.arena-explode__track input[type="range"]::-moz-range-thumb {
-  inline-size: 14px;
-  block-size: 22px;
-  border-radius: 4px;
-  border: 1px solid rgba(15, 23, 42, 0.75);
-  background: #cbd5e1;
-}
-.arena-explode__value {
-  font-size: 0.5rem;
-  font-variant-numeric: tabular-nums;
-  color: #e2e8f0;
-}
-
-/* Landscape, where the free band is short.
-
-   Measured at 640×360: the strip ends at y104 and the console starts at y252,
-   and a 192px rail centred at 44% ran from y62 to y254 — over the Readouts
-   button at the top AND into the console at the bottom. A 48px-wide control
-   sitting on two other controls is not a spacing problem, it is three things
-   fighting for one area. Shorter track, centred in the band that is actually
-   free. */
-@media (orientation: landscape) and (max-height: 430px) {
-  .arena-explode {
-    inset-block-start: 49%;
-    gap: 3px;
-    padding: 5px 3px 4px;
-  }
-  .arena-explode__track {
-    block-size: 84px;
-  }
-  .arena-explode__track input[type="range"] {
-    inline-size: 84px;
-  }
-}
-
 /* ── Ramp axis ────────────────────────────────────────────────────────────
    Sits under the environment picker in the Conditions sheet: same chips, same
    behaviour, one decision deeper. */
@@ -4086,4 +4362,37 @@
   flex-direction: column;
   gap: 5px;
   margin-block-start: 12px;
+}
+
+/* ── Parts sheet: room for the reel ─────────────────────────────────────
+   The picker sheet was capped at 38vh, which is shorter than the reel it
+   holds: the film strip (three frames) was clipped by the sheet and both
+   of them scrolled, so a drag fought the other scroll and the picker read
+   as a slit at the bottom of the screen. The parts sheet is the one sheet
+   whose content is a fixed-height control rather than prose, so it gets
+   its own, taller cap and one scroll — the sheet's — with the reel sized
+   to fit inside it (see `compact` on ScrollerMenu). */
+.arena-quickbar__sheet--parts,
+.arena-quickbar__sheet--board {
+  max-block-size: min(66vh, 540px);
+  overscroll-behavior: contain;
+}
+
+/* The bench chips are the app's own selection control, not a caption: they
+   were 28px tall, which is a mouse target. 44px and a real gap between
+   them, so a gloved hand picks the part it meant to. */
+.arena-roster__chip-pick,
+.arena-roster__chip-edit,
+.arena-roster__chip-drop {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+}
+.arena-roster__chip-pick {
+  padding: 0 12px;
+}
+.arena-roster__chip-edit,
+.arena-roster__chip-drop {
+  min-width: 44px;
 }
