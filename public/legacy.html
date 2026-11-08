@@ -6720,9 +6720,11 @@ body.android-optimized .zoom-btn {
                     .filter(value => typeof value === 'string' && value.trim().length > 0)
                     .join(' ')
                     .replace(/[<>&]/g, '');
-                const designator = makerText && showValueText ? `${identifier} · ${text}` : identifier;
                 const showIdentifier = labelVisibilityLevel >= 1;
                 const showValueText = labelVisibilityLevel >= 2;
+                // Declared after showValueText: reading it any earlier is a
+                // temporal-dead-zone ReferenceError that killed every branded spawn.
+                const designator = makerText && showValueText ? `${identifier} · ${text}` : identifier;
                 const showRuntimeMetrics = labelVisibilityLevel >= 3;
                 const runtimeMarkup = showRuntimeMetrics ? this.getRuntimeMetricMarkup() : '';
                 // Below level 3 the runtime block is off, but the temperature still

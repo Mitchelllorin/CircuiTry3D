@@ -113,7 +113,7 @@ await closeLibrary();
 // step 1 before it had looked at anything. Match the ADD action on the 0218, not
 // the exact string: the last card in the drawer is also labelled "Pin 218 ...",
 // and tapping that one pins a part instead of spawning it.
-const fuseAdd = await addFromLibrary('218', '^Add .*0218');
+const fuseAdd = await addFromLibrary('218', '^Add 218 series cartridge fuse$');
 check('library.branded-card', fuseAdd.ok,
   fuseAdd.ok ? `"${PART}" added from the Library search` : `${fuseAdd.why} — saw ${JSON.stringify(fuseAdd.labels)}`);
 if (!fuseAdd.ok) { await browser.close(); process.exit(1); }

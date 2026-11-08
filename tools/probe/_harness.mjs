@@ -1,5 +1,5 @@
 import { chromium } from 'playwright';
-export const CHROME = 'C:/Users/mitch/AppData/Local/ms-playwright/chromium-1228/chrome-win64/chrome.exe';
+export const CHROME = process.env.CLIP_CHROME || 'C:/Users/mitch/AppData/Local/ms-playwright/chromium-1228/chrome-win64/chrome.exe';
 export const TOUR = 'circuitry3d:circuit-sweep:dismissed:v1';
 
 // gpu: render on the real graphics card instead of swiftshader. Swiftshader draws
@@ -9,8 +9,10 @@ export async function openBuilder({ dismissTour = true, hash = '#/app', gpu = fa
   const args = gpu
     ? ['--use-angle=d3d11', '--ignore-gpu-blocklist', '--enable-gpu-rasterization']
     : ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'];
-  const browser = await chromium.launch({ headless: true, executablePath: CHROME, args });
-  const ctx = await browser.newContext({ viewport: { width: 412, height: 915 }, isMobile: true, hasTouch: true,
+  const { existsSync } = await import('node:fs');
+  const browser = await chromium.launch({ headless: true, ...(existsSync(CHROME) ? { executablePath: CHROME } : {}), args });
+  const ctx = await browser.newContext({ viewport: { width: 412, height: 915 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2,
+    ...(process.env.CLIP_DIR ? { recordVideo: { dir: process.env.CLIP_DIR, size: { width: 824, height: 1830 } } } : {}),
     userAgent: 'Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Mobile Safari/537.36' });
   if (dismissTour) await ctx.addInitScript(k => { try { localStorage.setItem(k, '1'); } catch {} }, TOUR);
   const page = await ctx.newPage();
