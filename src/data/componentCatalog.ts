@@ -378,8 +378,22 @@ export const CATALOG_COMPONENTS: CatalogComponent[] = [
     name: "TLHR5400",
     spec: "T-1 3/4 · red · 2.0V · 20mA · 630nm",
     type: "led",
-    properties: { forwardVoltage: 2.0, maxCurrent: 0.02, efficiency: 0.3 },
-    ratedThresholds: { maxVoltageV: 2.6, maxCurrentA: 0.02, maxTempC: 100, thermalResistanceCA: 120 },
+    // Vishay document 83012, current revision: forward voltage 2.0 V typical at
+    // 20 mA and 3.0 V maximum at the same current, DC forward current 30 mA at
+    // an ambient of 65 C or below, reverse voltage 6 V, junction temperature
+    // 100 C. The 20 mA on this card is the test current for VF, not a limit —
+    // the limit is 30 mA, and the card used to carry 20 mA as though it were.
+    properties: { forwardVoltage: 2.0, maxCurrent: 0.03, efficiency: 0.3 },
+    source: {
+      publisher: "Vishay",
+      url: "https://www.vishay.com/docs/83012/tlhr540x_tlhy540x.pdf",
+    },
+    simulation: {
+      status: "modeled",
+      detail:
+        "Modeled with Vishay's 2.0 V typical forward drop and its 30 mA DC rating at an ambient of 65 C or below. The engine holds one forward drop rather than this LED's I-V curve, so the 3.0 V maximum at 20 mA is carried as a rating rather than shown, and the 6 V reverse limit and the luminous intensity are carried as figures: neither is simulated.",
+    },
+    ratedThresholds: { maxVoltageV: 3, maxCurrentA: 0.03, maxTempC: 100, thermalResistanceCA: 120 },
   },
   {
     id: "wurth-led-green",
@@ -475,7 +489,22 @@ export const CATALOG_COMPONENTS: CatalogComponent[] = [
     name: "1N5819",
     spec: "DO-41 · 40V · 1A · Schottky",
     type: "diode",
-    properties: { forwardVoltage: 0.34, maxCurrent: 1, reverseVoltage: 40, powerRating: 2.5 },
+    // Vishay General Semiconductor 1N581x sheet: maximum instantaneous forward
+    // voltage 0.600 V at 1.0 A for the 1N5819 (0.450 V for the 5817, 0.550 V
+    // for the 5818), 40 V repetitive peak reverse, 1.0 A average rectified,
+    // 25 A non-repetitive surge, 150 C junction. The 0.34 V this card used to
+    // carry was not on that sheet in any column: the maker's own 1 A figure is
+    // 0.600 V, and a Schottky is not a 0.3 V device at an amp.
+    properties: { forwardVoltage: 0.6, maxCurrent: 1, reverseVoltage: 40, powerRating: 2.5 },
+    source: {
+      publisher: "Vishay",
+      url: "https://www.vishay.com/docs/88523/1n5817.pdf",
+    },
+    simulation: {
+      status: "modeled",
+      detail:
+        "Modeled with Vishay's 0.600 V maximum forward drop at 1 A and its 40 V and 1 A ratings. The engine uses a fixed drop rather than this part's I-V curve, so the 0.90 V the sheet gives at 3 A is not shown. The 2.5 W dissipation is the app's own figure: this sheet states no power dissipation for the part. Surge current is carried as a rating, not simulated.",
+    },
     ratedThresholds: { maxVoltageV: 40, maxCurrentA: 1, maxPowerW: 2.5, maxTempC: 150, thermalResistanceCA: 50 },
   },
 
@@ -628,8 +657,25 @@ export const CATALOG_COMPONENTS: CatalogComponent[] = [
     name: "SI2302ADS",
     spec: "SOT-23 · N-MOSFET · 20V · 2.3A",
     type: "mosfet",
-    properties: { vth: 1.0, rds_on: 0.08, id_max: 2.3, vds_max: 20, vgs_max: 12, powerRating: 0.9 },
-    ratedThresholds: { maxVoltageV: 20, maxCurrentA: 2.3, maxPowerW: 0.9, maxTempC: 150, thermalResistanceCA: 138 },
+    // Vishay Siliconix document 71831, Rev. J: VDS 20 V, VGS +/- 8 V, continuous
+    // drain current 2.4 A for 5 s and 2.1 A steady state at TA = 25 C, pulsed
+    // 10 A, RDS(on) 0.060 ohm maximum at VGS = 4.5 V and 0.115 ohm at 2.5 V,
+    // gate threshold 0.65 to 1.2 V, PD 0.9 W (5 s) and 0.7 W steady state,
+    // RthJA 140 C/W (5 s) and 175 C/W steady state, TJ 150 C. The card used to
+    // carry 2.3 A, 0.08 ohm, a 12 V gate limit and 138 C/W, none of which is on
+    // the sheet; `vth` takes the top of the band, so it switches later than a
+    // typical part rather than earlier.
+    properties: { vth: 1.2, rds_on: 0.06, id_max: 2.1, vds_max: 20, vgs_max: 8, powerRating: 0.9 },
+    source: {
+      publisher: "Vishay",
+      url: "https://www.vishay.com/docs/71831/si2302ads.pdf",
+    },
+    simulation: {
+      status: "modeled",
+      detail:
+        "Modeled with Vishay's 0.060 ohm maximum on-resistance at 4.5 V gate drive and its 2.1 A steady-state rating in free air. RDS(on) is held at its 25 C value, so a hot part here does not resist as much as the real one, and the 0.115 ohm at 2.5 V drive is carried as a figure rather than modelled: this engine treats the channel as fully enhanced.",
+    },
+    ratedThresholds: { maxVoltageV: 20, maxCurrentA: 2.1, maxPowerW: 0.9, maxTempC: 150, thermalResistanceCA: 175 },
   },
   {
     id: "on-semi-2n7000",
@@ -836,11 +882,32 @@ export const CATALOG_COMPONENTS: CatalogComponent[] = [
     id: "littelfuse-251001",
     manufacturer: "Littelfuse",
     partNumber: "251001",
-    name: "251001",
-    spec: "axial · 1A · 250V · fast blow · glass",
+    name: "PICO II very fast-acting fuse",
+    spec: "subminiature axial · 1A · 125V · very fast-acting · I²t 0.256 A²s · 128mΩ cold",
     type: "fuse",
-    properties: { ratedCurrentA: 1, meltingI2t: 1, resistance: 0.02 },
-    ratedThresholds: { maxVoltageV: 250, maxCurrentA: 1, maxTempC: 125 },
+    // Littelfuse 251 Series data sheet, the 1.00 A row of the electrical
+    // specifications table: ordering number 251001, 125 V maximum, 50 A
+    // interrupting at 125 VAC (300 A at 125 VDC), nominal cold resistance
+    // 0.128 ohm, nominal melting I2t 0.256 A2s, nominal voltage drop 0.194 V.
+    // This card used to carry 250 V, 1 A2s and 0.02 ohm — the voltage was the
+    // 218 series' by mistake, and neither of the other two is on this sheet.
+    properties: {
+      ratedCurrentA: 1,
+      meltingI2t: 0.256,
+      resistance: 0.128,
+      voltageRatingV: 125,
+      breakingCapacityA: 50,
+    },
+    source: {
+      publisher: "Littelfuse",
+      url: "https://www.littelfuse.com/assetdocs/fuse-251-datasheet?assetguid=f47a0bb7-8ede-4679-9646-7114c3787688",
+    },
+    simulation: {
+      status: "modeled",
+      detail:
+        "Modeled with CircuiTry3D's generic fuse engine at Littelfuse's 1 A rating, reporting the published 0.256 A2s melting I2t as the let-through energy. The 251 is very fast-acting, and the engine opens as soon as current passes the rating anyway, so the 1 s maximum the sheet allows at 200 percent is not shown. The 50 A interrupting rating at 125 VAC is carried as a figure, not as arc-quenching behaviour.",
+    },
+    ratedThresholds: { maxVoltageV: 125, maxCurrentA: 1, maxTempC: 125 },
   },
   {
     id: "littelfuse-250500",

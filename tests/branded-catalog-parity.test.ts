@@ -51,7 +51,9 @@ const OLD_LIBRARY: Record<string, { builderType: string; props: Record<string, n
   // The old list carried the textbook 0.7 V; the entry now spawns at the
   // datasheet's 1.1 V maximum forward drop at 1 A, so this pins that change.
   "on-semi-1n4007": { builderType: "diode", props: { forwardVoltage: 1.1 } },
-  "vishay-1n5819": { builderType: "diode", props: { forwardVoltage: 0.34 } },
+  // Vishay's own 1N581x sheet gives 0.600 V maximum at 1.0 A for the 1N5819;
+  // the card used to carry 0.34 V, which is on no column of that sheet.
+  "vishay-1n5819": { builderType: "diode", props: { forwardVoltage: 0.6 } },
 
   // hfe → gain
   "on-semi-2n2222a": { builderType: "bjt", props: { gain: 100 } },
@@ -99,7 +101,7 @@ const OLD_LIBRARY: Record<string, { builderType: string; props: Record<string, n
   // part. The 250 mA 218-series is the case that made that visible.
   "littelfuse-251001": {
     builderType: "fuse",
-    props: { current: 1, ratedCurrentA: 1, meltingI2t: 1 },
+    props: { current: 1, ratedCurrentA: 1, meltingI2t: 0.256 },
   },
   "littelfuse-250500": {
     builderType: "fuse",

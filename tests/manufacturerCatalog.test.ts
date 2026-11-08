@@ -23,6 +23,8 @@ const TE_PRODUCT_URLS = {
 const LITTELFUSE_PRODUCT_URLS = {
   "0218.250MXP":
     "https://www.littelfuse.com/products/fuses-overcurrent-protection/fuses/cartridge-fuses/5x20mm-fuses-cartridge-fuses/218/0218-250",
+  "251001":
+    "https://www.littelfuse.com/assetdocs/fuse-251-datasheet?assetguid=f47a0bb7-8ede-4679-9646-7114c3787688",
   "1812L110/16DR":
     "https://www.littelfuse.com/assetdocs/resettable-ptcs-1812l-datasheet?assetguid=ca5c80cb-504e-4a8a-8e74-0107520a1717",
   "SMF5.0A":
@@ -36,6 +38,9 @@ const LITTELFUSE_PRODUCT_URLS = {
 } as const;
 
 const VISHAY_PRODUCT_URLS = {
+  TLHR5400: "https://www.vishay.com/docs/83012/tlhr540x_tlhy540x.pdf",
+  "1N5819": "https://www.vishay.com/docs/88523/1n5817.pdf",
+  SI2302ADS: "https://www.vishay.com/docs/71831/si2302ads.pdf",
   "1N4148W-E3-08": "https://www.vishay.com/docs/86356/1n4148w.pdf",
   "SS14-E3/61T": "https://www.vishay.com/doc/?88746",
   "SMAJ5.0A-E3/61": "https://www.vishay.com/docs/88390/smaj50a.pdf",
@@ -93,7 +98,7 @@ describe("Littelfuse and Vishay manufacturer catalogs", () => {
 
   it("keeps transient and resettable protection reference-only", () => {
     const protection = getManufacturerCatalogComponents("Littelfuse").filter(
-      (entry) => entry.source && entry.partNumber !== "0218.250MXP",
+      (entry) => entry.source && entry.type !== "fuse",
     );
     expect(protection.every((entry) => builderTypeFor(entry) === null)).toBe(true);
   });
@@ -103,6 +108,9 @@ describe("Littelfuse and Vishay manufacturer catalogs", () => {
       (entry) => entry.source && entry.simulation?.status === "modeled",
     );
     expect(modeled.map(builderTypeFor)).toEqual([
+      "led",
+      "diode",
+      "mosfet",
       "diode",
       "diode",
       "resistor",
