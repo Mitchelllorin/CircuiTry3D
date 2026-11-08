@@ -6710,6 +6710,17 @@ body.android-optimized .zoom-btn {
             renderNameplateMarkup() {
                 const identifier = this.getComponentIdentifier();
                 const { text, color } = this.getValueTextAndColor();
+                // A branded part says whose part it is before it says anything
+                // else. "F1" is a board position, not a part: the maker and the
+                // ordering code are what a student can look up, and what a clip of
+                // the board needs on screen. Generic parts carry neither, so their
+                // plate is unchanged.
+                const props = this.properties || {};
+                const makerText = [props.manufacturer, props.partNumber]
+                    .filter(value => typeof value === 'string' && value.trim().length > 0)
+                    .join(' ')
+                    .replace(/[<>&]/g, '');
+                const designator = makerText && showValueText ? `${identifier} · ${text}` : identifier;
                 const showIdentifier = labelVisibilityLevel >= 1;
                 const showValueText = labelVisibilityLevel >= 2;
                 const showRuntimeMetrics = labelVisibilityLevel >= 3;
@@ -6722,8 +6733,9 @@ body.android-optimized .zoom-btn {
                 const failureBadge = this.getFailureBadgeMarkup ? this.getFailureBadgeMarkup() : '';
 
                 return `
-                    ${showIdentifier ? `<div style="color: white; font-size: ${isMobile ? '14px' : '12px'};">${identifier}</div>` : ''}
-                    ${showValueText ? `<div style="color: ${color}; font-size: ${isMobile ? '13px' : '11px'}; font-weight: bold;">${text}</div>` : ''}
+                    ${makerText ? `<div style="color: rgba(198, 214, 236, 0.86); font-size: ${isMobile ? '11px' : '10px'}; letter-spacing: 0.02em;">${makerText}</div>` : ''}
+                    ${showIdentifier ? `<div style="color: white; font-size: ${isMobile ? '14px' : '12px'};">${designator}</div>` : ''}
+                    ${showValueText && !makerText ? `<div style="color: ${color}; font-size: ${isMobile ? '13px' : '11px'}; font-weight: bold;">${text}</div>` : ''}
                     ${temperatureMarkup}
                     ${runtimeMarkup}
                     ${showIdentifier ? failureBadge : ''}

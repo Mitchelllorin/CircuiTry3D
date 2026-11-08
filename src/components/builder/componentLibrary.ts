@@ -43,8 +43,15 @@ export const REAL_PART_LIBRARY_ACTIONS: ComponentAction[] =
         builderType: builderType as ComponentAction["builderType"],
         // Manufacturer + datasheet spec, shown on the centered card / tooltip.
         description: `${part.manufacturer} · ${part.spec}`,
-        initialProperties:
-          Object.keys(properties).length > 0 ? properties : undefined,
+        // Whose part this is travels with the part. Without it the workspace
+        // nameplate printed only "F1 · 0.25A", which names a position on the
+        // board rather than a part anyone can look up — and the promo shots need
+        // the maker on the plate.
+        initialProperties: {
+          ...properties,
+          manufacturer: part.manufacturer,
+          partNumber: part.partNumber ?? part.name,
+        },
         // Inherit the base type's metadata so the branded part filters under
         // the same category tab (Power / Passive / Semi / …) as its generic
         // sibling.
