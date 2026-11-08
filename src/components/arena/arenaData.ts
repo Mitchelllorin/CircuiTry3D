@@ -230,7 +230,7 @@ function deriveRatings(
   family: string,
   properties: Record<string, unknown>,
 ): ArenaComponentRatings {
-  const thermal = familyThermal(family);
+  const thermal = familyThermal(family, properties);
   const powerRating =
     readNumeric(properties, ["powerRating", "maxPower", "ratedWatts"]) ??
     (family === "resistor" ? 0.25 : 0.5);

@@ -127,8 +127,10 @@ describe("branded catalog → Builder library derivation", () => {
       expect(builderTypeFor(part!)).toBe(expected.builderType);
 
       // An empty derivation means "use the workspace defaults", which is only
-      // correct if those defaults are what the old list was sending.
-      const derived = toWorkspaceProperties(part!);
+      // correct if those defaults are what the old list was sending. The
+      // datasheet temperature limit is new on top of the old set and is pinned
+      // separately below.
+      const { maxTempC: _limit, ...derived } = toWorkspaceProperties(part!);
       const effective =
         Object.keys(derived).length > 0
           ? derived
@@ -137,6 +139,24 @@ describe("branded catalog → Builder library derivation", () => {
       expect(effective).toEqual(expected.props);
     });
   }
+
+  it("every branded part spawns with its datasheet temperature limit", () => {
+    for (const part of CATALOG_COMPONENTS) {
+      if (!builderTypeFor(part)) continue;
+      const datasheet =
+        part.ratedThresholds?.maxTempC ??
+        (part.properties as Record<string, unknown>).maxTempC;
+      expect(toWorkspaceProperties(part).maxTempC, part.id).toBe(
+        typeof datasheet === "number" ? datasheet : undefined,
+      );
+    }
+  });
+
+  it("the SiSS52DN brings its 150 °C TJ max, not the MOSFET family's 175 °C", () => {
+    const part = CATALOG_COMPONENTS.find((p) => p.partNumber === "SiSS52DN");
+    expect(part).toBeDefined();
+    expect(toWorkspaceProperties(part!).maxTempC).toBe(150);
+  });
 
   it("ICs are excluded from the Builder library — the workspace cannot draw them", () => {
     const ics = CATALOG_COMPONENTS.filter((p) => p.type === "ic");
