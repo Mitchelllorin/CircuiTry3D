@@ -101,6 +101,11 @@ These framings map to common Perkins V allowable expenditure categories.
 
 ## Part 3 — Manufacturer Product Placement
 
+> **Superseded for manufacturer outreach.** See
+> [MANUFACTURER_OUTREACH.md](./MANUFACTURER_OUTREACH.md), which leads with a modelled
+> part run past its rating and a record of what it took, rather than brand exposure.
+> The placement tiers below still apply to inbound enquiries, not to a first approach.
+
 ### The Concept
 
 The Arena's **Featured Components** panel displays real manufacturer parts as pre-loaded test specimens. A student running a stress test selects "Vishay CRCW0402 100Ω" and FUSE™ runs the failure simulation against Vishay's actual datasheet values. The manufacturer name and part number are visible throughout the session.

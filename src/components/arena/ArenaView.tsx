@@ -5,6 +5,12 @@ import { ArenaOverlay } from "./ArenaOverlay";
 import { ArenaFuseForecast } from "./ArenaFuseForecast";
 import { ArenaTestLog } from "./ArenaInstrumentation";
 import { ArenaLeaderboard } from "./ArenaLeaderboard";
+import { importFamilyBundle, loadFamilyLog } from "./fuseHistory";
+import {
+  resetLevelCache,
+  saveLog as saveFuseLog,
+  type FuseRecord,
+} from "../../lib/fuseRecord";
 import { ArenaPartEditor } from "./ArenaPartEditor";
 import { ArenaDashboard } from "./ArenaDashboard";
 import { ArenaExplodeRail } from "./ArenaExplodeRail";
@@ -19,11 +25,24 @@ import {
   buildArenaAgents,
 } from "./arenaData";
 import { entriesFromRun, mergeEntries, type LeaderboardEntry } from "./leaderboardModel";
+import {
+  RUN_HISTORY_MAX,
+  runRecordFrom,
+  type ArenaRunRecord,
+} from "./runHistory";
+import { fileRunToFuseLog } from "./fuseLog";
 import { overdriveCeiling } from "./stressTest";
 import { loadFromSupply, supplyDivider } from "./supplyLoad";
-import { loadArenaBoard, loadArenaSessionPayload, saveArenaBoard } from "./arenaStorage";
+import {
+  loadArenaBoard,
+  loadArenaRunHistory,
+  loadArenaSessionPayload,
+  saveArenaBoard,
+  saveArenaRunHistory,
+} from "./arenaStorage";
 import type { ComponentAction } from "../builder/types";
 import type {
+  ArenaBattleAgent,
   ArenaSourceComponent,
   ArenaViewProps,
   ArenaViewTransitionPhase,
@@ -171,6 +190,82 @@ export default function ArenaView({
     saveArenaBoard({ entries: board, runs: runCountRef.current });
   }, [board]);
 
+  // ── Run history ───────────────────────────────────────────────────────
+  // The board is a MAP — one best row per contender. The history is a LOG — one
+  // record per finished run, roster and all — because "which part is best" and
+  // "what happened on Tuesday" are different questions and merging answers only
+  // the first. Kept in its own key so clearing the board to start a fresh
+  // comparison does not erase the runs that taught you what it is telling you.
+  const [runs, setRuns] = useState<ArenaRunRecord[]>(() => loadArenaRunHistory());
+  // The family record is read back, not derived: a run files its rows into the
+  // shared log (`fileRun`), and the tab shows a snapshot of that log. Refreshing
+  // when a run lands keeps the two from disagreeing without re-reading on every
+  // render of a bench that is already running at frame rate.
+  const [familyLog, setFamilyLog] = useState<FuseRecord[]>(() => loadFamilyLog());
+  useEffect(() => {
+    saveArenaRunHistory(runs);
+    setFamilyLog(loadFamilyLog());
+  }, [runs]);
+
+  const handleClearFamilyLog = () => {
+    saveFuseLog(typeof window === "undefined" ? null : window.localStorage, []);
+    // The transition guard holds the last level per subject in memory. Clearing
+    // the log without clearing that would leave a failing part writing nothing
+    // until it happened to change again.
+    resetLevelCache();
+    setFamilyLog([]);
+  };
+
+  const handleImportFamilyText = (text: string) => {
+    const result = importFamilyBundle(
+      typeof window === "undefined" ? null : window.localStorage,
+      text,
+    );
+    // Imported rows are the new baseline: a subject already in the log must not
+    // look "new" on the next change just because this load saw an empty cache.
+    resetLevelCache();
+    setFamilyLog(loadFamilyLog());
+    return result;
+  };
+
+  /**
+   * File one finished run: into the board, and into the history.
+   *
+   * Both are written here rather than at each call site, because the run number
+   * is what ties them together — a history row says "run 12" and the board rows
+   * from that run say the same, which is the whole reason the two are readable
+   * side by side. Two call sites incrementing their own counters would drift.
+   */
+  const fileRun = useCallback(
+    (
+      finished: ArenaBattleAgent[],
+      scenarioName: string,
+      mode: "bench" | "battle",
+      winnerId: string | null,
+    ) => {
+      runCountRef.current += 1;
+      const runIndex = runCountRef.current;
+      setBoard((current) =>
+        mergeEntries(current, entriesFromRun(finished, scenarioName, runIndex)),
+      );
+      const record = runRecordFrom({
+        agents: finished,
+        scenarioName,
+        runIndex,
+        mode,
+        winnerId,
+      });
+      setRuns((current) => [record, ...current].slice(0, RUN_HISTORY_MAX));
+      // Also file it into the family record, which is the one log every app in
+      // the line writes to. The run stays this app's detail; the family log is
+      // the row another app can count beside its own. Ids are derived from the
+      // run, so a second fire of the same run is a no-op rather than a second
+      // death.
+      fileRunToFuseLog(record);
+    },
+    [],
+  );
+
   /** Which part's editor is open, if any. */
   const [editingAgentId, setEditingAgentId] = useState<string | null>(null);
   // Resolved from the LIVE roster, so an editor left open across a roster
@@ -179,6 +274,30 @@ export default function ArenaView({
     () => arenaAgents.find((agent) => agent.id === editingAgentId) ?? null,
     [arenaAgents, editingAgentId],
   );
+
+  /**
+   * Escape belongs to the Arena while the Arena is the thing on screen.
+   *
+   * It used to have no owner here at all, so it fell through to the workspace's
+   * own window handler, which closes the workspace panels and swaps the mode
+   * back to build — pressing Escape to put the part editor away instead put
+   * "Workspace Settings" in front of the bench. The editor also had no key of
+   * its own, so the one gesture every sheet in the app answers did nothing.
+   *
+   * Bound in the CAPTURE phase and stopped there: both listeners sit on window,
+   * so stopping in the bubble phase would already be too late.
+   */
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") {
+        return;
+      }
+      event.stopPropagation();
+      setEditingAgentId(null);
+    };
+    window.addEventListener("keydown", onKeyDown, true);
+    return () => window.removeEventListener("keydown", onKeyDown, true);
+  }, []);
 
   /**
    * Write edited values back into the ROSTER, not into the live agent.
@@ -320,11 +439,8 @@ export default function ArenaView({
     if (status !== "complete" || previous === "complete") {
       return;
     }
-    runCountRef.current += 1;
-    setBoard((current) =>
-      mergeEntries(current, entriesFromRun(agents, scenario.name, runCountRef.current)),
-    );
-  }, [status, agents, scenario.name]);
+    fileRun(agents, scenario.name, "battle", winnerId);
+  }, [status, agents, scenario.name, winnerId, fileRun]);
 
   const handleClearBoard = useCallback(() => {
     setBoard([]);
@@ -335,15 +451,28 @@ export default function ArenaView({
     saveArenaBoard({ entries: [], runs: 0 });
   }, []);
 
+  /**
+   * Clearing the history is NOT clearing the board.
+   *
+   * They answer different questions and the user clears them for different
+   * reasons — "start this comparison fresh" is common, "forget every run I have
+   * done" is deliberate. So this does not touch `runCountRef`: the run numbers
+   * on the board keep meaning what they meant, and the next run continues the
+   * sequence rather than re-numbering from 1 over rows that still say run 12.
+   */
+  const handleClearRuns = useCallback(() => {
+    setRuns([]);
+    saveArenaRunHistory([]);
+  }, []);
+
   /** Shared by both modes, so one board holds every run on this bench. */
   const handleRunComplete = useCallback(
-    (finished: typeof agents, scenarioName: string) => {
-      runCountRef.current += 1;
-      setBoard((current) =>
-        mergeEntries(current, entriesFromRun(finished, scenarioName, runCountRef.current)),
-      );
+    (finished: ArenaBattleAgent[], scenarioName: string) => {
+      // A solo bench run declares no winner — there is usually one part on it —
+      // so the record derives one from the same ordering the board ranks by.
+      fileRun(finished, scenarioName, "bench", null);
     },
-    [],
+    [fileRun],
   );
 
   const handleExitComplete = useCallback(() => {
@@ -444,7 +573,15 @@ export default function ArenaView({
             nameplates={showReadouts}
             readouts={showReadouts}
             onToggleReadouts={toggleReadouts}
-            board={<ArenaLeaderboard entries={board} onClear={handleClearBoard} />}
+            board={<ArenaLeaderboard
+              entries={board}
+              runs={runs}
+              familyLog={familyLog}
+              onClear={handleClearBoard}
+              onClearRuns={handleClearRuns}
+              onClearFamilyLog={handleClearFamilyLog}
+              onImportFamilyText={handleImportFamilyText}
+            />}
             onRunComplete={handleRunComplete}
           />
           {/* The editor is owned by the arena, not by either mode, so the same
@@ -577,7 +714,15 @@ export default function ArenaView({
           }
           board={
             <>
-              <ArenaLeaderboard entries={board} onClear={handleClearBoard} />
+              <ArenaLeaderboard
+              entries={board}
+              runs={runs}
+              familyLog={familyLog}
+              onClear={handleClearBoard}
+              onClearRuns={handleClearRuns}
+              onClearFamilyLog={handleClearFamilyLog}
+              onImportFamilyText={handleImportFamilyText}
+            />
               <ArenaTestLog log={log} winnerName={winnerName} heading="Test Log" />
             </>
           }
