@@ -191,6 +191,11 @@ export const CATALOG_COMPONENTS: CatalogComponent[] = [
     spec: "0402 · 100Ω · 1% · 63mW",
     type: "resistor",
     properties: { resistance: 100, powerRating: 0.063, tolerance: 0.01, deratingKneeC: 70 },
+    simulation: {
+      status: "modeled",
+      detail:
+        "Modeled with Vishay's 100 Ω resistance, 63 mW rating and ±1% tolerance. The 300 °C/W junction-to-ambient figure the thermal model uses is CircuiTry3D's own: the D/CRCW e3 sheet gives a derating curve and a temperature range, not a thermal resistance, so the heat this part sheds is the app's estimate rather than a Vishay number.",
+    },
     ratedThresholds: { maxPowerW: 0.063, maxTempC: 155, thermalResistanceCA: 300 },
   },
   {
@@ -200,6 +205,11 @@ export const CATALOG_COMPONENTS: CatalogComponent[] = [
     spec: "0603 · 330Ω · 1% · 100mW",
     type: "resistor",
     properties: { resistance: 330, powerRating: 0.1, tolerance: 0.01, deratingKneeC: 70 },
+    simulation: {
+      status: "modeled",
+      detail:
+        "Modeled with Vishay's 330 Ω resistance, 0.10 W rating and ±1% tolerance. The 200 °C/W junction-to-ambient figure the thermal model uses is CircuiTry3D's own: the D/CRCW e3 sheet gives a derating curve and a temperature range, not a thermal resistance, so the heat this part sheds is the app's estimate rather than a Vishay number.",
+    },
     ratedThresholds: { maxPowerW: 0.1, maxTempC: 155, thermalResistanceCA: 200 },
   },
   {
@@ -209,6 +219,11 @@ export const CATALOG_COMPONENTS: CatalogComponent[] = [
     spec: "0603 · 1kΩ · 1% · 100mW",
     type: "resistor",
     properties: { resistance: 1000, powerRating: 0.1, tolerance: 0.01, deratingKneeC: 70 },
+    simulation: {
+      status: "modeled",
+      detail:
+        "Modeled with Vishay's 1 kΩ resistance, 0.10 W rating and ±1% tolerance. The 200 °C/W junction-to-ambient figure the thermal model uses is CircuiTry3D's own: the D/CRCW e3 sheet gives a derating curve and a temperature range, not a thermal resistance, so the heat this part sheds is the app's estimate rather than a Vishay number.",
+    },
     ratedThresholds: { maxPowerW: 0.1, maxTempC: 155, thermalResistanceCA: 200 },
   },
   {
@@ -218,6 +233,11 @@ export const CATALOG_COMPONENTS: CatalogComponent[] = [
     spec: "0603 · 10kΩ · 1% · 100mW",
     type: "resistor",
     properties: { resistance: 10000, powerRating: 0.1, tolerance: 0.01, deratingKneeC: 70 },
+    simulation: {
+      status: "modeled",
+      detail:
+        "Modeled with Vishay's 10 kΩ resistance, 0.10 W rating and ±1% tolerance. The 200 °C/W junction-to-ambient figure the thermal model uses is CircuiTry3D's own: the D/CRCW e3 sheet gives a derating curve and a temperature range, not a thermal resistance, so the heat this part sheds is the app's estimate rather than a Vishay number.",
+    },
     ratedThresholds: { maxPowerW: 0.1, maxTempC: 155, thermalResistanceCA: 200 },
   },
   {
@@ -391,7 +411,7 @@ export const CATALOG_COMPONENTS: CatalogComponent[] = [
     simulation: {
       status: "modeled",
       detail:
-        "Modeled with Vishay's 2.0 V typical forward drop and its 30 mA DC rating at an ambient of 65 C or below. The engine holds one forward drop rather than this LED's I-V curve, so the 3.0 V maximum at 20 mA is carried as a rating rather than shown, and the 6 V reverse limit and the luminous intensity are carried as figures: neither is simulated.",
+        "Modeled with Vishay's 2.0 V typical forward drop and its 30 mA DC rating at an ambient of 65 C or below. The engine holds one forward drop rather than this LED's I-V curve, so the 3.0 V maximum at 20 mA is carried as a rating rather than shown, and the 6 V reverse limit and the luminous intensity are carried as figures: neither is simulated. The 120 °C/W junction-to-ambient the thermal model uses is CircuiTry3D's own: this sheet publishes no thermal resistance.",
     },
     ratedThresholds: { maxVoltageV: 3, maxCurrentA: 0.03, maxTempC: 100, thermalResistanceCA: 120 },
   },
@@ -403,6 +423,13 @@ export const CATALOG_COMPONENTS: CatalogComponent[] = [
     spec: "SMD · green · 2.1V · 20mA · 525nm",
     type: "led",
     properties: { forwardVoltage: 2.1, maxCurrent: 0.02, efficiency: 0.35 },
+    // No thermal resistance is published for this LED; the figure beside it is
+    // the app's own thermal model, and the note says so.
+    simulation: {
+      status: "modeled",
+      detail:
+        "Modeled with Würth Elektronik's forward voltage and current rating. The 110 °C/W junction-to-ambient the thermal model uses is CircuiTry3D's own: the maker's sheet gives no thermal resistance for the part, so the heat it sheds here is the app's estimate.",
+    },
     ratedThresholds: { maxVoltageV: 2.8, maxCurrentA: 0.02, maxTempC: 100, thermalResistanceCA: 110 },
   },
   {
@@ -413,6 +440,13 @@ export const CATALOG_COMPONENTS: CatalogComponent[] = [
     spec: "SMD · blue · 3.0V · 20mA · 470nm",
     type: "led",
     properties: { forwardVoltage: 3.0, maxCurrent: 0.02, efficiency: 0.33 },
+    // No thermal resistance is published for this LED; the figure beside it is
+    // the app's own thermal model, and the note says so.
+    simulation: {
+      status: "modeled",
+      detail:
+        "Modeled with Osram's forward voltage and current rating. The 110 °C/W junction-to-ambient the thermal model uses is CircuiTry3D's own: the maker's sheet gives no thermal resistance for the part, so the heat it sheds here is the app's estimate.",
+    },
     ratedThresholds: { maxVoltageV: 3.8, maxCurrentA: 0.02, maxTempC: 100, thermalResistanceCA: 110 },
   },
   {
@@ -423,6 +457,13 @@ export const CATALOG_COMPONENTS: CatalogComponent[] = [
     spec: "T-1 3/4 · white · 3.2V · 20mA · 6000K",
     type: "led",
     properties: { forwardVoltage: 3.2, maxCurrent: 0.02, efficiency: 0.4 },
+    // No thermal resistance is published for this LED; the figure beside it is
+    // the app's own thermal model, and the note says so.
+    simulation: {
+      status: "modeled",
+      detail:
+        "Modeled with Cree's forward voltage and current rating. The 100 °C/W junction-to-ambient the thermal model uses is CircuiTry3D's own: the maker's sheet gives no thermal resistance for the part, so the heat it sheds here is the app's estimate.",
+    },
     ratedThresholds: { maxVoltageV: 4.0, maxCurrentA: 0.02, maxTempC: 100, thermalResistanceCA: 100 },
   },
   {
@@ -433,6 +474,13 @@ export const CATALOG_COMPONENTS: CatalogComponent[] = [
     spec: "T-1 3/4 · yellow · 2.1V · 20mA · 585nm",
     type: "led",
     properties: { forwardVoltage: 2.1, maxCurrent: 0.02, efficiency: 0.28 },
+    // No thermal resistance is published for this LED; the figure beside it is
+    // the app's own thermal model, and the note says so.
+    simulation: {
+      status: "modeled",
+      detail:
+        "Modeled with Lumileds' forward voltage and current rating. The 115 °C/W junction-to-ambient the thermal model uses is CircuiTry3D's own: the maker's sheet gives no thermal resistance for the part, so the heat it sheds here is the app's estimate.",
+    },
     ratedThresholds: { maxVoltageV: 2.8, maxCurrentA: 0.02, maxTempC: 100, thermalResistanceCA: 115 },
   },
 
@@ -444,7 +492,17 @@ export const CATALOG_COMPONENTS: CatalogComponent[] = [
     name: "1N4148",
     spec: "DO-35 · 100V · 300mA · signal",
     type: "diode",
+    // NOT re-checked against onsemi's own 1N4148 data sheet: the document could
+    // not be retrieved from onsemi.com on this pass, and the distributor copies
+    // of it disagree on whether the 300 mA or the 200 mA average rating is the
+    // one onsemi publishes. Nothing here has been changed on the strength of a
+    // secondary source; the card carries what it carried, and says so.
     properties: { forwardVoltage: 0.72, maxCurrent: 0.3, reverseVoltage: 100, powerRating: 0.5 },
+    simulation: {
+      status: "modeled",
+      detail:
+        "Modeled with a fixed 0.72 V forward drop. These figures are unverified against onsemi's own sheet: its 1N4148 data sheet could not be retrieved from onsemi.com, and the distributor copies disagree over the average forward current. Treat the drop, the 300 mA rating and the 200 °C limit as the app's current values rather than as confirmed datasheet numbers until the sheet is read.",
+    },
     ratedThresholds: { maxVoltageV: 100, maxCurrentA: 0.3, maxPowerW: 0.5, maxTempC: 200, thermalResistanceCA: 250 },
   },
   {
@@ -463,7 +521,7 @@ export const CATALOG_COMPONENTS: CatalogComponent[] = [
     properties: { forwardVoltage: 1.1, maxCurrent: 1, reverseVoltage: 1000, powerRating: 3 },
     source: {
       publisher: "ON Semiconductor",
-      url: "https://www.mouser.com/ds/2/149/1N4007-888322.pdf",
+      url: "https://www.onsemi.com/download/data-sheet/pdf/1n4001-d.pdf",
     },
     simulation: {
       status: "modeled",
@@ -573,10 +631,26 @@ export const CATALOG_COMPONENTS: CatalogComponent[] = [
     manufacturer: "ON Semiconductor",
     partNumber: "2N2222A",
     name: "2N2222A",
-    spec: "TO-18 · NPN · 40V · 600mA · 625mW",
+    spec: "TO-18 · NPN · 40V · 600mA · 500mW at 25°C ambient",
     type: "bjt",
-    properties: { vce_max: 40, ic_max: 0.6, hfe: 100, vbe: 0.7, powerRating: 0.625 },
-    ratedThresholds: { maxVoltageV: 40, maxCurrentA: 0.6, maxPowerW: 0.625, maxTempC: 200, thermalResistanceCA: 200 },
+    // onsemi's 2N2222A sheet (the TO-18 metal can, not the TO-92 P2N2222A it is
+    // often confused with): PD 500 mW at TA = 25 °C and 1.0 W at TC = 25 °C,
+    // TJ −65 to +200 °C, hFE 100 minimum at IC = 150 mA. The 625 mW this card
+    // carried is the plastic TO-92 part's figure; a metal-can 2N2222A does not
+    // get that in free air. 350 °C/W is derived from onsemi's own two limits
+    // (175 K between 25 °C ambient and a 200 °C junction at 0.5 W), because the
+    // sheet states dissipation and junction temperature rather than RthJA.
+    properties: { vce_max: 40, ic_max: 0.6, hfe: 100, vbe: 0.7, powerRating: 0.5 },
+    source: {
+      publisher: "onsemi",
+      url: "https://www.onsemi.com/download/data-sheet/pdf/2n2222a-d.pdf",
+    },
+    simulation: {
+      status: "modeled",
+      detail:
+        "Modeled with onsemi's 40 V, 600 mA and 100 minimum gain. Gain is one fixed number, so the 100-to-300 spread the sheet gives at 150 mA is not shown: two 2N2222As here behave identically. The 200 °C junction limit and the 0.5 W free-air dissipation are onsemi's; the 350 °C/W thermal resistance is derived from those two figures rather than published, and the 1.0 W case-referenced dissipation is carried as a figure, not modelled.",
+    },
+    ratedThresholds: { maxVoltageV: 40, maxCurrentA: 0.6, maxPowerW: 0.5, maxTempC: 200, thermalResistanceCA: 350 },
   },
   {
     id: "on-semi-2n3904",
@@ -617,10 +691,26 @@ export const CATALOG_COMPONENTS: CatalogComponent[] = [
     manufacturer: "ON Semiconductor",
     partNumber: "TIP31C",
     name: "TIP31C",
-    spec: "TO-220 · NPN · 100V · 3A · 40W",
+    spec: "TO-220 · NPN · 100V · 3A · 2W free air · 40W case",
     type: "bjt",
-    properties: { vce_max: 100, ic_max: 3, hfe: 25, vbe: 0.7, powerRating: 40 },
-    ratedThresholds: { maxVoltageV: 100, maxCurrentA: 3, maxPowerW: 40, maxTempC: 150, thermalResistanceCA: 3.125 },
+    // onsemi's TIP31A/TIP31C sheet: VCEO 100 V, IC 3 A, PC 2 W at TA = 25 °C
+    // and 40 W at TC = 25 °C, hFE 25 minimum at 1 A and 10 to 50 at 3 A,
+    // VBE(on) 1.8 V maximum at 3 A, TJ 150 °C. The 40 W is the case figure and
+    // needs a heatsink: without one a TO-220 gets 2 W, which is what the thermal
+    // model must be given or a bare TIP31C will be shown surviving 20 times the
+    // heat it can actually shed. 62.5 °C/W is derived from the 2 W free-air
+    // rating and the 150 °C junction (125 K / 2 W), not published as RthJA.
+    properties: { vce_max: 100, ic_max: 3, hfe: 25, vbe: 0.7, powerRating: 2 },
+    source: {
+      publisher: "onsemi",
+      url: "https://www.onsemi.com/pdf/datasheet/tip31c-d.pdf",
+    },
+    simulation: {
+      status: "modeled",
+      detail:
+        "Modeled with onsemi's 100 V, 3 A and 25 minimum gain. The power limit is the sheet's 2 W free-air figure, not its 40 W case figure: a TIP31C on a heatsink really can pass 40 W, and this model has no heatsink to know about, so it judges the bare part. The base-emitter drop is held at the 0.7 V the app uses for every BJT; the sheet's 1.8 V maximum at 3 A is carried as a figure rather than modelled.",
+    },
+    ratedThresholds: { maxVoltageV: 100, maxCurrentA: 3, maxPowerW: 2, maxTempC: 150, thermalResistanceCA: 62.5 },
   },
 
   // ── MOSFETs ───────────────────────────────────────────────────────────────
@@ -684,8 +774,24 @@ export const CATALOG_COMPONENTS: CatalogComponent[] = [
     name: "2N7000",
     spec: "TO-92 · N-MOSFET · 60V · 200mA",
     type: "mosfet",
-    properties: { vth: 2.1, rds_on: 5, id_max: 0.2, vds_max: 60, vgs_max: 20, powerRating: 0.4 },
-    ratedThresholds: { maxVoltageV: 60, maxCurrentA: 0.2, maxPowerW: 0.4, maxTempC: 150, thermalResistanceCA: 62.5 },
+    // onsemi's 2N7000 sheet: VDSS 60 V, ID 200 mA continuous, PD 350 mW at
+    // TC = 25 °C, RthJA 357 °C/W, gate threshold 0.8 to 3.0 V at 1 mA, RDS(on)
+    // 5 Ω maximum at 10 V gate drive, TJ 150 °C. The card carried 400 mW and
+    // 62.5 °C/W; 400 mW is the NDS7002A/2N7002 family figure and 62.5 °C/W is
+    // not on the sheet at all — it is 1/0.016, which nothing here justifies.
+    // `vth` keeps 2.1 V, the middle of onsemi's 0.8-to-3.0 V band, so the model
+    // neither switches early nor late against a typical part.
+    properties: { vth: 2.1, rds_on: 5, id_max: 0.2, vds_max: 60, vgs_max: 20, powerRating: 0.35 },
+    source: {
+      publisher: "onsemi",
+      url: "https://www.onsemi.com/download/data-sheet/pdf/2n7000-d.pdf",
+    },
+    simulation: {
+      status: "modeled",
+      detail:
+        "Modeled with onsemi's 5 Ω maximum on-resistance at 10 V drive, its 60 V and 200 mA ratings and its 357 °C/W junction-to-ambient. RDS(on) is held at its 25 °C value, so a hot 2N7000 here does not resist as much as the real one, and the 6 Ω the sheet gives at 4.5 V drive is carried as a figure: this engine treats the channel as fully enhanced. The 0.8-to-3.0 V threshold band is represented by one 2.1 V number.",
+    },
+    ratedThresholds: { maxVoltageV: 60, maxCurrentA: 0.2, maxPowerW: 0.35, maxTempC: 150, thermalResistanceCA: 357 },
   },
 
   // ── Voltage Regulators ────────────────────────────────────────────────────
@@ -831,12 +937,26 @@ export const CATALOG_COMPONENTS: CatalogComponent[] = [
   {
     id: "bourns-srr1260-101y",
     manufacturer: "Bourns",
-    partNumber: "SRR1260-101Y",
-    name: "SRR1260-101Y",
-    spec: "SMD shielded · 100µH · 2.1A sat · 0.061Ω DCR",
+    // There is no SRR1260-101Y: Bourns' Y suffix (±30%) runs from 1R0Y to 8R2Y,
+    // and the 100 µH row is SRR1260-101M (±20%). The card also carried 61 mΩ and
+    // 2.1 A, which are the 680M/820M rows' figures; the 100 µH part is 180 mΩ
+    // maximum DCR with 1.7 A rms and 1.7 A saturation. Both corrected to the
+    // row Bourns actually publishes for this inductance.
+    partNumber: "SRR1260-101M",
+    name: "SRR1260-101M",
+    spec: "SMD shielded · 100µH ±20% · 1.7A sat · 0.180Ω DCR max",
     type: "inductor",
-    properties: { inductance: 100e-6, dcResistance: 0.061, saturationCurrentA: 2.1, powerRating: 1 },
-    ratedThresholds: { maxCurrentA: 2.1, maxPowerW: 1, maxTempC: 125, thermalResistanceCA: 35 },
+    properties: { inductance: 100e-6, dcResistance: 0.18, saturationCurrentA: 1.7, powerRating: 1 },
+    source: {
+      publisher: "Bourns",
+      url: "https://www.bourns.com/data/global/pdfs/SRR1260.pdf",
+    },
+    simulation: {
+      status: "modeled",
+      detail:
+        "Modeled with Bourns' 100 µH and 180 mΩ maximum DC resistance, so the copper loss shown is this part's worst case rather than a typical one. The 1 W dissipation and 35 °C/W beside it are CircuiTry3D's own: Bourns publishes DCR, rms current and saturation current for this series, not a thermal resistance. The model does not roll inductance off with current, so the 1.7 A saturation point is carried as a rating rather than a behaviour.",
+    },
+    ratedThresholds: { maxCurrentA: 1.7, maxPowerW: 1, maxTempC: 125, thermalResistanceCA: 35 },
   },
   {
     id: "vishay-ihlp2020-10uh",
@@ -917,6 +1037,13 @@ export const CATALOG_COMPONENTS: CatalogComponent[] = [
     spec: "axial · 500mA · 250V · fast blow · glass",
     type: "fuse",
     properties: { ratedCurrentA: 0.5, meltingI2t: 0.25, resistance: 0.04 },
+    // No Littelfuse catalogue part carries the number 250500. It is not the 251
+    // series 500 mA part (251.500) and must not be silently read as one.
+    simulation: {
+      status: "reference-only",
+      detail:
+        "Reference only: Littelfuse publishes no catalogue part numbered 250500. The card is kept so the old library entry still resolves, and nothing on it is quoted from a Littelfuse sheet — the 0.5 A and 250 V are what the card has always claimed, and the melting I²t and cold resistance beside them are CircuiTry3D's own placeholders rather than a maker's figures. It is not the 251 series 500 mA fuse (251.500), and this entry does not assume it is.",
+    },
     ratedThresholds: { maxVoltageV: 250, maxCurrentA: 0.5, maxTempC: 125 },
   },
   {

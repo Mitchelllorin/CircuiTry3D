@@ -275,7 +275,7 @@ export function arenaSourceFromLibrary(
     label: string;
     builderType?: string;
     description?: string;
-    initialProperties?: Record<string, number>;
+    initialProperties?: Record<string, number | string>;
   },
   index: number,
 ): ArenaSourceComponent {

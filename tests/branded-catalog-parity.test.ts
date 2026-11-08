@@ -103,10 +103,6 @@ const OLD_LIBRARY: Record<string, { builderType: string; props: Record<string, n
     builderType: "fuse",
     props: { current: 1, ratedCurrentA: 1, meltingI2t: 0.256 },
   },
-  "littelfuse-250500": {
-    builderType: "fuse",
-    props: { current: 0.5, ratedCurrentA: 0.5, meltingI2t: 0.25 },
-  },
   "schurter-ato-5a": {
     builderType: "fuse",
     props: { current: 5, ratedCurrentA: 5, meltingI2t: 25 },
@@ -114,6 +110,15 @@ const OLD_LIBRARY: Record<string, { builderType: string; props: Record<string, n
 };
 
 const byId = new Map(CATALOG_COMPONENTS.map((p) => [p.id, p]));
+
+describe("catalog entries that name parts nobody makes", () => {
+  it("keeps the 250500 reference-only, so it never spawns as a 251.500", () => {
+    const part = byId.get("littelfuse-250500");
+    expect(part).toBeDefined();
+    expect(part?.simulation?.status).toBe("reference-only");
+    expect(builderTypeFor(part!)).toBeNull();
+  });
+});
 
 describe("branded catalog → Builder library derivation", () => {
   it("every part the old Builder list offered still exists in the shared catalog", () => {
