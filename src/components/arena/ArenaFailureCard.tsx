@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { failureHeadline, limitSourceFor } from "./breakIt";
 import type { ArenaBattleAgent } from "./types";
 
@@ -13,6 +14,12 @@ type ArenaFailureCardProps = {
    * part it is reporting on is the toast bug with better typography.
    */
   bottomOffsetPx?: number;
+  /**
+   * The card element itself, so the scene can measure the band it covers and
+   * compose the part into what is left. Without it the card is just a slab over
+   * a part the camera believes it has already framed.
+   */
+  innerRef?: React.Ref<HTMLElement>;
 };
 
 function numericLimit(agent: ArenaBattleAgent): string | null {
@@ -49,7 +56,12 @@ export function ArenaFailureCard({
   onDismiss,
   onReset,
   bottomOffsetPx = 0,
+  innerRef,
 }: ArenaFailureCardProps) {
+  // Compact by default: this is a band, not a sheet. The photograph can afford
+  // to be small only because the part behind it is the thing being looked at —
+  // the physics paragraph is one tap away, and only when it is asked for.
+  const [expanded, setExpanded] = useState(false);
   const maker = agent.manufacturer?.trim();
   const number = agent.partNumber?.trim();
   const title = maker && number ? `${maker} ${number}` : agent.name;
@@ -59,7 +71,8 @@ export function ArenaFailureCard({
 
   return (
     <section
-      className="arena-fail"
+      ref={innerRef}
+      className={`arena-fail${expanded ? " is-expanded" : ""}`}
       role="status"
       aria-live="assertive"
       style={{ bottom: `calc(env(safe-area-inset-bottom) + ${bottomOffsetPx + 8}px)` }}
@@ -67,8 +80,12 @@ export function ArenaFailureCard({
       <header className="arena-fail__head">
         <span className="arena-fail__tag">FAILED</span>
         <span className="arena-fail__title">{title}</span>
-        {agent.componentNumber && agent.componentNumber !== title ? (
-          <span className="arena-fail__designator">{agent.name}</span>
+        {/* Only when it says something the title did not. An unnamed part used
+            to print its own name here and the card said it twice. */}
+        {agent.name && agent.name !== title ? (
+          <span className="arena-fail__designator">
+            {agent.componentNumber ?? agent.name}
+          </span>
         ) : null}
       </header>
 
@@ -85,19 +102,27 @@ export function ArenaFailureCard({
         </span>
       </p>
 
-      {limit ? (
+      {expanded && limit ? (
         <p className="arena-fail__limit">
           Limit crossed: <b>{limit}</b> — {owner}.
         </p>
       ) : null}
 
-      {agent.failureDescription ? (
+      {expanded && agent.failureDescription ? (
         <p className="arena-fail__desc">{agent.failureDescription}</p>
       ) : null}
 
       <div className="arena-fail__actions">
         <button type="button" className="arena-fail__btn" onClick={onReset}>
           Reset the bench
+        </button>
+        <button
+          type="button"
+          className="arena-fail__btn arena-fail__btn--ghost"
+          aria-expanded={expanded}
+          onClick={() => setExpanded((open) => !open)}
+        >
+          {expanded ? "Less" : "Why it went"}
         </button>
         <button
           type="button"

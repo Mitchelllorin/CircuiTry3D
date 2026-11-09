@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+} from "react";
 import { ArenaFailureCard } from "./ArenaFailureCard";
 import { ArenaScene } from "./ArenaScene";
 import {
@@ -83,10 +90,19 @@ export function ArenaBreakIt({
   const [showAllBars, setShowAllBars] = useState(false);
   const consoleRef = useRef<HTMLElement | null>(null);
   const [consoleHeight, setConsoleHeight] = useState(0);
+  const cardRef = useRef<HTMLElement | null>(null);
+  const [cardHeight, setCardHeight] = useState(0);
   const pendingPresetRef = useRef<number | null>(null);
 
   const running = status === "battling";
   const ceiling = overdriveCeiling(scenario);
+  const failed = agent?.phase === "failed" ? agent : null;
+  /**
+   * Live telemetry, but only while it is live. At rest the gauge is the part
+   * evaluated at the parked factor, which is the same question asked earlier —
+   * reading the stale agent there reported the pre-run state instead.
+   */
+  const live = agent && (running || agent.phase === "failed") ? agent : null;
 
   // The console is the floor the scene composes against — measured, not assumed.
   useEffect(() => {
@@ -98,6 +114,26 @@ export function ArenaBreakIt({
     observer.observe(element);
     return () => observer.disconnect();
   }, []);
+
+  // The failure card is a band over the scene too, so the scene composes above
+  // its MEASURED height as well as the strip's. A card the camera does not know
+  // about is a card sitting on the part, which is the bug it was built to fix.
+  useEffect(() => {
+    const element = cardRef.current;
+    if (!element) {
+      setCardHeight(0);
+      return;
+    }
+    const report = () => setCardHeight(element.offsetHeight);
+    report();
+    const observer = new ResizeObserver(report);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [failed?.id, cardDismissed]);
+
+  const cardVisible = Boolean(failed) && !cardDismissed;
+  /** The bottom of the free frame: the strip, plus the card when it is up. */
+  const deskInset = consoleHeight + (cardVisible ? cardHeight + 8 : 0);
 
   // A new run is a new failure to show; nothing stays dismissed across runs.
   useEffect(() => {
@@ -205,10 +241,16 @@ export function ArenaBreakIt({
     holdAt(pending);
   }, [component?.id, startTest, holdAt]);
 
-  const failed = agent?.phase === "failed" ? agent : null;
-
   return (
-    <div className="arena-view arena-view--workspace arena-view--break">
+    <div
+      className={`arena-view arena-view--workspace arena-view--break${
+        failed ? " is-failed" : ""
+      }`}
+      // The strip's measured height, for anything else that has to sit clear of
+      // it — the F.U.S.E. watermark in the scene is the one that used to print
+      // straight over the readouts.
+      style={{ "--arena-console-h": `${consoleHeight}px` } as CSSProperties}
+    >
       <ArenaScene
         agents={agents}
         activeAgentId={component?.id ?? null}
@@ -229,7 +271,7 @@ export function ArenaBreakIt({
         selectedAgentId={component?.id ?? null}
         onSelectAgent={onSelectAgent}
         solo
-        bottomInsetPx={consoleHeight}
+        bottomInsetPx={deskInset}
         onExitTransitionComplete={() => undefined}
       />
 
@@ -239,6 +281,7 @@ export function ArenaBreakIt({
           onDismiss={() => setCardDismissed(true)}
           onReset={handleReset}
           bottomOffsetPx={consoleHeight}
+          innerRef={cardRef}
         />
       ) : null}
 
@@ -256,25 +299,25 @@ export function ArenaBreakIt({
               <b>{(running ? stressFactor : factor).toFixed(2)}×</b>
             </div>
             <div
-              className={`arena-breakit__gauge arena-breakit__gauge--${selectedGauge?.band ?? "safe"}`}
+              className={`arena-breakit__gauge arena-breakit__gauge--${failed ? "failed" : selectedGauge?.band ?? "safe"}`}
             >
               <span>Temp</span>
               {/* A failed part says FAILED, never the 25 °C it started at. */}
               <b>
-                {agent?.phase === "failed"
+                {failed
                   ? "FAILED"
-                  : `${Math.round(agent ? agent.tempC : selectedGauge?.tempC ?? 0)}°C`}
+                  : `${Math.round(live ? live.tempC : selectedGauge?.tempC ?? 0)}°C`}
               </b>
             </div>
-            <div className="arena-breakit__gauge">
-              <span>At limit</span>
-              <b>
-                {Math.round(
-                  agent ? agent.loadPercent : selectedGauge?.loadPercent ?? 0,
-                )}
-                %
-              </b>
-            </div>
+            {/* At the break the card reports the limit that was crossed, so this
+                gauge steps out and the two that remain have the width to say
+                FAILED rather than "FAILE…". */}
+            {failed ? null : (
+              <div className="arena-breakit__gauge">
+                <span>At limit</span>
+                <b>{Math.round(live ? live.loadPercent : selectedGauge?.loadPercent ?? 0)}%</b>
+              </div>
+            )}
           </div>
           <div role="group" aria-label="Arena mode" className="arena-breakit__modes">
             <button

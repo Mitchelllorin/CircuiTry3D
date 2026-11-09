@@ -393,7 +393,11 @@
 .fuse-watermark {
   position: absolute;
   inset-inline-start: 14px;
-  z-index: 100;
+  /* Below the HUD, not above it. At 100 this faint decorative mark printed
+     straight over LOAD/TEMP and the Current/Voltage buttons of The Ramp strip,
+     which made a watermark the loudest thing on screen. It is scenery: above
+     the canvas, under every control. */
+  z-index: 5;
   /* In the arena the console is a fixed strip across the foot of the screen and
      it outranks everything (z-index 1250), so the mark is placed clear ABOVE it
      using the height the console publishes for exactly this kind of
@@ -402,7 +406,13 @@
   /* The console is content-sized now (~70px), and `--arena-dash-height` is its
      measured height, so the mark is placed against that with a floor for the
      frame before the first measurement lands. */
-  inset-block-end: max(calc(var(--arena-dash-height, 76px) + 10px), 88px);
+  /* Whatever console is actually on the bottom edge. The Ramp publishes its
+     MEASURED height as --arena-console-h; the older dash variable is the
+     fallback for the surfaces that never set it. */
+  inset-block-end: max(
+    calc(var(--arena-console-h, var(--arena-dash-height, 76px)) + 10px),
+    88px
+  );
   font-size: 0.5rem;
   font-weight: 900;
   letter-spacing: 0.14em;
@@ -4426,9 +4436,15 @@
 @supports not (backdrop-filter: blur(1px)) {
   .arena-breakit { background: rgba(21, 28, 37, 0.95); }
 }
-/* The break is the shot: the list of parts and the presets step out of it. */
+/* The break is the shot. The list of parts, the presets AND the ramp controls
+   step out of it — nothing in them has anything left to do once the part is
+   gone, and the card above the strip reports what they were reporting. What
+   remains is one readout row, so the strip and the card together stay inside a
+   third of the screen and the part keeps its two thirds. */
 .arena-breakit.is-broken .arena-breakit__bars,
-.arena-breakit.is-broken .arena-breakit__presets { display: none; }
+.arena-breakit.is-broken .arena-breakit__presets,
+.arena-breakit.is-broken .arena-breakit__ramp,
+.arena-breakit.is-broken .arena-breakit__row { display: none; }
 .arena-breakit__dash { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .arena-breakit__modes { display: flex; gap: 3px; flex: 0 0 auto; }
 .arena-breakit__mode,
@@ -4577,7 +4593,13 @@
 
 /* ── FAILURE CARD ───────────────────────────────────────────────────────────
    Replaces the toast that sat over the toolbar and the readout row. Fixed to
-   the bottom edge ABOVE the console, never over the part the camera isolated. */
+   the bottom edge ABOVE the console, never over the part the camera isolated.
+
+   A BAND, not a sheet: at 360x640 the whole card is about 120px, because the
+   part behind it is the thing being looked at. The last limit and the physics
+   paragraph are one tap away (Why it went) and only when asked for — expanded,
+   the card scrolls and the scene composes above its measured height, so even
+   then it does not sit on the part. */
 .arena-fail {
   position: fixed;
   left: 8px;
@@ -4585,9 +4607,9 @@
   z-index: 20;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 12px;
-  max-height: 34vh;
+  gap: 4px;
+  padding: 10px;
+  max-height: 60vh;
   overflow-y: auto;
   border-radius: 10px;
   border: 1px solid rgba(229, 100, 63, 0.75);

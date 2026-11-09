@@ -42,6 +42,9 @@ const strip = () => page.evaluate(() => {
     vh: window.innerHeight,
     presets: el.querySelectorAll('.arena-breakit__preset').length,
     bars: el.querySelectorAll('.arena-breakit__bar').length,
+    failedBars: el.querySelectorAll('.arena-breakit__bar--failed').length,
+    rampShown: !!el.querySelector('.arena-breakit__ramp') &&
+      getComputedStyle(el.querySelector('.arena-breakit__ramp')).display !== 'none',
     broken: el.classList.contains('is-broken'),
   };
 });
@@ -62,6 +65,11 @@ check('canvas keeps at least two thirds', base.vh - base.height >= VIEW.height *
   `${base.vh - base.height}px of ${VIEW.height}`);
 check('three stress bars on show', base.bars === Math.min(3, base.bars) && base.bars > 0, `${base.bars}`);
 check('presets are offered', base.presets > 0, `${base.presets}`);
+// QC 1: a part that is broken before the ramp moves proves nothing. The 470 µF
+// capacitor used to sit at 683 % of an invented power rating at 1.00x and peak
+// at 162 °C without the sweep touching it.
+check('nothing is broken before the ramp moves', base.failedBars === 0,
+  `${base.failedBars} bar(s) already failed`);
 const labels = await page.evaluate(() =>
   [...document.querySelectorAll('.arena-breakit__preset')].map((b) => b.textContent.trim()));
 check('no maker names on the preset buttons',
@@ -100,11 +108,24 @@ check('everything but the part is isolated', !!card && Number(card.isolate) > 0.
 const broke = await strip();
 check('the strip steps back at the break', !!broke && broke.height < base.height,
   broke ? `${broke.height}px vs ${base.height}px` : '');
+check('the ramp controls leave the strip at the break', !!broke && !broke.rampShown,
+  broke ? `ramp shown: ${broke.rampShown}` : '');
 if (card) {
-  check('the card does not cover the part frame',
-    card.top > (broke ? broke.height : 0) - 4,
-    `card top ${card.top}, strip ${broke ? broke.height : '?'}`);
+  // QC 2/3: the card was 217px tall and started at y273, leaving 43 % of the
+  // screen above it and covering the part the camera had just framed.
+  check('the card is a band, not a sheet', card.height <= 170, `${card.height}px`);
+  check('the clear canvas above the card is at least two thirds',
+    card.top >= VIEW.height * 2 / 3 - 2,
+    `card top ${card.top}px, needs ${Math.round(VIEW.height * 2 / 3)}px`);
 }
+const tempText = await page.evaluate(() => {
+  const el = document.querySelector('.arena-breakit__gauge b');
+  if (!el) return null;
+  const r = el.getBoundingClientRect();
+  return { text: el.textContent.trim(), clipped: el.scrollWidth > r.width + 1 };
+});
+check('the failed temperature reads in full, not "FAILE…"',
+  !!tempText && !tempText.clipped, tempText ? JSON.stringify(tempText) : 'no gauge');
 await shot('03-failure-card.png');
 
 const errors = logs.filter((l) => l.type === 'pageerror');

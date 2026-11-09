@@ -171,6 +171,7 @@ function readNumeric(
 function deriveMetrics(
   component: ArenaSourceComponent,
   payload: ArenaSessionPayload | null,
+  family = "",
 ): ArenaBattleAgent["metrics"] {
   const basic = payload?.analysis?.basic;
   const properties = component.properties;
@@ -213,9 +214,26 @@ function deriveMetrics(
   }
   const safeCurrent = Math.min(Math.max(current, 0.001), 100);
 
-  // Operating power is the REAL dissipation at this point (V·I), not a rating —
-  // the rating lives in `ratings.powerRating`. The bench ramps this up.
-  const operatingPower = Math.max(safeVoltage * safeCurrent, 0.02);
+  // Operating power is the REAL dissipation at this point, not a rating — the
+  // rating lives in `ratings.powerRating`. The bench ramps this up.
+  //
+  // A capacitor is the one family where V × I is not dissipation. At DC it
+  // BLOCKS, so volts times amps across it is the energy it is holding, not heat
+  // it is making. Charging a 470 µF can on a 16 V bench was read as 6.4 W into
+  // a junction and it went to 162 °C before the ramp had moved — over a rating
+  // it does not even have, since a capacitor is rated in farads and volts. Its
+  // real loss is ESR × ripple², which is why a working electrolytic is warm and
+  // not glowing. No declared ESR means no loss to report, and the part starts
+  // cold, which is what it is.
+  const capacitive = family === "capacitor" || family === "capacitor-ceramic";
+  const esrOhms = readNumeric(properties, [
+    "esr",
+    "esrOhms",
+    "equivalentSeriesResistance",
+  ]);
+  const operatingPower = capacitive
+    ? Math.max((esrOhms ?? 0) * safeCurrent * safeCurrent, 0.002)
+    : Math.max(safeVoltage * safeCurrent, 0.02);
 
   return {
     voltage: safeVoltage,
@@ -356,7 +374,7 @@ export function buildArenaAgents(
       ...familyDefaults(family),
       ...ownProps,
     };
-    const metrics = deriveMetrics(component, payload);
+    const metrics = deriveMetrics(component, payload, family);
     const ratings = deriveRatings(family, properties);
 
     // Pull rated thresholds from catalog if available, then from component properties

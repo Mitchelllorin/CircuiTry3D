@@ -3930,10 +3930,54 @@ export function ArenaScene({
         // is what lets a failure hold breathe without the frame creeping.
         const changedSubject = target !== chaseSubject;
         chaseSubject = target;
-        const moveK = changedSubject || isolateId ? kCut : k;
+        // A failure is a CUT, not a glide. Easing into the failure pose left the
+        // part off-centre for the better part of a second — the one shot that
+        // has to be framed the instant it happens was the one still travelling,
+        // which is why the failing capacitor was half out of frame on the left
+        // when its card came up. Landing on the pose in a single frame also
+        // means any still taken of the break IS the composed shot.
+        const moveK = isolateId ? 1 : changedSubject ? kCut : k;
         camera.position.lerp(chaseDesired, moveK);
         controls.target.lerp(chaseLook, moveK);
         return true;
+      };
+
+      /**
+       * Everything on the bench that is not a part under test.
+       *
+       * The isolation only ever hid the other PARTS, so the rails, the supply
+       * panel, the current running along them, the floor grid and the seat ring
+       * all stayed lit — and a fully lit bench around one part is a vignette,
+       * not an isolation. The failure shot is the part, its smoke, and dark.
+       *
+       * Visibility is REMEMBERED and put back rather than forced back on: the
+       * victor ring and the selection ring have their own reasons to be hidden,
+       * and this pass has no business overruling them.
+       */
+      const dressing: import("three").Object3D[] = [
+        board,
+        flowGroup,
+        lightningGroup,
+        grid,
+        floor,
+        victorRing,
+        selectionRing,
+      ];
+      const dressingWasVisible = new Map<import("three").Object3D, boolean>();
+      const applyIsolationDressing = (isolated: boolean): void => {
+        if (isolated && dressingWasVisible.size === 0) {
+          for (const object of dressing) {
+            dressingWasVisible.set(object, object.visible);
+            object.visible = false;
+          }
+          return;
+        }
+        if (!isolated && dressingWasVisible.size > 0) {
+          dressingWasVisible.forEach((wasVisible, object) => {
+            object.visible = wasVisible;
+          });
+          dressingWasVisible.clear();
+        }
       };
 
       const animate = (time: number) => {
@@ -4611,6 +4655,10 @@ export function ArenaScene({
           const rootRect = root.getBoundingClientRect();
           plateCeiling = Math.max(8, hudRect.bottom - rootRect.top + 8);
         }
+
+        // The bench itself goes dark for the failure cut, before the parts are
+        // touched — only the subject is left standing in the light.
+        applyIsolationDressing(isolateId !== null);
 
         agentsRef.current.forEach((agent, seatIndex) => {
           const objectEntry = agentObjects.get(agent.id);
