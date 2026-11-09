@@ -4479,3 +4479,224 @@
   gap: 5px;
   margin-block-start: 12px;
 }
+
+/* ── BREAK IT ────────────────────────────────────────────────────────────────
+   The arena's front door: ramp a factor past the limit, hold it there, watch
+   the part go. Console on the bottom edge, glass, phone first (360x640), never
+   more than 46vh so the part keeps the middle of the frame. */
+.arena-breakit {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px calc(env(safe-area-inset-right) + 10px)
+    calc(env(safe-area-inset-bottom) + 10px) calc(env(safe-area-inset-left) + 10px);
+  max-height: 46vh;
+  overflow-y: auto;
+  background: rgba(21, 28, 37, 0.8);
+  backdrop-filter: blur(14px) saturate(1.15);
+  -webkit-backdrop-filter: blur(14px) saturate(1.15);
+  border-top: 1px solid rgba(66, 84, 104, 0.8);
+  border-radius: 12px 12px 0 0;
+}
+@supports not (backdrop-filter: blur(1px)) {
+  .arena-breakit { background: rgba(21, 28, 37, 0.95); }
+}
+.arena-breakit__head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.arena-breakit__modes { display: flex; gap: 4px; }
+.arena-breakit__mode,
+.arena-breakit__chip {
+  min-height: 32px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(66, 84, 104, 0.9);
+  background: rgba(30, 40, 51, 0.85);
+  color: #aebccd;
+  font-size: 13px;
+  font-weight: 600;
+}
+.arena-breakit__mode.is-on,
+.arena-breakit__chip.is-on {
+  background: #3d9ae8;
+  border-color: #3d9ae8;
+  color: #04121f;
+}
+.arena-breakit__part { font-size: 13px; color: #e8eef5; font-weight: 600; text-align: right; }
+.arena-breakit__gauges { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.arena-breakit__gauge {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: rgba(11, 15, 20, 0.72);
+  border: 1px solid rgba(44, 58, 74, 0.9);
+  min-width: 0;
+}
+.arena-breakit__gauge span { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: #7b8ca1; }
+.arena-breakit__gauge b { font-size: 15px; color: #e8eef5; font-variant-numeric: tabular-nums; }
+.arena-breakit__gauge em { font-size: 11px; font-style: normal; color: #7b8ca1; }
+.arena-breakit__gauge--warning b { color: #e0a03a; }
+.arena-breakit__gauge--critical b { color: #e5643f; }
+.arena-breakit__gauge--failed b { color: #ff5b3c; }
+.arena-breakit__ramp { display: flex; flex-direction: column; gap: 2px; }
+.arena-breakit__ramp-head { display: flex; justify-content: space-between; font-size: 12px; color: #aebccd; }
+.arena-breakit__ramp-head b { color: #e8eef5; }
+.arena-breakit__ramp input { width: 100%; min-height: 28px; accent-color: #e5643f; }
+.arena-breakit__row { display: flex; gap: 6px; flex-wrap: wrap; }
+.arena-breakit__hold,
+.arena-breakit__act {
+  min-height: 40px;
+  flex: 1 1 auto;
+  padding: 0 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(66, 84, 104, 0.9);
+  background: rgba(30, 40, 51, 0.85);
+  color: #e8eef5;
+  font-size: 13px;
+  font-weight: 700;
+}
+.arena-breakit__hold.is-held { border-color: #e0a03a; color: #e0a03a; }
+.arena-breakit__act { background: #e5643f; border-color: #e5643f; color: #1a0a06; }
+.arena-breakit__bars { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.arena-breakit__bar {
+  display: grid;
+  grid-template-columns: minmax(64px, 1.1fr) minmax(70px, 1fr) 62px minmax(84px, 1.2fr);
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+.arena-breakit__bar-name {
+  min-height: 28px;
+  text-align: left;
+  background: none;
+  border: 0;
+  padding: 0;
+  color: #e8eef5;
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.arena-breakit__bar-track { display: flex; gap: 2px; }
+.arena-breakit__bar-track i {
+  flex: 1;
+  height: 8px;
+  border-radius: 2px;
+  background: rgba(123, 140, 161, 0.28);
+}
+.arena-breakit__bar--safe .is-filled { background: #3fbf6e; }
+.arena-breakit__bar--stressed .is-filled { background: #e0a03a; }
+.arena-breakit__bar--warning .is-filled { background: #e08a3a; }
+.arena-breakit__bar--critical .is-filled { background: #e5643f; }
+.arena-breakit__bar--failed .is-filled { background: #ff2e1f; }
+.arena-breakit__bar-state { color: #aebccd; font-weight: 600; font-variant-numeric: tabular-nums; }
+.arena-breakit__bar-limit { color: #7b8ca1; font-variant-numeric: tabular-nums; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.arena-breakit__presets { display: flex; align-items: stretch; gap: 6px; overflow-x: auto; padding-bottom: 2px; }
+.arena-breakit__presets-label {
+  flex: 0 0 auto;
+  align-self: center;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #7b8ca1;
+}
+.arena-breakit__preset {
+  flex: 0 0 auto;
+  min-height: 44px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  padding: 4px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(229, 100, 63, 0.7);
+  background: rgba(229, 100, 63, 0.14);
+  color: #e8eef5;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: left;
+}
+.arena-breakit__preset em { font-style: normal; font-size: 11px; color: #aebccd; font-variant-numeric: tabular-nums; }
+.arena-breakit__none { margin: 0; font-size: 12px; color: #aebccd; }
+
+/* ── FAILURE CARD ───────────────────────────────────────────────────────────
+   Replaces the toast that sat over the toolbar and the readout row. Fixed to
+   the bottom edge ABOVE the console, never over the part the camera isolated. */
+.arena-fail {
+  position: fixed;
+  left: 8px;
+  right: 8px;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px;
+  max-height: 34vh;
+  overflow-y: auto;
+  border-radius: 10px;
+  border: 1px solid rgba(229, 100, 63, 0.75);
+  background: rgba(21, 28, 37, 0.9);
+  backdrop-filter: blur(14px) saturate(1.15);
+  -webkit-backdrop-filter: blur(14px) saturate(1.15);
+  color: #e8eef5;
+}
+@supports not (backdrop-filter: blur(1px)) {
+  .arena-fail { background: rgba(21, 28, 37, 0.96); }
+}
+.arena-fail__head { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.arena-fail__tag {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: #e5643f;
+  color: #1a0a06;
+}
+.arena-fail__title { font-size: 16px; font-weight: 700; }
+.arena-fail__designator { font-size: 12px; color: #aebccd; }
+.arena-fail__what { margin: 0; display: flex; flex-direction: column; gap: 2px; font-size: 14px; }
+.arena-fail__what strong { color: #ff8a6b; font-variant-numeric: tabular-nums; }
+.arena-fail__reading { font-size: 12px; color: #aebccd; font-variant-numeric: tabular-nums; }
+.arena-fail__limit { margin: 0; font-size: 12px; color: #aebccd; }
+.arena-fail__limit b { color: #e8eef5; font-variant-numeric: tabular-nums; }
+.arena-fail__desc { margin: 0; font-size: 12px; line-height: 1.4; color: #d7e0ea; background: #151c25; border-radius: 6px; padding: 8px; }
+.arena-fail__actions { display: flex; gap: 8px; }
+.arena-fail__btn {
+  flex: 1;
+  min-height: 44px;
+  border-radius: 8px;
+  border: 1px solid #e5643f;
+  background: #e5643f;
+  color: #1a0a06;
+  font-size: 13px;
+  font-weight: 700;
+}
+.arena-fail__btn--ghost { background: transparent; color: #e8eef5; border-color: rgba(66, 84, 104, 0.9); }
+
+/* Personal bests: one line per part, against its own history. */
+.arena-board__bests { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 8px; }
+.arena-board__bests-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #7b8ca1;
+}
+.arena-board__best {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(63, 191, 110, 0.5);
+  background: rgba(63, 191, 110, 0.12);
+  font-size: 12px;
+  color: #e8eef5;
+}
+.arena-board__best b { font-variant-numeric: tabular-nums; color: #3fbf6e; }
+.arena-board__best em { font-style: normal; font-size: 10px; color: #7b8ca1; }

@@ -1,4 +1,5 @@
 import type { ArenaScenario } from "./scenarios";
+import { limitSourceFor, type LimitSource } from "./breakIt";
 import type { ArenaBattleAgent } from "./types";
 
 /**
@@ -190,6 +191,16 @@ export type ThermalReport = {
   state: ThermalState;
   /** The load multiple the report was computed at. */
   powerFactor: number;
+  /**
+   * The part has already failed: this is a post-mortem, not a live reading.
+   *
+   * A destroyed part must not report a cool body just because the model stopped
+   * heating it — "T 25.0 °C" on a blown fuse reads as safe at the one moment it
+   * is not.
+   */
+  failed: boolean;
+  /** Whether the limit came from the maker's sheet or from this app's model. */
+  limitSource: LimitSource;
 };
 
 /**
@@ -260,5 +271,7 @@ export function thermalReportFor(
     ohmsHot: resistanceAt(agent.metrics.resistance, tempcoPpm, tempC),
     state,
     powerFactor,
+    failed: agent.phase === "failed",
+    limitSource: limitSourceFor(agent),
   };
 }

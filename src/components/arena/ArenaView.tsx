@@ -49,6 +49,8 @@ import type {
 } from "./types";
 import { useArenaBattle } from "./useArenaBattle";
 import ArenaBenchView from "./ArenaBenchView";
+import { ArenaBreakIt } from "./ArenaBreakIt";
+import { ArenaFailureCard } from "./ArenaFailureCard";
 
 const ENTER_TRANSITION_MS = 1800;
 
@@ -65,7 +67,10 @@ export default function ArenaView({
   // Workspace variant: terminal exit sweep, distinct from the panel-driven camera.
   const [isExiting, setIsExiting] = useState(false);
   // Arena entry: solo bench first ("playable datasheet"), then head-to-head battle.
-  const [arenaMode, setArenaMode] = useState<"bench" | "battle">("bench");
+  // Break It first: the arena's job is to break something on purpose, and a
+  // head-to-head where nothing fails sells nothing. Solo and Battle are the
+  // experiments you graduate to.
+  const [arenaMode, setArenaMode] = useState<"break" | "bench" | "battle">("break");
 
   useEffect(() => {
     const refreshPayload = () => setSessionPayload(loadArenaSessionPayload());
@@ -497,6 +502,16 @@ export default function ArenaView({
     [agents, winnerId],
   );
   const winnerName = winner?.name ?? null;
+  /** The part the failure card is about: the last one to let go. */
+  const failedAgent = useMemo(() => {
+    const failed = agents.filter((agent) => agent.phase === "failed");
+    return failed.length > 0 ? failed[failed.length - 1] : null;
+  }, [agents]);
+  const [dismissedFailure, setDismissedFailure] = useState<string | null>(null);
+  // A new run is a new failure; nothing stays dismissed across runs.
+  useEffect(() => {
+    if (status === "battling") setDismissedFailure(null);
+  }, [status]);
   const survivorCount = useMemo(
     () => agents.filter((agent) => agent.phase !== "failed").length,
     [agents],
@@ -556,6 +571,16 @@ export default function ArenaView({
   );
 
   if (isWorkspace) {
+    if (arenaMode === "break") {
+      return (
+        <ArenaBreakIt
+          roster={arenaAgents}
+          selectedAgentId={selectedAgentId}
+          onSelectAgent={setSelectedAgentId}
+          onSwitchMode={(next) => setArenaMode(next)}
+        />
+      );
+    }
     if (arenaMode === "bench") {
       return (
         <>
@@ -748,6 +773,14 @@ export default function ArenaView({
 
         {/* The console. Fixed at the bottom, and now only what you operate a
             LIVE run with: the circuit totals, the two faders, the switch. */}
+        {failedAgent && dismissedFailure !== failedAgent.id ? (
+          <ArenaFailureCard
+            agent={failedAgent}
+            onDismiss={() => setDismissedFailure(failedAgent.id)}
+            onReset={resetTest}
+            bottomOffsetPx={dashHeight}
+          />
+        ) : null}
         <ArenaDashboard
           status={status}
           voltsMultiple={liveVolts}
@@ -759,7 +792,7 @@ export default function ArenaView({
           onThrowSwitch={status === "battling" ? resetTest : startTest}
           mode="battle"
           onSwitchMode={(next) => {
-            if (next === "bench") setArenaMode("bench");
+            setArenaMode(next);
           }}
           onReset={resetTest}
           thermal={thermal}

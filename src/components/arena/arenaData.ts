@@ -288,7 +288,19 @@ export function arenaSourceFromLibrary(
     id: `${action.id}-${index}-${Math.random().toString(36).slice(2, 8)}`,
     name: action.label,
     type: action.builderType ?? catalogEntry?.type ?? "resistor",
-    manufacturer: catalogEntry?.manufacturer ?? null,
+    manufacturer:
+      catalogEntry?.manufacturer ??
+      (typeof action.initialProperties?.manufacturer === "string"
+        ? action.initialProperties.manufacturer
+        : null),
+    // The ordering code travels with the part, exactly as it does into the
+    // builder. Dropping it here left the arena's failure card naming a designator
+    // ("F1") instead of a part anyone can look up ("Littelfuse 0218.250MXP").
+    partNumber:
+      catalogEntry?.partNumber ??
+      (typeof action.initialProperties?.partNumber === "string"
+        ? action.initialProperties.partNumber
+        : undefined),
     properties: { ...(catalogEntry?.properties ?? {}), ...(action.initialProperties ?? {}) },
   };
 }
@@ -380,6 +392,9 @@ export function buildArenaAgents(
       ratings,
       componentNumber:
         component.componentNumber?.trim() || component.partNumber?.trim() || null,
+      // The ordering code stays separate from the designator: a failure card
+      // says "Littelfuse 0218.250MXP", and "F1" is not that part.
+      partNumber: component.partNumber?.trim() || null,
 
       // fresh telemetry — a part starts the bench cool and intact
       integrity: 100,

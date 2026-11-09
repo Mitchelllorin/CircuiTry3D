@@ -95,6 +95,13 @@ export type ArenaBattleAgent = {
   properties: Record<string, unknown>;
   ratings: ArenaComponentRatings;
   componentNumber?: string | null;
+  /**
+   * The maker's own ordering code, when the part has one.
+   *
+   * The failure card has to name the part the way its datasheet does —
+   * "Littelfuse 0218.250MXP", not "F1" — and a designator alone cannot do that.
+   */
+  partNumber?: string | null;
 
   // ── live telemetry, updated every test tick ──
   /** Structural integrity 100 → 0 (0 = failed). Replaces the old HP bar. */
