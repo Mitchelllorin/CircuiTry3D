@@ -1333,9 +1333,12 @@ export const CATALOG_COMPONENTS: CatalogComponent[] = [
     simulation: {
       status: "modeled",
       detail:
-        "Modeled as a generic electromagnetic relay at TE's own coil and contact ratings. The coil is treated as its rated 144 Ω, so it does not drop out as the supply sags toward the sheet's 9 V must-operate; contact bounce, arc duration and the 10⁶-operation mechanical life are not simulated. The relay switches; it does not wear.",
+        "Modeled as a generic electromagnetic relay at TE's own coil and contact ratings. The coil is treated as its rated 144 Ω, so it does not drop out as the supply sags toward the sheet's 9 V must-operate; contact bounce, arc duration and the 10⁶-operation mechanical life are not simulated. The relay switches; it does not wear. TE rates the same contacts at 10 A on 28 VDC as well as 30 A on 277 VAC — DC is not the AC figure derated a little, it is a third of it — and the engine carries the AC rating because that is the number on the front of the sheet.",
     },
-    ratedThresholds: { maxCurrentA: 30, maxVoltageV: 277 },
+    // 155 °C, not the 125 °C blanket limit the app applies to a part that
+    // declares nothing: TE's T9A sheet gives max coil temperature 155 °C on a
+    // UL class F insulation system, and the coil is where a relay's heat is.
+    ratedThresholds: { maxCurrentA: 30, maxVoltageV: 277, maxTempC: 155 },
   },
   {
     id: "te-ev200aaana",
