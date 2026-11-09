@@ -75,9 +75,12 @@ describe("TE Connectivity manufacturer catalog", () => {
       "T9AS1D22-12",
     ]);
     expect(modeled.map(builderTypeFor)).toEqual(["relay", "relay"]);
+    // The T9A now carries TE's own 155 °C class F coil limit, so that spawns
+    // with the part; the V23074 declares no thermal limit of its own and still
+    // spawns bare rather than with an invented one.
     expect(modeled.map(toWorkspaceProperties)).toEqual([
       { coilVoltage: 12 },
-      { coilVoltage: 12 },
+      { coilVoltage: 12, maxTempC: 155 },
     ]);
   });
 
