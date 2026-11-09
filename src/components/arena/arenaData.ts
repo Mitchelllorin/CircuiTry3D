@@ -288,13 +288,19 @@ export function arenaSourceFromLibrary(
     id: `${action.id}-${index}-${Math.random().toString(36).slice(2, 8)}`,
     name: action.label,
     type: action.builderType ?? catalogEntry?.type ?? "resistor",
-    manufacturer: catalogEntry?.manufacturer ?? null,
-    // The id above is deliberately suffixed for uniqueness, which means
-    // `findCatalogComponent(id)` no longer matches it downstream. The identity
-    // has to be carried HERE, where the card is still in hand, or the part
-    // reaches the bench anonymous and the plate can only print the reference
-    // designator.
-    partNumber: catalogEntry?.partNumber ?? null,
+    manufacturer:
+      catalogEntry?.manufacturer ??
+      (typeof action.initialProperties?.manufacturer === "string"
+        ? action.initialProperties.manufacturer
+        : null),
+    // The ordering code travels with the part, exactly as it does into the
+    // builder. Dropping it here left the arena's failure card naming a designator
+    // ("F1") instead of a part anyone can look up ("Littelfuse 0218.250MXP").
+    partNumber:
+      catalogEntry?.partNumber ??
+      (typeof action.initialProperties?.partNumber === "string"
+        ? action.initialProperties.partNumber
+        : null),
     properties: { ...(catalogEntry?.properties ?? {}), ...(action.initialProperties ?? {}) },
   };
 }
