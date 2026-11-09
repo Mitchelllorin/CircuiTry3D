@@ -160,7 +160,7 @@ export function safeLoadUnder(
 export type BreakPreset = {
   id: string;
   agentId: string;
-  /** What the button says: the part, by maker and number when it has one. */
+  /** What the button says: what happens to the part, never whose it is. */
   label: string;
   /** The load multiple that destroys it. */
   loadFactor: number;
@@ -175,11 +175,38 @@ export type BreakPreset = {
   limitLabel: string;
 };
 
-function presetLabel(agent: ArenaBattleAgent): string {
-  const maker = agent.manufacturer?.trim();
-  const number = agent.partNumber?.trim();
-  if (maker && number) return `${maker} ${number}`;
-  return agent.componentNumber ?? agent.name;
+/**
+ * What each kind of part does when it goes, in the trade's words.
+ *
+ * The preset is a demonstration, not a catalogue entry: we do not have the
+ * makers' permission to put their names on our buttons, so a button says what
+ * happens — "Overload the fuse" — and the identity of the part that breaks is
+ * read off the part and its failure card, where identification is all it is.
+ */
+const BREAK_ACTION: Record<string, string> = {
+  fuse: "Overload the fuse",
+  resistor: "Burn the resistor",
+  capacitor: "Blow the capacitor",
+  diode: "Burn the diode",
+  led: "Burn the LED",
+  inductor: "Cook the coil",
+  transistor: "Fry the transistor",
+  mosfet: "Crack the die",
+  ic: "Fry the chip",
+  relay: "Weld the contacts",
+  battery: "Vent the cell",
+};
+
+/**
+ * The preset's caption. Generic by construction — it never reads a maker.
+ *
+ * Two fuses on the bench therefore share a button title; the load multiple and
+ * the bar underneath are what tell them apart, and that is the honest split:
+ * the action is the same, the part is not.
+ */
+export function presetLabel(agent: ArenaBattleAgent): string {
+  const kind = (agent.componentType || agent.family || "part").toLowerCase();
+  return BREAK_ACTION[kind] ?? `Break the ${kind}`;
 }
 
 /**
@@ -187,7 +214,8 @@ function presetLabel(agent: ArenaBattleAgent): string {
  *
  * Branded first is the order the orders ask for and the right order anyway: a
  * named part breaking at a rated limit is the claim that can be checked, and it
- * is the one worth putting at the top of a list.
+ * is the one worth putting at the top of a list. The button still does not name
+ * it — see `presetLabel`.
  */
 export function presetsFor(
   agents: ArenaBattleAgent[],

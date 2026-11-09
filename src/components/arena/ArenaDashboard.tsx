@@ -269,7 +269,7 @@ export function ArenaDashboard({
           <div className="arena-dash__mode" role="group" aria-label="Bench">
             {(
               [
-                ["break", "Break"],
+                ["break", "Ramp"],
                 ["bench", "Solo"],
                 ["battle", "Battle"],
               ] as const

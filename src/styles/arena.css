@@ -4480,10 +4480,12 @@
   margin-block-start: 12px;
 }
 
-/* ── BREAK IT ────────────────────────────────────────────────────────────────
-   The arena's front door: ramp a factor past the limit, hold it there, watch
-   the part go. Console on the bottom edge, glass, phone first (360x640), never
-   more than 46vh so the part keeps the middle of the frame. */
+/* ── THE RAMP ────────────────────────────────────────────────────────────────
+   The arena's front door, and a strip rather than a panel: at most ONE THIRD of
+   the screen (33vh — 211px at 360x640), glass, on the bottom edge, so the part
+   being broken keeps the other two thirds. Readouts, the ramp, the switch, the
+   three parts closest to failing, the presets — nothing else. At the break it
+   shrinks again, because then the part and its card own the screen. */
 .arena-breakit {
   position: fixed;
   left: 0;
@@ -4492,11 +4494,12 @@
   z-index: 10;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 10px calc(env(safe-area-inset-right) + 10px)
-    calc(env(safe-area-inset-bottom) + 10px) calc(env(safe-area-inset-left) + 10px);
-  max-height: 46vh;
+  gap: 5px;
+  padding: 8px calc(env(safe-area-inset-right) + 10px)
+    calc(env(safe-area-inset-bottom) + 8px) calc(env(safe-area-inset-left) + 10px);
+  max-height: 33vh;
   overflow-y: auto;
+  overscroll-behavior: contain;
   background: rgba(21, 28, 37, 0.8);
   backdrop-filter: blur(14px) saturate(1.15);
   -webkit-backdrop-filter: blur(14px) saturate(1.15);
@@ -4506,18 +4509,22 @@
 @supports not (backdrop-filter: blur(1px)) {
   .arena-breakit { background: rgba(21, 28, 37, 0.95); }
 }
-.arena-breakit__head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.arena-breakit__modes { display: flex; gap: 4px; }
+/* The break is the shot: the list of parts and the presets step out of it. */
+.arena-breakit.is-broken .arena-breakit__bars,
+.arena-breakit.is-broken .arena-breakit__presets { display: none; }
+.arena-breakit__dash { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.arena-breakit__modes { display: flex; gap: 3px; flex: 0 0 auto; }
 .arena-breakit__mode,
 .arena-breakit__chip {
-  min-height: 32px;
-  padding: 0 10px;
+  min-height: 30px;
+  padding: 0 8px;
   border-radius: 8px;
   border: 1px solid rgba(66, 84, 104, 0.9);
   background: rgba(30, 40, 51, 0.85);
   color: #aebccd;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
+  white-space: nowrap;
 }
 .arena-breakit__mode.is-on,
 .arena-breakit__chip.is-on {
@@ -4525,28 +4532,30 @@
   border-color: #3d9ae8;
   color: #04121f;
 }
-.arena-breakit__part { font-size: 13px; color: #e8eef5; font-weight: 600; text-align: right; }
-.arena-breakit__gauges { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
-.arena-breakit__gauge {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 6px 8px;
-  border-radius: 8px;
-  background: rgba(11, 15, 20, 0.72);
-  border: 1px solid rgba(44, 58, 74, 0.9);
+/* One thin row of numbers, with the mode switch at its end. Not cards. */
+.arena-breakit__gauges {
+  flex: 1 1 auto;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
   min-width: 0;
 }
-.arena-breakit__gauge span { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: #7b8ca1; }
-.arena-breakit__gauge b { font-size: 15px; color: #e8eef5; font-variant-numeric: tabular-nums; }
-.arena-breakit__gauge em { font-size: 11px; font-style: normal; color: #7b8ca1; }
+.arena-breakit__gauge { display: flex; flex-direction: column; gap: 0; min-width: 0; }
+.arena-breakit__gauge span { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: #7b8ca1; white-space: nowrap; }
+.arena-breakit__gauge b {
+  font-size: 14px;
+  line-height: 1.15;
+  color: #e8eef5;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .arena-breakit__gauge--warning b { color: #e0a03a; }
 .arena-breakit__gauge--critical b { color: #e5643f; }
 .arena-breakit__gauge--failed b { color: #ff5b3c; }
-.arena-breakit__ramp { display: flex; flex-direction: column; gap: 2px; }
-.arena-breakit__ramp-head { display: flex; justify-content: space-between; font-size: 12px; color: #aebccd; }
-.arena-breakit__ramp-head b { color: #e8eef5; }
-.arena-breakit__ramp input { width: 100%; min-height: 28px; accent-color: #e5643f; }
+.arena-breakit__ramp { display: flex; flex-direction: column; gap: 0; }
+.arena-breakit__ramp input { width: 100%; min-height: 26px; accent-color: #e5643f; }
 .arena-breakit__row { display: flex; gap: 6px; flex-wrap: wrap; }
 .arena-breakit__hold,
 .arena-breakit__act {
@@ -4562,30 +4571,55 @@
 }
 .arena-breakit__hold.is-held { border-color: #e0a03a; color: #e0a03a; }
 .arena-breakit__act { background: #e5643f; border-color: #e5643f; color: #1a0a06; }
-.arena-breakit__bars { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
-.arena-breakit__bar {
-  display: grid;
-  grid-template-columns: minmax(64px, 1.1fr) minmax(70px, 1fr) 62px minmax(84px, 1.2fr);
-  align-items: center;
+/* Three bars, one per part closest to failing: who, then how close. The full
+   list is one tap away and scrolls sideways rather than growing the strip. */
+.arena-breakit__bars { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.arena-breakit__bars-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
   gap: 6px;
-  font-size: 12px;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-x: auto;
+}
+.arena-breakit__bar {
+  flex: 0 0 auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1px 4px;
+  min-width: 96px;
+  max-width: 124px;
 }
 .arena-breakit__bar-name {
-  min-height: 28px;
+  min-height: 22px;
   text-align: left;
   background: none;
   border: 0;
   padding: 0;
   color: #e8eef5;
-  font-size: 12px;
+  font-size: 11px;
+  font-weight: 600;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.arena-breakit__bar-track { display: flex; gap: 2px; }
+.arena-breakit__bars-more {
+  flex: 0 0 auto;
+  min-height: 34px;
+  padding: 0 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(66, 84, 104, 0.9);
+  background: rgba(30, 40, 51, 0.85);
+  color: #aebccd;
+  font-size: 11px;
+  font-weight: 700;
+}
+.arena-breakit__bar-track { grid-column: 1 / -1; display: flex; gap: 2px; }
 .arena-breakit__bar-track i {
   flex: 1;
-  height: 8px;
+  height: 6px;
   border-radius: 2px;
   background: rgba(123, 140, 161, 0.28);
 }
@@ -4594,8 +4628,8 @@
 .arena-breakit__bar--warning .is-filled { background: #e08a3a; }
 .arena-breakit__bar--critical .is-filled { background: #e5643f; }
 .arena-breakit__bar--failed .is-filled { background: #ff2e1f; }
-.arena-breakit__bar-state { color: #aebccd; font-weight: 600; font-variant-numeric: tabular-nums; }
-.arena-breakit__bar-limit { color: #7b8ca1; font-variant-numeric: tabular-nums; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.arena-breakit__bar-state { color: #aebccd; font-weight: 600; font-size: 11px; text-align: right; font-variant-numeric: tabular-nums; }
+.arena-breakit__bar-limit { grid-column: 1 / -1; color: #7b8ca1; font-size: 11px; font-variant-numeric: tabular-nums; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .arena-breakit__presets { display: flex; align-items: stretch; gap: 6px; overflow-x: auto; padding-bottom: 2px; }
 .arena-breakit__presets-label {
   flex: 0 0 auto;

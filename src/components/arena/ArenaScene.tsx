@@ -17,6 +17,7 @@ import { failSignatureFor, type FailSmoke } from "./deathSignatures";
 import { isMobile } from "../../utils/mobilePerformance";
 import type { Vec2 } from "../../schematic/types";
 import { STRESS_MAX } from "./stressTest";
+import { failurePose } from "./failureShot";
 import type {
   ArenaBattleAgent,
   ArenaBattleHighlight,
@@ -3482,9 +3483,9 @@ export function ArenaScene({
        * size. At 4.2 the part fills about a third of the frame's height, which
        * is the first distance at which a split seam is actually a shot.
        */
-      const FAILURE_RADIUS = 4.2;
-      /** And a bench-side eye line on it, rather than looking down at it. */
-      const FAILURE_HEIGHT = 2.4;
+      // FAILURE_RADIUS and FAILURE_HEIGHT live in failureShot.ts now, with the
+      // framing they were measured against and a test that projects a part
+      // through this very pose. The numbers are unchanged; the claim is checkable.
       /**
        * How fast a CHANGE OF SUBJECT lands, in ms.
        *
@@ -3896,10 +3897,13 @@ export function ArenaScene({
         chaseDir.normalize();
         // Tightening the shot is part of the cut, not a separate deal: the
         // radius is chosen from what the camera is looking at.
-        const closeUp = isolateId ? FAILURE_RADIUS : CHASE_RADIUS;
-        const lift = isolateId ? FAILURE_HEIGHT : CHASE_HEIGHT;
-        chaseDesired.copy(chaseLook).addScaledVector(chaseDir, closeUp);
-        chaseDesired.y = chaseLook.y + lift;
+        if (isolateId) {
+          const pose = failurePose(chaseLook, chaseDir);
+          chaseDesired.set(pose.x, pose.y, pose.z);
+        } else {
+          chaseDesired.copy(chaseLook).addScaledVector(chaseDir, CHASE_RADIUS);
+          chaseDesired.y = chaseLook.y + CHASE_HEIGHT;
+        }
 
         // A different part, or a shot that just became a close-up, is a cut and
         // lands as one. Staying on the same part keeps the gentle glide, which

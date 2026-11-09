@@ -128,7 +128,7 @@ describe("Break It presets", () => {
     expect(presetsFor([indestructible])).toHaveLength(0);
   });
 
-  it("puts branded parts first and names them by maker and ordering code", () => {
+  it("puts branded parts first without putting a maker's name on the button", () => {
     const generic = makeAgent({
       id: "res-1",
       name: "R1 · 100Ω",
@@ -151,10 +151,14 @@ describe("Break It presets", () => {
 
     const presets = presetsFor([generic, makeAgent()]);
     expect(presets).toHaveLength(2);
-    expect(presets[0].label).toBe("Littelfuse 0218.250MXP");
+    // The branded part leads — it is the checkable claim — but the caption says
+    // what happens, because we have no permission to put the maker on it.
     expect(presets[0].limitSource).toBe("maker");
-    expect(presets[1].label).toBe("R1");
+    expect(presets[0].label).toBe("Overload the fuse");
+    expect(presets[0].label).not.toContain("Littelfuse");
+    expect(presets[0].label).not.toContain("0218");
     expect(presets[1].limitSource).toBe("app");
+    expect(presets[1].label).toBe("Burn the resistor");
   });
 
   it("gives every preset a failure and a hold, so the button is not a bluff", () => {
