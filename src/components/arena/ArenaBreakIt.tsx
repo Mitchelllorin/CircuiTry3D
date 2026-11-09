@@ -4,7 +4,6 @@ import { ArenaScene } from "./ArenaScene";
 import {
   STRESS_BANDS,
   breakingLoadFor,
-  formatPartTemp,
   gaugeFor,
   limitLabelFor,
   limitSourceFor,
@@ -20,7 +19,7 @@ type ArenaBreakItProps = {
   roster: ArenaBattleAgent[];
   selectedAgentId: string | null;
   onSelectAgent: (id: string | null) => void;
-  /** Walk to the ordinary bench or the battle. Break It is the front door. */
+  /** Walk to the ordinary bench or the battle. The Ramp is the front door. */
   onSwitchMode: (mode: "bench" | "battle") => void;
 };
 
@@ -32,18 +31,26 @@ const BAND_FILL: Record<FuseRiskLevel, number> = {
   failed: 5,
 };
 
+/** How many stress bars the strip shows before it has to be asked for more. */
+const BARS_SHOWN = 3;
+
 /**
- * BREAK IT — the arena's front door.
+ * THE RAMP — the arena's front door.
  *
  * The other two modes are experiments: the bench finds an envelope, the battle
  * finds a winner. This one is a demonstration with a number on it — park a part
  * at a load, hold it there, and watch it fail for the reason its datasheet says
  * it would. The gauges are the factor being ramped and the part's own margin;
- * the bars are every part in play, each limit labelled with its owner; the
- * presets are loads proven to break a named part, branded parts first.
+ * the bars are the worst three parts in play, each limit labelled with its
+ * owner; the presets are loads proven to break a part.
  *
- * Phone first: one column, the scene above, this console below, nothing over
- * the middle of the screen that is not the part being broken.
+ * The 3D workspace is the show, so this is a strip and not a panel: temptingly
+ * tall — up to a third of the screen at 360×640 — glass, on the bottom edge,
+ * gone at the break. Readouts first, the ramp, the switch, the parts closest to
+ * failing, the presets. Nothing else.
+ *
+ * No maker names in here. A preset says what happens ("Overload the fuse"), and
+ * the maker's name and ordering code stay on the part and on its failure card.
  */
 export function ArenaBreakIt({
   roster,
@@ -73,6 +80,7 @@ export function ArenaBreakIt({
 
   const [factor, setFactor] = useState(1);
   const [cardDismissed, setCardDismissed] = useState(false);
+  const [showAllBars, setShowAllBars] = useState(false);
   const consoleRef = useRef<HTMLElement | null>(null);
   const [consoleHeight, setConsoleHeight] = useState(0);
   const pendingPresetRef = useRef<number | null>(null);
@@ -95,6 +103,12 @@ export function ArenaBreakIt({
   useEffect(() => {
     setCardDismissed(false);
   }, [status, component?.id]);
+
+  // The full bar list is a look, not a mode: a run starting closes it, so the
+  // strip is back to the three parts that matter while something is cooking.
+  useEffect(() => {
+    if (running) setShowAllBars(false);
+  }, [running]);
 
   const selectedGauge = useMemo(
     () => gaugeFor(component, running ? stressFactor : factor, scenario),
@@ -122,6 +136,18 @@ export function ArenaBreakIt({
       }),
     [roster, component?.id, agent, running, stressFactor, factor, scenario],
   );
+
+  // Worst first, so the three on show are the three about to go. Ties break on
+  // load, which is stable, so the strip does not reshuffle as the model turns.
+  const rankedBars = useMemo(
+    () =>
+      [...bars].sort(
+        (a, b) =>
+          BAND_FILL[b.band] - BAND_FILL[a.band] || b.loadPercent - a.loadPercent,
+      ),
+    [bars],
+  );
+  const visibleBars = showAllBars ? rankedBars : rankedBars.slice(0, BARS_SHOWN);
 
   const presets = useMemo(() => presetsFor(roster, scenario), [roster, scenario]);
 
@@ -218,10 +244,38 @@ export function ArenaBreakIt({
 
       <section
         ref={consoleRef}
-        className="arena-breakit"
-        aria-label="Break It dashboard"
+        className={`arena-breakit${failed ? " is-broken" : ""}`}
+        aria-label="The Ramp dashboard"
       >
-        <header className="arena-breakit__head">
+        {/* One readout strip with the mode switch at its end — the same shape
+            as every sibling app's dashboard. Numbers, not cards. */}
+        <div className="arena-breakit__dash">
+          <div className="arena-breakit__gauges">
+            <div className="arena-breakit__gauge">
+              <span>Load</span>
+              <b>{(running ? stressFactor : factor).toFixed(2)}×</b>
+            </div>
+            <div
+              className={`arena-breakit__gauge arena-breakit__gauge--${selectedGauge?.band ?? "safe"}`}
+            >
+              <span>Temp</span>
+              {/* A failed part says FAILED, never the 25 °C it started at. */}
+              <b>
+                {agent?.phase === "failed"
+                  ? "FAILED"
+                  : `${Math.round(agent ? agent.tempC : selectedGauge?.tempC ?? 0)}°C`}
+              </b>
+            </div>
+            <div className="arena-breakit__gauge">
+              <span>At limit</span>
+              <b>
+                {Math.round(
+                  agent ? agent.loadPercent : selectedGauge?.loadPercent ?? 0,
+                )}
+                %
+              </b>
+            </div>
+          </div>
           <div role="group" aria-label="Arena mode" className="arena-breakit__modes">
             <button
               type="button"
@@ -229,7 +283,7 @@ export function ArenaBreakIt({
               aria-pressed
               disabled
             >
-              Break It
+              The Ramp
             </button>
             <button
               type="button"
@@ -246,52 +300,9 @@ export function ArenaBreakIt({
               Battle
             </button>
           </div>
-          <span className="arena-breakit__part">
-            {component?.manufacturer && component.partNumber
-              ? `${component.manufacturer} ${component.partNumber}`
-              : component?.name ?? "No part"}
-          </span>
-        </header>
-
-        {/* Gauges: the factor being ramped, and what it is doing. */}
-        <div className="arena-breakit__gauges">
-          <div className="arena-breakit__gauge">
-            <span>Load</span>
-            <b>{(running ? stressFactor : factor).toFixed(2)}×</b>
-            <em>of {ceiling.toFixed(1)}× rated</em>
-          </div>
-          <div
-            className={`arena-breakit__gauge arena-breakit__gauge--${selectedGauge?.band ?? "safe"}`}
-          >
-            <span>Temp</span>
-            <b>
-              {agent ? (
-                formatPartTemp(agent)
-              ) : (
-                `${Math.round(selectedGauge?.tempC ?? 0)}°C`
-              )}
-            </b>
-            <em>limit {Math.round(selectedGauge?.limitC ?? 0)}°C</em>
-          </div>
-          <div className="arena-breakit__gauge">
-            <span>At limit</span>
-            <b>
-              {Math.round(
-                agent ? agent.loadPercent : selectedGauge?.loadPercent ?? 0,
-              )}
-              %
-            </b>
-            <em>{selectedGauge?.limitLabel ?? "—"}</em>
-          </div>
         </div>
 
         <label className="arena-breakit__ramp">
-          <span className="arena-breakit__ramp-head">
-            <span>Ramp {stressor}</span>
-            <b>
-              {heldFactor != null ? `holding ${heldFactor.toFixed(2)}×` : running ? "climbing" : "ready"}
-            </b>
-          </span>
           <input
             type="range"
             min={1}
@@ -329,52 +340,70 @@ export function ArenaBreakIt({
             className="arena-breakit__act"
             onClick={running ? handleReset : handleStart}
           >
-            {running ? "Stop" : "Break it"}
+            {running ? "Stop" : "Run"}
           </button>
           <button type="button" className="arena-breakit__act" onClick={handleReset}>
             Reset
           </button>
         </div>
 
-        {/* Every part in play, in F.U.S.E.'s five levels, limit and owner named. */}
-        <ul className="arena-breakit__bars">
-          {bars.map((bar) => (
-            <li
-              key={bar.id}
-              className={`arena-breakit__bar arena-breakit__bar--${bar.band}`}
+        {/* The three parts closest to failing, each in F.U.S.E.'s five levels
+            with its limit and whose number it is. The rest are one tap away and
+            the list closes itself when a run starts. */}
+        <div className="arena-breakit__bars">
+          <ul className="arena-breakit__bars-list">
+            {visibleBars.map((bar) => (
+              <li
+                key={bar.id}
+                className={`arena-breakit__bar arena-breakit__bar--${bar.band}`}
+              >
+                <button
+                  type="button"
+                  className="arena-breakit__bar-name"
+                  onClick={() => onSelectAgent(bar.id)}
+                  aria-pressed={bar.id === component?.id}
+                >
+                  {bar.name}
+                </button>
+                <span className="arena-breakit__bar-state">
+                  {stressBandLabel(bar.band)}
+                </span>
+                <span
+                  className="arena-breakit__bar-track"
+                  aria-label={`${stressBandLabel(bar.band)}, ${Math.round(
+                    bar.loadPercent,
+                  )} percent of rating`}
+                >
+                  {STRESS_BANDS.map((band) => (
+                    <i
+                      key={band}
+                      className={
+                        BAND_FILL[band] <= BAND_FILL[bar.band] ? "is-filled" : ""
+                      }
+                    />
+                  ))}
+                </span>
+                <span className="arena-breakit__bar-limit" title={bar.limit}>
+                  {bar.limit}
+                </span>
+              </li>
+            ))}
+          </ul>
+          {bars.length > BARS_SHOWN ? (
+            <button
+              type="button"
+              className="arena-breakit__bars-more"
+              onClick={() => setShowAllBars((all) => !all)}
+              aria-expanded={showAllBars}
             >
-              <button
-                type="button"
-                className="arena-breakit__bar-name"
-                onClick={() => onSelectAgent(bar.id)}
-                aria-pressed={bar.id === component?.id}
-              >
-                {bar.name}
-              </button>
-              <span
-                className="arena-breakit__bar-track"
-                aria-label={`${stressBandLabel(bar.band)}, ${Math.round(
-                  bar.loadPercent,
-                )} percent of rating`}
-              >
-                {STRESS_BANDS.map((band) => (
-                  <i
-                    key={band}
-                    className={
-                      BAND_FILL[band] <= BAND_FILL[bar.band] ? "is-filled" : ""
-                    }
-                  />
-                ))}
-              </span>
-              <span className="arena-breakit__bar-state">{stressBandLabel(bar.band)}</span>
-              <span className="arena-breakit__bar-limit">{bar.limit}</span>
-            </li>
-          ))}
-        </ul>
+              {showAllBars ? `Top ${BARS_SHOWN}` : `All ${bars.length}`}
+            </button>
+          ) : null}
+        </div>
 
         {presets.length > 0 ? (
           <div className="arena-breakit__presets">
-            <span className="arena-breakit__presets-label">Breaks for sure</span>
+            <span className="arena-breakit__presets-label">Breaks</span>
             {presets.map((preset) => (
               <button
                 key={preset.id}
@@ -394,8 +423,7 @@ export function ArenaBreakIt({
           </div>
         ) : (
           <p className="arena-breakit__none">
-            No part on the bench can be broken by this ramp — add a part with a
-            rating to test.
+            No part here can be broken by this ramp — add one with a rating.
           </p>
         )}
       </section>
