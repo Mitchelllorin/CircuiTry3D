@@ -17,7 +17,6 @@ import { failSignatureFor, type FailSmoke } from "./deathSignatures";
 import { isMobile } from "../../utils/mobilePerformance";
 import type { Vec2 } from "../../schematic/types";
 import { STRESS_MAX } from "./stressTest";
-import { failurePose } from "./failureShot";
 import type {
   ArenaBattleAgent,
   ArenaBattleHighlight,
@@ -3483,9 +3482,9 @@ export function ArenaScene({
        * size. At 4.2 the part fills about a third of the frame's height, which
        * is the first distance at which a split seam is actually a shot.
        */
-      // FAILURE_RADIUS and FAILURE_HEIGHT live in failureShot.ts now, with the
-      // framing they were measured against and a test that projects a part
-      // through this very pose. The numbers are unchanged; the claim is checkable.
+      const FAILURE_RADIUS = 4.2;
+      /** And a bench-side eye line on it, rather than looking down at it. */
+      const FAILURE_HEIGHT = 2.4;
       /**
        * How fast a CHANGE OF SUBJECT lands, in ms.
        *
@@ -3897,67 +3896,20 @@ export function ArenaScene({
         chaseDir.normalize();
         // Tightening the shot is part of the cut, not a separate deal: the
         // radius is chosen from what the camera is looking at.
-        if (isolateId) {
-          const pose = failurePose(chaseLook, chaseDir);
-          chaseDesired.set(pose.x, pose.y, pose.z);
-        } else {
-          chaseDesired.copy(chaseLook).addScaledVector(chaseDir, CHASE_RADIUS);
-          chaseDesired.y = chaseLook.y + CHASE_HEIGHT;
-        }
+        const closeUp = isolateId ? FAILURE_RADIUS : CHASE_RADIUS;
+        const lift = isolateId ? FAILURE_HEIGHT : CHASE_HEIGHT;
+        chaseDesired.copy(chaseLook).addScaledVector(chaseDir, closeUp);
+        chaseDesired.y = chaseLook.y + lift;
 
         // A different part, or a shot that just became a close-up, is a cut and
         // lands as one. Staying on the same part keeps the gentle glide, which
         // is what lets a failure hold breathe without the frame creeping.
         const changedSubject = target !== chaseSubject;
         chaseSubject = target;
-        // A failure is a CUT, not a glide. Easing into the failure pose left the
-        // part off-centre for the better part of a second — the one shot that
-        // has to be framed the instant it happens was the one still travelling,
-        // which is why the failing capacitor was half out of frame on the left
-        // when its card came up. Landing on the pose in a single frame also
-        // means any still taken of the break IS the composed shot.
-        const moveK = isolateId ? 1 : changedSubject ? kCut : k;
+        const moveK = changedSubject || isolateId ? kCut : k;
         camera.position.lerp(chaseDesired, moveK);
         controls.target.lerp(chaseLook, moveK);
         return true;
-      };
-
-      /**
-       * Everything on the bench that is not a part under test.
-       *
-       * The isolation only ever hid the other PARTS, so the rails, the supply
-       * panel, the current running along them, the floor grid and the seat ring
-       * all stayed lit — and a fully lit bench around one part is a vignette,
-       * not an isolation. The failure shot is the part, its smoke, and dark.
-       *
-       * Visibility is REMEMBERED and put back rather than forced back on: the
-       * victor ring and the selection ring have their own reasons to be hidden,
-       * and this pass has no business overruling them.
-       */
-      const dressing: import("three").Object3D[] = [
-        board,
-        flowGroup,
-        lightningGroup,
-        grid,
-        floor,
-        victorRing,
-        selectionRing,
-      ];
-      const dressingWasVisible = new Map<import("three").Object3D, boolean>();
-      const applyIsolationDressing = (isolated: boolean): void => {
-        if (isolated && dressingWasVisible.size === 0) {
-          for (const object of dressing) {
-            dressingWasVisible.set(object, object.visible);
-            object.visible = false;
-          }
-          return;
-        }
-        if (!isolated && dressingWasVisible.size > 0) {
-          dressingWasVisible.forEach((wasVisible, object) => {
-            object.visible = wasVisible;
-          });
-          dressingWasVisible.clear();
-        }
       };
 
       const animate = (time: number) => {
@@ -4635,10 +4587,6 @@ export function ArenaScene({
           const rootRect = root.getBoundingClientRect();
           plateCeiling = Math.max(8, hudRect.bottom - rootRect.top + 8);
         }
-
-        // The bench itself goes dark for the failure cut, before the parts are
-        // touched — only the subject is left standing in the light.
-        applyIsolationDressing(isolateId !== null);
 
         agentsRef.current.forEach((agent, seatIndex) => {
           const objectEntry = agentObjects.get(agent.id);

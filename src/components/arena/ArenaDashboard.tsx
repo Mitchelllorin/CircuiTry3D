@@ -16,8 +16,8 @@ type ArenaDashboardProps = {
   /** Throwing the switch runs the bench. */
   onThrowSwitch: () => void;
   /** Which bench you are standing at — one part to failure, or a field of them. */
-  mode: "break" | "bench" | "battle";
-  onSwitchMode: (mode: "break" | "bench" | "battle") => void;
+  mode: "bench" | "battle";
+  onSwitchMode: (mode: "bench" | "battle") => void;
   /** Put the bench back to untested: clears failures, scorch and the result. */
   onReset: () => void;
   /**
@@ -170,22 +170,13 @@ export function ArenaDashboard({
             thermal.limitC
           } degrees. Show the working.`}
         >
-          <span className="arena-dash__margin-name">
-            {thermal.name}
-            {thermal.failed ? " · FAILED" : ""}
-          </span>
+          <span className="arena-dash__margin-name">{thermal.name}</span>
           <span className="arena-dash__margin-metric">
             <b>{Math.min(thermal.utilisationPct, 999).toFixed(0)}%</b>
             {thermal.saturated ? "+ " : " "}of derated
           </span>
           <span className="arena-dash__margin-metric">
-            {thermal.failed ? (
-              <b>FAILED</b>
-            ) : (
-              <>
-                <b>{Math.round(thermal.tempC)}</b>/{Math.round(thermal.limitC)}°C
-              </>
-            )}
+            <b>{Math.round(thermal.tempC)}</b>/{Math.round(thermal.limitC)}°C
           </span>
           <span className="arena-dash__margin-bar" aria-hidden>
             <i style={{ width: `${Math.min(thermal.utilisationPct, 100)}%` }} />
@@ -269,7 +260,6 @@ export function ArenaDashboard({
           <div className="arena-dash__mode" role="group" aria-label="Bench">
             {(
               [
-                ["break", "Ramp"],
                 ["bench", "Solo"],
                 ["battle", "Battle"],
               ] as const

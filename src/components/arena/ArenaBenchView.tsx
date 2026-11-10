@@ -14,7 +14,6 @@ import {
 } from "./useBenchSession";
 import { loadFromSupply, supplyDivider } from "./supplyLoad";
 import { overdriveCeiling } from "./stressTest";
-import { ArenaFailureCard } from "./ArenaFailureCard";
 import type { ArenaBattleAgent } from "./types";
 
 type ArenaBenchViewProps = {
@@ -138,11 +137,6 @@ export default function ArenaBenchView({
   // How much of the canvas the console covers, measured live, so the circuit
   // composes into the space actually left for it.
   const [dashHeight, setDashHeight] = useState(0);
-  /** The failure card stays until dismissed — a failure you can miss is not seen. */
-  const [failureDismissed, setFailureDismissed] = useState(false);
-  useEffect(() => {
-    setFailureDismissed(false);
-  }, [component?.id, status]);
 
   const running = status === "battling";
   const complete = status === "complete";
@@ -295,15 +289,6 @@ export default function ArenaBenchView({
         topInsetPx={topInset}
         onExitTransitionComplete={() => undefined}
       />
-
-      {agent?.phase === "failed" && !failureDismissed ? (
-        <ArenaFailureCard
-          agent={agent}
-          onDismiss={() => setFailureDismissed(true)}
-          onReset={resetTest}
-          bottomOffsetPx={dashHeight}
-        />
-      ) : null}
 
       {/* Parts / Conditions / Results, on the arena. Same surface as battle
           mode, because the bench and the battle are one instrument with a

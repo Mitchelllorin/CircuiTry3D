@@ -449,29 +449,6 @@ function localDetectFailure(
     }
   }
 
-  // Overvoltage. Without this the local model had no way to fail a capacitor at
-  // all: it dissipates almost nothing, and volts are the only rating it has, so
-  // a bench with no engine loaded would ramp a 25 V can to 100 V and report it
-  // perfectly healthy. Mirrors the engine's own threshold — past the rating is a
-  // critical, 20 % past it is a failure.
-  const maxVoltage = num(
-    props.maxVoltage ?? props.maxVoltageV ?? props.reverseVoltage ?? props.vds_max,
-    NaN,
-  );
-  if (
-    Number.isFinite(maxVoltage) &&
-    maxVoltage > 0 &&
-    metrics.operatingVoltage > maxVoltage
-  ) {
-    const over = metrics.operatingVoltage / maxVoltage;
-    const sev = Math.min((over - 1) * 12, 3);
-    if (sev > severity) {
-      severity = sev;
-      name = "Dielectric Breakdown";
-      visual = "burst";
-    }
-  }
-
   // Overcurrent (junction parts)
   const maxCurrent = num(props.maxCurrent ?? props.id_max ?? props.ic_max, NaN);
   if (Number.isFinite(maxCurrent) && metrics.currentRms > maxCurrent * 1.3) {

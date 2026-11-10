@@ -5,7 +5,6 @@ import {
   ratedFraction,
   type LeaderboardEntry,
 } from "./leaderboardModel";
-import { personalBests } from "./leaderboardModel";
 import type { ArenaRunRecord } from "./runHistory";
 import { FuseHistoryPanel } from "./FuseHistoryPanel";
 import type { FamilyImportResult } from "./fuseHistory";
@@ -75,8 +74,6 @@ export function ArenaLeaderboard({
   const [tab, setTab] = useState<"board" | "runs" | "history">("board");
   const [openRunId, setOpenRunId] = useState<string | null>(null);
   const panelId = useId();
-  // One line per PART: its own history, never one maker's part against another's.
-  const bests = personalBests(entries, 3);
 
   // Every clear is irreversible, so every clear asks first. A board is an
   // afternoon of runs; there is no undo behind any of these buttons.
@@ -176,19 +173,6 @@ export function ArenaLeaderboard({
             </p>
           ) : (
             <>
-              {bests.length > 0 ? (
-                <div className="arena-board__bests" aria-label="Personal bests">
-                  <span className="arena-board__bests-label">Personal bests</span>
-                  {bests.map((best) => (
-                    <span key={`${best.name}-${best.family}`} className="arena-board__best">
-                      {best.name}
-                      <b>{best.heldToLoad.toFixed(1)}×</b>
-                      <em>{best.scenarioName}</em>
-                    </span>
-                  ))}
-                </div>
-              ) : null}
-
               <div className="arena-board__legend" aria-hidden>
                 <span>Held to</span>
                 <span>Power at peak</span>

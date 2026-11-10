@@ -69,14 +69,6 @@ type BenchState = {
   stressor: BenchStressor;
   samples: BenchSample[];
   envelope: BenchEnvelope | null;
-  /**
-   * Load the ramp is being HELD at, or null while it climbs on its own.
-   *
-   * Hold is the difference between "drive it harder" and "leave it there and
-   * let the heat build": the load stops moving, the bench clock does not, so a
-   * part can be parked at a number and watched until it gives up.
-   */
-  heldFactor: number | null;
   /** Internal: last stressor value seen while still in the safe (nominal) zone. */
   lastSafeValue: number | null;
   log: ArenaBattleLogEntry[];
@@ -281,7 +273,6 @@ function createInitialState(
     stressor,
     samples: [],
     envelope: null,
-    heldFactor: null,
     lastSafeValue: null,
     log,
   };
@@ -298,12 +289,7 @@ function step(prev: BenchState): BenchState {
   // A soak holds the rated load and lets heat build on the part's own thermal
   // constant; every other axis climbs the ramp.
   const isSoak = stressor === "time";
-  const stressFactor =
-    prev.heldFactor != null
-      ? prev.heldFactor
-      : isSoak
-        ? 1
-        : stressFactorAt(elapsedMs, scenario);
+  const stressFactor = isSoak ? 1 : stressFactorAt(elapsedMs, scenario);
   const thermalFraction = thermalFractionAt(elapsedMs);
   const dtSeconds = TICK_MS / 1000;
   const agent = prev.agent;
@@ -523,40 +509,10 @@ export function useBenchSession({
       }
       const elapsedMs = elapsedMsForStressFactor(factor, previous.scenario);
       const stressFactor = stressFactorAt(elapsedMs, previous.scenario);
-      // Dragging the ramp takes the hold off: the handle is the load again.
-      if (Math.abs(stressFactor - previous.stressFactor) < 1e-4 && previous.heldFactor == null) {
+      if (Math.abs(stressFactor - previous.stressFactor) < 1e-4) {
         return previous;
       }
-      return { ...previous, elapsedMs, stressFactor, heldFactor: null };
-    });
-  }, []);
-
-  /**
-   * Park the load at a factor and keep the clock running.
-   *
-   * Used by Break It's presets and its Hold button: the part sits at exactly the
-   * number on the dial while heat accumulates on its own thermal constant —
-   * which is how a real part fails, and how a preset proves it breaks.
-   */
-  const holdAt = useCallback((factor: number) => {
-    setState((previous) => {
-      if (previous.status !== "battling") {
-        return previous;
-      }
-      return { ...previous, heldFactor: factor, stressFactor: factor };
-    });
-  }, []);
-
-  const releaseHold = useCallback(() => {
-    setState((previous) => {
-      if (previous.heldFactor == null) {
-        return previous;
-      }
-      // Resume the ramp from the point the hold was at, not from where the
-      // clock had got to — otherwise letting go jumps the load forward by
-      // however long the part was parked.
-      const elapsedMs = elapsedMsForStressFactor(previous.heldFactor, previous.scenario);
-      return { ...previous, heldFactor: null, elapsedMs };
+      return { ...previous, elapsedMs, stressFactor };
     });
   }, []);
 
@@ -605,12 +561,9 @@ export function useBenchSession({
     samples: state.samples,
     envelope: state.envelope,
     log: state.log,
-    heldFactor: state.heldFactor,
     startTest,
     resetTest,
     selectScenario,
     setLoad,
-    holdAt,
-    releaseHold,
   };
 }

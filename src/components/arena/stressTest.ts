@@ -187,21 +187,14 @@ export function evaluateStress(
 
   const severity = Math.max(0, Math.min(3, result.severity + vibrationSeverity));
 
-  // Headroom used against the binding rating — power, current or voltage,
-  // whichever is tighter. Voltage is in the list because it is the ONLY rating
-  // a capacitor has: 16 V on a 25 V can is 64 % of the way to its limit while
-  // the part is dissipating almost nothing, and a gauge reading 0 % on a part
-  // that is two thirds of the way to failure is worse than no gauge.
+  // Headroom used against the binding rating (power or current, whichever is
+  // tighter) — drives the "% of rating" gauge.
   const powerPercent =
     ratings.powerRating > 0 ? (effectivePower / ratings.powerRating) * 100 : 0;
   const currentPercent = Number.isFinite(ratings.maxCurrent)
     ? (current / ratings.maxCurrent) * 100
     : 0;
-  const voltagePercent =
-    Number.isFinite(ratings.maxVoltage) && ratings.maxVoltage > 0
-      ? (voltage / ratings.maxVoltage) * 100
-      : 0;
-  const loadPercent = Math.max(powerPercent, currentPercent, voltagePercent);
+  const loadPercent = Math.max(powerPercent, currentPercent);
 
   // Integrity falls to zero at severity 2 (the failure threshold).
   const integrity = Math.max(0, Math.min(100, 100 * (1 - severity / 2)));

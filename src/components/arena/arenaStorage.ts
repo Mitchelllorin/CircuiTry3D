@@ -8,7 +8,6 @@ const LAST_SESSION_KEY = `${SESSION_STORAGE_PREFIX}last`;
 const BOARD_KEY = "circuitry:arena-board:v1";
 /** A board past this is a session, not a comparison. Oldest results fall off. */
 const BOARD_MAX = 80;
-/** Run history: the last N runs, newest first. Device only, never uploaded. */
 
 type ArenaSessionEnvelope = {
   payload?: ArenaSessionPayload;
