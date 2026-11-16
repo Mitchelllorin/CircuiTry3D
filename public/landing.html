@@ -279,7 +279,7 @@
     .landing-platform-link:hover { color: rgba(147,197,253,0.95); }
     .landing-credit {
       margin: 0;
-      font-size: 0.62rem;
+      font-size: 0.66rem;
       letter-spacing: 0.015em;
       color: rgba(147,197,253,0.3);
     }
@@ -290,6 +290,14 @@
       transition: color 0.15s ease;
     }
     .landing-credit-link:hover { color: rgba(147,197,253,0.85); }
+    .landing-credit-hub {
+      display: block;
+      width: max-content;
+      margin: 0 auto 2px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: rgba(147,197,253,0.62);
+    }
     /* The joining word sits behind the two names it joins. */
     .landing-credit-and { opacity: 0.62; }
     /* ══════════════════════════════════════════════════════════════
@@ -448,11 +456,15 @@
       Android on
       <a class="landing-platform-link" href="https://play.google.com/store/apps/details?id=com.circuitry3d.app" target="_blank" rel="noopener noreferrer">Google Play</a>
     </p>
+    <!-- The family line, the same on every family landing page: the hub a
+         touch bigger on top, then the other three main apps below. -->
     <p class="landing-credit">
-      From the makers of
-      <a class="landing-credit-link" href="https://theprints3d.com" target="_blank" rel="noopener noreferrer">ThePrints3D.com</a>
-      <span class="landing-credit-and">and</span>
-      <a class="landing-credit-link" href="https://automotive3d.ca" target="_blank" rel="noopener noreferrer">Automotive3D.ca</a>
+      <a class="landing-credit-link landing-credit-hub" href="https://3dlearningfamily.com" target="_blank" rel="noopener noreferrer">3D Learning Family</a>
+      <a class="landing-credit-link" href="https://theprints3d.com" target="_blank" rel="noopener noreferrer">ThePrints3D</a>
+      <span class="landing-footer-sep" aria-hidden="true">·</span>
+      <a class="landing-credit-link" href="https://automotive3d.ca" target="_blank" rel="noopener noreferrer">AutoMotive3D</a>
+      <span class="landing-footer-sep" aria-hidden="true">·</span>
+      <a class="landing-credit-link" href="https://3dlearningfamily.com/#electrimotive3d" target="_blank" rel="noopener noreferrer">ElectriMotive3D</a>
     </p>
   </footer>
 
