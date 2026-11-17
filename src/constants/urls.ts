@@ -29,6 +29,7 @@ export const DESKTOP_APP_URL = `${SITE_ORIGIN}/#/app`;
 export const STUDIO_SITES = [
   { label: "ThePrints3D.com", href: "https://theprints3d.com" },
   { label: "AutoMotive3D.ca", href: "https://automotive3d.ca" },
+  { label: "ElectriMotive3D", href: "https://3dlearningfamily.com/#apps" },
   { label: "AnyBody3D.com", href: "https://anybody3d.com" },
   { label: "TheCell3D.com", href: "https://thecell3d.com" },
   { label: "3DLearningFamily.com", href: "https://3dlearningfamily.com" },
