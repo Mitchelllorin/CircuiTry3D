@@ -1,6 +1,8 @@
 /// <reference types="vite/client" />
 
 interface ImportMetaEnv {
+  /** The F.U.S.E. collector's URL; with none, runs stay on the device. */
+  readonly VITE_FUSE_ENDPOINT?: string;
   /** Set to "true" at build time to enable demo/preview mode. */
   readonly VITE_DEMO_MODE: string;
   /**

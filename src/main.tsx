@@ -2,6 +2,7 @@ import React from "react";
 import { createRoot } from "react-dom/client";
 import { HashRouter } from "react-router-dom";
 import App from "./App";
+import { startFuseSync } from "./lib/fuseShare";
 import { AuthProvider } from "./context/AuthContext";
 import { EngagementProvider } from "./context/EngagementContext";
 import { GalleryProvider } from "./context/GalleryContext";
@@ -199,3 +200,6 @@ try {
     stack: error instanceof Error ? error.stack : undefined,
   });
 }
+
+// Send the spine to the family collector (no-op until a build carries the endpoint).
+startFuseSync();
