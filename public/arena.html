@@ -2832,7 +2832,7 @@ html.is-embedded .lib-toggle {
           <div class="fuse-legend-item l-stressed"  title="Stressed — exceeding comfortable operating margins. Consider derating.">🟡 Stressed</div>
           <div class="fuse-legend-item l-warning"   title="Warning — significant overstress. Risk of accelerated degradation.">🟠 Warning</div>
           <div class="fuse-legend-item l-critical"  title="Critical — severe overstress. Failure imminent or in progress.">🔴 Critical</div>
-          <div class="fuse-legend-item l-destroyed" title="Destroyed — component has been simulated to failure. Replace it.">💀 Destroyed</div>
+          <div class="fuse-legend-item l-destroyed" title="Failed — the component has been run past its limit. Replace it.">Failed</div>
         </div>
 
         <!-- Empty state before first run -->
@@ -5242,7 +5242,7 @@ html.is-embedded .lib-toggle {
         }
 
         const severityLabel =
-          failure.severity >= 2.5 ? "DESTROYED" :
+          failure.severity >= 2.5 ? "FAILED" :
           failure.severity >= 1.5 ? "CRITICAL" :
           failure.severity >= 0.8 ? "WARNING" : "STRESSED";
 
@@ -5388,7 +5388,7 @@ html.is-embedded .lib-toggle {
         /** Map numeric severity → human-readable outcome label */
         function severityLabel(failure) {
           if (!failure || failure.severity <= 0) return "✅ Nominal (within ratings)";
-          if (failure.severity >= 2.5) return "💀 Destroyed";
+          if (failure.severity >= 2.5) return "Failed";
           if (failure.severity >= 1.8) return "🔴 Critical failure";
           if (failure.severity >= 1.0) return "🟠 Warning — significant stress";
           return "🟡 Stressed — mild overstress";
@@ -5521,7 +5521,7 @@ html.is-embedded .lib-toggle {
           const winName = winner === "A" ? nameA : nameB;
           const loseName = winner === "A" ? nameB : nameA;
           const loseSev = winner === "A" ? failureB : failureA;
-          const loseLabel = loseSev && loseSev.severity >= 2.5 ? "DESTROYED" :
+          const loseLabel = loseSev && loseSev.severity >= 2.5 ? "FAILED" :
                             loseSev && loseSev.severity >= 1.5 ? "CRITICAL" :
                             loseSev && loseSev.severity >= 0.8 ? "WARNING" :
                             loseSev && loseSev.severity > 0 ? "STRESSED" : "operating within ratings";
@@ -6418,7 +6418,7 @@ html.is-embedded .lib-toggle {
             const sev = failureResult.severity;
             const cls = sev >= 2.5 ? "result-destroyed" : sev >= 1.5 ? "result-fail" : "result-warn";
             resultEl.classList.add(cls);
-            const label = sev >= 2.5 ? "💀 DESTROYED" : sev >= 1.5 ? "🔴 CRITICAL" : sev >= 0.8 ? "🟠 WARNING" : "🟡 STRESSED";
+            const label = sev >= 2.5 ? "FAILED" : sev >= 1.5 ? "🔴 CRITICAL" : sev >= 0.8 ? "🟠 WARNING" : "🟡 STRESSED";
             const modeName = failureResult.name || (failureResult.mode && typeof failureResult.mode === "object" ? failureResult.mode.name : failureResult.mode) || "unknown failure";
             const volStr = triggerVoltage >= 1000 ? (triggerVoltage / 1000).toFixed(1) + " kV" : triggerVoltage.toFixed(1) + " V";
             resultEl.innerHTML =
@@ -7761,7 +7761,7 @@ html.is-embedded .lib-toggle {
         }
         const SEV_LABELS = {
           safe: "🟢 Safe", stressed: "🟡 Stressed",
-          warning: "🟠 Warning", critical: "🔴 Critical", failed: "💀 Destroyed",
+          warning: "🟠 Warning", critical: "🔴 Critical", failed: "Failed",
         };
         state.runHistory.forEach((run) => {
           const item = document.createElement("div");

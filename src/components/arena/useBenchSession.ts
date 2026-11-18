@@ -397,8 +397,8 @@ function step(prev: BenchState): BenchState {
       kind: "failure",
       round: stressFactor,
       actorId: agent.id,
-      message: `💥 FAILED at ${formatAxisValue(value, stressor)} — ${
-        out.failureName ?? "destroyed"
+      message: `Failed at ${formatAxisValue(value, stressor)} — ${
+        out.failureName ?? "failed"
       } · ${Math.round(out.tempC)}°C · ${Math.round(out.loadPercent)}% of rating.`,
     });
   } else {

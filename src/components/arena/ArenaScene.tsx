@@ -5417,7 +5417,7 @@ export function ArenaScene({
           <span className="arena-fuse-card__mark">⚡</span>
           <b>{fuseCard.name}</b>
           <span className="arena-fuse-card__mode">
-            {fuseCard.failureName ?? "Destroyed"}
+            {fuseCard.failureName ?? "Failed"}
           </span>
           <span className="arena-fuse-card__peek">
             {Math.round(fuseCard.peakTempC)}°C / {Math.round(fuseCard.ratings.junctionLimitC)}°C rated
@@ -5443,7 +5443,7 @@ export function ArenaScene({
           <div className="arena-fuse-card__title">
             <b>{fuseCard.name}</b>
             <span className="arena-fuse-card__mode">
-              {fuseCard.failureName ?? "Destroyed"}
+              {fuseCard.failureName ?? "Failed"}
             </span>
           </div>
           {fuseCard.failureDescription ? (

@@ -225,8 +225,8 @@ function step(prev: ArenaBattleState): ArenaBattleState {
         kind: "failure",
         round: stressFactor,
         actorId: agent.id,
-        message: `💥 ${agent.name} FAILED — ${
-          out.failureName ?? "destroyed"
+        message: `${agent.name} failed: ${
+          out.failureName ?? "failed"
         } at ${sf}× load · ${Math.round(out.tempC)}°C · ${Math.round(
           out.loadPercent,
         )}% of rating.`,
