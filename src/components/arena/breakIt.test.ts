@@ -59,7 +59,7 @@ function makeAgent(overrides: Partial<ArenaBattleAgent> = {}): ArenaBattleAgent 
   };
 }
 
-describe("Break It bands", () => {
+describe("Bench bands", () => {
   it("moves safe → stressed → warning → critical → failed without gaps", () => {
     expect(stressBandFor(0, "nominal")).toBe("safe");
     expect(stressBandFor(0.5, "stressed")).toBe("stressed");
@@ -89,7 +89,7 @@ describe("limit provenance", () => {
   });
 });
 
-describe("Break It presets", () => {
+describe("Bench presets", () => {
   it("finds the load that destroys the part, and a load just under it that holds", () => {
     const agent = makeAgent();
     const breaking = breakingLoadFor(agent);
@@ -176,7 +176,7 @@ describe("Break It presets", () => {
   });
 });
 
-describe("Break It gauges", () => {
+describe("Bench gauges", () => {
   it("marks the limit with its owner and stops at the ramp ceiling", () => {
     const gauge = gaugeFor(makeAgent(), 2, DEFAULT_SCENARIO)!;
     expect(gauge.factor).toBe(2);

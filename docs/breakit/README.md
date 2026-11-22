@@ -20,20 +20,19 @@ through the pose the scene actually uses (`failurePose`, shared with
 ## On screen (needs the dev server)
 
 ```
-node tools/probe/drive-108-ramp-sweep.mjs
+node tools/probe/drive-100-arenadash.mjs
 ```
 
-Drives the real UI at 360×640 against `localhost:3000`, and writes:
+Drives the real UI at 360×640 against `localhost:3000`, and writes
+`04-console.png`: the console with both faders, the switch and the bench
+legends. (`05-failure.png` is the same bench after a throw — the card comes up
+above the console and the switch reads "Run again".) It fails the run if the console is not mounted, if any W.I.R.E.
+readout is covered, if either fader has less than 120px of throw, if a fader
+legend is clipped, if the console overflows its cap, if the switch is off the
+screen, or if a page error fires.
 
-| shot | what it shows |
-| --- | --- |
-| `01-ramp-strip.png` | The Ramp strip at rest: readouts, ramp, switch, three bars, presets |
-| `02-mid-sweep.png` | A preset tapped, camera mid-flight, everything else fading |
-| `03-failure-card.png` | The card up, strip stepped back, one part on stage |
-
-It also fails the run if the strip is taller than a third of the screen, if the
-canvas drops under two thirds, if a preset carries a maker's name, if the card
-appears over the part's frame, or if a page error fires.
-
-These images are not checked in yet — the script writes them on the first run
-against a live server.
+The strip this folder was named for — `drive-108-ramp-sweep.mjs`, and the
+`01`/`02`/`03` shots — has been retired with the Ramp mode. "The Ramp" is the
+console's load slider (the supply fader), not a third bench, so the strip no
+longer exists on screen; the camera pose it was photographing is still covered
+in code by `failureShot.test.ts` below.

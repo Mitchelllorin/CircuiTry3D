@@ -1033,6 +1033,7 @@ body.builder-body::before {
 }
 
 .circuit-zoom-controls {
+  align-items: center;  /* 34px icons centred in the 48px rail the slider needs */
   position: fixed;
   bottom: calc(36px + var(--builder-safe-area-bottom, 0px));
   /* Hard against the right edge. It used to step 46px in around the CONTROLS
@@ -1114,56 +1115,50 @@ body.builder-body::before {
 }
 
 /* ── Explode ───────────────────────────────────────────────────────────────
-   One button at the foot of the zoom column; the slider opens beside it, to the
-   left, anchored to the button rather than placed on the screen. It is a
-   transient surface — summoned, and gone on a canvas tap — so it is solid
-   rather than glass: nothing to fall back from, readable over any part. */
+   The family's dial, slimmed into this column: a bare vertical rail with its
+   mark under it. No card, no printed label, no percentage — the thumb's
+   position IS the reading, and a number set straight on the 3D scene would be
+   text with nothing holding it up. The mark is the name, the way every other
+   glyph on this edge is.
+   Always on screen, like ThePrints3D's. */
 .explode-control {
-  position: relative;
-  display: flex;
-  justify-content: flex-end;
-}
-
-/* Apart is a different SHAPE, not just a colour: a filled face and a heavier
-   ring, so it reads in sunlight and to a colour-blind eye. */
-.explode-toggle--apart {
-  background: rgba(56, 189, 248, 0.3);
-  border: 2px solid rgba(120, 224, 255, 0.95);
-  color: #f1f8ff;
-}
-
-.explode-pop {
-  position: absolute;
-  right: calc(100% + 8px);
-  bottom: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
-  padding: 10px 8px;
-  background: var(--glass-bg-solid);
-  border: var(--glass-border);
-  border-radius: var(--radius-tab);
-  box-shadow: var(--glass-shadow);
-  color: rgba(226, 240, 255, 0.96);
-  max-height: calc(100dvh - 24px - var(--builder-safe-area-bottom, 0px));
-  overflow-y: auto;
+  gap: 2px;
+  padding: 0;
+  background: none;
+  border: none;
 }
 
-.explode-pop__label {
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+/* Apart reads as a different SHAPE, not only a colour: the mark fills and lifts
+   its glow, so it holds up in sunlight and to a colour-blind eye. */
+.explode-mark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--control-size);
+  height: 20px;
+  color: inherit;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.85));
+  transition: color 0.16s ease, filter 0.16s ease, transform 0.15s ease;
 }
 
-.explode-pop__value {
-  font-size: 13px;
-  font-variant-numeric: tabular-nums;
-  color: rgba(180, 215, 255, 0.92);
+.explode-control--apart .explode-mark {
+  color: #8fe4ff;
+  filter:
+    drop-shadow(0 1px 2px rgba(0, 0, 0, 0.85))
+    drop-shadow(0 0 6px rgba(56, 189, 248, 0.7));
+  transform: scale(1.08);
 }
 
-.explode-pop__slider {
+.explode-control--disabled {
+  opacity: 0.35;
+}
+
+/* Slim track, wide target: 48px across so a gloved thumb can find it, whatever
+   groove the platform draws inside that. */
+.explode-slider {
   /* vertical-lr + rtl puts 0 at the BOTTOM and apart at the top — the way the
      parts travel. slider-vertical is the pre-Chrome-111 spelling, kept for
      older Android WebViews; the two agree on direction. Same as ThePrints3D. */
@@ -1171,25 +1166,38 @@ body.builder-body::before {
   direction: rtl;
   -webkit-appearance: slider-vertical;
   appearance: slider-vertical;
-  width: 48px;                          /* the thumb's target, not the track's */
-  height: clamp(96px, 28vh, 160px);
+  width: 48px;
+  height: clamp(80px, 20vh, 124px);
   margin: 0;
   accent-color: #38bdf8;
   cursor: pointer;
   touch-action: none;                   /* the drag is the slider's, not a scroll */
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.85));
 }
 
-.explode-pop__reset {
-  min-height: 48px;
-  min-width: 48px;
-  padding: 0 10px;
-  border-radius: var(--radius-control);
-  border: var(--glass-border);
-  background: rgba(30, 40, 70, 0.9);
-  color: inherit;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
+.explode-slider:disabled {
+  cursor: not-allowed;
+}
+
+/* Short screen — a 640x360 landscape phone. The icon column is already using
+   every pixel of height it has there (eight controls above the bottom edge), so
+   the rail steps out beside it rather than pushing the top of the column off the
+   screen. Still bare, still always up, still no card; the mark stands down
+   because a glyph floating on its own over the canvas reads as a stray button. */
+@media (max-height: 560px) {
+  .explode-control {
+    position: absolute;
+    right: calc(100% + 8px);
+    bottom: 0;
+  }
+
+  .explode-mark {
+    display: none;
+  }
+
+  .explode-slider {
+    height: clamp(72px, 26vh, 110px);
+  }
 }
 
 /* ── Measurement Tools FAB ──────────────────────────────────────────────────
@@ -1568,6 +1576,16 @@ body.builder-body::before {
   height: 31px;
   flex-shrink: 0;
   box-sizing: border-box;
+}
+
+/* Arena — the mode's mark, promoted off the nav bar onto the rail above Clear.
+   Bigger than its neighbours because it is a mode rather than a tool, but the
+   CELL stays 48px: growing the button too would add a row to a rail that already
+   wraps into the canvas on a short screen. The size is what carries the
+   prominence, not a plate, a fill or a colour of its own. */
+.unified-action-bar .edge-action-btn--arena .edge-action-icon-svg {
+  width: 38px;
+  height: 38px;
 }
 
 /* Wire strippers is an <img>, style separately */

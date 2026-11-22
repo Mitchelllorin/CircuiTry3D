@@ -16,8 +16,8 @@ type ArenaDashboardProps = {
   /** Throwing the switch runs the bench. */
   onThrowSwitch: () => void;
   /** Which bench you are standing at — one part to failure, or a field of them. */
-  mode: "break" | "bench" | "battle";
-  onSwitchMode: (mode: "break" | "bench" | "battle") => void;
+  mode: "bench" | "battle";
+  onSwitchMode: (mode: "bench" | "battle") => void;
   /** Put the bench back to untested: clears failures, scorch and the result. */
   onReset: () => void;
   /**
@@ -213,7 +213,10 @@ export function ArenaDashboard({
       <div className="arena-dash__controls">
         <label className="arena-dash__fader">
           <span className="arena-dash__fader-head">
-            <span className="ct-term-voltage">Supply</span>
+            {/* THE RAMP is the slider's name, not a mode: this is the control
+                that raises the load, in both benches. It used to be called a
+                bench of its own, which made a slider look optional. */}
+            <span className="ct-term-voltage">The Ramp</span>
             <b className="ct-term-voltage">{voltsMultiple.toFixed(2)}×</b>
             {/* The reference sits ABOVE the track, not under it. Under a
                 104px vertical fader it was the last line in the console and
@@ -228,7 +231,7 @@ export function ArenaDashboard({
             step={0.01}
             value={Math.min(Math.max(voltsMultiple, 1), voltsMax)}
             onChange={(event) => onVoltsChange(Number(event.target.value))}
-            aria-label="Supply voltage, as a multiple of nominal"
+            aria-label="The Ramp: supply voltage, as a multiple of nominal"
           />
         </label>
 
@@ -269,7 +272,6 @@ export function ArenaDashboard({
           <div className="arena-dash__mode" role="group" aria-label="Bench">
             {(
               [
-                ["break", "Ramp"],
                 ["bench", "Solo"],
                 ["battle", "Battle"],
               ] as const

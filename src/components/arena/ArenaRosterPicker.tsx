@@ -3,6 +3,7 @@ import { UNIFIED_COMPONENT_ACTIONS } from "../builder/componentLibrary";
 import type { ComponentAction } from "../builder/types";
 import "../../styles/scroller-menu.css";
 import { ArenaCatalogReference } from "./ArenaCatalogReference";
+import { RANDOM_ROSTER_COUNT } from "./rosterRandom";
 import type { ArenaBattleAgent } from "./types";
 
 type ArenaRosterPickerProps = {
@@ -13,6 +14,13 @@ type ArenaRosterPickerProps = {
   onRemoveAgent: (id: string) => void;
   /** Open the value/ratings editor for a part. */
   onEditAgent: (id: string) => void;
+  /**
+   * Stock the bench with random parts - one, or a handful at once.
+   *
+   * Optional, and the row is absent rather than dead where the picker is
+   * mounted by a surface that cannot change the roster.
+   */
+  onAddRandom?: (count: number) => void;
   /** A running bench cannot be re-stocked mid-test. */
   disabled: boolean;
   /** True once the bench holds as many parts as the board has rungs. */
@@ -46,10 +54,14 @@ export function ArenaRosterPicker({
   onAddComponent,
   onRemoveAgent,
   onEditAgent,
+  onAddRandom,
   disabled,
   full,
 }: ArenaRosterPickerProps) {
   const selected = agents.find((agent) => agent.id === selectedAgentId) ?? null;
+  // Same gate as the reel: a running bench is not re-stocked, and a full
+  // bench can only take a part by swapping it for the selected one.
+  const randomDisabled = disabled || (full && !selected);
 
   return (
     <section className="arena-roster">
@@ -58,6 +70,34 @@ export function ArenaRosterPicker({
           the reel demonstrates by doing it — and it was the longest line on the
           sheet for the least information. */}
       <p className="arena-roster__hint">{`${agents.length}/6 on the bench`}</p>
+
+      {/* The reel is a hundred cards long, so reaching something you have not
+          tested is a scroll rather than a choice. These draw for you: one card,
+          or five different ones to compare. Same pick path as the reel, so a
+          random part can be swapped in for the selected one exactly the way a
+          tapped card can. */}
+      {onAddRandom ? (
+        <div className="arena-roster__random">
+          <button
+            type="button"
+            className="arena-roster__random-btn"
+            onClick={() => onAddRandom(1)}
+            disabled={randomDisabled}
+            title="Put one part on the bench at random"
+          >
+            <span aria-hidden="true">🎲</span> Random part
+          </button>
+          <button
+            type="button"
+            className="arena-roster__random-btn"
+            onClick={() => onAddRandom(RANDOM_ROSTER_COUNT)}
+            disabled={randomDisabled}
+            title={`Put ${RANDOM_ROSTER_COUNT} different parts on the bench at random`}
+          >
+            <span aria-hidden="true">🎲</span> {RANDOM_ROSTER_COUNT} at random
+          </button>
+        </div>
+      ) : null}
 
       <ScrollerMenu
         components={UNIFIED_COMPONENT_ACTIONS}

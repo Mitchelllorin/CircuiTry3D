@@ -45,6 +45,8 @@ type ArenaPanelContentProps = {
   onAddComponent: (action: ComponentAction) => void;
   onRemoveAgent: (id: string) => void;
   onEditAgent: (id: string) => void;
+  /** Draw one part, or a handful, off the library at random. */
+  onAddRandom?: (count: number) => void;
   /** The bench holds as many parts as the board has rungs. */
   rosterFull: boolean;
 };
@@ -77,6 +79,7 @@ export function ArenaPanelContent({
   onAddComponent,
   onRemoveAgent,
   onEditAgent,
+  onAddRandom,
   rosterFull,
 }: ArenaPanelContentProps) {
   return (
@@ -147,6 +150,7 @@ export function ArenaPanelContent({
         onAddComponent={onAddComponent}
         onRemoveAgent={onRemoveAgent}
         onEditAgent={onEditAgent}
+        onAddRandom={onAddRandom}
         disabled={status === "battling"}
         full={rosterFull}
       />

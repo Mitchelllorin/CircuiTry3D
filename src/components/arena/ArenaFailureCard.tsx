@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { failureHeadline, limitSourceFor } from "./breakIt";
+import { REFERENCE_C } from "./thermalModel";
 import type { ArenaBattleAgent } from "./types";
 
 type ArenaFailureCardProps = {
@@ -68,6 +69,16 @@ export function ArenaFailureCard({
   const source = limitSourceFor(agent);
   const limit = numericLimit(agent);
   const owner = source === "maker" ? `${maker ?? "the maker"}'s rating` : "this app's model";
+  /**
+   * Whether the part ever got hot.
+   *
+   * An LED that loses its junction on the first tick is at 25 °C and guilty of
+   * nothing thermal, and "peaked 25 °C · 9 % of rating" next to "FAILED" reads
+   * as a broken readout — the cold corpse this card exists to stop reporting.
+   * When there was no heat, the card says what actually happened and leaves the
+   * temperature out rather than printing a number that looks like a bug.
+   */
+  const heated = agent.peakTempC > REFERENCE_C + 1;
 
   return (
     <section
@@ -95,7 +106,7 @@ export function ArenaFailureCard({
           {agent.failedAtLoad != null
             ? `${agent.failedAtLoad.toFixed(2)}× rated load`
             : "at its limit"}
-          {" · "}peaked {Math.round(agent.peakTempC)} °C
+          {heated ? ` · peaked ${Math.round(agent.peakTempC)} °C` : ""}
           {agent.peakLoadPercent > 0
             ? ` · ${Math.round(agent.peakLoadPercent)}% of rating`
             : ""}

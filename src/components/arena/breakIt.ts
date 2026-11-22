@@ -4,17 +4,17 @@ import { evaluateStress, overdriveCeiling } from "./stressTest";
 import type { ArenaBattleAgent, ArenaTestPhase, FuseRiskLevel } from "./types";
 
 /**
- * BREAK IT — the deliberate-failure end of the arena.
+ * THE BENCH — a part taken past its limit on the ramp.
  *
  * The battle and the bench both ramp a part until it lets go, which is the right
  * experiment and the wrong headline: nobody watching learns anything from "it
- * broke somewhere up there". Break It is the same physics with the question
+ * broke somewhere up there". The bench is the same physics with the question
  * turned round — WHERE does it break, and is that number the maker's or ours?
  *
  * Everything in here is pure. The view drives the ramp; this module answers what
  * a given load does to a part, which preset will break which part, and what the
  * record of a finished run says. That separation is what lets the presets be
- * tested without a browser: a preset that does not break its part is not a
+ * tested without a browser: a preset that does not reach its part limit is not a
  * preset, it is a button.
  */
 
@@ -103,13 +103,13 @@ function formatWatts(watts: number): string {
   return watts >= 1 ? `${watts.toFixed(2)} W` : `${Math.round(watts * 1000)} mW`;
 }
 
-/** Axis a Break It run ramps. Both are what actually kills these parts. */
+/** Axis a bench run ramps. Both are what actually kills these parts. */
 export type BreakAxis = "current" | "voltage";
 
 /**
  * The lowest load multiple at which a part is destroyed, at steady state.
  *
- * Steady state (`thermalFraction = 1`) on purpose: a preset has to break its
+ * Steady state (`thermalFraction = 1`) on purpose: a preset has to take its part past its
  * part from cold, on the first run, with no warm-up — otherwise the button
  * works or not depending on how long the last run was left sitting.
  *

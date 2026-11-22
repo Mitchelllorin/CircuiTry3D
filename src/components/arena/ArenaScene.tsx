@@ -12,7 +12,6 @@ import {
   type BlowoutTextures,
 } from "./failureFx";
 import { createInternalsReveal, failedInternal } from "./componentInternals";
-import type { InternalsReveal } from "./componentInternals";
 import { failSignatureFor, type FailSmoke } from "./deathSignatures";
 import { isMobile } from "../../utils/mobilePerformance";
 import type { Vec2 } from "../../schematic/types";
@@ -99,14 +98,6 @@ type ArenaSceneProps = {
    * strip above it, so it sat high in the band it was actually free to use.
    */
   topInsetPx?: number;
-  /**
-   * How far the selected part's package is opened, 0 → 1.
-   *
-   * A VIEW, not a run parameter: reversible, continuous, persisting across runs
-   * and selection, and it never touches the physics. Only families with a
-   * modelled interior open — see componentInternals.ts.
-   */
-  explode?: number;
   /** Tapping a part reports it here; tapping empty board reports null. */
   onSelectAgent?: (id: string | null) => void;
   /**
@@ -115,9 +106,6 @@ type ArenaSceneProps = {
    */
   onLongPressAgent?: (id: string) => void;
 };
-
-/** Below this the cutaway counts as closed, and its reveal is disposed. */
-const EXPLODE_OPEN_MIN = 0.01;
 
 const PHASE_LABEL: Record<string, string> = {
   nominal: "OK",
@@ -1858,7 +1846,6 @@ export function ArenaScene({
   nameplates = false,
   bottomInsetPx = 0,
   topInsetPx = 0,
-  explode = 0,
   selectedAgentId = null,
   onSelectAgent,
   onLongPressAgent,
@@ -1902,14 +1889,6 @@ export function ArenaScene({
   const bottomInsetRef = useRef(bottomInsetPx);
   /** And the top, which the arena's own strip occupies. */
   const topInsetRef = useRef(topInsetPx);
-  /**
-   * The explode dial, read by the frame loop.
-   *
-   * A ref rather than a dependency: dragging the slider must not tear down and
-   * rebuild the 3D world, and the loop reads it every frame anyway.
-   */
-  const explodeRef = useRef(explode);
-  explodeRef.current = explode;
   /** Published by the scene once it is up, so a height change can re-frame it. */
   const reframeRef = useRef<(() => void) | null>(null);
   useEffect(() => {
@@ -2142,13 +2121,6 @@ export function ArenaScene({
          * for parts that are doing fine.
          */
         blowout: BlowoutKit | null;
-        /**
-         * The live cutaway, when the package is open. Built on demand and
-         * disposed when the dial returns to zero — a reveal HIDES the casing it
-         * replaces, so it must not exist at rest. See the explode block in the
-         * frame loop.
-         */
-        explodeReveal: InternalsReveal | null;
         /** Invisible, generous tap target — the only thing selection raycasts. */
         pick: import("three").Mesh;
         /**
@@ -2750,7 +2722,6 @@ export function ArenaScene({
           })),
           smoke: agentPlume,
           blowout: null,
-          explodeReveal: null,
           pick: pickBox,
           // Smallest cross-section, because that is the dimension a casing
           // splits ACROSS — a resistor is long and thin, and a wound scaled to
@@ -3910,13 +3881,18 @@ export function ArenaScene({
         // is what lets a failure hold breathe without the frame creeping.
         const changedSubject = target !== chaseSubject;
         chaseSubject = target;
-        // A failure is a CUT, not a glide. Easing into the failure pose left the
-        // part off-centre for the better part of a second — the one shot that
-        // has to be framed the instant it happens was the one still travelling,
-        // which is why the failing capacitor was half out of frame on the left
-        // when its card came up. Landing on the pose in a single frame also
-        // means any still taken of the break IS the composed shot.
-        const moveK = isolateId ? 1 : changedSubject ? kCut : k;
+        // The failure shot is an EASED SWEEP of about a second — the bench rules,
+        // with ElectriMotive3D as the reference (§10) — so it keeps the same
+        // cut timing as any other change of subject. It used to snap onto the
+        // pose in one frame, which centred the part instantly but threw the
+        // sweep away, and the sweep is half of what the section is asking for.
+        //
+        // The "part half out of frame on the left" that prompted the snap was a
+        // photograph taken mid-sweep, not a wrong destination: the pose below is
+        // the measured one (failureShot.ts), and it is centred when it lands.
+        // Anything measuring or photographing the break has to wait for the
+        // sweep to arrive — the probe does, and says so.
+        const moveK = changedSubject || isolateId ? kCut : k;
         camera.position.lerp(chaseDesired, moveK);
         controls.target.lerp(chaseLook, moveK);
         return true;
@@ -4034,7 +4010,15 @@ export function ArenaScene({
               exitCompleteFired = true;
               onExitCompleteRef.current();
             }
-          } else if (panelOpenRef.current) {
+          } else if (
+            panelOpenRef.current &&
+            // A live failure outranks an open surface. The failure card is a
+            // panel, so the moment it opened this branch took the camera and
+            // the cut was dropped mid-move: overlay to 0, bench back to the
+            // wide sway, and the break watched from across the room. The card
+            // is a readout of the failure — it does not get to hide it.
+            recentDeath(time, FAILURE_HOLD_MS) == null
+          ) {
             // Panel open: hold a slowly swaying cinematic preview, no user
             // control. The camera arcs ±18° around the arena and gently bobs so
             // the framed hero shot reads as alive rather than a frozen still.
@@ -4048,7 +4032,11 @@ export function ArenaScene({
             );
             camera.position.lerp(previewDrift, kPreview);
             camera.lookAt(cameraTarget);
-          } else if (!workspaceSweepDone) {
+          } else if (
+            !workspaceSweepDone &&
+            statusRef.current !== "battling" &&
+            statusRef.current !== "complete"
+          ) {
             // Panel just collapsed: cinematic sweep into the interactive pose.
             controls.enabled = false;
             camera.position.lerp(arenaPosition, kSweep);
@@ -4111,6 +4099,11 @@ export function ArenaScene({
         // legible over a shot that is otherwise one part.
         if (isolateOverlayRef.current) {
           isolateOverlayRef.current.style.opacity = isolateId ? "1" : "0";
+          // Which part the cut is holding, if any. The wrapper is driven per
+          // frame, so a probe (or a person with devtools) can tell "the cut is
+          // not engaged" from "the cut is engaged and faded", which are two
+          // different bugs that look identical through an opacity read.
+          isolateOverlayRef.current.dataset.cut = isolateId ?? "";
         }
 
         // Every nameplate and readout below is projected BEFORE renderer.render,
@@ -4126,9 +4119,31 @@ export function ArenaScene({
           lastStatus = statusRef.current;
           if (statusRef.current === "complete") {
             completedAt = time;
+            // A finished run owns the camera as much as a running one does. On
+            // a bench that tests one part to destruction the end of the run IS
+            // the failure, and an entry sweep still in flight must not be what
+            // sits between the camera and it.
+            workspaceSweepDone = true;
+            // And the tap that STARTED the run does not get to veto the shot at
+            // the end of it. A part that dies on the first tick goes ready →
+            // complete without ever passing through "battling", so the preset
+            // tap was still inside its 2.6 s idle window when the failure came
+            // up and the cut sat there waiting for a lock nobody needed. That
+            // is why the bench showed the break wide for two seconds and then
+            // cut in — measured, 0 at 2.1 s, 1 at 3 s.
+            lastCameraInteract = Number.NEGATIVE_INFINITY;
           }
           if (statusRef.current === "battling") {
             battleStartedAt = time;
+            // Starting a run is the user AIMING the camera, not taking it — and
+            // without this the idle gate below killed the failure cut outright.
+            // A preset is a tap on a DOM button, which lands inside the 2.6 s
+            // window in which the action camera keeps its hands off; a part
+            // that then dies on the first tick did so while the camera was
+            // still "respecting" the tap, so there was no sweep, no isolation,
+            // and a failure card over a wide shot. That is the state QC kept
+            // finding. Tapping Run (or a preset) hands the camera back.
+            lastCameraInteract = Number.NEGATIVE_INFINITY;
             // A fresh shuffle per run — that is what stops a re-run of the
             // same bench from being the same film. Cleared rather than
             // reshuffled here so the order is drawn when the walk actually
@@ -4657,18 +4672,6 @@ export function ArenaScene({
           const shaker = core ?? group;
           const isFailed = agent.phase === "failed";
           /**
-           * How far THIS part's package is opened.
-           *
-           * Selected part only, and only while it is alive: a dead part is
-           * opened by the failure blowout, which builds its own interior and
-           * moves it on the failure clock. Two reveals on one body would fight
-           * over the same casing meshes.
-           */
-          const exploded =
-            !isFailed && selectedAgentIdRef.current === agent.id
-              ? explodeRef.current
-              : 0;
-          /**
            * Whether this part is currently the worst-off, and gets the swell.
            *
            * Deliberately NOT a ranking the camera reads (it never has — see the
@@ -4703,7 +4706,17 @@ export function ArenaScene({
             // component dies the way that component actually dies.
             const sig = failSignatureFor(agent.family, agent.failureVisual);
             if (!failedAt.has(agent.id)) {
-              failedAt.set(agent.id, time);
+              // An instant death can be seen a frame BEFORE the scene observes
+              // the status flip to "battling" — the LED on The Ramp dies on
+              // the first tick of its own preset. Its stamp then predates
+              // battleStartedAt, and since `recentDeath` only accepts deaths
+              // from the current run, that death was invisible to the camera
+              // for the rest of the run: no sweep, no isolation, the card over
+              // a wide shot. A death the scene is watching belongs to the run
+              // that is running, so it is dated to the run's start at the
+              // earliest. Entries already in the map keep their old stamps,
+              // so last run's corpses stay excluded as before.
+              failedAt.set(agent.id, Math.max(time, battleStartedAt));
             }
             const sinceFail = time - (failedAt.get(agent.id) ?? time);
             const flashEnd = attackFlashUntil.get(agent.id) ?? 0;
@@ -4917,11 +4930,6 @@ export function ArenaScene({
             // plume: debris that has left the package must not keep following
             // the package as it convulses and slumps. Once it is off, it is
             // off — it obeys the bench, not the part it came from.
-            // A part that has just died hands the cutaway over to the blowout.
-            if (objectEntry.explodeReveal) {
-              objectEntry.explodeReveal.dispose();
-              objectEntry.explodeReveal = null;
-            }
             if (!objectEntry.blowout) {
               // ── The interior ── a real one for the families that have it,
               // built first because it decides whether the kit builds its generic
@@ -4956,32 +4964,6 @@ export function ArenaScene({
             }
             objectEntry.blowout.update(frameDelta, sinceFail);
           } else {
-            // ── The cutaway ─────────────────────────────────────────────────
-            // The package opens onto its own interior while the part is alive.
-            // Built on the first frame the dial leaves zero and disposed when it
-            // returns, because a reveal replaces the casing it opens: at rest
-            // there must be no reveal at all, or the part would look like it had
-            // been taken apart overnight.
-            //
-            // `sinceFail` is held at 0 deliberately. There is no failure here, so
-            // there is no charring and no failure clock — only an intact part
-            // being opened, which is the difference between a cutaway and a
-            // post-mortem.
-            if (objectEntry.explodeReveal && exploded <= EXPLODE_OPEN_MIN) {
-              objectEntry.explodeReveal.dispose();
-              objectEntry.explodeReveal = null;
-            }
-            if (exploded > EXPLODE_OPEN_MIN) {
-              if (!objectEntry.explodeReveal) {
-                objectEntry.explodeReveal = createInternalsReveal(
-                  THREE,
-                  agent.family,
-                  core,
-                );
-              }
-              objectEntry.explodeReveal?.update(frameDelta, 0, exploded);
-            }
-
             // ── Live stress ── shake + heat ramp with how hard the part is being
             // driven (severity, temperature, OR percent-of-rating), so even a
             // robust part that never fails visibly strains as the load climbs.
@@ -5130,7 +5112,7 @@ export function ArenaScene({
               if (objectEntry.smoke) {
                 objectEntry.smoke.object.visible = false;
               }
-              // The wreckage goes with it. Disposed rather than hidden: the
+              // The debris goes with it. Disposed rather than hidden: the
               // debris has already landed and a re-run must throw NEW pieces
               // from the new failure, not resurrect the last run's — and the
               // scorch mark is meant to be permanent for exactly one run.
@@ -5335,7 +5317,6 @@ export function ArenaScene({
       agentObjects.forEach((entry) => {
         entry.smoke?.dispose();
         entry.blowout?.dispose();
-        entry.explodeReveal?.dispose();
         entry.flashCore.material.dispose();
         entry.flashHalo.material.dispose();
       });

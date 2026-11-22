@@ -13,6 +13,8 @@ type ArenaQuickBarProps = {
   onAddComponent: (action: ComponentAction) => void;
   onRemoveAgent: (id: string) => void;
   onEditAgent: (id: string) => void;
+  /** Draw one part, or a handful, off the library at random. */
+  onAddRandom?: (count: number) => void;
   rosterFull: boolean;
   scenario: ArenaScenario;
   onSelectScenario: (id: string) => void;
@@ -105,6 +107,7 @@ export function ArenaQuickBar({
   onAddComponent,
   onRemoveAgent,
   onEditAgent,
+  onAddRandom,
   rosterFull,
   scenario,
   onSelectScenario,
@@ -288,6 +291,7 @@ export function ArenaQuickBar({
             onAddComponent={onAddComponent}
             onRemoveAgent={onRemoveAgent}
             onEditAgent={onEditAgent}
+            onAddRandom={onAddRandom}
             disabled={running}
             full={rosterFull}
           />

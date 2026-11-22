@@ -326,13 +326,6 @@ export function ArenaBreakIt({
               aria-pressed
               disabled
             >
-              The Ramp
-            </button>
-            <button
-              type="button"
-              className="arena-breakit__mode"
-              onClick={() => onSwitchMode("bench")}
-            >
               Solo
             </button>
             <button
@@ -446,7 +439,7 @@ export function ArenaBreakIt({
 
         {presets.length > 0 ? (
           <div className="arena-breakit__presets">
-            <span className="arena-breakit__presets-label">Breaks</span>
+            <span className="arena-breakit__presets-label">Runs</span>
             {presets.map((preset) => (
               <button
                 key={preset.id}

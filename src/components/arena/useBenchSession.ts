@@ -534,7 +534,7 @@ export function useBenchSession({
   /**
    * Park the load at a factor and keep the clock running.
    *
-   * Used by Break It's presets and its Hold button: the part sits at exactly the
+   * Used by the bench presets and its Hold button: the part sits at exactly the
    * number on the dial while heat accumulates on its own thermal constant —
    * which is how a real part fails, and how a preset proves it breaks.
    */

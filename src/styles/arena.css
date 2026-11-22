@@ -1418,8 +1418,7 @@
 .arena-view--workspace .arena-dash,
 .arena-view--workspace .arena-editor,
 .arena-view--workspace .arena-result,
-.arena-view--workspace .arena-thermal,
-.arena-view--workspace .arena-explode {
+.arena-view--workspace .arena-thermal {
   pointer-events: auto;
 }
 
@@ -2236,6 +2235,37 @@
   font-size: 0.72rem;
   color: rgba(148, 163, 184, 0.8);
 }
+/* The randomiser: two draws off the long reel, next to the count because they
+   answer the same question it does. Wraps rather than shrinks, so the pair
+   stays thumb-sized at 360px, and 48px tall like every other bench control. */
+.arena-roster__random {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.arena-roster__random-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 48px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  background: rgba(15, 23, 42, 0.55);
+  color: rgba(226, 232, 240, 0.95);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.arena-roster__random-btn:hover:not(:disabled) {
+  border-color: rgba(159, 216, 255, 0.85);
+  color: #dbeeff;
+}
+.arena-roster__random-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
 
 /* Catalog facts that do not have a faithful electrical model stay visible and
    source-linked, but cannot be mistaken for roster parts. */
@@ -3921,11 +3951,11 @@
      quieter costume. The cap keeps it honest on a short window; the content
      is what sets the height everywhere else. */
   height: auto !important;
-  /* 30vh, raised from 25 when the margin strip joined the console. On a phone
-     on its side the viewport is ~360px tall, so 25vh was 90px against a console
-     that now needs ~96 — and `overflow: hidden` would have clipped the switch,
-     which is the one control on the surface you cannot do without. */
-  max-height: 30vh !important;
+  /* 35vh, raised from 30 when the faders went back to a full-width row each.
+     Two full-width faders, the margin row and the bench legends measure 219px
+     at 360×640, and the cap is the line `overflow: hidden` must not cross — so
+     it is measured rather than guessed, and drive-100 fails if it is crossed. */
+  max-height: 35vh !important;
   min-height: 0 !important;
   overflow: hidden !important;
   gap: 3px !important;
@@ -3962,26 +3992,32 @@
    The grid was `minmax(0, 1fr) auto` — two columns for four children — so the
    last two wrapped onto a second row and the console became three rows deep,
    which is what it was scrolling to hide. */
-/* FLEX, not the grid this was. A `minmax(0, 1fr) auto` grid keeps sizing the
-   auto tracks from each item's max-content, and a bare range input carries a
-   ~129px intrinsic width that no amount of shrinking on the label overrides —
-   so one fader kept coming out 129px wide and the one beside it 42px, in a
-   row where they are supposed to be the same control twice. Flex shares the
-   leftover space by definition: two equal faders, the bench row and the switch
-   taking exactly their own width. */
+/* RESTORED: one fader per row, with the switch beside them.
+
+   The four-instruments-in-one-row version measured the two faders at 35px and
+   21px of travel at 360px wide. The two controls you RIDE while a part cooks
+   were the smallest things on the console, and a 21px throw lands on an end
+   stop on every touch — the same failure the old vertical faders had, in a
+   different costume. Giving each fader its own full-width row costs one row of
+   height and hands back a ~270px throw on a phone.
+
+   The grid keeps the one thing that rule got right: `minmax(0, 1fr)` plus an
+   explicitly sized switch, with `min-inline-size: 0` on the input, so a range
+   input's ~129px intrinsic width cannot starve its neighbour. */
 .arena-dash__controls {
-  display: flex !important;
-  align-items: stretch !important;
-  gap: 8px !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  align-items: center !important;
+  column-gap: 8px !important;
+  row-gap: 3px !important;
 }
-/* The legend wraps INSIDE its own column rather than being cut off: "Supply
-   1.00×" over "of 12.0× rated" is still the whole reading, and it costs the
-   strip no extra height because the fader column is as tall as the switch. */
+/* One line per legend, now that each fader owns a row: "Supply 1.00× of 12.0×
+   rated" is one thought and fits the ~270px a phone gives it. It wrapped when
+   the faders were 35px wide, which is where "SUPP" came from. */
 .arena-dash__fader-head {
-  flex-wrap: wrap !important;
+  flex-wrap: nowrap !important;
 }
 .arena-dash__fader-ref {
-  flex-basis: 100% !important;
   margin-inline-start: 0 !important;
 }
 .arena-dash__displays {
@@ -4014,7 +4050,7 @@
 /* The two legands stay on ONE line each: "Supply 1.00× of 12.0× rated" is a
    single thought, and wrapping it costs a line of a strip this short. */
 .arena-dash__fader {
-  flex: 1 1 0 !important;
+  grid-column: 1 !important;
   min-inline-size: 0 !important;
   row-gap: 2px !important;
 }
@@ -4052,7 +4088,9 @@
    panel was sized around its largest control at the cost of the two you
    actually ride, and the faders came out 34px each. */
 .arena-dash__switch {
-  flex: 0 0 78px !important;
+  /* Beside BOTH faders, full height — the one control you throw, not ride. */
+  grid-column: 2 !important;
+  grid-row: 1 / -1 !important;
   inline-size: 78px !important;
   max-inline-size: 78px !important;
   min-inline-size: 0 !important;
@@ -4068,6 +4106,21 @@
 .arena-dash__switch-label {
   font-size: 0.48rem !important;
   letter-spacing: 0.1em !important;
+}
+
+/* A phone on its side has ~360px of height, where two stacked faders plus the
+   bench row do not fit and `overflow: hidden` would clip the switch. There the
+   console keeps the compact one-row layout: a short throw beats a control that
+   is off the screen, and at 640px wide the row still gives each fader ~180px. */
+@media (max-height: 430px) {
+  .arena-dash__controls {
+    display: flex !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+  }
+  .arena-dash__fader { flex: 1 1 0 !important; }
+  .arena-dash__bench-row { flex: 0 0 auto !important; }
+  .arena-dash__switch { grid-row: auto !important; }
 }
 
 /* ── Phone widths ────────────────────────────────────────────────────────
@@ -4097,7 +4150,7 @@
   }
 }
 .arena-dash__bench-row {
-  flex: 0 0 auto !important;
+  grid-column: 1 !important;
 }
 .arena-dash__bench-row {
   gap: 6px !important;
@@ -4365,121 +4418,6 @@
   line-height: 1.4;
 }
 
-/* ── Explode, on the right edge ───────────────────────────────────────────
-   The family's signature control, in the family's place for it. Not in the
-   console, because it changes the VIEW and not the run — and it must never
-   fight orbit or pinch, so it hugs the edge in its own 48px column.
-
-   Rotated rather than `writing-mode: vertical`, which is what broke the
-   console's first faders: a pseudo-element inherits the writing mode, so a
-   "7px" track ended up 7px along the axis you were supposed to drag and every
-   touch slammed to an end stop. A rotated horizontal input keeps every size on
-   the axis it was written for. */
-.arena-explode {
-  position: fixed;
-  z-index: 10;
-  inset-inline-end: calc(env(safe-area-inset-right, 0px) + 5px);
-  inset-block-start: 44%;
-  transform: translateY(-50%);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  padding: 7px 3px 6px;
-  border-radius: 11px;
-  border: 1px solid rgba(148, 163, 184, 0.18);
-  background: rgba(6, 12, 22, 0.5);
-  backdrop-filter: blur(10px) saturate(1.15);
-  -webkit-backdrop-filter: blur(10px) saturate(1.15);
-}
-@supports not (backdrop-filter: blur(1px)) {
-  .arena-explode {
-    background: rgba(6, 12, 22, 0.92);
-  }
-}
-.arena-explode__label {
-  font-size: 0.42rem;
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: rgba(174, 188, 205, 0.8);
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
-}
-.arena-explode__track {
-  position: relative;
-  inline-size: 42px;
-  block-size: 150px;
-}
-.arena-explode__track input[type="range"] {
-  position: absolute;
-  inset-block-start: 50%;
-  inset-inline-start: 50%;
-  inline-size: 150px;
-  block-size: 42px;
-  margin: 0;
-  transform: translate(-50%, -50%) rotate(-90deg);
-  appearance: none;
-  -webkit-appearance: none;
-  background: transparent;
-  cursor: pointer;
-}
-.arena-explode__track input[type="range"]::-webkit-slider-runnable-track {
-  block-size: 5px;
-  border-radius: 3px;
-  background: linear-gradient(180deg, #020610 0%, #0b1220 100%);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.9) inset;
-}
-.arena-explode__track input[type="range"]::-moz-range-track {
-  block-size: 5px;
-  border-radius: 3px;
-  background: #0b1220;
-}
-.arena-explode__track input[type="range"]::-webkit-slider-thumb {
-  appearance: none;
-  -webkit-appearance: none;
-  inline-size: 14px;
-  block-size: 22px;
-  margin-block-start: -8px;
-  border-radius: 4px;
-  border: 1px solid rgba(15, 23, 42, 0.75);
-  background: linear-gradient(90deg, #f1f5f9 0%, #cbd5e1 45%, #64748b 100%);
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.6);
-}
-.arena-explode__track input[type="range"]::-moz-range-thumb {
-  inline-size: 14px;
-  block-size: 22px;
-  border-radius: 4px;
-  border: 1px solid rgba(15, 23, 42, 0.75);
-  background: #cbd5e1;
-}
-.arena-explode__value {
-  font-size: 0.5rem;
-  font-variant-numeric: tabular-nums;
-  color: #e2e8f0;
-}
-
-/* Landscape, where the free band is short.
-
-   Measured at 640×360: the strip ends at y104 and the console starts at y252,
-   and a 192px rail centred at 44% ran from y62 to y254 — over the Readouts
-   button at the top AND into the console at the bottom. A 48px-wide control
-   sitting on two other controls is not a spacing problem, it is three things
-   fighting for one area. Shorter track, centred in the band that is actually
-   free. */
-@media (orientation: landscape) and (max-height: 430px) {
-  .arena-explode {
-    inset-block-start: 49%;
-    gap: 3px;
-    padding: 5px 3px 4px;
-  }
-  .arena-explode__track {
-    block-size: 84px;
-  }
-  .arena-explode__track input[type="range"] {
-    inline-size: 84px;
-  }
-}
-
 /* ── Ramp axis ────────────────────────────────────────────────────────────
    Sits under the environment picker in the Conditions sheet: same chips, same
    behaviour, one decision deeper. */
@@ -4494,7 +4432,7 @@
    The arena's front door, and a strip rather than a panel: at most ONE THIRD of
    the screen (33vh — 211px at 360x640), glass, on the bottom edge, so the part
    being broken keeps the other two thirds. Readouts, the ramp, the switch, the
-   three parts closest to failing, the presets — nothing else. At the break it
+   three parts closest to failing, the presets — nothing else. At the failure it
    shrinks again, because then the part and its card own the screen. */
 .arena-breakit {
   position: fixed;
@@ -4673,67 +4611,6 @@
 }
 .arena-breakit__preset em { font-style: normal; font-size: 11px; color: #aebccd; font-variant-numeric: tabular-nums; }
 .arena-breakit__none { margin: 0; font-size: 12px; color: #aebccd; }
-
-/* ── FAILURE CARD ───────────────────────────────────────────────────────────
-   Replaces the toast that sat over the toolbar and the readout row. Fixed to
-   the bottom edge ABOVE the console, never over the part the camera isolated.
-
-   A BAND, not a sheet: at 360x640 the whole card is about 120px, because the
-   part behind it is the thing being looked at. The last limit and the physics
-   paragraph are one tap away (Why it went) and only when asked for — expanded,
-   the card scrolls and the scene composes above its measured height, so even
-   then it does not sit on the part. */
-.arena-fail {
-  position: fixed;
-  left: 8px;
-  right: 8px;
-  z-index: 20;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 10px;
-  max-height: 60vh;
-  overflow-y: auto;
-  border-radius: 10px;
-  border: 1px solid rgba(229, 100, 63, 0.75);
-  background: rgba(21, 28, 37, 0.9);
-  backdrop-filter: blur(14px) saturate(1.15);
-  -webkit-backdrop-filter: blur(14px) saturate(1.15);
-  color: #e8eef5;
-}
-@supports not (backdrop-filter: blur(1px)) {
-  .arena-fail { background: rgba(21, 28, 37, 0.96); }
-}
-.arena-fail__head { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
-.arena-fail__tag {
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.1em;
-  padding: 2px 6px;
-  border-radius: 4px;
-  background: #e5643f;
-  color: #1a0a06;
-}
-.arena-fail__title { font-size: 16px; font-weight: 700; }
-.arena-fail__designator { font-size: 12px; color: #aebccd; }
-.arena-fail__what { margin: 0; display: flex; flex-direction: column; gap: 2px; font-size: 14px; }
-.arena-fail__what strong { color: #ff8a6b; font-variant-numeric: tabular-nums; }
-.arena-fail__reading { font-size: 12px; color: #aebccd; font-variant-numeric: tabular-nums; }
-.arena-fail__limit { margin: 0; font-size: 12px; color: #aebccd; }
-.arena-fail__limit b { color: #e8eef5; font-variant-numeric: tabular-nums; }
-.arena-fail__desc { margin: 0; font-size: 12px; line-height: 1.4; color: #d7e0ea; background: #151c25; border-radius: 6px; padding: 8px; }
-.arena-fail__actions { display: flex; gap: 8px; }
-.arena-fail__btn {
-  flex: 1;
-  min-height: 44px;
-  border-radius: 8px;
-  border: 1px solid #e5643f;
-  background: #e5643f;
-  color: #1a0a06;
-  font-size: 13px;
-  font-weight: 700;
-}
-.arena-fail__btn--ghost { background: transparent; color: #e8eef5; border-color: rgba(66, 84, 104, 0.9); }
 
 /* Personal bests: one line per part, against its own history. */
 .arena-board__bests { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 8px; }

@@ -25,7 +25,6 @@ const NAV_TABS: TabConfig[] = [
   { mode: "build",        label: "Build",       title: "Component builder and circuit designer" },
   { mode: "practice",     label: "Practice",    title: "Guided worksheets and W.I.R.E. problems" },
   { mode: "troubleshoot", label: "Troubleshoot",title: "Fix broken circuits and restore current flow" },
-  { mode: "arena",        label: "Arena",       title: "Component testing and advanced simulation" },
   { mode: "learn",        label: "Learn",       title: "Take the guided tour" },
   { mode: "help",         label: "Help",        title: "W.I.R.E. guide, shortcuts, and reference" },
   { mode: "wire-guide",   label: "Wire Guide",  title: "Wire guide, formulas, and gauge recommendations" },
@@ -118,13 +117,11 @@ export function GlobalModeBar() {
         navigate("/gallery");
         return;
       }
-      // The arena is a workspace mode of the builder, not a page of its own:
-      // Builder mounts ArenaView itself when the mode is "arena", and the
-      // /arena route it used to have is gone. It therefore falls through to the
-      // anchor below with every other workspace tool — set the mode, make sure
-      // we are on /app, and let the workspace open it. Sending it to a route of
-      // its own is what made the mode bar and the arena disagree about which
-      // surface was on screen.
+      // Arena is no longer a tab in this bar — it is a button on the build
+      // rail now, directly above Clear (see Builder.tsx). It is still a
+      // workspace mode of the builder and not a page of its own: Builder
+      // mounts ArenaView itself, and the /arena route it used to have is gone.
+      // Nothing here can reach it, which is the point — the rail owns it.
 
       // Keep all workspace-bound tools anchored to the main workspace shell
       if (!isWorkspacePage) {

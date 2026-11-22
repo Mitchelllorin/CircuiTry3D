@@ -13,10 +13,8 @@ import {
 } from "../../lib/fuseRecord";
 import { ArenaPartEditor } from "./ArenaPartEditor";
 import { ArenaDashboard } from "./ArenaDashboard";
-import { ArenaExplodeRail } from "./ArenaExplodeRail";
 import { ArenaQuickBar } from "./ArenaQuickBar";
 import { ArenaScene } from "./ArenaScene";
-import { hasModelledInternals } from "./componentInternals";
 import { thermalReportFor } from "./thermalModel";
 import {
   ARENA_ROSTER_MAX,
@@ -25,6 +23,8 @@ import {
   buildArenaAgents,
 } from "./arenaData";
 import { entriesFromRun, mergeEntries, type LeaderboardEntry } from "./leaderboardModel";
+import { UNIFIED_COMPONENT_ACTIONS } from "../builder/componentLibrary";
+import { pickRandomParts } from "./rosterRandom";
 import {
   RUN_HISTORY_MAX,
   runRecordFrom,
@@ -49,8 +49,6 @@ import type {
 } from "./types";
 import { useArenaBattle } from "./useArenaBattle";
 import ArenaBenchView from "./ArenaBenchView";
-import { ArenaBreakIt } from "./ArenaBreakIt";
-import { ArenaFailureCard } from "./ArenaFailureCard";
 
 const ENTER_TRANSITION_MS = 1800;
 
@@ -66,11 +64,12 @@ export default function ArenaView({
     useState<ArenaViewTransitionPhase>("entering");
   // Workspace variant: terminal exit sweep, distinct from the panel-driven camera.
   const [isExiting, setIsExiting] = useState(false);
-  // Arena entry: solo bench first ("playable datasheet"), then head-to-head battle.
-  // Break It first: the arena's job is to break something on purpose, and a
-  // head-to-head where nothing fails sells nothing. Solo and Battle are the
-  // experiments you graduate to.
-  const [arenaMode, setArenaMode] = useState<"break" | "bench" | "battle">("break");
+  // TWO modes, and only two: the bench (one part, ramped to failure) and the
+  // battle (a field of parts). "Ramp" used to be a third, and it was never a
+  // mode — the ramp is the slider on the console that raises the load, and it
+  // is there in both. A mode named after a control makes the control look
+  // optional, and it split one bench into two doors to the same room.
+  const [arenaMode, setArenaMode] = useState<"bench" | "battle">("bench");
 
   useEffect(() => {
     const refreshPayload = () => setSessionPayload(loadArenaSessionPayload());
@@ -171,6 +170,59 @@ export default function ArenaView({
     pendingPickIndexRef.current = null;
     setSelectedAgentId(picked.id);
   }, [arenaAgents]);
+
+  /**
+   * Stock the bench with random parts.
+   *
+   * The library holds every branded catalog part as well as the generic ones,
+   * so finding something new by scrolling is slow enough that it does not
+   * happen. One press puts one part on - or swaps it for the selected one,
+   * exactly as a library pick does. The five press fills the bench, which is
+   * the experiment a random draw can actually set up: five different things to
+   * compare, rather than the one you would have chosen anyway.
+   */
+  const handleAddRandomParts = useCallback(
+    (count: number) => {
+      // A slot can arrive unnamed (an imported circuit), and `avoid` matches
+      // on the library label, so an unnamed part simply never excludes one.
+      const onBench = rosterSources.map((source) => source.name ?? "");
+
+      if (count <= 1) {
+        const [only] = pickRandomParts(UNIFIED_COMPONENT_ACTIONS, 1, { avoid: onBench });
+        if (only) {
+          handleAddComponent(only);
+        }
+        return;
+      }
+
+      const room = ARENA_ROSTER_MAX - rosterSources.length;
+      if (room <= 0) {
+        return;
+      }
+      const chosen = pickRandomParts(UNIFIED_COMPONENT_ACTIONS, Math.min(count, room), {
+        avoid: onBench,
+      });
+      if (chosen.length === 0) {
+        return;
+      }
+
+      setRosterSources((previous) => {
+        const space = Math.max(0, ARENA_ROSTER_MAX - previous.length);
+        return [
+          ...previous,
+          ...chosen
+            .slice(0, space)
+            .map((action, offset) => arenaSourceFromLibrary(action, previous.length + offset)),
+        ];
+      });
+      // The first card of the draw becomes the part under test, the same way a
+      // single pick does - resolved to an id once the roster rebuilds.
+      pendingPickIndexRef.current = rosterSources.length;
+      setSelectedAgentId(null);
+    },
+    [handleAddComponent, rosterSources],
+  );
+
 
   // ── Leaderboard ───────────────────────────────────────────────────────
   // Accumulated across runs for the session, not per run: the comparison this
@@ -417,8 +469,6 @@ export default function ArenaView({
   const [dashHeight, setDashHeight] = useState(0);
   /** The strip's bottom edge — the top of the scene's free space. */
   const [topInset, setTopInset] = useState(0);
-  /** How far the selected part's package is opened. A view, so it persists. */
-  const [explode, setExplode] = useState(0);
 
   // Mark the shell while the arena is up, so app-level furniture can stand down.
   // The tips ticker is the reason: in workspace it is z-index 1310 pinned 56px
@@ -502,16 +552,6 @@ export default function ArenaView({
     [agents, winnerId],
   );
   const winnerName = winner?.name ?? null;
-  /** The part the failure card is about: the last one to let go. */
-  const failedAgent = useMemo(() => {
-    const failed = agents.filter((agent) => agent.phase === "failed");
-    return failed.length > 0 ? failed[failed.length - 1] : null;
-  }, [agents]);
-  const [dismissedFailure, setDismissedFailure] = useState<string | null>(null);
-  // A new run is a new failure; nothing stays dismissed across runs.
-  useEffect(() => {
-    if (status === "battling") setDismissedFailure(null);
-  }, [status]);
   const survivorCount = useMemo(
     () => agents.filter((agent) => agent.phase !== "failed").length,
     [agents],
@@ -532,11 +572,6 @@ export default function ArenaView({
     () => thermalReportFor(thermalAgent, scenario, stressFactor),
     [thermalAgent, scenario, stressFactor],
   );
-  /** Only families with a modelled interior get the dial — see ArenaExplodeRail. */
-  const canExplode = thermalAgent
-    ? hasModelledInternals(thermalAgent.family)
-    : false;
-
   const sessionLabel = sessionPayload?.sessionName ?? "CircuiTry3D Arena";
 
   /**
@@ -571,16 +606,6 @@ export default function ArenaView({
   );
 
   if (isWorkspace) {
-    if (arenaMode === "break") {
-      return (
-        <ArenaBreakIt
-          roster={arenaAgents}
-          selectedAgentId={selectedAgentId}
-          onSelectAgent={setSelectedAgentId}
-          onSwitchMode={(next) => setArenaMode(next)}
-        />
-      );
-    }
     if (arenaMode === "bench") {
       return (
         <>
@@ -594,6 +619,7 @@ export default function ArenaView({
             onAddComponent={handleAddComponent}
             onRemoveAgent={handleRemoveAgent}
             onEditAgent={setEditingAgentId}
+            onAddRandom={handleAddRandomParts}
             rosterFull={rosterSources.length >= ARENA_ROSTER_MAX}
             nameplates={showReadouts}
             readouts={showReadouts}
@@ -654,7 +680,6 @@ export default function ArenaView({
           onLongPressAgent={setEditingAgentId}
           bottomInsetPx={dashHeight}
           topInsetPx={topInset}
-          explode={explode}
           onExitTransitionComplete={handleExitComplete}
         />
         {editingAgent ? (
@@ -720,6 +745,7 @@ export default function ArenaView({
           onAddComponent={handleAddComponent}
           onRemoveAgent={handleRemoveAgent}
           onEditAgent={setEditingAgentId}
+          onAddRandom={handleAddRandomParts}
           rosterFull={rosterSources.length >= ARENA_ROSTER_MAX}
           scenario={scenario}
           onSelectScenario={selectScenario}
@@ -766,21 +792,8 @@ export default function ArenaView({
           }
         />
 
-        {/* Explode, on the right edge where every app in the family keeps it. */}
-        {canExplode ? (
-          <ArenaExplodeRail value={explode} onChange={setExplode} />
-        ) : null}
-
         {/* The console. Fixed at the bottom, and now only what you operate a
             LIVE run with: the circuit totals, the two faders, the switch. */}
-        {failedAgent && dismissedFailure !== failedAgent.id ? (
-          <ArenaFailureCard
-            agent={failedAgent}
-            onDismiss={() => setDismissedFailure(failedAgent.id)}
-            onReset={resetTest}
-            bottomOffsetPx={dashHeight}
-          />
-        ) : null}
         <ArenaDashboard
           status={status}
           voltsMultiple={liveVolts}

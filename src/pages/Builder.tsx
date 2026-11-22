@@ -108,6 +108,7 @@ import { ScrollerMenu } from "../components/builder/ScrollerMenu";
 import { ExplodeControl } from "../components/builder/ExplodeControl";
 import { HelpSheet } from "../components/builder/HelpSheet";
 import { FamilyDrawer, FamilyGlyph } from "../components/family/FamilyDrawer";
+import { NavGlyph } from "../components/navGlyphs";
 import { AnalysisSheet } from "../components/builder/AnalysisSheet";
 import type { InsightsMetric } from "../components/builder/InsightsFilmReel";
 import { formatEngineering } from "../utils/electrical";
@@ -1270,7 +1271,6 @@ export default function Builder() {
   // it survives rotation, selection, panels opening and the frame reloading. It
   // only goes back to zero when the user takes it there.
   const [explodeAmount, setExplodeAmount] = useState(0);
-  const [isExplodeOpen, setExplodeOpen] = useState(false);
   // The W.I.R.E. readout is the control now; this is what it opens.
   const [isAnalysisOpen, setAnalysisOpen] = useState(false);
   const [isCinematicOpen, setIsCinematicOpen] = useState(false);
@@ -1287,19 +1287,6 @@ export default function Builder() {
     if (!isFrameReady) return;
     triggerBuilderAction("set-explode", { amount: explodeAmount });
   }, [isFrameReady, explodeAmount, triggerBuilderAction]);
-
-  // Reaching for the model puts the explode slider away. The canvas is inside the
-  // iframe, so the scene reports the press (legacy:canvas-press).
-  useEffect(() => {
-    if (!isExplodeOpen) return;
-    const handleMessage = (event: MessageEvent) => {
-      if (event.data && typeof event.data === "object" && event.data.type === "legacy:canvas-press") {
-        setExplodeOpen(false);
-      }
-    };
-    window.addEventListener("message", handleMessage);
-    return () => window.removeEventListener("message", handleMessage);
-  }, [isExplodeOpen]);
 
   // "Center circuit in available space": measure the UI that occludes the canvas
   // (top metrics ticker + the bottom-sheet workspace panel) and push CSS-px insets
@@ -1386,8 +1373,7 @@ export default function Builder() {
     isLoadModalOpen ||
     isAIHelperOpen ||
     isMeasureWidgetOpen ||
-    isCinematicOpen ||
-    isExplodeOpen;
+    isCinematicOpen;
   // NOT in that list, deliberately: isGuidedTourOpen / isBuildAlongOpen. Effect 1
   // opens the guided tour on EVERY launch, so counting it as "a panel is open"
   // meant the turntable was blocked from the moment the app started and never
@@ -3030,6 +3016,23 @@ export default function Builder() {
             <span className="unified-action-divider" aria-hidden="true" />
 
             {/* Tool actions (formerly left edge) */}
+            {/* Arena — promoted out of the nav bar and onto this rail, sitting
+                directly above Clear and below the Library tab. It is a place you
+                GO, like Clear is a thing you DO, and it now costs the model no
+                space at all: the rail already hugs the left edge and packs upward,
+                so the button takes the gap under the tab rather than adding a
+                strip of chrome. Deliberately not `--secondary`: the rail hides
+                those in tools-only mode, and the way into the Arena should not
+                depend on how much of the bar is showing. */}
+            <button
+              type="button"
+              className="edge-action-btn edge-action-btn--arena"
+              onClick={() => openArenaWorkspace()}
+              aria-label="Arena"
+              title="Arena — test a part to failure"
+            >
+              <NavGlyph name="arena" className="edge-action-icon-svg" />
+            </button>
             <button
               type="button"
               className={`edge-action-btn edge-action-btn--clear${isClearArmed ? " edge-action-btn--armed" : ""}`}
@@ -3506,13 +3509,12 @@ export default function Builder() {
           >
             <FamilyGlyph />
           </button>
-          {/* Explode — foot of the right edge, the same place ThePrints3D keeps
-              it, and the nearest spot in this column to the thumb. */}
+          {/* Explode — foot of the right edge, where ThePrints3D keeps it and
+              the nearest spot in this column to the thumb. The rail is always up:
+              it is a dial you look at while you adjust it, not a panel you open. */}
           <ExplodeControl
             amount={explodeAmount}
             onAmountChange={setExplodeAmount}
-            isOpen={isExplodeOpen}
-            onOpenChange={setExplodeOpen}
             disabled={controlsDisabled}
           />
         </div>

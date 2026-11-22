@@ -53,8 +53,23 @@ const GLYPHS: Partial<Record<string, ReactNode>> = {
       <path d="M11 7.2 8.9 11.1h2.8L10 14.6l3.5-4.4h-2.8z" />
     </>
   ),
-  // The bolt, as the reference rail draws it.
-  arena: <path d="M13.4 2.5 5.6 13.2h5l-.9 8.3 8.3-11h-5.1z" />,
+  // Shield and two crossed swords — a trial, not a power source. The bolt
+  // said "current", which is every other tab in this bar; this says what the
+  // Arena is for, and it is the mark that now carries the mode on its own
+  // because it no longer sits in the nav. Outline only, so it takes the ink
+  // of whatever holds it, and the blades are a touch lighter than the shield
+  // so the two shapes stay legible when the mark is small.
+  arena: (
+    <>
+      <path d="M12 2.9 19.3 5.6v5.7c0 4-3 7.2-7.3 9-4.3-1.8-7.3-5-7.3-9V5.6z" />
+      <g strokeWidth={1.5}>
+        <path d="M8.9 15.7 15.5 9.1" />
+        <path d="M15.1 15.7 8.5 9.1" />
+        <path d="m7.7 14.3 1.8 1.8" />
+        <path d="m16.3 14.3-1.8 1.8" />
+      </g>
+    </>
+  ),
   learn: (
     <>
       <path d="M2.8 8.6 12 4.2l9.2 4.4L12 13z" />
